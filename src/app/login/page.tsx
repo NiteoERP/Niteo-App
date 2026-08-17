@@ -16,10 +16,9 @@ export default function LoginPage() {
         <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-indigo-500 via-neutral-900 to-neutral-950"></div>
         <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-3xl translate-x-1/3 translate-y-1/3"></div>
         
-        {/* Logo superior */}
         <div className="relative z-10">
           <h1 className="text-3xl font-bold tracking-tighter text-white flex items-center gap-3">
-            <img src="/logo.png" alt="Niteo Logo" className="w-10 h-10 object-contain drop-shadow-[0_0_12px_rgba(99,102,241,0.5)]" />
+            <img src="/logo.png" alt="Niteo Logo" className="w-14 h-14 object-contain drop-shadow-[0_0_12px_rgba(99,102,241,0.5)]" />
             Niteo
           </h1>
         </div>
@@ -46,7 +45,7 @@ export default function LoginPage() {
           <div className="text-center md:text-left space-y-3">
             {/* Logo solo visible en móvil */}
             <div className="md:hidden flex justify-center mb-8">
-              <img src="/logo.png" alt="Niteo Logo" className="w-12 h-12 object-contain drop-shadow-[0_0_12px_rgba(99,102,241,0.5)]" />
+              <img src="/logo.png" alt="Niteo Logo" className="w-16 h-16 object-contain drop-shadow-[0_0_12px_rgba(99,102,241,0.5)]" />
             </div>
             <h2 className="text-3xl font-semibold tracking-tight text-white">
               Bienvenido de vuelta
@@ -119,6 +118,13 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+
+          <p className="text-center text-sm text-neutral-400 mt-6">
+            ¿No tienes una cuenta?{' '}
+            <Link href="/register" className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors">
+              Crear cuenta
+            </Link>
+          </p>
 
         </div>
       </div>
