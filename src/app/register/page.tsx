@@ -43,9 +43,7 @@ export default function RegisterPage() {
         
         <div className="relative z-10">
           <h1 className="text-3xl font-bold tracking-tighter text-white flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/20">
-              <span className="text-white text-2xl font-bold leading-none tracking-tighter">N</span>
-            </div>
+            <img src="/logo.png" alt="Niteo Logo" className="w-10 h-10 object-contain drop-shadow-[0_0_12px_rgba(99,102,241,0.5)]" />
             Niteo
           </h1>
         </div>
@@ -69,9 +67,7 @@ export default function RegisterPage() {
           
           <div className="text-center md:text-left space-y-3">
             <div className="md:hidden flex justify-center mb-6">
-              <div className="w-12 h-12 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/20">
-                <span className="text-white text-3xl font-bold leading-none tracking-tighter">N</span>
-              </div>
+              <img src="/logo.png" alt="Niteo Logo" className="w-12 h-12 object-contain drop-shadow-[0_0_12px_rgba(99,102,241,0.5)]" />
             </div>
             <h2 className="text-3xl font-semibold tracking-tight text-white">
               Crear tu cuenta
