@@ -4,9 +4,16 @@ import { cookies } from 'next/headers'
 export async function createClient() {
   const cookieStore = await cookies()
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('CRITICAL: Environment variables for Supabase are missing.');
+  }
+
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl || 'https://placeholder.supabase.co',
+    supabaseKey || 'placeholder-key',
     {
       cookies: {
         getAll() {
@@ -18,8 +25,7 @@ export async function createClient() {
               cookieStore.set(name, value, options)
             )
           } catch (error) {
-            // Este error ocurre si se intenta setear cookies en un Server Component.
-            // Puede ser ignorado de forma segura ya que el middleware debería manejarlo.
+            // Manejado por middleware
           }
         },
       },
