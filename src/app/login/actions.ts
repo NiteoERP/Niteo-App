@@ -20,7 +20,8 @@ export async function login(prevState: any, formData: FormData) {
   })
 
   if (error) {
-    return { error: 'Correo o contraseña incorrectos.' }
+    console.error('Login error:', error.message);
+    return { error: `Error: ${error.message}` }
   }
 
   revalidatePath('/dashboard')

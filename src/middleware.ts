@@ -56,12 +56,12 @@ export async function middleware(request: NextRequest) {
     try {
       const { data: profile, error: profileError } = await supabase
         .from('perfiles')
-        .select('id_empresa, rol')
+        .select('empresa_id, rol')
         .eq('id', user.id)
         .single();
       
       if (profileError) {
-        console.error('Error al obtener perfil:', profileError);
+        console.error('Error al obtener perfil en middleware:', profileError);
       }
 
       if (profile) {
@@ -69,7 +69,7 @@ export async function middleware(request: NextRequest) {
         const { data: sub } = await supabase
           .from('suscripciones_empresas')
           .select('estado')
-          .eq('id_empresa', profile.id_empresa)
+          .eq('empresa_id', profile.empresa_id)
           .single();
 
         // Si no tiene suscripción o está vencida/suspendida -> Bloqueo total

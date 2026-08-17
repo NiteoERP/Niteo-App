@@ -55,7 +55,8 @@ export async function iniciarSesion(formData: FormData) {
   });
 
   if (error) {
-    return redirect(`/login?error=${encodeURIComponent('Credenciales incorrectas')}`);
+    console.error('Login error:', error.message);
+    return redirect(`/login?error=${encodeURIComponent('Error: ' + error.message)}`);
   }
 
   redirect('/dashboard');
