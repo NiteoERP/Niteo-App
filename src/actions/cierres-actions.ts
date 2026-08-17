@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 
 import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
@@ -9,19 +9,19 @@ import { revalidatePath } from 'next/cache';
 export async function getCierrePrevio(fechaStr: string) {
   const supabase = await createClient();
 
-  // Obtener la sesión y el perfil para saber la sede
+  // Obtener la sesiÃ³n y el perfil para saber la sede
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("No autenticado");
 
   const { data: profile } = await supabase
-    .from('usuarios')
+    .from('perfiles')
     .select('id_empresa, id_sede')
-    .eq('auth_uuid', user.id)
+    .eq('id', user.id)
     .single();
 
   if (!profile) throw new Error("Perfil no encontrado");
 
-  // 1. Consultar la Tasa de Cambio Automática del Día
+  // 1. Consultar la Tasa de Cambio AutomÃ¡tica del DÃ­a
   // Asumimos que existe una tabla 'tasas_cambio' o tomamos un valor por defecto seguro
   let tasaCambio = 40.00; // Valor de fallback
   const { data: tasaData } = await supabase
@@ -35,7 +35,7 @@ export async function getCierrePrevio(fechaStr: string) {
     tasaCambio = tasaData.tasa;
   }
 
-  // 2. Sumar Ventas del Día (de Niteo Sync)
+  // 2. Sumar Ventas del DÃ­a (de Niteo Sync)
   const { data: ventasData } = await supabase
     .from('ventas_facturas')
     .select('total')
@@ -45,7 +45,7 @@ export async function getCierrePrevio(fechaStr: string) {
   
   const ventasTotales = ventasData ? ventasData.reduce((acc, curr) => acc + Number(curr.total), 0) : 0;
 
-  // 3. Sumar Gastos Operativos del Día
+  // 3. Sumar Gastos Operativos del DÃ­a
   const { data: gastosData } = await supabase
     .from('gastos_sede')
     .select('monto')
@@ -76,9 +76,9 @@ export async function guardarCierre(cierreData: any, transacciones: any[]) {
   if (!user) return { error: "No autenticado" };
 
   const { data: profile } = await supabase
-    .from('usuarios')
+    .from('perfiles')
     .select('id_empresa, id_sede')
-    .eq('auth_uuid', user.id)
+    .eq('id', user.id)
     .single();
 
   if (!profile) return { error: "Perfil no encontrado" };
@@ -106,7 +106,7 @@ export async function guardarCierre(cierreData: any, transacciones: any[]) {
 
   if (errorCierre) {
     console.error('Error insertando cierre:', errorCierre);
-    // Verificar si es error de constraint unique (ya cerró hoy)
+    // Verificar si es error de constraint unique (ya cerrÃ³ hoy)
     if (errorCierre.code === '23505') {
        return { error: 'Ya existe un cierre de caja registrado para esta fecha y sede.' };
     }
@@ -130,11 +130,12 @@ export async function guardarCierre(cierreData: any, transacciones: any[]) {
 
     if (errorTransacciones) {
       console.error('Error insertando transacciones:', errorTransacciones);
-      // Opcional: Aquí se podría hacer un rollback borrando el cierre, pero dejemos el log por ahora
-      return { error: 'El cierre guardó el resumen, pero hubo un error guardando el detalle de los bancos.' };
+      // Opcional: AquÃ­ se podrÃ­a hacer un rollback borrando el cierre, pero dejemos el log por ahora
+      return { error: 'El cierre guardÃ³ el resumen, pero hubo un error guardando el detalle de los bancos.' };
     }
   }
 
   revalidatePath('/dashboard/cierre');
   return { success: true };
 }
+

@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation';
+﻿import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
 import { 
@@ -24,11 +24,11 @@ export default async function DashboardLayout({
     redirect('/login');
   }
 
-  // Extraer información pública del usuario (Rol, Nombre, Empresa, Sede)
+  // Extraer informaciÃ³n pÃºblica del usuario (Rol, Nombre, Empresa, Sede)
   const { data: perfil } = await supabase
-    .from('usuarios')
+    .from('perfiles')
     .select('nombre_completo, rol, id_empresa, id_sede')
-    .eq('auth_uuid', user.id)
+    .eq('id', user.id)
     .single();
 
   const userName = perfil?.nombre_completo || user.email;
@@ -45,7 +45,7 @@ export default async function DashboardLayout({
           <span className="font-bold text-xl tracking-tight text-neutral-100">Niteo</span>
         </div>
         
-        {/* Navegación Condicional por Roles */}
+        {/* NavegaciÃ³n Condicional por Roles */}
         <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
           {userRole !== 'CAJERO' && (
             <Link href="/dashboard" className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-indigo-500/10 text-indigo-400 transition-colors border border-indigo-500/10">
@@ -90,7 +90,7 @@ export default async function DashboardLayout({
         )}
       </aside>
 
-      {/* ÁREA PRINCIPAL */}
+      {/* ÃREA PRINCIPAL */}
       <div className="flex-1 flex flex-col min-w-0">
         
         {/* TOPBAR */}
@@ -132,3 +132,4 @@ export default async function DashboardLayout({
     </div>
   );
 }
+

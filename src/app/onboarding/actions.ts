@@ -1,4 +1,4 @@
-'use server';
+﻿'use server';
 
 import { createClient } from '@/utils/supabase/server';
 import { randomUUID } from 'crypto';
@@ -13,7 +13,7 @@ export async function setupWorkspace(formData: {
   // 1. Obtener usuario autenticado
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr || !user) {
-    return { success: false, error: 'No estás autorizado. Inicia sesión nuevamente.' };
+    return { success: false, error: 'No estÃ¡s autorizado. Inicia sesiÃ³n nuevamente.' };
   }
 
   // 2. Insertar la Empresa
@@ -31,17 +31,17 @@ export async function setupWorkspace(formData: {
 
   // 3. Enlazar el Usuario a la Empresa y darle rol MASTER
   const { error: userErr } = await supabase
-    .from('usuarios')
+    .from('perfiles')
     .update({ id_empresa: idEmpresa, rol: 'MASTER' })
-    .eq('auth_uuid', user.id);
+    .eq('id', user.id);
 
   if (userErr) {
-    // Idealmente se haría un rollback de la empresa, pero para simplicidad del MVP lo dejamos así
+    // Idealmente se harÃ­a un rollback de la empresa, pero para simplicidad del MVP lo dejamos asÃ­
     return { success: false, error: 'Error al enlazar el perfil de usuario. ' + userErr.message };
   }
 
   // 4. Crear Sede inicial y generar Master Key
-  // Formato: niteo_ + UUID sin guiones para que sea estético
+  // Formato: niteo_ + UUID sin guiones para que sea estÃ©tico
   const masterKey = `niteo_${randomUUID().replace(/-/g, '')}`;
   
   const { error: sedeErr } = await supabase
@@ -60,3 +60,4 @@ export async function setupWorkspace(formData: {
 
   return { success: true, masterKey };
 }
+

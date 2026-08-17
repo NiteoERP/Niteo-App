@@ -1,9 +1,9 @@
-'use server';
+﻿'use server';
 
 import { createClient } from '@/utils/supabase/server';
 
 /**
- * Función interna de seguridad para extraer el contexto
+ * FunciÃ³n interna de seguridad para extraer el contexto
  * y forzar arquitectura Multi-inquilino en el servidor.
  */
 async function getAuthContext() {
@@ -12,9 +12,9 @@ async function getAuthContext() {
   if (authErr || !user) throw new Error('No autorizado');
 
   const { data: perfil, error: perfErr } = await supabase
-    .from('usuarios')
+    .from('perfiles')
     .select('id_empresa, id_sede, auth_uuid')
-    .eq('auth_uuid', user.id)
+    .eq('id', user.id)
     .single();
 
   if (perfErr || !perfil) throw new Error('Perfil de usuario no encontrado');
@@ -88,7 +88,7 @@ export async function getTasaDelDia() {
       .limit(1)
       .single();
 
-    // Si no hay datos, retornamos éxito con tasa 0 para que el front no explote
+    // Si no hay datos, retornamos Ã©xito con tasa 0 para que el front no explote
     if (error && error.code !== 'PGRST116') throw error;
     
     return { success: true, tasa: data?.tasa_bcv || 0 };
@@ -198,7 +198,7 @@ export async function actualizarCompraPuntual(id_compra: number, data: {
 export async function eliminarCompraPuntual(id_compra: number) {
   try {
     const { supabase, idEmpresa } = await getAuthContext();
-    // Borrado físico
+    // Borrado fÃ­sico
     const { error } = await supabase
       .from('compras_puntuales')
       .delete()
@@ -251,3 +251,4 @@ export async function registrarFactura(
     return { success: false, error: err.message };
   }
 }
+

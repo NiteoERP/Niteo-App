@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 
 import { createClient } from '@/utils/supabase/server';
 import { endOfDay, startOfMonth, startOfToday, subDays, subMonths } from 'date-fns';
@@ -10,9 +10,9 @@ export async function getDashboardData(range: string) {
   if (!user) throw new Error("No autenticado");
 
   const { data: profile } = await supabase
-    .from('usuarios')
+    .from('perfiles')
     .select('id_sede')
-    .eq('auth_uuid', user.id)
+    .eq('id', user.id)
     .single();
 
   if (!profile) throw new Error("Perfil no encontrado");
@@ -52,3 +52,4 @@ export async function getDashboardData(range: string) {
 
   return metrics || [];
 }
+
