@@ -29,10 +29,92 @@ function SubmitButton() {
   );
 }
 
-export default function RegisterPage() {
+function RegisterForm() {
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
 
+  return (
+    <>
+      <form className="space-y-5" action={registrarUsuario}>
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-neutral-300" htmlFor="fullName">
+            Nombre Completo
+          </label>
+          <input
+            id="fullName"
+            name="fullName"
+            type="text"
+            placeholder="Ej. Carlos Mendoza"
+            className="w-full px-4 py-3.5 bg-neutral-900/50 border border-neutral-800 rounded-xl text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-neutral-300" htmlFor="companyName">
+            Nombre de tu Restaurante
+          </label>
+          <input
+            id="companyName"
+            name="companyName"
+            type="text"
+            placeholder="Ej. Burger Station"
+            className="w-full px-4 py-3.5 bg-neutral-900/50 border border-neutral-800 rounded-xl text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-neutral-300" htmlFor="email">
+            Correo electrónico
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="nombre@empresa.com"
+            className="w-full px-4 py-3.5 bg-neutral-900/50 border border-neutral-800 rounded-xl text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-neutral-300" htmlFor="password">
+            Contraseña
+          </label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            placeholder="••••••••"
+            className="w-full px-4 py-3.5 bg-neutral-900/50 border border-neutral-800 rounded-xl text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+            required
+            minLength={6}
+          />
+        </div>
+
+        {error && (
+          <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+            <p className="text-sm font-medium text-red-400 text-center">
+              {error}
+            </p>
+          </div>
+        )}
+
+        <SubmitButton />
+      </form>
+
+      <p className="text-center text-sm text-neutral-400">
+        ¿Ya tienes una cuenta?{' '}
+        <Link href="/login" className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors">
+          Iniciar sesión
+        </Link>
+      </p>
+    </>
+  );
+}
+
+export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-neutral-950 flex flex-col md:flex-row text-neutral-200 font-sans selection:bg-indigo-500/30">
       
@@ -77,82 +159,9 @@ export default function RegisterPage() {
             </p>
           </div>
 
-          <form className="space-y-5" action={registrarUsuario}>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-neutral-300" htmlFor="fullName">
-                Nombre Completo
-              </label>
-              <input
-                id="fullName"
-                name="fullName"
-                type="text"
-                placeholder="Ej. Carlos Mendoza"
-                className="w-full px-4 py-3.5 bg-neutral-900/50 border border-neutral-800 rounded-xl text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-neutral-300" htmlFor="companyName">
-                Nombre de tu Restaurante
-              </label>
-              <input
-                id="companyName"
-                name="companyName"
-                type="text"
-                placeholder="Ej. Burger Station"
-                className="w-full px-4 py-3.5 bg-neutral-900/50 border border-neutral-800 rounded-xl text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-neutral-300" htmlFor="email">
-                Correo electrónico
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="nombre@empresa.com"
-                className="w-full px-4 py-3.5 bg-neutral-900/50 border border-neutral-800 rounded-xl text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-neutral-300" htmlFor="password">
-                Contraseña
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="••••••••"
-                className="w-full px-4 py-3.5 bg-neutral-900/50 border border-neutral-800 rounded-xl text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
-                required
-                minLength={6}
-              />
-            </div>
-
-            {error && (
-              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
-                <p className="text-sm font-medium text-red-400 text-center">
-                  {error}
-                </p>
-              </div>
-            )}
-
-            <SubmitButton />
-          </form>
-
-          <p className="text-center text-sm text-neutral-400">
-            ¿Ya tienes una cuenta?{' '}
-            <Link href="/login" className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors">
-              Iniciar sesión
-            </Link>
-          </p>
+          <React.Suspense fallback={<div className="h-64 flex items-center justify-center"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>}>
+            <RegisterForm />
+          </React.Suspense>
 
         </div>
       </div>
