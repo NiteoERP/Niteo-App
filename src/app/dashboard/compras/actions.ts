@@ -1,4 +1,4 @@
-﻿'use server';
+'use server';
 
 import { createClient } from '@/utils/supabase/server';
 
@@ -13,13 +13,13 @@ async function getAuthContext() {
 
   const { data: perfil, error: perfErr } = await supabase
     .from('perfiles')
-    .select('id_empresa, id_sede, auth_uuid')
+    .select('empresa_id, sede_id')
     .eq('id', user.id)
     .single();
 
   if (perfErr || !perfil) throw new Error('Perfil de usuario no encontrado');
 
-  return { supabase, user, idEmpresa: perfil.id_empresa, idSede: perfil.id_sede };
+  return { supabase, user, idEmpresa: perfil.empresa_id, idSede: perfil.sede_id };
 }
 
 export async function getProveedoresYProductos() {

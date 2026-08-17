@@ -1,4 +1,4 @@
-﻿import { redirect } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
 import { 
@@ -27,7 +27,7 @@ export default async function DashboardLayout({
   // Extraer informaciÃ³n pÃºblica del usuario (Rol, Nombre, Empresa, Sede)
   const { data: perfil } = await supabase
     .from('perfiles')
-    .select('nombre_completo, rol, id_empresa, id_sede')
+    .select('nombre_completo, rol, empresa_id, sede_id')
     .eq('id', user.id)
     .single();
 
