@@ -38,6 +38,13 @@ export async function middleware(request: NextRequest) {
   // 3. Verificar Sesión Activa
   const { data: { user } } = await supabase.auth.getUser();
 
+  // Si el usuario ya está autenticado y visita /login o /register, enviarlo al dashboard
+  if (user && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/register')) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/dashboard';
+    return NextResponse.redirect(url);
+  }
+
   // Proteger rutas /dashboard
   if (request.nextUrl.pathname.startsWith('/dashboard')) {
     if (!user) {
