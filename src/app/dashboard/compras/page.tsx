@@ -46,12 +46,12 @@ export default function ComprasPage() {
     ]);
 
     if (resListas.success) {
-      setProveedoresDb(resListas.proveedores);
-      setProductosDb(resListas.productos);
+      setProveedoresDb(resListas.proveedores || []);
+      setProductosDb(resListas.productos || []);
     }
     
     if (resCompras.success) {
-      setUltimasCompras(resCompras.compras);
+      setUltimasCompras(resCompras.compras || []);
     }
 
     if (resTasa.success && resTasa.tasa > 0) {
@@ -65,7 +65,7 @@ export default function ComprasPage() {
     setIsSearching(true);
     const res = await getHistorialCompras(filtros.busqueda, filtros.fechaInicio, filtros.fechaFin);
     if (res.success) {
-      setHistorialCompleto(res.compras);
+      setHistorialCompleto(res.compras || []);
     }
     setIsSearching(false);
   };
@@ -146,7 +146,7 @@ export default function ComprasPage() {
       mostrarAlerta('Gasto registrado exitosamente.', 'success');
       setGasto(initialGasto);
       const comprasRes = await getUltimasCompras();
-      if (comprasRes.success) setUltimasCompras(comprasRes.compras);
+      if (comprasRes.success) setUltimasCompras(comprasRes.compras || []);
     } else {
       mostrarAlerta(res.error, 'error');
     }
@@ -193,7 +193,7 @@ export default function ComprasPage() {
       cargarHistorialCompleto();
       // Refrescar recuadros recientes si se cambiaron a tab 1 luego
       const comprasRes = await getUltimasCompras();
-      if (comprasRes.success) setUltimasCompras(comprasRes.compras);
+      if (comprasRes.success) setUltimasCompras(comprasRes.compras || []);
     } else {
       mostrarAlerta(res.error, 'error');
     }
@@ -206,7 +206,7 @@ export default function ComprasPage() {
         mostrarAlerta('Registro eliminado', 'success');
         cargarHistorialCompleto();
         const comprasRes = await getUltimasCompras();
-        if (comprasRes.success) setUltimasCompras(comprasRes.compras);
+        if (comprasRes.success) setUltimasCompras(comprasRes.compras || []);
       } else {
         mostrarAlerta(res.error, 'error');
       }
@@ -220,7 +220,7 @@ export default function ComprasPage() {
       const res = await crearProveedor(nombre.trim());
       if (res.success) {
         setProveedoresDb([...proveedoresDb, res.proveedor]);
-        setFactura({...factura, proveedor: res.proveedor.id.toString()});
+        setFactura({...factura, proveedor: res.proveedor?.id?.toString() || ''});
         mostrarAlerta('Proveedor creado.', 'success');
       }
       setIsSubmitting(false);

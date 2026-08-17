@@ -124,7 +124,7 @@ export default function DashboardPage() {
                   <XAxis dataKey="dia" stroke="#6b7280" tick={{fontSize: 12}} tickFormatter={(val) => val.split('-').slice(1).join('/')} />
                   <YAxis stroke="#6b7280" tick={{fontSize: 12}} tickFormatter={(val) => `$${val/1000}k`} />
                   <Tooltip 
-                    formatter={(value: number) => [formatMoney(value), '']}
+                    formatter={(value: any) => [formatMoney(Number(value)), '']}
                     labelFormatter={(label) => `Fecha: ${label}`}
                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                   />
