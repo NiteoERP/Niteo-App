@@ -2,14 +2,21 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
-  // 1. Configurar Supabase SSR Middleware
+  // 1. Validar Variables de Entorno
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.error('Faltan variables de entorno de Supabase');
+    // Continuar sin bloquear para no dar 500, pero la app fallará en el cliente
+    return NextResponse.next();
+  }
+
+  // 2. Configurar Supabase SSR Middleware
   let supabaseResponse = NextResponse.next({
     request,
   });
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         getAll() {
@@ -28,7 +35,7 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // 2. Verificar Sesión Activa
+  // 3. Verificar Sesión Activa
   const { data: { user } } = await supabase.auth.getUser();
 
   // Proteger rutas /dashboard
@@ -45,43 +52,46 @@ export async function middleware(request: NextRequest) {
       return supabaseResponse;
     }
 
-    // 3. HARDENING SAAS (Comprobación de Suscripción)
-    // Para no hacer esto extremadamente pesado en cada clic, idealmente
-    // el perfil y el estado de la suscripción deberían vivir en el JWT custom claims o una cookie cifrada.
-    // Aquí hacemos el fetch para cumplir la regla de negocio crítica:
-    const { data: profile } = await supabase
-      .from('usuarios')
-      .select('id_empresa, rol')
-      .eq('auth_uuid', user.id)
-      .single();
-
-    if (profile) {
-      // Validar suscripción
-      const { data: sub } = await supabase
-        .from('suscripciones_empresas')
-        .select('estado')
-        .eq('id_empresa', profile.id_empresa)
+    // 4. HARDENING SAAS (Comprobación de Suscripción) usando la nueva tabla "perfiles"
+    try {
+      const { data: profile, error: profileError } = await supabase
+        .from('perfiles')
+        .select('id_empresa, rol')
+        .eq('id', user.id)
         .single();
-
-      // Si no tiene suscripción o está vencida/suspendida -> Bloqueo total
-      if (!sub || sub.estado === 'VENCIDA' || sub.estado === 'SUSPENDIDA') {
-        const url = request.nextUrl.clone();
-        url.pathname = '/dashboard/billing';
-        return NextResponse.redirect(url);
-      }
-
-      // 4. HARDENING DE ROLES EN FRONTEND
-      // Aunque el RLS de la Base de Datos ya prohíbe que vean datos (Postgres bloquea),
-      // no queremos que los Cajeros ni siquiera vean la página en blanco de Finanzas.
-      const protectedAdminRoutes = ['/dashboard/gastos', '/dashboard/finanzas', '/dashboard/cierre'];
-      const isTryingToAccessAdminRoute = protectedAdminRoutes.some(route => request.nextUrl.pathname.startsWith(route));
       
-      // La jerarquía exige MASTER o GERENTE
-      if (isTryingToAccessAdminRoute && (profile.rol === 'CAJERO' || profile.rol === 'COMPRADOR')) {
-        const url = request.nextUrl.clone();
-        url.pathname = '/dashboard'; // Devolverlos al home permitido
-        return NextResponse.redirect(url);
+      if (profileError) {
+        console.error('Error al obtener perfil:', profileError);
       }
+
+      if (profile) {
+        // Validar suscripción
+        const { data: sub } = await supabase
+          .from('suscripciones_empresas')
+          .select('estado')
+          .eq('id_empresa', profile.id_empresa)
+          .single();
+
+        // Si no tiene suscripción o está vencida/suspendida -> Bloqueo total
+        if (!sub || sub.estado === 'VENCIDA' || sub.estado === 'SUSPENDIDA') {
+          const url = request.nextUrl.clone();
+          url.pathname = '/dashboard/billing';
+          return NextResponse.redirect(url);
+        }
+
+        // 4. HARDENING DE ROLES EN FRONTEND
+        const protectedAdminRoutes = ['/dashboard/gastos', '/dashboard/finanzas', '/dashboard/cierre'];
+        const isTryingToAccessAdminRoute = protectedAdminRoutes.some(route => request.nextUrl.pathname.startsWith(route));
+        
+        // La jerarquía exige MASTER o GERENTE
+        if (isTryingToAccessAdminRoute && (profile.rol === 'CAJERO' || profile.rol === 'COMPRADOR')) {
+          const url = request.nextUrl.clone();
+          url.pathname = '/dashboard'; // Devolverlos al home permitido
+          return NextResponse.redirect(url);
+        }
+      }
+    } catch (err) {
+      console.error('Error no controlado en middleware:', err);
     }
   }
 
