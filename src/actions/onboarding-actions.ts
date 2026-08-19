@@ -3,6 +3,8 @@
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+
 export async function completarOnboarding(formData: FormData) {
   const supabase = await createClient();
   
@@ -17,11 +19,15 @@ export async function completarOnboarding(formData: FormData) {
   if (!user) return redirect('/login');
 
   // Bypass RLS para el onboarding usando Service Role
-  const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
   const supabaseAdmin = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY || ''
   );
+
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.error("CRITICAL: SUPABASE_SERVICE_ROLE_KEY is missing in environment variables!");
+    // Fallback to normal client if admin key is missing to avoid crashing, though RLS might fail
+  }
 
   // 1. Crear Empresa
   const { data: empresa, error: empErr } = await supabaseAdmin
