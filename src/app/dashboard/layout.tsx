@@ -24,7 +24,6 @@ export default async function DashboardLayout({
     redirect('/login');
   }
 
-  // Extraer informaciÃ³n pÃºblica del usuario (Rol, Nombre, Empresa, Sede)
   const { data: perfil } = await supabase
     .from('perfiles')
     .select('nombre_completo, rol, empresa_id, sede_id')
@@ -33,6 +32,29 @@ export default async function DashboardLayout({
 
   const userName = perfil?.nombre_completo || user.email;
   const userRole = perfil?.rol || 'Administrador';
+
+  let subPlan = 'BASICO';
+  let subEstado = 'INACTIVA';
+  let daysLeft = 0;
+
+  if (perfil?.empresa_id) {
+    const { data: sub } = await supabase
+      .from('suscripciones_empresas')
+      .select('plan, fecha_vencimiento, estado')
+      .eq('empresa_id', perfil.empresa_id)
+      .single();
+
+    if (sub) {
+      subPlan = sub.plan;
+      subEstado = sub.estado;
+      const today = new Date();
+      const expiration = new Date(sub.fecha_vencimiento);
+      const diffTime = expiration.getTime() - today.getTime();
+      daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+  }
+
+  const isTrial = daysLeft > 0 && daysLeft <= 14;
 
   return (
     <div className="flex h-screen bg-neutral-950 text-white font-sans overflow-hidden selection:bg-indigo-500/30">
@@ -117,8 +139,24 @@ export default async function DashboardLayout({
               </div>
             </div>
             
-            <div className="flex items-center gap-3">
-              <div className="text-right hidden sm:block">
+            <div className="flex items-center gap-4">
+              
+              {/* BADGE DE SUSCRIPCIÓN */}
+              {isTrial && (
+                <div className="hidden md:flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 px-3 py-1.5 rounded-full">
+                  <span className="text-orange-400 text-xs font-semibold tracking-wide">TRIAL: Quedan {daysLeft} días</span>
+                  <Link href="/dashboard/billing" className="text-orange-300 hover:text-white text-xs underline decoration-orange-500/30 font-medium transition-colors">
+                    Actualizar a PRO
+                  </Link>
+                </div>
+              )}
+              {!isTrial && subEstado === 'ACTIVA' && subPlan === 'PRO' && (
+                <div className="hidden md:flex items-center bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-full">
+                  <span className="text-indigo-400 text-xs font-bold tracking-widest uppercase">VERSIÓN PRO</span>
+                </div>
+              )}
+
+              <div className="text-right hidden sm:block ml-2 border-l border-neutral-800 pl-4">
                 <p className="text-sm font-medium text-neutral-200">{userName}</p>
                 <p className="text-xs text-indigo-400 font-bold tracking-wide uppercase">{userRole}</p>
               </div>
