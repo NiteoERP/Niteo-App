@@ -54,8 +54,8 @@ export async function registrarCompra(formData: FormData) {
     const { data: newInsumo, error: insertError } = await supabase
       .from('inventario_insumos')
       .insert({
-        id_empresa: profile.empresa_id,
-        id_sede: profile.sede_id,
+        empresa_id: profile.empresa_id,
+        sede_id: profile.sede_id,
         nombre: nombre_nuevo_insumo,
         unidad_medida: unidad_medida_nueva,
         cantidad_actual: 0,
@@ -113,8 +113,9 @@ export async function getInsumos() {
   const { data, error } = await supabase
     .from('inventario_insumos')
     .select('id, nombre, unidad_medida')
-    .eq('id_sede', profile.sede_id)
-    .order('nombre', { ascending: true });
+    .eq('sede_id', profile.sede_id)
+    .order('nombre', { ascending: true })
+    .limit(50);
 
   if (error) {
     console.error('Error cargando insumos:', error);

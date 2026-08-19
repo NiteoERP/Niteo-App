@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useTransition } from 'react';
 import { registrarCompra, getInsumos, getTasaDelDia } from '@/actions/compras-actions';
 import { Loader2, CheckCircle2, ShoppingCart, Search, Package } from 'lucide-react';
 
@@ -26,7 +26,7 @@ export default function MobileCompraForm() {
   const [costoUSD, setCostoUSD] = useState('');
   const [costoVES, setCostoVES] = useState('');
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -67,15 +67,13 @@ export default function MobileCompraForm() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsSubmitting(true);
     setErrorMsg('');
     setSuccess(false);
 
     if (!isNewInsumo && !selectedInsumo) {
       setErrorMsg('Debes seleccionar un insumo.');
-      setIsSubmitting(false);
       return;
     }
 
@@ -90,31 +88,31 @@ export default function MobileCompraForm() {
     formData.set('cantidad', cantidad);
     formData.set('costo_total', costoUSD);
 
-    const result = await registrarCompra(formData);
+    startTransition(async () => {
+      const result = await registrarCompra(formData);
 
-    if (result?.error) {
-      setErrorMsg(result.error);
-    } else if (result?.success) {
-      setSuccess(true);
-      
-      // Reset form
-      setSelectedInsumo(null);
-      setIsNewInsumo(false);
-      setSearchTerm('');
-      setNewInsumoName('');
-      setCantidad('');
-      setCostoUSD('');
-      setCostoVES('');
-      
-      // Auto-ocultar mensaje de éxito
-      setTimeout(() => setSuccess(false), 3000);
-      
-      // Actualizar lista de insumos
-      const data = await getInsumos();
-      setInsumos(data);
-    }
-    
-    setIsSubmitting(false);
+      if (result?.error) {
+        setErrorMsg(result.error);
+      } else if (result?.success) {
+        setSuccess(true);
+        
+        // Reset form
+        setSelectedInsumo(null);
+        setIsNewInsumo(false);
+        setSearchTerm('');
+        setNewInsumoName('');
+        setCantidad('');
+        setCostoUSD('');
+        setCostoVES('');
+        
+        // Auto-ocultar mensaje de éxito
+        setTimeout(() => setSuccess(false), 3000);
+        
+        // Actualizar lista de insumos
+        const data = await getInsumos();
+        setInsumos(data);
+      }
+    });
   };
 
   return (
@@ -311,10 +309,10 @@ export default function MobileCompraForm() {
         <div className="pt-4">
           <button
             type="submit"
-            disabled={isSubmitting || (!selectedInsumo && !isNewInsumo) || !costoUSD || !cantidad}
+            disabled={isPending || (!selectedInsumo && !isNewInsumo) || !costoUSD || !cantidad}
             className="w-full h-14 flex justify-center items-center gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-lg font-semibold rounded-2xl transition-colors disabled:opacity-50 shadow-lg shadow-blue-600/20"
           >
-            {isSubmitting ? (
+            {isPending ? (
               <>
                 <Loader2 className="animate-spin" size={24} />
                 <span>Registrando...</span>

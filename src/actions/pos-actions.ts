@@ -92,9 +92,10 @@ export async function getProductosCatalogo(empresaId: string): Promise<ProductoP
 
   const { data: productos, error } = await supabase
     .from('productos')
-    .select('id, codigo_barras, nombre_producto, precio_venta, costo')
-    .eq('id_empresa', empresaId)
-    .order('nombre_producto', { ascending: true });
+    .select('id, codigo_barras, nombre, precio_venta, costo')
+    .eq('empresa_id', empresaId)
+    .order('nombre', { ascending: true })
+    .limit(50);
 
   if (error) {
     console.error('Error fetching productos:', error);

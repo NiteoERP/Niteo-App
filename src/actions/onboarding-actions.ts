@@ -16,8 +16,15 @@ export async function completarOnboarding(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return redirect('/login');
 
+  // Bypass RLS para el onboarding usando Service Role
+  const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+  const supabaseAdmin = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
   // 1. Crear Empresa
-  const { data: empresa, error: empErr } = await supabase
+  const { data: empresa, error: empErr } = await supabaseAdmin
     .from('empresas')
     .insert({ nombre_comercial: companyName })
     .select('id')
@@ -29,7 +36,7 @@ export async function completarOnboarding(formData: FormData) {
   }
 
   // 2. Crear Sede Principal
-  const { data: sede, error: sedeErr } = await supabase
+  const { data: sede, error: sedeErr } = await supabaseAdmin
     .from('sedes')
     .insert({ empresa_id: empresa.id, nombre_sede: 'Sede Principal' })
     .select('id')
@@ -41,7 +48,7 @@ export async function completarOnboarding(formData: FormData) {
   }
 
   // 3. Crear Perfil
-  const { error: profErr } = await supabase
+  const { error: profErr } = await supabaseAdmin
     .from('perfiles')
     .insert({
       id: user.id,
