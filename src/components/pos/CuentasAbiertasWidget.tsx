@@ -47,8 +47,18 @@ export default function CuentasAbiertasWidget({ sedeId }: { sedeId: string }) {
           filter: `sede_id=eq.${sedeId}`
         },
         (payload) => {
-          // Refrescar completamente al detectar cualquier cambio para mantener el estado "espejo" exacto
-          fetchCuentas();
+          if (payload.eventType === 'INSERT') {
+            setCuentas((prev) => {
+              const exists = prev.find((c) => c.id === payload.new.id);
+              if (exists) return prev;
+              const newState = [payload.new as CuentaAbierta, ...prev];
+              return newState.sort((a, b) => new Date(b.fecha_apertura).getTime() - new Date(a.fecha_apertura).getTime());
+            });
+          } else if (payload.eventType === 'DELETE') {
+            setCuentas((prev) => prev.filter((c) => c.id !== payload.old.id));
+          } else if (payload.eventType === 'UPDATE') {
+            setCuentas((prev) => prev.map((c) => (c.id === payload.new.id ? (payload.new as CuentaAbierta) : c)));
+          }
         }
       )
       .subscribe();
