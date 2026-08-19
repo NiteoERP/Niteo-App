@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { VentaPOS } from '@/actions/pos-actions';
+import { getVentasRecientes, VentaPOS } from '@/actions/pos-actions';
 import { Receipt, CheckCircle2, ChevronRight, Store } from 'lucide-react';
 import Link from 'next/link';
 

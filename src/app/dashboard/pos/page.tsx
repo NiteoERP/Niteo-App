@@ -1,7 +1,7 @@
 import React from 'react';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
-import { getVentasRecientes, getProductosCatalogo } from '@/actions/pos-actions';
+import { getVentasRecientes, getProductosCatalogo, VentaPOS, ProductoPOS } from '@/actions/pos-actions';
 import LiveSalesFeed from '@/components/pos/LiveSalesFeed';
 import { Store, PackageSearch } from 'lucide-react';
 
@@ -32,8 +32,8 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
   }
 
   // Fetch initial data based on tab
-  let initialSales = [];
-  let catalog = [];
+  let initialSales: VentaPOS[] = [];
+  let catalog: ProductoPOS[] = [];
 
   if (tab === 'ventas') {
     initialSales = await getVentasRecientes(perfil.sede_id);
