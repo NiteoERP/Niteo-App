@@ -58,6 +58,11 @@ export default async function DashboardLayout({
             <Package size={20} />
             <span className="text-sm font-medium">Inventario</span>
           </Link>
+
+          <Link href="/dashboard/pos" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300 transition-colors border border-transparent hover:border-indigo-500/20">
+            <LayoutDashboard size={20} />
+            <span className="text-sm font-medium">Espejo POS</span>
+          </Link>
           
           <Link href="/dashboard/despachos" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
             <Truck size={20} />

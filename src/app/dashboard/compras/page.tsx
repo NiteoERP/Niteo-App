@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Receipt, FileText, Plus, Trash2, Save, ShoppingCart, UserPlus, Loader2, CheckCircle2, History, Search, Calendar, Edit2, X, Lock } from 'lucide-react';
+import { Receipt, FileText, Plus, Trash2, Save, ShoppingCart, UserPlus, Loader2, CheckCircle2, History, Search, Calendar, Edit2, X, Lock, Package } from 'lucide-react';
 import { getProveedoresYProductos, crearProveedor, registrarCompraPuntual, registrarFactura, getUltimasCompras, getHistorialCompras, actualizarCompraPuntual, eliminarCompraPuntual, getTasaDelDia } from './actions';
+import MobileCompraForm from '@/components/compras/MobileCompraForm';
 
 export default function ComprasPage() {
-  const [activeTab, setActiveTab] = useState<'puntual' | 'factura' | 'historial'>('puntual');
+  const [activeTab, setActiveTab] = useState<'insumos' | 'puntual' | 'factura' | 'historial'>('insumos');
   const [isLoadingDatos, setIsLoadingDatos] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [alertMsg, setAlertMsg] = useState({ text: '', type: '' });
@@ -255,8 +256,11 @@ export default function ComprasPage() {
         </div>
 
         <div className="flex p-1 bg-neutral-900 border border-neutral-800 rounded-xl overflow-x-auto max-w-full">
+          <button onClick={() => setActiveTab('insumos')} className={`flex items-center whitespace-nowrap gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'insumos' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-neutral-200'}`}>
+            <Package size={16} /> Compra Insumos (Móvil)
+          </button>
           <button onClick={() => setActiveTab('puntual')} className={`flex items-center whitespace-nowrap gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'puntual' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-neutral-200'}`}>
-            <Receipt size={16} /> Compra Puntual
+            <Receipt size={16} /> Gastos Operativos
           </button>
           <button onClick={() => setActiveTab('factura')} className={`flex items-center whitespace-nowrap gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'factura' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-neutral-200'}`}>
             <FileText size={16} /> Factura Proveedor
@@ -270,6 +274,13 @@ export default function ComprasPage() {
       {isLoadingDatos && (
         <div className="flex justify-center p-8 text-indigo-400">
           <Loader2 className="animate-spin" size={32} />
+        </div>
+      )}
+
+      {/* VISTA 0: COMPRA INSUMOS (MÓVIL) */}
+      {activeTab === 'insumos' && !isLoadingDatos && (
+        <div className="animate-in slide-in-from-bottom-4 duration-300">
+          <MobileCompraForm />
         </div>
       )}
 

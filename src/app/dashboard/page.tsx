@@ -7,6 +7,7 @@ import {
   ComposedChart, Line
 } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Receipt, Loader2, Calendar } from 'lucide-react';
+import RecentSalesWidget from '@/components/pos/RecentSalesWidget';
 
 export default function DashboardPage() {
   const [range, setRange] = useState('thisMonth');
@@ -114,33 +115,41 @@ export default function DashboardPage() {
 
           </div>
 
-          {/* CHARTS SECTION */}
-          <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Análisis de Rentabilidad Diaria</h2>
-            <div className="h-[400px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                  <XAxis dataKey="dia" stroke="#6b7280" tick={{fontSize: 12}} tickFormatter={(val) => val.split('-').slice(1).join('/')} />
-                  <YAxis stroke="#6b7280" tick={{fontSize: 12}} tickFormatter={(val) => `$${val/1000}k`} />
-                  <Tooltip 
-                    formatter={(value: any) => [formatMoney(Number(value)), '']}
-                    labelFormatter={(label) => `Fecha: ${label}`}
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  />
-                  <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                  
-                  {/* Barras de Egresos Apilados */}
-                  <Bar dataKey="cogs" name="COGS (Insumos)" stackId="a" fill="#f97316" radius={[0, 0, 4, 4]} />
-                  <Bar dataKey="mermas" name="Mermas" stackId="a" fill="#ef4444" />
-                  <Bar dataKey="gastos_operativos" name="Gastos Opex" stackId="a" fill="#a855f7" radius={[4, 4, 0, 0]} />
-                  
-                  {/* Línea de Ventas Brutas y Utilidad */}
-                  <Line type="monotone" dataKey="ventas_brutas" name="Ventas Brutas" stroke="#22c55e" strokeWidth={3} dot={{r:4}} />
-                  <Line type="monotone" dataKey="utilidad_neta" name="Utilidad Neta" stroke="#3b82f6" strokeWidth={3} dot={{r:4}} />
-                </ComposedChart>
-              </ResponsiveContainer>
+          {/* CHARTS & WIDGETS SECTION */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <div className="lg:col-span-2 bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Análisis de Rentabilidad Diaria</h2>
+              <div className="h-[400px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                    <XAxis dataKey="dia" stroke="#6b7280" tick={{fontSize: 12}} tickFormatter={(val) => val.split('-').slice(1).join('/')} />
+                    <YAxis stroke="#6b7280" tick={{fontSize: 12}} tickFormatter={(val) => `$${val/1000}k`} />
+                    <Tooltip 
+                      formatter={(value: any) => [formatMoney(Number(value)), '']}
+                      labelFormatter={(label) => `Fecha: ${label}`}
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    />
+                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                    
+                    {/* Barras de Egresos Apilados */}
+                    <Bar dataKey="cogs" name="COGS (Insumos)" stackId="a" fill="#f97316" radius={[0, 0, 4, 4]} />
+                    <Bar dataKey="mermas" name="Mermas" stackId="a" fill="#ef4444" />
+                    <Bar dataKey="gastos_operativos" name="Gastos Opex" stackId="a" fill="#a855f7" radius={[4, 4, 0, 0]} />
+                    
+                    {/* Línea de Ventas Brutas y Utilidad */}
+                    <Line type="monotone" dataKey="ventas_brutas" name="Ventas Brutas" stroke="#22c55e" strokeWidth={3} dot={{r:4}} />
+                    <Line type="monotone" dataKey="utilidad_neta" name="Utilidad Neta" stroke="#3b82f6" strokeWidth={3} dot={{r:4}} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
             </div>
+
+            <div className="lg:col-span-1 h-[480px]">
+              <RecentSalesWidget />
+            </div>
+
           </div>
           
           {/* DATA TABLE */}

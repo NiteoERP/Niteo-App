@@ -1,4 +1,4 @@
-﻿'use server'
+'use server'
 
 import { createClient } from '@/utils/supabase/server';
 import { endOfDay, startOfMonth, startOfToday, subDays, subMonths } from 'date-fns';
@@ -11,7 +11,7 @@ export async function getDashboardData(range: string) {
 
   const { data: profile } = await supabase
     .from('perfiles')
-    .select('id_sede')
+    .select('sede_id')
     .eq('id', user.id)
     .single();
 
@@ -40,7 +40,7 @@ export async function getDashboardData(range: string) {
   }
 
   const { data: metrics, error } = await supabase.rpc('get_dashboard_metrics', {
-    p_sede_id: profile.id_sede,
+    p_sede_id: profile.sede_id,
     p_fecha_inicio: startDate.toISOString(),
     p_fecha_fin: endDate.toISOString()
   });
