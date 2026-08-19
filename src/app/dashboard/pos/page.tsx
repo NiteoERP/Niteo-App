@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { getVentasRecientes, getProductosCatalogo, VentaPOS, ProductoPOS } from '@/actions/pos-actions';
 import LiveSalesFeed from '@/components/pos/LiveSalesFeed';
 import CuentasAbiertasWidget from '@/components/pos/CuentasAbiertasWidget';
+import CatalogView from '@/components/pos/CatalogView';
 import { Store, PackageSearch, Users } from 'lucide-react';
 
 export const metadata = {
@@ -101,42 +102,7 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
         <CuentasAbiertasWidget sedeId={perfil.sede_id} />
       )}
       {tab === 'catalogo' && (
-        <div className="bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden">
-          <div className="p-4 border-b border-neutral-800 flex justify-between items-center">
-            <h3 className="font-medium text-white">Catálogo Sincronizado</h3>
-            <span className="text-sm text-neutral-400">{catalog.length} productos</span>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-neutral-400">
-              <thead className="bg-neutral-950/50 text-xs uppercase text-neutral-500">
-                <tr>
-                  <th className="px-6 py-4 font-medium">Código</th>
-                  <th className="px-6 py-4 font-medium">Producto</th>
-                  <th className="px-6 py-4 font-medium text-right">Costo</th>
-                  <th className="px-6 py-4 font-medium text-right">Precio Venta</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-800">
-                {catalog.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="px-6 py-8 text-center text-neutral-500">
-                      No hay productos sincronizados.
-                    </td>
-                  </tr>
-                ) : (
-                  catalog.map((prod) => (
-                    <tr key={prod.id_producto} className="hover:bg-neutral-800/30 transition-colors">
-                      <td className="px-6 py-4 font-mono text-xs">{prod.codigo_barras || '-'}</td>
-                      <td className="px-6 py-4 font-medium text-neutral-200">{prod.nombre}</td>
-                      <td className="px-6 py-4 text-right">${Number(prod.costo).toFixed(2)}</td>
-                      <td className="px-6 py-4 text-right text-emerald-400 font-medium">${Number(prod.precio_venta).toFixed(2)}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <CatalogView catalog={catalog} />
       )}
     </div>
   );

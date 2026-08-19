@@ -34,7 +34,7 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
       .channel('realtime-ventas')
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'ventas_facturas', filter: `id_sede=eq.${sedeId}` },
+        { event: 'INSERT', schema: 'public', table: 'ventas_facturas', filter: `sede_id=eq.${sedeId}` },
         async (payload) => {
           const newVentaRaw = payload.new;
           
@@ -43,8 +43,8 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
           // Para esta demostración, hacemos un pequeño fetch del detalle:
           const { data: detalles } = await supabase
             .from('ventas_detalles')
-            .select('id_detalle, id_producto, cantidad, precio_unitario, total, productos(nombre_producto, codigo_barras)')
-            .eq('id_factura', newVentaRaw.id_factura);
+            .select('id_detalle:id, id_producto, cantidad, precio_unitario, total, productos(nombre, codigo_barras)')
+            .eq('factura_id', newVentaRaw.id);
 
           const mappedDetalles = (detalles || []).map((d: any) => ({
             id_detalle: d.id_detalle,
@@ -52,12 +52,12 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
             cantidad: d.cantidad,
             precio_unitario: d.precio_unitario,
             total: d.total,
-            producto_nombre: d.productos?.nombre_producto,
+            producto_nombre: d.productos?.nombre,
             producto_codigo: d.productos?.codigo_barras,
           }));
 
           const newVenta: VentaPOS = {
-            id_factura: newVentaRaw.id_factura,
+            id_factura: newVentaRaw.id,
             id_pos: newVentaRaw.id_pos,
             numero_documento: newVentaRaw.numero_documento,
             fecha_venta: newVentaRaw.fecha_venta,
