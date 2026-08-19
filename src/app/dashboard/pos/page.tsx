@@ -3,7 +3,8 @@ import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { getVentasRecientes, getProductosCatalogo, VentaPOS, ProductoPOS } from '@/actions/pos-actions';
 import LiveSalesFeed from '@/components/pos/LiveSalesFeed';
-import { Store, PackageSearch } from 'lucide-react';
+import CuentasAbiertasWidget from '@/components/pos/CuentasAbiertasWidget';
+import { Store, PackageSearch, Users } from 'lucide-react';
 
 export const metadata = {
   title: 'Espejo POS | Niteo',
@@ -68,6 +69,17 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
             Ventas en Vivo
           </a>
           <a
+            href="?tab=cuentas"
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              tab === 'cuentas'
+                ? 'bg-neutral-800 text-white shadow-sm'
+                : 'text-neutral-400 hover:text-white hover:bg-neutral-800/50'
+            }`}
+          >
+            <Users size={16} />
+            Cuentas Abiertas
+          </a>
+          <a
             href="?tab=catalogo"
             className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
               tab === 'catalogo'
@@ -82,9 +94,13 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
       </div>
 
       {/* Tab Content */}
-      {tab === 'ventas' ? (
+      {tab === 'ventas' && (
         <LiveSalesFeed initialSales={initialSales} sedeId={perfil.sede_id} />
-      ) : (
+      )}
+      {tab === 'cuentas' && (
+        <CuentasAbiertasWidget sedeId={perfil.sede_id} />
+      )}
+      {tab === 'catalogo' && (
         <div className="bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden">
           <div className="p-4 border-b border-neutral-800 flex justify-between items-center">
             <h3 className="font-medium text-white">Catálogo Sincronizado</h3>
