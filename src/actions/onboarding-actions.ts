@@ -19,14 +19,14 @@ export async function completarOnboarding(formData: FormData) {
   if (!user) return redirect('/login');
 
   // Bypass RLS para el onboarding usando Service Role
-  const supabaseAdmin = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-  );
-
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    console.error("CRITICAL: SUPABASE_SERVICE_ROLE_KEY is missing in environment variables!");
-    // Fallback to normal client if admin key is missing to avoid crashing, though RLS might fail
+  let supabaseAdmin = supabase; // Fallback al cliente normal
+  if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    supabaseAdmin = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+  } else {
+    console.error("CRITICAL: SUPABASE_SERVICE_ROLE_KEY is missing in Vercel! Usando cliente normal (posible fallo RLS).");
   }
 
   // 1. Crear Empresa
