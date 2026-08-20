@@ -1,24 +1,37 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getDashboardData } from '@/actions/dashboard-actions';
+import { getDashboardData, getSedes } from '@/actions/dashboard-actions';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   ComposedChart, Line
 } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Receipt, Loader2, Calendar } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Receipt, Loader2, Calendar, Store } from 'lucide-react';
 import RecentSalesWidget from '@/components/pos/RecentSalesWidget';
 
 export default function DashboardPage() {
   const [range, setRange] = useState('thisMonth');
+  const [sedeId, setSedeId] = useState('ALL');
+  const [sedes, setSedes] = useState<any[]>([]);
   const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchInit = async () => {
+      try {
+        const s = await getSedes();
+        setSedes(s);
+      } catch (err) { console.error(err); }
+    };
+    fetchInit();
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const res = await getDashboardData(range);
+        const targetSede = sedeId === 'ALL' ? null : sedeId;
+        const res = await getDashboardData(range, targetSede);
         setData(res);
       } catch (err) {
         console.error(err);
@@ -27,7 +40,7 @@ export default function DashboardPage() {
       }
     };
     fetchData();
-  }, [range]);
+  }, [range, sedeId]);
 
   // Consolidar Totales para las Cards
   const kpis = data.reduce((acc, curr) => ({
@@ -49,18 +62,33 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-black text-gray-900 dark:text-white">Company Highlights</h1>
           <p className="text-gray-500">Rentabilidad Neta y Desempeño Operativo</p>
         </div>
-        <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 p-1.5 rounded-xl border border-gray-200 dark:border-gray-700">
-          <Calendar size={18} className="text-gray-400 ml-2" />
-          <select 
-            value={range} 
-            onChange={(e) => setRange(e.target.value)}
-            className="bg-transparent border-none text-sm font-semibold focus:ring-0 text-gray-700 dark:text-gray-300 pr-8 cursor-pointer outline-none"
-          >
-            <option value="today">Hoy</option>
-            <option value="7days">Últimos 7 Días</option>
-            <option value="thisMonth">Este Mes (MTD)</option>
-            <option value="lastMonth">Mes Anterior</option>
-          </select>
+        <div className="flex flex-col sm:flex-row gap-3">
+          {sedes.length > 0 && (
+            <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 p-1.5 rounded-xl border border-gray-200 dark:border-gray-700">
+              <Store size={18} className="text-indigo-400 ml-2" />
+              <select 
+                value={sedeId} 
+                onChange={(e) => setSedeId(e.target.value)}
+                className="bg-transparent border-none text-sm font-semibold focus:ring-0 text-gray-700 dark:text-gray-300 pr-8 cursor-pointer outline-none"
+              >
+                <option value="ALL">Todas las Sedes</option>
+                {sedes.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+              </select>
+            </div>
+          )}
+          <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 p-1.5 rounded-xl border border-gray-200 dark:border-gray-700">
+            <Calendar size={18} className="text-gray-400 ml-2" />
+            <select 
+              value={range} 
+              onChange={(e) => setRange(e.target.value)}
+              className="bg-transparent border-none text-sm font-semibold focus:ring-0 text-gray-700 dark:text-gray-300 pr-8 cursor-pointer outline-none"
+            >
+              <option value="today">Hoy</option>
+              <option value="7days">Últimos 7 Días</option>
+              <option value="thisMonth">Este Mes (MTD)</option>
+              <option value="lastMonth">Mes Anterior</option>
+            </select>
+          </div>
         </div>
       </div>
 
