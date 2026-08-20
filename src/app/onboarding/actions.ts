@@ -25,8 +25,13 @@ export async function setupWorkspace(formData: {
   });
 
   if (rpcErr) {
+    console.error("RPC ERROR:", rpcErr);
     return { success: false, error: 'Error al configurar el espacio: ' + rpcErr.message };
   }
+
+  // Debug verify
+  const { data: verifyProfile, error: verifyErr } = await supabase.from('perfiles').select('*').eq('id', user.id).single();
+  console.log("VERIFY PROFILE AFTER RPC:", verifyProfile, "ERROR:", verifyErr);
 
   return { success: true, masterKey: masterKey as string };
 }
