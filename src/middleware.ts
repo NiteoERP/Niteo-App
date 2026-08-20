@@ -59,40 +59,12 @@ export async function middleware(request: NextRequest) {
       return supabaseResponse;
     }
 
-    // 4. HARDENING SAAS (Comprobación de Suscripción) usando la nueva tabla "perfiles"
+    // 4. LEER PERFIL DIRECTAMENTE DEL JWT (Cero latencia, cero bases de datos)
     try {
-      // Usamos el Service Role para saltarnos cualquier restricción de RLS y asegurar que siempre podamos leer el perfil
-      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const empresa_id = user.app_metadata?.empresa_id;
+      const rol = user.app_metadata?.user_role;
       
-      let profile;
-      if (serviceRoleKey) {
-        const supabaseAdmin = createServerClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL,
-          serviceRoleKey,
-          { 
-            cookies: {
-              getAll() { return [] },
-              setAll() {}
-            } 
-          }
-        );
-        const { data } = await supabaseAdmin
-          .from('perfiles')
-          .select('empresa_id, rol')
-          .eq('id', user.id)
-          .single();
-        profile = data;
-      } else {
-        const { data, error } = await supabase
-          .from('perfiles')
-          .select('empresa_id, rol')
-          .eq('id', user.id)
-          .single();
-        profile = data;
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error al obtener perfil:', error);
-        }
-      }
+      const profile = empresa_id ? { empresa_id, rol } : null;
 
       // Si el perfil no existe, forzarlos al Onboarding principal
       if (!profile) {
@@ -112,28 +84,12 @@ export async function middleware(request: NextRequest) {
       }
 
       if (profile) {
-        // Validar suscripción usando supabaseAdmin (para saltar RLS)
-        let sub = null;
-        if (serviceRoleKey) {
-          const supabaseAdmin = createServerClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL,
-            serviceRoleKey,
-            { cookies: { getAll() { return [] }, setAll() {} } }
-          );
-          const { data } = await supabaseAdmin
-            .from('suscripciones_empresas')
-            .select('estado')
-            .eq('empresa_id', profile.empresa_id)
-            .single();
-          sub = data;
-        } else {
-          const { data } = await supabase
-            .from('suscripciones_empresas')
-            .select('estado')
-            .eq('empresa_id', profile.empresa_id)
-            .single();
-          sub = data;
-        }
+        // Validar suscripción (Ahora con RLS seguro basado en JWT, no necesitamos Service Role)
+        const { data: sub } = await supabase
+          .from('suscripciones_empresas')
+          .select('estado')
+          .eq('empresa_id', profile.empresa_id)
+          .single();
 
         // Si no tiene suscripción o está vencida/suspendida -> Bloqueo total
         if (!sub || sub.estado === 'VENCIDA' || sub.estado === 'SUSPENDIDA') {

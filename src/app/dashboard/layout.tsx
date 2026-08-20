@@ -25,73 +25,30 @@ export default async function DashboardLayout({
     redirect('/login');
   }
 
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  let perfil = null;
-
-  if (serviceRoleKey) {
-    const { createClient: createAdminClient } = await import('@supabase/supabase-js');
-    const supabaseAdmin = createAdminClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      serviceRoleKey
-    );
-    const { data } = await supabaseAdmin
-      .from('perfiles')
-      .select('nombre_completo, rol, empresa_id, sede_id')
-      .eq('id', user.id)
-      .single();
-    perfil = data;
-  } else {
-    const { data } = await supabase
-      .from('perfiles')
-      .select('nombre_completo, rol, empresa_id, sede_id')
-      .eq('id', user.id)
-      .single();
-    perfil = data;
-  }
-
-  const userName = perfil?.nombre_completo || user.email;
-  const userRole = perfil?.rol || 'Administrador';
+  // 1. LEER PERFIL DEL JWT DIRECTAMENTE (Sin consultas a BD)
+  const empresa_id = user.app_metadata?.empresa_id;
+  const userRole = user.app_metadata?.user_role || 'CAJERO';
+  const userName = user.user_metadata?.full_name || user.email;
 
   let subPlan = 'BASICO';
   let subEstado = 'INACTIVA';
   let daysLeft = 0;
 
-  if (perfil?.empresa_id) {
-    if (serviceRoleKey) {
-      const { createClient: createAdminClient } = await import('@supabase/supabase-js');
-      const supabaseAdmin = createAdminClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        serviceRoleKey
-      );
-      const { data: sub } = await supabaseAdmin
-        .from('suscripciones_empresas')
-        .select('plan, fecha_vencimiento, estado')
-        .eq('empresa_id', perfil.empresa_id)
-        .single();
-      
-      if (sub) {
-        subPlan = sub.plan;
-        subEstado = sub.estado;
-        const today = new Date();
-        const expiration = new Date(sub.fecha_vencimiento);
-        const diffTime = expiration.getTime() - today.getTime();
-        daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      }
-    } else {
-      const { data: sub } = await supabase
-        .from('suscripciones_empresas')
-        .select('plan, fecha_vencimiento, estado')
-        .eq('empresa_id', perfil.empresa_id)
-        .single();
+  if (empresa_id) {
+    // Leemos la suscripción de forma segura (nuestro RLS ya lo protege por empresa_id)
+    const { data: sub } = await supabase
+      .from('suscripciones_empresas')
+      .select('plan, fecha_vencimiento, estado')
+      .eq('empresa_id', empresa_id)
+      .single();
 
-      if (sub) {
-        subPlan = sub.plan;
-        subEstado = sub.estado;
-        const today = new Date();
-        const expiration = new Date(sub.fecha_vencimiento);
-        const diffTime = expiration.getTime() - today.getTime();
-        daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      }
+    if (sub) {
+      subPlan = sub.plan;
+      subEstado = sub.estado;
+      const today = new Date();
+      const expiration = new Date(sub.fecha_vencimiento);
+      const diffTime = expiration.getTime() - today.getTime();
+      daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     }
   }
 

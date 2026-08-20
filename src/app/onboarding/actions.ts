@@ -29,9 +29,8 @@ export async function setupWorkspace(formData: {
     return { success: false, error: 'Error al configurar el espacio: ' + rpcErr.message };
   }
 
-  // Debug verify
-  const { data: verifyProfile, error: verifyErr } = await supabase.from('perfiles').select('*').eq('id', user.id).single();
-  console.log("VERIFY PROFILE AFTER RPC:", verifyProfile, "ERROR:", verifyErr);
+  // Forzar actualización del JWT para obtener los claims enriquecidos (empresa_id y rol)
+  await supabase.auth.refreshSession();
 
   return { success: true, masterKey: masterKey as string };
 }
