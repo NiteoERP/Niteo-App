@@ -28,9 +28,17 @@ export async function updateProducto(productoId: string, descripcion: string, es
   return { success: true };
 }
 
-export async function addInsumoToReceta(empresaId: string, productoId: string, insumoId: string, cantidad: number) {
+export async function addInsumoToReceta(empresaId: string, productoId: string, itemId: string, tipo: 'insumo' | 'producto', cantidad: number) {
   const supabase = await createClient();
-  const { error } = await supabase.from('recetas').insert([{ empresa_id: empresaId, producto_id: productoId, insumo_id: insumoId, cantidad_necesaria: cantidad }]);
+  const payload = {
+    empresa_id: empresaId,
+    producto_id: productoId,
+    cantidad_necesaria: cantidad,
+    insumo_id: tipo === 'insumo' ? itemId : null,
+    subproducto_id: tipo === 'producto' ? itemId : null,
+  };
+  
+  const { error } = await supabase.from('recetas').insert([payload]);
   if (error) return { success: false, error: error.message };
   revalidatePath('/dashboard/inventario');
   return { success: true };

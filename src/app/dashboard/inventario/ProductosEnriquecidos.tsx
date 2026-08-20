@@ -170,16 +170,29 @@ export default function ProductosEnriquecidos({ productos, insumos, recetas, emp
                         <th className="px-4 py-3 font-medium text-right">Costo Calculado</th>
                         <th className="px-4 py-3"></th>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-neutral-800/50">
+                    </                    <tbody className="divide-y divide-neutral-800/50">
                       {productRecipes.map(r => {
-                        const insumo = insumos.find(i => i.id === r.insumo_id);
-                        const costoReceta = insumo ? (r.cantidad_necesaria * insumo.costo_unitario) : 0;
+                        const isSubproduct = !!r.subproducto_id;
+                        const itemNombre = isSubproduct 
+                          ? (productos.find(p => p.id_producto === r.subproducto_id)?.nombre || 'Subproducto Desconocido')
+                          : (insumos.find(i => i.id === r.insumo_id)?.nombre || 'Insumo Desconocido');
+                          
+                        const itemUnidad = isSubproduct 
+                          ? 'Unidades' 
+                          : (insumos.find(i => i.id === r.insumo_id)?.unidad_medida || '');
+                          
+                        const costoReceta = isSubproduct 
+                          ? 0 // Cálculo recursivo complejo para frontend, dejamos en 0 por ahora
+                          : (r.cantidad_necesaria * (insumos.find(i => i.id === r.insumo_id)?.costo_unitario || 0));
+
                         return (
                           <tr key={r.id}>
-                            <td className="px-4 py-3 text-neutral-300">{insumo?.nombre || 'Desconocido'}</td>
-                            <td className="px-4 py-3 text-indigo-400 font-mono text-xs">{r.cantidad_necesaria} {insumo?.unidad_medida}</td>
-                            <td className="px-4 py-3 text-right text-neutral-400">${costoReceta.toFixed(2)}</td>
+                            <td className="px-4 py-3 text-neutral-300">
+                              {isSubproduct ? <span className="text-emerald-400 text-xs border border-emerald-400/20 bg-emerald-400/10 px-1 rounded mr-2">SUB</span> : null}
+                              {itemNombre}
+                            </td>
+                            <td className="px-4 py-3 text-indigo-400 font-mono text-xs">{r.cantidad_necesaria} {itemUnidad}</td>
+                            <td className="px-4 py-3 text-right text-neutral-400">{costoReceta > 0 ? `$${costoReceta.toFixed(2)}` : '-'}</td>
                             <td className="px-4 py-3 text-right">
                               <button onClick={() => handleRemoveIngredient(r.id)} className="text-neutral-500 hover:text-rose-400" disabled={isPending}>
                                 <Trash2 size={16} />
@@ -189,15 +202,15 @@ export default function ProductosEnriquecidos({ productos, insumos, recetas, emp
                         );
                       })}
                       {productRecipes.length === 0 && (
-                        <tr><td colSpan={4} className="px-4 py-8 text-center text-neutral-500">No hay insumos asignados a esta receta.</td></tr>
+                        <tr><td colSpan={4} className="px-4 py-8 text-center text-neutral-500">No hay insumos ni subproductos asignados.</td></tr>
                       )}
                     </tbody>
                     {productRecipes.length > 0 && (
                       <tfoot className="bg-neutral-900/50 border-t border-neutral-800">
                         <tr>
-                          <td colSpan={2} className="px-4 py-3 text-right font-medium text-neutral-300">Costo Base de la Receta:</td>
+                          <td colSpan={2} className="px-4 py-3 text-right font-medium text-neutral-300">Costo Base Directo:</td>
                           <td className="px-4 py-3 text-right font-medium text-rose-400">
-                            ${productRecipes.reduce((acc, r) => acc + (r.cantidad_necesaria * (insumos.find(i => i.id === r.insumo_id)?.costo_unitario || 0)), 0).toFixed(2)}
+                            ${productRecipes.reduce((acc, r) => acc + (r.insumo_id ? (r.cantidad_necesaria * (insumos.find(i => i.id === r.insumo_id)?.costo_unitario || 0)) : 0), 0).toFixed(2)}
                           </td>
                           <td></td>
                         </tr>
@@ -206,18 +219,39 @@ export default function ProductosEnriquecidos({ productos, insumos, recetas, emp
                   </table>
                 </div>
 
-                {/* Agregar Insumo */}
-                <form onSubmit={handleAddIngredient} className="flex gap-2 items-end">
+                {/* Agregar Insumo o Subproducto */}
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  const form = e.target as HTMLFormElement;
+                  const itemValue = (form.elements.namedItem('item_id') as HTMLSelectElement).value;
+                  const cantidad = parseFloat((form.elements.namedItem('cantidad') as HTMLInputElement).value);
+                  
+                  if (!itemValue || !cantidad || !selectedProduct) return;
+                  
+                  const [tipo, id] = itemValue.split('||'); // 'insumo||123' o 'producto||456'
+                  
+                  startTransition(async () => {
+                    await addInsumoToReceta(empresaId, selectedProduct.id_producto, id, tipo as 'insumo'|'producto', cantidad);
+                    form.reset();
+                  });
+                }} className="flex gap-2 items-end">
                   <div className="flex-1">
-                    <label className="block text-xs font-medium text-neutral-400 mb-1">Insumo del Almacén</label>
-                    <select name="insumo_id" className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none" required>
+                    <label className="block text-xs font-medium text-neutral-400 mb-1">Insumo o Subproducto (Combo)</label>
+                    <select name="item_id" className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none" required>
                       <option value="">Selecciona...</option>
-                      {insumos.map(i => <option key={i.id} value={i.id}>{i.nombre} ({i.unidad_medida})</option>)}
+                      <optgroup label="Materia Prima (Insumos)">
+                        {insumos.map(i => <option key={`i-${i.id}`} value={`insumo||${i.id}`}>{i.nombre} ({i.unidad_medida})</option>)}
+                      </optgroup>
+                      <optgroup label="Subproductos (Para Combos)">
+                        {productos.filter(p => p.id_producto !== selectedProduct.id_producto).map(p => (
+                           <option key={`p-${p.id_producto}`} value={`producto||${p.id_producto}`}>{p.nombre}</option>
+                        ))}
+                      </optgroup>
                     </select>
                   </div>
                   <div className="w-32">
-                    <label className="block text-xs font-medium text-neutral-400 mb-1">Gasto por Unidad</label>
-                    <input type="number" step="0.0001" name="cantidad" placeholder="Ej. 0.20" className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none" required />
+                    <label className="block text-xs font-medium text-neutral-400 mb-1">Gasto / Cantidad</label>
+                    <input type="number" step="0.0001" name="cantidad" placeholder="Ej. 1" className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none" required />
                   </div>
                   <button type="submit" disabled={isPending} className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm px-4 py-2 rounded-lg transition-colors flex items-center h-[38px]">
                     <Plus size={16} />
