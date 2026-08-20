@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Building2, Store, Key, Copy, CheckCircle2, ArrowRight, Loader2 } from 'lucide-react';
+import { Building2, Store, Key, Copy, CheckCircle2, ArrowRight, Loader2, LogOut } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
 import { setupWorkspace } from './actions';
 
 export default function OnboardingPage() {
@@ -19,6 +20,13 @@ export default function OnboardingPage() {
   });
   
   const [masterKey, setMasterKey] = useState('');
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/login');
+    router.refresh();
+  };
 
   const handleNext = () => {
     if (step === 1 && !formData.nombreEmpresa.trim()) {
@@ -59,6 +67,15 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center p-4 selection:bg-indigo-500/30">
       
+      {/* Botón de Salir */}
+      <button 
+        onClick={handleLogout}
+        className="absolute top-6 right-6 text-neutral-500 hover:text-white transition-colors flex items-center gap-2 text-sm bg-neutral-900/50 px-4 py-2 rounded-lg border border-neutral-800 z-20"
+      >
+        <LogOut size={16} />
+        <span>Cerrar Sesión</span>
+      </button>
+
       {/* Background Decorativo */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
 
