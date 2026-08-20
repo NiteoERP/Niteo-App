@@ -10,6 +10,7 @@ import {
   Settings, 
   UserCircle 
 } from 'lucide-react';
+import { LogoutButton } from '@/components/LogoutButton';
 
 export default async function DashboardLayout({
   children,
@@ -181,6 +182,9 @@ export default async function DashboardLayout({
               <div className="w-9 h-9 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
                 <UserCircle size={22} className="text-indigo-400" />
               </div>
+              
+              {/* Botón de Cerrar Sesión */}
+              <LogoutButton />
             </div>
           </div>
         </header>
