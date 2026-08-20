@@ -80,9 +80,9 @@ export default async function DashboardLayout({
             <span className="text-sm font-medium">Inventario</span>
           </Link>
 
-          <Link href="/dashboard/pos" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300 transition-colors border border-transparent hover:border-indigo-500/20">
+          <Link href="/dashboard/ventas" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300 transition-colors border border-transparent hover:border-indigo-500/20">
             <LayoutDashboard size={20} />
-            <span className="text-sm font-medium">Espejo POS</span>
+            <span className="text-sm font-medium">Ventas</span>
           </Link>
           
           <Link href="/dashboard/despachos" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
@@ -100,6 +100,10 @@ export default async function DashboardLayout({
               <Link href="/dashboard/clientes" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
                 <Users size={20} />
                 <span className="text-sm font-medium">Clientes</span>
+              </Link>
+              <Link href="/dashboard/equipo" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
+                <UserCircle size={20} />
+                <span className="text-sm font-medium">Equipo</span>
               </Link>
             </>
           )}
