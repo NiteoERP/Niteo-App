@@ -69,7 +69,12 @@ export async function middleware(request: NextRequest) {
         const supabaseAdmin = createServerClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL,
           serviceRoleKey,
-          { cookies: {} }
+          { 
+            cookies: {
+              getAll() { return [] },
+              setAll() {}
+            } 
+          }
         );
         const { data } = await supabaseAdmin
           .from('perfiles')
