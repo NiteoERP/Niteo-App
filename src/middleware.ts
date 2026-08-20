@@ -70,18 +70,18 @@ export async function middleware(request: NextRequest) {
         console.error('Error al obtener perfil en middleware:', profileError);
       }
 
-      // Si el perfil no existe, forzarlos al Onboarding manual
+      // Si el perfil no existe, forzarlos al Onboarding principal
       if (!profile) {
-        if (!request.nextUrl.pathname.startsWith('/dashboard/onboarding')) {
+        if (!request.nextUrl.pathname.startsWith('/onboarding')) {
           const url = request.nextUrl.clone();
-          url.pathname = '/dashboard/onboarding';
+          url.pathname = '/onboarding';
           return NextResponse.redirect(url);
         }
         return supabaseResponse; // Permitir que estén en onboarding
       }
 
       // Evitar loop infinito en onboarding si ya tienen perfil
-      if (request.nextUrl.pathname.startsWith('/dashboard/onboarding')) {
+      if (request.nextUrl.pathname.startsWith('/onboarding')) {
         const url = request.nextUrl.clone();
         url.pathname = '/dashboard';
         return NextResponse.redirect(url);
