@@ -24,11 +24,29 @@ export default async function DashboardLayout({
     redirect('/login');
   }
 
-  const { data: perfil } = await supabase
-    .from('perfiles')
-    .select('nombre_completo, rol, empresa_id, sede_id')
-    .eq('id', user.id)
-    .single();
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  let perfil = null;
+
+  if (serviceRoleKey) {
+    const { createClient: createAdminClient } = await import('@supabase/supabase-js');
+    const supabaseAdmin = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      serviceRoleKey
+    );
+    const { data } = await supabaseAdmin
+      .from('perfiles')
+      .select('nombre_completo, rol, empresa_id, sede_id')
+      .eq('id', user.id)
+      .single();
+    perfil = data;
+  } else {
+    const { data } = await supabase
+      .from('perfiles')
+      .select('nombre_completo, rol, empresa_id, sede_id')
+      .eq('id', user.id)
+      .single();
+    perfil = data;
+  }
 
   const userName = perfil?.nombre_completo || user.email;
   const userRole = perfil?.rol || 'Administrador';
