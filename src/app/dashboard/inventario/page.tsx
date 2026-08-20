@@ -1,6 +1,7 @@
 import React from 'react';
 import { createClient } from '@/utils/supabase/server';
 import InsumosManager from './InsumosManager';
+import ProductosEnriquecidos from './ProductosEnriquecidos';
 import { Package, Beaker, FileBox } from 'lucide-react';
 
 export default async function InventarioPage({ searchParams }: { searchParams: { tab?: string } }) {
@@ -13,13 +14,22 @@ export default async function InventarioPage({ searchParams }: { searchParams: {
   const currentTab = searchParams.tab || 'insumos';
 
   let insumos = [];
+  let productos = [];
+  let recetas = [];
+
   if (currentTab === 'insumos') {
-    const { data } = await supabase
-      .from('insumos')
-      .select('*')
-      .eq('empresa_id', empresaId)
-      .order('creado_en', { ascending: false });
+    const { data } = await supabase.from('insumos').select('*').eq('empresa_id', empresaId).order('creado_en', { ascending: false });
     insumos = data || [];
+  } else if (currentTab === 'productos') {
+    // Para el editor de recetas necesitamos: productos sincronizados, insumos, y las recetas existentes
+    const [resProd, resIns, resRecetas] = await Promise.all([
+      supabase.from('productos').select('id_producto, nombre, codigo_barras, precio_venta, descripcion, es_compuesto'), // Se asume que sede_id / empresa_id ya lo filtra RLS si aplica
+      supabase.from('insumos').select('id, nombre, unidad_medida, costo_unitario').eq('empresa_id', empresaId),
+      supabase.from('recetas').select('*').eq('empresa_id', empresaId)
+    ]);
+    productos = resProd.data || [];
+    insumos = resIns.data || [];
+    recetas = resRecetas.data || [];
   }
 
   return (
@@ -56,16 +66,12 @@ export default async function InventarioPage({ searchParams }: { searchParams: {
         )}
         
         {currentTab === 'productos' && (
-          <div className="bg-neutral-900 border border-neutral-800 p-8 rounded-2xl text-center">
-            <Beaker size={48} className="mx-auto text-neutral-600 mb-4" />
-            <h3 className="text-lg font-medium text-white mb-2">Editor de Recetas</h3>
-            <p className="text-neutral-400 max-w-md mx-auto">
-              Aquí aparecerán los productos sincronizados desde Aronium. Podrás hacer clic en cualquiera de ellos para asignarle fotos, descripciones y vincular los insumos que lo componen.
-            </p>
-            <p className="text-xs text-indigo-400 mt-4 font-medium animate-pulse">
-              (Próximo paso a desarrollar en esta Fase)
-            </p>
-          </div>
+          <ProductosEnriquecidos 
+            productos={productos} 
+            insumos={insumos} 
+            recetas={recetas} 
+            empresaId={empresaId} 
+          />
         )}
       </div>
       
