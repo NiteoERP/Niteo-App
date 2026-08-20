@@ -61,13 +61,32 @@ export async function middleware(request: NextRequest) {
 
     // 4. HARDENING SAAS (Comprobación de Suscripción) usando la nueva tabla "perfiles"
     try {
-      const { data: profile, error: profileError } = await supabase
-        .from('perfiles')
-        .select('empresa_id, rol')
-        .eq('id', user.id)
-        .single();
-      if (profileError && profileError.code !== 'PGRST116') {
-        console.error('Error al obtener perfil en middleware:', profileError);
+      // Usamos el Service Role para saltarnos cualquier restricción de RLS y asegurar que siempre podamos leer el perfil
+      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      
+      let profile;
+      if (serviceRoleKey) {
+        const supabaseAdmin = createServerClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL,
+          serviceRoleKey,
+          { cookies: {} }
+        );
+        const { data } = await supabaseAdmin
+          .from('perfiles')
+          .select('empresa_id, rol')
+          .eq('id', user.id)
+          .single();
+        profile = data;
+      } else {
+        const { data, error } = await supabase
+          .from('perfiles')
+          .select('empresa_id, rol')
+          .eq('id', user.id)
+          .single();
+        profile = data;
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error al obtener perfil:', error);
+        }
       }
 
       // Si el perfil no existe, forzarlos al Onboarding principal
