@@ -38,24 +38,35 @@ export default function OnboardingPage() {
   };
 
   const handleFinish = async () => {
+    // 1. Protección contra doble clic preventivo en UI
+    if (loading) return; 
+
     setLoading(true);
     setError('');
     
-    const res = await setupWorkspace(formData);
-    
-    setLoading(false);
-    if (!res.success) {
-      setError(res.error || 'Ocurrió un error inesperado');
-      return;
+    try {
+      const res = await setupWorkspace(formData);
+      
+      if (!res.success) {
+        setError(res.error || 'Ocurrió un retraso guardando tus datos. Por favor, intenta de nuevo.');
+        setLoading(false);
+        return;
+      }
+      
+      // Si todo fue bien, pero no hay llave (sede opcional omitida), vamos al Dashboard
+      if (!res.masterKey) {
+        window.location.href = '/dashboard';
+        return;
+      }
+      
+      setMasterKey(res.masterKey);
+      setStep(3);
+    } catch (err: any) {
+      setError('Hubo un problema de conexión con el servidor. Por favor intenta de nuevo.');
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
-    
-    if (!res.masterKey) {
-      window.location.href = '/dashboard';
-      return;
-    }
-    
-    setMasterKey(res.masterKey);
-    setStep(3);
   };
 
   const copyToClipboard = () => {
