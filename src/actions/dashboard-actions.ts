@@ -11,7 +11,7 @@ export async function getDashboardData(range: string) {
 
   const { data: profile } = await supabase
     .from('perfiles')
-    .select('sede_id')
+    .select('sede_id, empresa_id')
     .eq('id', user.id)
     .single();
 
@@ -39,8 +39,8 @@ export async function getDashboardData(range: string) {
       break;
   }
 
-  const { data: metrics, error } = await supabase.rpc('get_dashboard_metrics', {
-    p_sede_id: profile.sede_id,
+  const { data: metrics, error } = await supabase.rpc('get_dashboard_metrics_real', {
+    p_empresa_id: profile.empresa_id,
     p_fecha_inicio: startDate.toISOString(),
     p_fecha_fin: endDate.toISOString()
   });
