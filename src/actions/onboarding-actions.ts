@@ -21,7 +21,9 @@ export async function completarOnboarding(formData: FormData) {
   // Usar la función RPC para saltarse RLS de forma segura sin necesitar llaves maestras en Vercel
   const { error: rpcError } = await supabase.rpc('rpc_completar_onboarding', {
     p_nombre_completo: fullName,
-    p_nombre_comercial: companyName
+    p_nombre_comercial: companyName,
+    p_nombre_sede: 'Sede Principal',
+    p_sistema_pos: 'Aronium'
   });
 
   if (rpcError) {
