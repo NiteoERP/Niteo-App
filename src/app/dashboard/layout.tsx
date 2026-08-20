@@ -57,19 +57,41 @@ export default async function DashboardLayout({
   let daysLeft = 0;
 
   if (perfil?.empresa_id) {
-    const { data: sub } = await supabase
-      .from('suscripciones_empresas')
-      .select('plan, fecha_vencimiento, estado')
-      .eq('empresa_id', perfil.empresa_id)
-      .single();
+    if (serviceRoleKey) {
+      const { createClient: createAdminClient } = await import('@supabase/supabase-js');
+      const supabaseAdmin = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        serviceRoleKey
+      );
+      const { data: sub } = await supabaseAdmin
+        .from('suscripciones_empresas')
+        .select('plan, fecha_vencimiento, estado')
+        .eq('empresa_id', perfil.empresa_id)
+        .single();
+      
+      if (sub) {
+        subPlan = sub.plan;
+        subEstado = sub.estado;
+        const today = new Date();
+        const expiration = new Date(sub.fecha_vencimiento);
+        const diffTime = expiration.getTime() - today.getTime();
+        daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      }
+    } else {
+      const { data: sub } = await supabase
+        .from('suscripciones_empresas')
+        .select('plan, fecha_vencimiento, estado')
+        .eq('empresa_id', perfil.empresa_id)
+        .single();
 
-    if (sub) {
-      subPlan = sub.plan;
-      subEstado = sub.estado;
-      const today = new Date();
-      const expiration = new Date(sub.fecha_vencimiento);
-      const diffTime = expiration.getTime() - today.getTime();
-      daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      if (sub) {
+        subPlan = sub.plan;
+        subEstado = sub.estado;
+        const today = new Date();
+        const expiration = new Date(sub.fecha_vencimiento);
+        const diffTime = expiration.getTime() - today.getTime();
+        daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      }
     }
   }
 

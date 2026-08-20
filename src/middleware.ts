@@ -112,12 +112,28 @@ export async function middleware(request: NextRequest) {
       }
 
       if (profile) {
-        // Validar suscripción
-        const { data: sub } = await supabase
-          .from('suscripciones_empresas')
-          .select('estado')
-          .eq('empresa_id', profile.empresa_id)
-          .single();
+        // Validar suscripción usando supabaseAdmin (para saltar RLS)
+        let sub = null;
+        if (serviceRoleKey) {
+          const supabaseAdmin = createServerClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL,
+            serviceRoleKey,
+            { cookies: { getAll() { return [] }, setAll() {} } }
+          );
+          const { data } = await supabaseAdmin
+            .from('suscripciones_empresas')
+            .select('estado')
+            .eq('empresa_id', profile.empresa_id)
+            .single();
+          sub = data;
+        } else {
+          const { data } = await supabase
+            .from('suscripciones_empresas')
+            .select('estado')
+            .eq('empresa_id', profile.empresa_id)
+            .single();
+          sub = data;
+        }
 
         // Si no tiene suscripción o está vencida/suspendida -> Bloqueo total
         if (!sub || sub.estado === 'VENCIDA' || sub.estado === 'SUSPENDIDA') {
