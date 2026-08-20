@@ -50,7 +50,7 @@ export default function OnboardingPage() {
     }
     
     if (!res.masterKey) {
-      router.push('/dashboard');
+      window.location.href = '/dashboard';
       return;
     }
     
@@ -228,12 +228,12 @@ export default function OnboardingPage() {
               </button>
             </div>
 
-            <button 
-              onClick={() => router.push('/dashboard')}
-              className="w-full bg-white hover:bg-neutral-200 text-black font-semibold py-3.5 rounded-xl transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)] flex items-center justify-center gap-2"
-            >
-              Ir al Dashboard <ArrowRight size={18} />
-            </button>
+            <button
+            onClick={() => window.location.href = '/dashboard'}
+            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-600/20"
+          >
+            Ir al Dashboard <ArrowRight size={18} />
+          </button>
           </div>
         )}
 

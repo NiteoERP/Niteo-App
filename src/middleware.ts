@@ -94,9 +94,7 @@ export async function middleware(request: NextRequest) {
         }
       }
 
-      // Si el perfil no existe, deberíamos forzarlos al Onboarding principal
-      // PERO, para evitar bloqueos si la DB está asincrónica, vamos a comentarlo temporalmente.
-      /*
+      // Si el perfil no existe, forzarlos al Onboarding principal
       if (!profile) {
         if (!request.nextUrl.pathname.startsWith('/onboarding')) {
           const url = request.nextUrl.clone();
@@ -105,7 +103,6 @@ export async function middleware(request: NextRequest) {
         }
         return supabaseResponse; 
       }
-      */
 
       // Evitar loop infinito en onboarding si ya tienen perfil
       if (request.nextUrl.pathname.startsWith('/onboarding')) {
@@ -116,7 +113,6 @@ export async function middleware(request: NextRequest) {
 
       if (profile) {
         // Validar suscripción
-        /*
         const { data: sub } = await supabase
           .from('suscripciones_empresas')
           .select('estado')
@@ -129,7 +125,6 @@ export async function middleware(request: NextRequest) {
           url.pathname = '/dashboard/billing';
           return NextResponse.redirect(url);
         }
-        */
 
         // 4. HARDENING DE ROLES EN FRONTEND
         const protectedAdminRoutes = ['/dashboard/gastos', '/dashboard/finanzas', '/dashboard/cierre'];
