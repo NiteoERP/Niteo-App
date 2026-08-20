@@ -30,11 +30,6 @@ export default function OnboardingPage() {
   };
 
   const handleFinish = async () => {
-    if (!formData.nombreSede.trim()) {
-      setError('Por favor, ingresa el nombre de la sede principal');
-      return;
-    }
-    
     setLoading(true);
     setError('');
     
@@ -46,7 +41,12 @@ export default function OnboardingPage() {
       return;
     }
     
-    setMasterKey(res.masterKey!);
+    if (!res.masterKey) {
+      router.push('/dashboard');
+      return;
+    }
+    
+    setMasterKey(res.masterKey);
     setStep(3);
   };
 
@@ -127,60 +127,57 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* PASO 2: Sede */}
+        {/* PASO 2: Sede (Opcional) */}
         {step === 2 && (
           <div className="animate-in slide-in-from-right-4 fade-in duration-300">
             <div className="mb-6">
               <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-4 text-indigo-400">
                 <Store size={24} />
               </div>
-              <h2 className="text-xl font-semibold text-white">Primera Sede</h2>
-              <p className="text-sm text-neutral-400 mt-1">Configura la sucursal principal de tu negocio.</p>
+              <h2 className="text-xl font-semibold text-white">Configuración del Punto de Venta (Opcional)</h2>
+              <p className="text-neutral-400 text-sm mt-1">
+                Si usas un sistema POS (como Aronium), crea tu primera sede. Si solo usarás Niteo para compras y finanzas, puedes omitir este paso.
+              </p>
             </div>
 
-            <div className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-neutral-300 mb-1.5">Nombre de la Sede</label>
-                <input 
-                  type="text" 
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-neutral-300">Nombre de la Sede</label>
+                <input
+                  type="text"
+                  placeholder="Ej. Local Principal"
                   value={formData.nombreSede}
-                  onChange={(e) => setFormData({...formData, nombreSede: e.target.value})}
-                  placeholder="Ej: Sede Principal Caracas"
-                  className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all placeholder:text-neutral-600"
-                  autoFocus
+                  onChange={(e) => setFormData({ ...formData, nombreSede: e.target.value })}
+                  className="w-full px-4 py-3 bg-neutral-950 border border-neutral-800 rounded-xl text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-neutral-300 mb-1.5">Sistema POS Utilizado</label>
-                <select 
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-neutral-300">Software POS Actual</label>
+                <select
                   value={formData.sistemaPos}
-                  onChange={(e) => setFormData({...formData, sistemaPos: e.target.value})}
-                  className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all appearance-none"
+                  onChange={(e) => setFormData({ ...formData, sistemaPos: e.target.value })}
+                  className="w-full px-4 py-3 bg-neutral-950 border border-neutral-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all appearance-none"
                 >
-                  <option value="Aronium">Aronium POS</option>
+                  <option value="Aronium">Aronium</option>
                   <option value="A2Softway">A2 Softway</option>
+                  <option value="Ninguno">Ninguno</option>
                 </select>
               </div>
 
-              <div className="flex gap-3 pt-2">
-                <button 
+              <div className="flex gap-3 pt-4">
+                <button
                   onClick={() => setStep(1)}
-                  disabled={loading}
-                  className="flex-1 bg-neutral-800 hover:bg-neutral-700 text-white font-medium py-3 rounded-xl transition-all"
+                  className="w-full py-3 px-4 bg-neutral-800 hover:bg-neutral-700 text-white font-medium rounded-xl transition-all"
                 >
-                  Volver
+                  Atrás
                 </button>
-                <button 
+                <button
                   onClick={handleFinish}
                   disabled={loading}
-                  className="flex-[2] bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 rounded-xl transition-all shadow-[0_0_15px_rgba(79,70,229,0.3)] hover:shadow-[0_0_20px_rgba(79,70,229,0.5)] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center gap-2"
                 >
-                  {loading ? (
-                    <><Loader2 size={18} className="animate-spin" /> Configurando...</>
-                  ) : (
-                    <><CheckCircle2 size={18} /> Finalizar</>
-                  )}
+                  {loading ? <Loader2 size={18} className="animate-spin" /> : (formData.nombreSede ? 'Finalizar' : 'Omitir y Finalizar')}
                 </button>
               </div>
             </div>
