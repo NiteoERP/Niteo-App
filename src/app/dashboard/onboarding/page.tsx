@@ -3,6 +3,10 @@
 import React, { useState } from 'react';
 import { completarOnboarding } from '@/actions/onboarding-actions';
 
+import { LogOut } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
+import { useRouter } from 'next/navigation';
+
 function SubmitButton() {
   const [pending, setPending] = useState(false);
   
@@ -18,10 +22,30 @@ function SubmitButton() {
 }
 
 export default function OnboardingPage() {
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/login');
+    router.refresh();
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-[80vh] p-8">
-      <div className="w-full max-w-md space-y-8 bg-neutral-900 p-8 rounded-2xl border border-neutral-800">
-        <div className="text-center space-y-2">
+      <div className="w-full max-w-md relative space-y-8 bg-neutral-900 p-8 rounded-2xl border border-neutral-800">
+        
+        {/* Botón de escape / logout */}
+        <button 
+          onClick={handleLogout}
+          className="absolute top-4 right-4 text-neutral-500 hover:text-white transition-colors flex items-center gap-2 text-sm"
+          title="Cerrar sesión"
+        >
+          <LogOut size={18} />
+          <span>Salir</span>
+        </button>
+
+        <div className="text-center space-y-2 mt-4">
           <h1 className="text-2xl font-bold text-white tracking-tight">Falta un último paso</h1>
           <p className="text-neutral-400 text-sm">
             Detectamos que tu cuenta no tiene una empresa asociada. Por favor, ingresa los datos para crear tu espacio de trabajo.
