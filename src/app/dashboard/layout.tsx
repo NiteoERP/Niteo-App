@@ -8,7 +8,8 @@ import {
   ShoppingCart, 
   Users, 
   Settings, 
-  UserCircle 
+  UserCircle,
+  ShieldAlert
 } from 'lucide-react';
 import { LogoutButton } from '@/components/LogoutButton';
 
@@ -106,7 +107,11 @@ export default async function DashboardLayout({
 
         {/* Ajustes al fondo (Solo MASTER) */}
         {userRole === 'MASTER' && (
-          <div className="p-4 border-t border-neutral-800 shrink-0">
+          <div className="p-4 border-t border-neutral-800 shrink-0 space-y-1">
+            <Link href="/dashboard/auditoria" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
+              <ShieldAlert size={20} />
+              <span className="text-sm font-medium">Auditoría</span>
+            </Link>
             <Link href="/dashboard/configuracion" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
               <Settings size={20} />
               <span className="text-sm font-medium">Ajustes</span>
