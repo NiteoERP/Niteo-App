@@ -40,8 +40,20 @@ export default function BillingPage() {
       </p>
 
       {errorMsg && (
-        <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 px-4 py-3 rounded-xl max-w-md text-sm font-medium">
-          {errorMsg}
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-neutral-900 border border-rose-500/30 rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl shadow-rose-500/20 animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">Error de Activación</h3>
+            <p className="text-sm text-neutral-400 mb-6">{errorMsg}</p>
+            <button 
+              onClick={() => setErrorMsg('')}
+              className="w-full bg-neutral-800 hover:bg-neutral-700 text-white font-medium py-3 rounded-xl transition-colors"
+            >
+              Entendido
+            </button>
+          </div>
         </div>
       )}
       
