@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { createUser } from './actions';
@@ -151,12 +151,14 @@ export default function AddUserModal() {
                       <div 
                         key={mod.id}
                         onClick={() => toggleModule(mod.id)}
-                        className={lex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors \}
+                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                          isSelected ? 'bg-indigo-500/10 border-indigo-500/50' : 'bg-neutral-950 border-neutral-800 hover:border-neutral-700'
+                        }`}
                       >
-                        <div className={w-5 h-5 rounded flex items-center justify-center \}>
+                        <div className={`w-5 h-5 rounded flex items-center justify-center ${isSelected ? 'bg-indigo-500 text-white' : 'bg-neutral-800 text-transparent'}`}>
                           <Check size={14} />
                         </div>
-                        <span className={	ext-sm \}>
+                        <span className={`text-sm ${isSelected ? 'text-indigo-100 font-medium' : 'text-neutral-400'}`}>
                           {mod.label}
                         </span>
                       </div>
