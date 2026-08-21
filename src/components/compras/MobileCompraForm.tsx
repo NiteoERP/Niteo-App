@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useTransition } from 'react';
 import { getInsumos, getTasaDelDia } from '@/actions/compras-actions';
@@ -199,8 +199,8 @@ export default function MobileCompraForm() {
                 onChange={(e) => setMonedaGlobal(e.target.value as 'USD'|'VES')}
                 className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-indigo-500"
               >
-                <option value="USD">Dólares (USD)</option>
-                <option value="VES">Bolívares (VES)</option>
+                <option value="USD">DÃ³lares (USD)</option>
+                <option value="VES">BolÃ­vares (VES)</option>
               </select>
             </div>
           </div>
@@ -269,7 +269,7 @@ export default function MobileCompraForm() {
             {/* If New Insumo */}
             {isNewInsumo && (
               <div className="bg-indigo-500/10 border border-indigo-500/30 rounded-xl p-4 animate-in fade-in">
-                <p className="text-sm text-indigo-300 font-medium mb-3">Estás creando un nuevo insumo</p>
+                <p className="text-sm text-indigo-300 font-medium mb-3">EstÃ¡s creando un nuevo insumo</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs text-neutral-400 mb-1">Nombre</label>
@@ -338,7 +338,7 @@ export default function MobileCompraForm() {
               disabled={!cantidad || !costo || (!selectedInsumo && !isNewInsumo)}
               className="w-full bg-neutral-800 hover:bg-neutral-700 text-white font-medium py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              <Plus size={18} /> Añadir a la Lista
+              <Plus size={18} /> AÃ±adir a la Lista
             </button>
           </div>
 
@@ -351,7 +351,7 @@ export default function MobileCompraForm() {
                   <div key={item.id} className="bg-neutral-950 border border-neutral-800 rounded-lg p-3 flex justify-between items-center">
                     <div>
                       <p className="text-white font-medium text-sm">{item.nombre_nuevo} {item.is_new && <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded ml-1">NUEVO</span>}</p>
-                      <p className="text-neutral-500 text-xs">{item.cantidad} {item.unidad_nueva} � {item.monedaItem} {item.costoTotal.toFixed(2)} Total <span className="text-[10px] opacity-60">({(item.costoTotal / item.cantidad).toFixed(2)} c/u)</span></p>
+                      <p className="text-neutral-500 text-xs">{item.cantidad} {item.unidad_nueva} • {item.monedaItem} {item.costoTotal.toFixed(2)} Total <span className="text-[10px] opacity-60">({(item.costoTotal / item.cantidad).toFixed(2)} c/u)</span></p>
                     </div>
                     <button onClick={() => removeFromCart(item.id)} className="text-rose-400 hover:bg-rose-500/20 p-2 rounded-lg">
                       <Trash2 size={16} />
