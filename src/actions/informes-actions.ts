@@ -22,33 +22,37 @@ export async function generateReport(
 
   if (!profile) return { success: false, error: "Perfil no encontrado" };
 
-  // Mapear el reportId a la función RPC correspondiente
-  let rpcName = '';
-  switch (reportId) {
-    case 'ventas_diarias':
-      rpcName = 'get_reporte_ventas_diarias';
-      break;
-    case 'ventas_productos':
-      rpcName = 'get_reporte_ventas_productos';
-      break;
-    case 'ventas_usuarios':
-      rpcName = 'get_reporte_ventas_usuarios';
-      break;
-    default:
-      return { success: false, error: "Reporte no implementado todavía." };
-  }
-
   // Asegurar horas correctas para las fechas (inicio de día a fin de día)
   const p_fecha_inicio = startOfDay(new Date(startDate)).toISOString();
   const p_fecha_fin = endOfDay(new Date(endDate)).toISOString();
   const p_sede_id = sedeId === 'ALL' ? null : sedeId;
 
-  const { data, error } = await supabase.rpc(rpcName, {
-    p_empresa_id: profile.empresa_id,
-    p_sede_id,
-    p_fecha_inicio,
-    p_fecha_fin
-  });
+  // Mapear el reportId a la función RPC correspondiente
+  let rpcName = '';
+  let rpcParams: any = {};
+  
+  switch (reportId) {
+    case 'ventas_diarias':
+      rpcName = 'get_reporte_ventas_diarias';
+      rpcParams = { p_empresa_id: profile.empresa_id, p_sede_id, p_fecha_inicio, p_fecha_fin };
+      break;
+    case 'ventas_productos':
+      rpcName = 'get_reporte_ventas_productos';
+      rpcParams = { p_empresa_id: profile.empresa_id, p_sede_id, p_fecha_inicio, p_fecha_fin };
+      break;
+    case 'ventas_usuarios':
+      rpcName = 'get_reporte_ventas_usuarios';
+      rpcParams = { p_empresa_id: profile.empresa_id, p_sede_id, p_fecha_inicio, p_fecha_fin };
+      break;
+    case 'cuentas_por_cobrar':
+      rpcName = 'get_reporte_cuentas_por_cobrar';
+      rpcParams = { p_empresa_id: profile.empresa_id, p_sede_id };
+      break;
+    default:
+      return { success: false, error: "Reporte no implementado todavía." };
+  }
+
+  const { data, error } = await supabase.rpc(rpcName, rpcParams);
 
   if (error) {
     console.error("Error generando reporte:", error);

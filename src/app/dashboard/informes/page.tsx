@@ -13,6 +13,7 @@ const REPORT_MENU = [
       { id: 'ventas_diarias', name: 'Ventas Diarias' },
       { id: 'ventas_productos', name: 'Ventas por Producto' },
       { id: 'ventas_usuarios', name: 'Desempeño de Cajeros' },
+      { id: 'cuentas_por_cobrar', name: 'Cuentas por Cobrar (Créditos)' }
     ]
   },
   {
