@@ -6,8 +6,9 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   ComposedChart, Line
 } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Receipt, Loader2, Calendar, Store } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Receipt, Loader2, Calendar, Store, FileOutput } from 'lucide-react';
 import RecentSalesWidget from '@/components/pos/RecentSalesWidget';
+import ReportPreviewModal from '@/components/reports/ReportPreviewModal';
 
 export default function DashboardPage() {
   const [range, setRange] = useState('thisMonth');
@@ -15,6 +16,7 @@ export default function DashboardPage() {
   const [sedes, setSedes] = useState<any[]>([]);
   const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showExport, setShowExport] = useState(false);
 
   useEffect(() => {
     const fetchInit = async () => {
@@ -89,8 +91,23 @@ export default function DashboardPage() {
               <option value="lastMonth">Mes Anterior</option>
             </select>
           </div>
+          <button 
+            onClick={() => setShowExport(true)}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors shadow-sm"
+          >
+            <FileOutput size={16} /> Exportar
+          </button>
         </div>
       </div>
+
+      {showExport && (
+        <ReportPreviewModal 
+          data={data}
+          kpis={kpis}
+          range={range}
+          onClose={() => setShowExport(false)}
+        />
+      )}
 
       {isLoading ? (
         <div className="h-64 flex items-center justify-center">
