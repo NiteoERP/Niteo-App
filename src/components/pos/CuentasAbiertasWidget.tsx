@@ -12,6 +12,7 @@ interface CuentaAbiertaDetalle {
 
 interface CuentaAbierta {
   id: string;
+  sede_id: string;
   numero_documento: string;
   nombre_cuenta: string;
   total: number;
@@ -21,6 +22,7 @@ interface CuentaAbierta {
 
 export default function CuentasAbiertasWidget({ sedeId }: { sedeId: string }) {
   const [cuentas, setCuentas] = useState<CuentaAbierta[]>([]);
+  const [sedesMap, setSedesMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const supabase = createClient();
@@ -28,12 +30,21 @@ export default function CuentasAbiertasWidget({ sedeId }: { sedeId: string }) {
   // Función para cargar los datos iniciales
   const fetchCuentas = async () => {
     setLoading(true);
+
+    // Cargar sedes para el mapeo
+    const { data: sedesData } = await supabase.from('sedes').select('id, nombre_sede');
+    if (sedesData) {
+      const sMap: Record<string, string> = {};
+      sedesData.forEach(s => sMap[s.id] = s.nombre_sede);
+      setSedesMap(sMap);
+    }
+
     let query = supabase
       .from('pos_cuentas_abiertas')
       .select('*')
       .order('fecha_apertura', { ascending: false });
       
-    if (sedeId) {
+    if (sedeId && sedeId !== 'ALL') {
       query = query.eq('sede_id', sedeId);
     }
 
@@ -50,7 +61,7 @@ export default function CuentasAbiertasWidget({ sedeId }: { sedeId: string }) {
 
     // Suscripción Realtime a la tabla
     let filterStr = undefined;
-    if (sedeId) {
+    if (sedeId && sedeId !== 'ALL') {
       filterStr = `sede_id=eq.${sedeId}`;
     }
 
@@ -125,13 +136,20 @@ export default function CuentasAbiertasWidget({ sedeId }: { sedeId: string }) {
                   <div className="bg-indigo-500/10 p-2 rounded-lg text-indigo-400">
                     <Users size={20} />
                   </div>
+                <div className="flex flex-col">
                   <h3 className="font-bold text-white text-lg line-clamp-1" title={cuenta.nombre_cuenta}>
                     {cuenta.nombre_cuenta}
                   </h3>
+                  {sedeId === 'ALL' && (
+                    <span className="text-xs text-indigo-400 font-medium mt-0.5">
+                      {sedesMap[cuenta.sede_id] || 'Sucursal'}
+                    </span>
+                  )}
                 </div>
-                <span className="text-xs font-mono text-neutral-500 bg-neutral-800 px-2 py-1 rounded-md">
-                  #{cuenta.numero_documento}
-                </span>
+              </div>
+              <span className="text-xs font-mono text-neutral-500 bg-neutral-800 px-2 py-1 rounded-md shrink-0">
+                #{cuenta.numero_documento}
+              </span>
               </div>
 
               <div className="space-y-3">
