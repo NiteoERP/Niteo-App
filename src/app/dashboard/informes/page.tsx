@@ -222,26 +222,27 @@ export default function InformesPage() {
 
       {/* MODAL PREVISUALIZACION DEL REPORTE */}
       {showPreviewModal && reportData && (
-         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex flex-col justify-center items-center p-4 sm:p-8 print:p-0 print:bg-white print:block">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex justify-center items-start overflow-y-auto p-4 sm:p-8 print:p-0 print:bg-white print:block">
             
-            {/* Toolbar superior (No se imprime) */}
-            <div className="w-full max-w-5xl flex justify-between items-center mb-4 print:hidden">
-               <h3 className="text-white font-bold text-lg flex items-center gap-2">
-                 <FileText size={20} className="text-indigo-400" />
-                 Vista Previa del Documento
-               </h3>
-               <div className="flex gap-3">
-                 <button onClick={() => window.print()} className="bg-neutral-800 hover:bg-neutral-700 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
-                   <Printer size={16} /> Imprimir PDF
-                 </button>
-                 <button onClick={() => setShowPreviewModal(false)} className="bg-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
-                   <X size={18} /> Cerrar
-                 </button>
-               </div>
-            </div>
+            <div className="w-full max-w-5xl my-auto flex flex-col print:my-0">
+              {/* Toolbar superior (No se imprime) */}
+              <div className="w-full flex justify-between items-center mb-4 print:hidden shrink-0 pt-8">
+                 <h3 className="text-white font-bold text-lg flex items-center gap-2">
+                   <FileText size={20} className="text-indigo-400" />
+                   Vista Previa del Reporte
+                 </h3>
+                 <div className="flex items-center gap-3">
+                   <button onClick={()=>window.print()} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm">
+                     <Printer size={18} /> Imprimir / PDF
+                   </button>
+                   <button onClick={()=>setShowPreviewModal(false)} className="bg-neutral-800 hover:bg-neutral-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm border border-neutral-700">
+                     Cerrar
+                   </button>
+                 </div>
+              </div>
 
-            {/* Hoja de Reporte */}
-            <div className="bg-white text-black p-8 sm:p-10 rounded-xl shadow-2xl w-full max-w-5xl overflow-y-auto max-h-[85vh] print:max-h-none print:shadow-none print:w-full print:max-w-none print:p-0 min-h-[800px]">
+              {/* El Documento (Papel) */}
+              <div className="bg-white text-black w-full rounded-xl shadow-2xl p-8 sm:p-12 print:shadow-none print:p-0 mb-8 shrink-0 min-h-[800px]">
                
                {/* Header del Reporte */}
                <div className="border-b-2 border-neutral-200 pb-6 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">

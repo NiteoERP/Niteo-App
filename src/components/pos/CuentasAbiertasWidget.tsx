@@ -20,11 +20,16 @@ export default function CuentasAbiertasWidget({ sedeId }: { sedeId: string }) {
   // Función para cargar los datos iniciales
   const fetchCuentas = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from('pos_cuentas_abiertas')
       .select('*')
-      .eq('sede_id', sedeId)
       .order('fecha_apertura', { ascending: false });
+      
+    if (sedeId) {
+      query = query.eq('sede_id', sedeId);
+    }
+
+    const { data, error } = await query;
 
     if (!error && data) {
       setCuentas(data);
@@ -36,6 +41,11 @@ export default function CuentasAbiertasWidget({ sedeId }: { sedeId: string }) {
     fetchCuentas();
 
     // Suscripción Realtime a la tabla
+    let filterStr = undefined;
+    if (sedeId) {
+      filterStr = `sede_id=eq.${sedeId}`;
+    }
+
     const channel = supabase
       .channel('realtime_cuentas_abiertas')
       .on(
@@ -44,7 +54,7 @@ export default function CuentasAbiertasWidget({ sedeId }: { sedeId: string }) {
           event: '*', // Insert, Update o Delete
           schema: 'public',
           table: 'pos_cuentas_abiertas',
-          filter: `sede_id=eq.${sedeId}`
+          filter: filterStr
         },
         (payload) => {
           if (payload.eventType === 'INSERT') {
