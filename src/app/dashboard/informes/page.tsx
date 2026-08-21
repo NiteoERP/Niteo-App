@@ -12,9 +12,16 @@ const REPORT_MENU = [
     reports: [
       { id: 'ventas_diarias', name: 'Ventas Diarias' },
       { id: 'ventas_productos', name: 'Ventas por Producto' },
+      { id: 'ventas_metodos_pago', name: 'Ventas por Método de Pago' },
       { id: 'ventas_usuarios', name: 'Desempeño de Cajeros' },
       { id: 'cuentas_por_cobrar', name: 'Cuentas por Cobrar (Créditos)' },
       { id: 'cuentas_abiertas', name: 'Cuentas Abiertas (Mesas)' }
+    ]
+  },
+  {
+    category: 'Control de Caja',
+    reports: [
+      { id: 'cierres_caja', name: 'Historial de Cierres de Caja' }
     ]
   },
   {

@@ -52,6 +52,14 @@ export async function generateReport(
       rpcName = 'get_reporte_cuentas_abiertas';
       rpcParams = { p_empresa_id: profile.empresa_id, p_sede_id };
       break;
+    case 'ventas_metodos_pago':
+      rpcName = 'get_reporte_metodos_pago';
+      rpcParams = { p_empresa_id: profile.empresa_id, p_sede_id, p_fecha_inicio, p_fecha_fin };
+      break;
+    case 'cierres_caja':
+      rpcName = 'get_reporte_cierres_caja';
+      rpcParams = { p_empresa_id: profile.empresa_id, p_sede_id, p_fecha_inicio, p_fecha_fin };
+      break;
     default:
       return { success: false, error: "Reporte no implementado todavía." };
   }
