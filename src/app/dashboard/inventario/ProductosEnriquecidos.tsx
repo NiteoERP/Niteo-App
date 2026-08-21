@@ -170,7 +170,8 @@ export default function ProductosEnriquecidos({ productos, insumos, recetas, emp
                         <th className="px-4 py-3 font-medium text-right">Costo Calculado</th>
                         <th className="px-4 py-3"></th>
                       </tr>
-                    </                    <tbody className="divide-y divide-neutral-800/50">
+                    </thead>
+                    <tbody className="divide-y divide-neutral-800/50">
                       {productRecipes.map(r => {
                         const isSubproduct = !!r.subproducto_id;
                         const itemNombre = isSubproduct 
