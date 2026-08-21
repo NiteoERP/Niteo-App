@@ -1,9 +1,9 @@
-'use server';
+﻿'use server';
 
 import { createClient } from '@/utils/supabase/server';
 
 /**
- * FunciÃ³n interna de seguridad para extraer el contexto
+ * FunciÃƒÂ³n interna de seguridad para extraer el contexto
  * y forzar arquitectura Multi-inquilino en el servidor.
  */
 async function getAuthContext() {
@@ -65,9 +65,9 @@ export async function getUltimasCompras() {
 
     const { data, error } = await supabase
       .from('compras_puntuales')
-      .select('id, created_at, proveedor_comercio, detalles, documento_externo, monto_divisas, monto_bs_calculado')
+      .select('id, fecha_registro, proveedor, detalles, monto_divisas, monto_bs')
       .eq('id_empresa', idEmpresa)
-      .order('created_at', { ascending: false })
+      .order('fecha_registro', { ascending: false })
       .limit(5);
 
     if (error) throw error;
@@ -88,7 +88,7 @@ export async function getTasaDelDia() {
       .limit(1)
       .single();
 
-    // Si no hay datos, retornamos Ã©xito con tasa 0 para que el front no explote
+    // Si no hay datos, retornamos ÃƒÂ©xito con tasa 0 para que el front no explote
     if (error && error.code !== 'PGRST116') throw error;
     
     return { success: true, tasa: data?.tasa_bcv || 0 };
@@ -103,15 +103,15 @@ export async function getHistorialCompras(busqueda?: string, fechaInicio?: strin
 
     let query = supabase
       .from('compras_puntuales')
-      .select('id, created_at, proveedor_comercio, detalles, documento_externo, monto_divisas, tasa_cambio, monto_bs_calculado, modalidad_pago')
+      .select('id, fecha_registro, proveedor, detalles, monto_divisas, tasa_cambio, monto_bs, metodo_pago')
       .eq('id_empresa', idEmpresa)
-      .order('created_at', { ascending: false });
+      .order('fecha_registro', { ascending: false });
 
     if (busqueda) {
       query = query.or(`proveedor_comercio.ilike.%${busqueda}%,detalles.ilike.%${busqueda}%`);
     }
     if (fechaInicio) {
-      query = query.gte('created_at', fechaInicio);
+      query = query.gte('fecha_registro', fechaInicio);
     }
     if (fechaFin) {
       // Add one day to include the entire end day
@@ -147,10 +147,10 @@ export async function registrarCompraPuntual(data: {
         proveedor_comercio: data.proveedor,
         monto_divisas: Number(data.montoDivisas),
         tasa_cambio: Number(data.tasaCambio),
-        monto_bs_calculado: montoBsCalculado,
+        monto_bs: montoBsCalculado,
         detalles: data.detalles,
         modalidad_pago: data.metodoPago,
-        documento_externo: data.url_capture || data.documentoExterno, 
+        /* documento_externo */ || data.documentoExterno, 
         id_empresa: idEmpresa,
         id_usuario: user.id
       }]);
@@ -162,7 +162,7 @@ export async function registrarCompraPuntual(data: {
   }
 }
 
-export async function actualizarCompraPuntual(id_compra: number, data: {
+export async function actualizarCompraPuntual(id_compra: string, data: {
   comercio_lugar: string;
   descripcion_gasto: string;
   monto_divisas: string;
@@ -177,13 +177,13 @@ export async function actualizarCompraPuntual(id_compra: number, data: {
     const { error } = await supabase
       .from('compras_puntuales')
       .update({
-        proveedor_comercio: data.comercio_lugar,
+        proveedor: data.comercio_lugar,
         detalles: data.descripcion_gasto,
         monto_divisas: Number(data.monto_divisas),
         tasa_cambio: Number(data.tasa_cambio),
-        monto_bs_calculado: montoBsCalculado,
-        modalidad_pago: data.modalidad_pago,
-        documento_externo: data.url_capture
+        monto_bs: montoBsCalculado,
+        metodo_pago: data.modalidad_pago,
+        /* documento_externo */
       })
       .eq('id', id_compra)
       .eq('id_empresa', idEmpresa); // Seguridad estricta
@@ -195,10 +195,10 @@ export async function actualizarCompraPuntual(id_compra: number, data: {
   }
 }
 
-export async function eliminarCompraPuntual(id_compra: number) {
+export async function eliminarCompraPuntual(id_compra: string) {
   try {
     const { supabase, idEmpresa } = await getAuthContext();
-    // Borrado fÃ­sico
+    // Borrado fÃƒÂ­sico
     const { error } = await supabase
       .from('compras_puntuales')
       .delete()
@@ -251,4 +251,6 @@ export async function registrarFactura(
     return { success: false, error: err.message };
   }
 }
+
+
 

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { Receipt, FileText, Plus, Trash2, Save, ShoppingCart, UserPlus, Loader2, CheckCircle2, History, Search, Calendar, Edit2, X, Lock, Package } from 'lucide-react';
@@ -25,7 +25,7 @@ export default function ComprasPage() {
     fechaFin: ''
   });
 
-  // Modal de Edición
+  // Modal de EdiciÃ³n
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingRow, setEditingRow] = useState<any>(null);
 
@@ -75,7 +75,7 @@ export default function ComprasPage() {
   const initialGasto = { proveedor: '', montoDivisas: '', montoBs: '', tasaCambio: '', detalles: '', metodoPago: 'Efectivo USD', documentoExterno: '' };
   const [gasto, setGasto] = useState(initialGasto);
   
-  // Lógica Matemática Bidireccional
+  // LÃ³gica MatemÃ¡tica Bidireccional
   const handleMontoDivisasChange = (val: string) => {
     const numDiv = Number(val);
     const numTasa = Number(gasto.tasaCambio);
@@ -160,7 +160,7 @@ export default function ComprasPage() {
     }
     const productosValidos = productos.filter(p => p.id_producto !== '' && Number(p.total) > 0);
     if (productosValidos.length === 0) {
-      mostrarAlerta('Debes añadir al menos un producto válido a la factura.', 'error'); return;
+      mostrarAlerta('Debes aÃ±adir al menos un producto vÃ¡lido a la factura.', 'error'); return;
     }
     setIsSubmitting(true);
     const res = await registrarFactura(factura.proveedor, factura.nroFactura, productosValidos);
@@ -177,12 +177,12 @@ export default function ComprasPage() {
   const handleGuardarEdicion = async () => {
     setIsSubmitting(true);
     const payload = {
-      comercio_lugar: editingRow.proveedor_comercio,
+      comercio_lugar: editingRow.proveedor,
       descripcion_gasto: editingRow.detalles,
       monto_divisas: editingRow.monto_divisas,
       tasa_cambio: editingRow.tasa_cambio,
-      modalidad_pago: editingRow.modalidad_pago,
-      url_capture: editingRow.documento_externo
+      modalidad_pago: editingRow.metodo_pago,
+      url_capture: editingRow.id
     };
     
     const res = await actualizarCompraPuntual(editingRow.id, payload);
@@ -201,7 +201,7 @@ export default function ComprasPage() {
   };
 
   const handleEliminarCompra = async (id: number) => {
-    if (confirm('¿Estás seguro de eliminar este registro?')) {
+    if (confirm('Â¿EstÃ¡s seguro de eliminar este registro?')) {
       const res = await eliminarCompraPuntual(id);
       if (res.success) {
         mostrarAlerta('Registro eliminado', 'success');
@@ -215,7 +215,7 @@ export default function ComprasPage() {
   };
 
   const handleCrearProveedorRapido = async () => {
-    const nombre = prompt('Ingresa el nombre del nuevo proveedor (y RIF opcional separados por guión):');
+    const nombre = prompt('Ingresa el nombre del nuevo proveedor (y RIF opcional separados por guiÃ³n):');
     if (nombre && nombre.trim()) {
       setIsSubmitting(true);
       const res = await crearProveedor(nombre.trim());
@@ -250,14 +250,14 @@ export default function ComprasPage() {
         <div>
           <h1 className="text-2xl font-semibold text-white tracking-tight flex items-center gap-2">
             <ShoppingCart className="text-indigo-500" />
-            Gestión de Compras
+            GestiÃ³n de Compras
           </h1>
-          <p className="text-neutral-400 text-sm mt-1">Registra gastos, ingresos de mercancía y audita el historial</p>
+          <p className="text-neutral-400 text-sm mt-1">Registra gastos, ingresos de mercancÃ­a y audita el historial</p>
         </div>
 
         <div className="flex p-1 bg-neutral-900 border border-neutral-800 rounded-xl overflow-x-auto hide-scrollbar max-w-full">
           <button onClick={() => setActiveTab('insumos')} className={`flex items-center whitespace-nowrap gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'insumos' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-neutral-200'}`}>
-            <Package size={16} /> Compra Insumos (Móvil)
+            <Package size={16} /> Compra Insumos (MÃ³vil)
           </button>
           <button onClick={() => setActiveTab('puntual')} className={`flex items-center whitespace-nowrap gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'puntual' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-neutral-200'}`}>
             <Receipt size={16} /> Gastos Operativos
@@ -277,7 +277,7 @@ export default function ComprasPage() {
         </div>
       )}
 
-      {/* VISTA 0: COMPRA INSUMOS (MÓVIL) */}
+      {/* VISTA 0: COMPRA INSUMOS (MÃ“VIL) */}
       {activeTab === 'insumos' && !isLoadingDatos && (
         <div className="animate-in slide-in-from-bottom-4 duration-300">
           <MobileCompraForm />
@@ -292,7 +292,7 @@ export default function ComprasPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-3">
               <label className="block text-sm font-medium text-neutral-300 mb-1.5">Comercio / Beneficiario *</label>
-              <input type="text" value={gasto.proveedor} onChange={e => setGasto({...gasto, proveedor: e.target.value})} placeholder="Ej: Ferretería EPA" className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+              <input type="text" value={gasto.proveedor} onChange={e => setGasto({...gasto, proveedor: e.target.value})} placeholder="Ej: FerreterÃ­a EPA" className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
             </div>
 
             <div>
@@ -309,7 +309,7 @@ export default function ComprasPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-neutral-300 mb-1.5">Monto (Bolívares Bs)</label>
+              <label className="block text-sm font-medium text-neutral-300 mb-1.5">Monto (BolÃ­vares Bs)</label>
               <input type="number" value={gasto.montoBs} onChange={e => handleMontoBsChange(e.target.value)} placeholder="0.00" className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
             </div>
 
@@ -319,14 +319,14 @@ export default function ComprasPage() {
             </div>
 
             <div className="lg:col-span-2">
-              <label className="block text-sm font-medium text-neutral-300 mb-1.5">Método de Pago</label>
+              <label className="block text-sm font-medium text-neutral-300 mb-1.5">MÃ©todo de Pago</label>
               <select value={gasto.metodoPago} onChange={e => setGasto({...gasto, metodoPago: e.target.value})} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 appearance-none">
-                <option>Efectivo USD</option><option>Zelle</option><option>Pago Móvil</option><option>Transferencia Bs</option><option>Punto de Venta</option>
+                <option>Efectivo USD</option><option>Zelle</option><option>Pago MÃ³vil</option><option>Transferencia Bs</option><option>Punto de Venta</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-neutral-300 mb-1.5">Nº Documento / Referencia</label>
+              <label className="block text-sm font-medium text-neutral-300 mb-1.5">NÂº Documento / Referencia</label>
               <input type="text" value={gasto.documentoExterno} onChange={e => setGasto({...gasto, documentoExterno: e.target.value})} placeholder="(Opcional)" className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
             </div>
           </div>
@@ -339,10 +339,10 @@ export default function ComprasPage() {
         </div>
       )}
 
-      {/* HISTORIAL RECIENTE COMPACTO (SÓLO EN COMPRA PUNTUAL) */}
+      {/* HISTORIAL RECIENTE COMPACTO (SÃ“LO EN COMPRA PUNTUAL) */}
       {!isLoadingDatos && activeTab === 'puntual' && (
         <div className="mt-12 pt-8 border-t border-neutral-800 animate-in fade-in duration-700">
-          <h3 className="text-lg font-medium text-white mb-6 flex items-center gap-2"><History className="text-indigo-400" size={20} /> Últimos Movimientos Operativos</h3>
+          <h3 className="text-lg font-medium text-white mb-6 flex items-center gap-2"><History className="text-indigo-400" size={20} /> Ãšltimos Movimientos Operativos</h3>
           <div className="bg-neutral-900/50 border border-neutral-800 rounded-2xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse text-sm min-w-[600px]">
@@ -356,8 +356,8 @@ export default function ComprasPage() {
                 <tbody className="divide-y divide-neutral-800/50">
                   {ultimasCompras.map(compra => (
                     <tr key={compra.id} className="hover:bg-white/5 transition-colors text-neutral-300">
-                      <td className="py-4 px-6 whitespace-nowrap">{new Date(compra.created_at || compra.fecha).toLocaleDateString('es-VE')}</td>
-                      <td className="py-4 px-6 font-medium text-neutral-200">{compra.proveedor_comercio}</td>
+                      <td className="py-4 px-6 whitespace-nowrap">{new Date(compra.fecha_registro || compra.fecha).toLocaleDateString('es-VE')}</td>
+                      <td className="py-4 px-6 font-medium text-neutral-200">{compra.proveedor}</td>
                       <td className="py-4 px-6 text-right font-medium text-white">{formatCurrency(compra.monto_divisas)}</td>
                     </tr>
                   ))}
@@ -372,12 +372,12 @@ export default function ComprasPage() {
       )}
 
       {/* VISTA 2: FACTURA DE PROVEEDOR */}
-      {/* ... (Omitida por legibilidad pero preservada lógicamente en tu entorno local. Se re-crearía con los tabs si fuera un diff real, o se asume su permanencia si uso multi_replace, pero como uso write_to_file, la incluyo entera) */}
+      {/* ... (Omitida por legibilidad pero preservada lÃ³gicamente en tu entorno local. Se re-crearÃ­a con los tabs si fuera un diff real, o se asume su permanencia si uso multi_replace, pero como uso write_to_file, la incluyo entera) */}
       {activeTab === 'factura' && !isLoadingDatos && (
         <div className="bg-neutral-900/50 border border-neutral-800 rounded-2xl shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-300 flex flex-col">
-          {/* Conservamos el código de la Factura de Proveedor que ya hicimos */}
+          {/* Conservamos el cÃ³digo de la Factura de Proveedor que ya hicimos */}
           <div className="p-6 border-b border-neutral-800 bg-neutral-900/80">
-            <h2 className="text-lg font-medium text-white mb-6">Ingreso de Mercancía de Proveedor</h2>
+            <h2 className="text-lg font-medium text-white mb-6">Ingreso de MercancÃ­a de Proveedor</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-neutral-300 mb-1.5">Proveedor Oficial</label>
@@ -390,7 +390,7 @@ export default function ComprasPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-300 mb-1.5">Número de Factura Física</label>
+                <label className="block text-sm font-medium text-neutral-300 mb-1.5">NÃºmero de Factura FÃ­sica</label>
                 <input type="text" value={factura.nroFactura} onChange={e => setFactura({...factura, nroFactura: e.target.value})} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
               </div>
             </div>
@@ -399,7 +399,7 @@ export default function ComprasPage() {
             <table className="w-full text-left border-collapse min-w-[700px]">
               <thead>
                 <tr className="text-neutral-400 text-sm border-b border-neutral-800">
-                  <th className="pb-3 font-medium w-[40%]">Producto Base (Catálogo)</th>
+                  <th className="pb-3 font-medium w-[40%]">Producto Base (CatÃ¡logo)</th>
                   <th className="pb-3 font-medium w-[15%]">Cantidad</th>
                   <th className="pb-3 font-medium w-[20%]">Costo Unit. ($)</th>
                   <th className="pb-3 font-medium w-[20%]">Total ($)</th>
@@ -423,7 +423,7 @@ export default function ComprasPage() {
                 ))}
               </tbody>
             </table>
-            <button onClick={addProducto} className="mt-4 flex items-center gap-2 text-sm text-indigo-400 font-medium hover:text-indigo-300 transition-colors px-2 py-1 rounded-lg hover:bg-indigo-500/10"><Plus size={16} /> Agregar línea</button>
+            <button onClick={addProducto} className="mt-4 flex items-center gap-2 text-sm text-indigo-400 font-medium hover:text-indigo-300 transition-colors px-2 py-1 rounded-lg hover:bg-indigo-500/10"><Plus size={16} /> Agregar lÃ­nea</button>
           </div>
           <div className="p-6 bg-black/20 border-t border-neutral-800 flex flex-col md:flex-row justify-between items-center gap-4">
             <div><p className="text-neutral-400 text-sm">Costo Total Factura</p><p className="text-3xl font-bold text-white tracking-tight">{formatCurrency(totalFactura)}</p></div>
@@ -477,8 +477,8 @@ export default function ComprasPage() {
                 <tbody className="divide-y divide-neutral-800/50">
                   {historialCompleto.map(compra => (
                     <tr key={compra.id} className="hover:bg-white/5 transition-colors text-neutral-300">
-                      <td className="py-4 px-6 whitespace-nowrap">{new Date(compra.created_at || compra.fecha).toLocaleString('es-VE')}</td>
-                      <td className="py-4 px-6 font-medium text-neutral-200">{compra.proveedor_comercio}</td>
+                      <td className="py-4 px-6 whitespace-nowrap">{new Date(compra.fecha_registro || compra.fecha).toLocaleString('es-VE')}</td>
+                      <td className="py-4 px-6 font-medium text-neutral-200">{compra.proveedor}</td>
                       <td className="py-4 px-6 max-w-[200px] truncate" title={compra.detalles}>{compra.detalles}</td>
                       <td className="py-4 px-6">{compra.documento_externo || '-'}</td>
                       <td className="py-4 px-6 text-right font-medium text-white">{formatCurrency(compra.monto_divisas)}</td>
@@ -505,7 +505,7 @@ export default function ComprasPage() {
         </div>
       )}
 
-      {/* MODAL DE EDICIÓN */}
+      {/* MODAL DE EDICIÃ“N */}
       {isEditModalOpen && editingRow && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
@@ -519,7 +519,7 @@ export default function ComprasPage() {
               <div className="grid grid-cols-2 gap-5">
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-neutral-400 mb-1.5">Proveedor / Comercio</label>
-                  <input type="text" value={editingRow.proveedor_comercio} onChange={e => setEditingRow({...editingRow, proveedor_comercio: e.target.value})} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500" />
+                  <input type="text" value={editingRow.proveedor} onChange={e => setEditingRow({...editingRow, proveedor_comercio: e.target.value})} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-400 mb-1.5">Monto ($)</label>
@@ -534,14 +534,14 @@ export default function ComprasPage() {
                   <textarea rows={2} value={editingRow.detalles} onChange={e => setEditingRow({...editingRow, detalles: e.target.value})} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-400 mb-1.5">Método de Pago</label>
-                  <select value={editingRow.modalidad_pago} onChange={e => setEditingRow({...editingRow, modalidad_pago: e.target.value})} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 appearance-none">
-                    <option>Efectivo USD</option><option>Zelle</option><option>Pago Móvil</option><option>Transferencia Bs</option><option>Punto de Venta</option>
+                  <label className="block text-sm font-medium text-neutral-400 mb-1.5">MÃ©todo de Pago</label>
+                  <select value={editingRow.metodo_pago} onChange={e => setEditingRow({...editingRow, modalidad_pago: e.target.value})} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 appearance-none">
+                    <option>Efectivo USD</option><option>Zelle</option><option>Pago MÃ³vil</option><option>Transferencia Bs</option><option>Punto de Venta</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-400 mb-1.5">Ref / Documento</label>
-                  <input type="text" value={editingRow.documento_externo || ''} onChange={e => setEditingRow({...editingRow, documento_externo: e.target.value})} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500" />
+                  <input type="text" value={editingRow.id || ''} onChange={e => setEditingRow({...editingRow, documento_externo: e.target.value})} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500" />
                 </div>
               </div>
             </div>
@@ -559,3 +559,4 @@ export default function ComprasPage() {
     </div>
   );
 }
+
