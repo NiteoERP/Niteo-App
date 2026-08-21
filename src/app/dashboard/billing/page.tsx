@@ -6,16 +6,18 @@ import { Loader2 } from 'lucide-react';
 
 export default function BillingPage() {
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const handleActivarTrial = async () => {
     setLoading(true);
+    setErrorMsg('');
     const supabase = createClient();
     
     // Llamar a la función RPC
     const { error } = await supabase.rpc('rpc_activar_trial');
     
     if (error) {
-      alert("Error al activar Trial: " + error.message);
+      setErrorMsg("Error al activar Trial: " + error.message);
       setLoading(false);
     } else {
       // Recargar la página fuerte para que el middleware valide la nueva suscripción
@@ -32,6 +34,12 @@ export default function BillingPage() {
       <p className="text-neutral-400 max-w-md">
         No pudimos validar una suscripción activa para tu empresa. Por favor, contacta con soporte o activa tu periodo de prueba para continuar utilizando Niteo ERP.
       </p>
+
+      {errorMsg && (
+        <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 px-4 py-3 rounded-xl max-w-md text-sm font-medium">
+          {errorMsg}
+        </div>
+      )}
       
       <div className="flex items-center gap-4 pt-4">
         <a href="mailto:soporte@niteo.app" className="px-6 py-3 bg-neutral-800 hover:bg-neutral-700 text-white rounded-xl font-medium transition-colors border border-neutral-700">
