@@ -74,7 +74,7 @@ export default function MobileCompraForm() {
       nombre_nuevo: isNewInsumo ? newInsumoName : selectedInsumo!.nombre,
       unidad_nueva: isNewInsumo ? newInsumoUnit : selectedInsumo!.unidad_medida,
       cantidad: parseFloat(cantidad),
-      costoTotal: parseFloat(costo) * parseFloat(cantidad),
+      costoTotal: parseFloat(costo),
       monedaItem: monedaInput
     };
 
@@ -310,7 +310,7 @@ export default function MobileCompraForm() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-400 mb-1">Costo Unit.</label>
+                <label className="block text-sm font-medium text-neutral-400 mb-1">Costo Total</label>
                 <input 
                   type="number" 
                   min="0.01" step="0.01"
@@ -351,7 +351,7 @@ export default function MobileCompraForm() {
                   <div key={item.id} className="bg-neutral-950 border border-neutral-800 rounded-lg p-3 flex justify-between items-center">
                     <div>
                       <p className="text-white font-medium text-sm">{item.nombre_nuevo} {item.is_new && <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded ml-1">NUEVO</span>}</p>
-                      <p className="text-neutral-500 text-xs">{item.cantidad} {item.unidad_nueva} x {item.costoTotal} {item.monedaItem}</p>
+                      <p className="text-neutral-500 text-xs">{item.cantidad} {item.unidad_nueva} • {item.monedaItem} {item.costoTotal.toFixed(2)} Total <span className="text-[10px] opacity-60">({(item.costoTotal / item.cantidad).toFixed(2)} c/u)</span></p>
                     </div>
                     <button onClick={() => removeFromCart(item.id)} className="text-rose-400 hover:bg-rose-500/20 p-2 rounded-lg">
                       <Trash2 size={16} />
@@ -381,3 +381,4 @@ export default function MobileCompraForm() {
     </div>
   );
 }
+
