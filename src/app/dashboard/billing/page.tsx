@@ -14,6 +14,9 @@ export default function BillingPage() {
       try {
         const res = await activarTrialAction();
         if (res.success) {
+          const { createClient } = await import('@/utils/supabase/client');
+          const supabase = createClient();
+          await supabase.auth.refreshSession();
           window.location.href = '/dashboard';
         } else {
           setErrorMsg("Servidor rechazó activación: " + res.error);

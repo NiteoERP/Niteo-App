@@ -84,18 +84,15 @@ export async function middleware(request: NextRequest) {
       }
 
       if (profile) {
-        // DESACTIVADO TEMPORALMENTE PARA EVITAR BLOQUEOS
-        // const { data: sub } = await supabase
-        //  .from('suscripciones_empresas')
-        //  .select('estado')
-        //  .eq('empresa_id', profile.empresa_id)
-        //  .single();
-
-        // if (!sub || sub.estado === 'VENCIDA' || sub.estado === 'SUSPENDIDA') {
-        //  const url = request.nextUrl.clone();
-        //  url.pathname = '/dashboard/billing';
-        //  return NextResponse.redirect(url);
-        // }
+        // 3. Validación de Suscripción (ZERO-LATENCY a través del JWT)
+        const subscription_status = user.app_metadata?.subscription_status;
+        
+        // Si no tiene suscripción activa o trial -> Bloqueo total
+        if (subscription_status !== 'ACTIVA') {
+          const url = request.nextUrl.clone();
+          url.pathname = '/dashboard/billing';
+          return NextResponse.redirect(url);
+        }
 
         // 4. HARDENING DE ROLES EN FRONTEND
         const protectedAdminRoutes = ['/dashboard/gastos', '/dashboard/finanzas', '/dashboard/cierre'];
