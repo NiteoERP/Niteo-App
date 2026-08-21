@@ -1,15 +1,18 @@
-'use server';
+﻿'use server';
 
 import { createClient } from '@/utils/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 
-export async function updateMemberRole(memberId: string, newRole: string) {
+export async function updateMemberAccess(memberId: string, permisos: string[], sede_id: string | null) {
   const supabase = await createClient();
   
   const { error } = await supabase
     .from('perfiles')
-    .update({ rol: newRole })
+    .update({ 
+      permisos,
+      sede_id: sede_id === 'ALL' ? null : sede_id
+    })
     .eq('id', memberId);
 
   if (error) {
@@ -20,12 +23,16 @@ export async function updateMemberRole(memberId: string, newRole: string) {
   return { success: true };
 }
 
-export async function createUser(email: string, password: string, nombreCompleto: string, rol: string) {
+export async function createUser(email: string, password: string, nombreCompleto: string, permisos: string[], sede_id: string | null) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const empresaId = user?.app_metadata?.empresa_id;
   
-  if (!empresaId || user?.app_metadata?.user_role !== 'MASTER') {
+  // Checking authorization. We allow MASTER, ADMIN, GERENTE to create users. 
+  // For simplicity, we check if they have 'usuarios' in their permissions
+  const { data: profile } = await supabase.from('perfiles').select('permisos').eq('id', user?.id).single();
+  
+  if (!empresaId || (!profile?.permisos?.includes('usuarios') && user?.app_metadata?.user_role !== 'MASTER')) {
     return { success: false, error: 'No autorizado' };
   }
 
@@ -42,8 +49,7 @@ export async function createUser(email: string, password: string, nombreCompleto
       nombre_completo: nombreCompleto,
     },
     app_metadata: {
-      empresa_id: empresaId,
-      user_role: rol
+      empresa_id: empresaId
     }
   });
 
@@ -52,8 +58,11 @@ export async function createUser(email: string, password: string, nombreCompleto
   }
 
   // The database trigger might handle perfiles insertion automatically, 
-  // but if we need to force update the role:
-  await supabaseAdmin.from('perfiles').update({ rol }).eq('id', newUser.user.id);
+  // so we update the created profile with the new permissions and sede
+  await supabaseAdmin.from('perfiles').update({ 
+    permisos, 
+    sede_id: sede_id === 'ALL' ? null : sede_id 
+  }).eq('id', newUser.user.id);
 
   revalidatePath('/dashboard/equipo');
   return { success: true };
