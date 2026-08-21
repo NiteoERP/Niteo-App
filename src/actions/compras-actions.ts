@@ -12,13 +12,14 @@ export async function registrarCompra(formData: FormData) {
     return { error: 'Debes iniciar sesión para registrar compras.' };   
   }    
   // Obtener perfil para sacar empresa_id y sede_id   
-  const { data: profile } = await supabase     
-    .from('perfiles')     
-    .select('empresa_id, sede_id')     
-    .eq('id', user.id)     
-    .single();    
-  if (!profile) {     
-    return { error: 'No se pudo obtener el perfil del usuario.' };   
+  const { data: profile } = await supabase.from('perfiles').select('empresa_id, sede_id').eq('id', user.id).single();
+  if (!profile) return { error: 'No se pudo obtener el perfil del usuario.' };
+
+  let activeSedeId = profile.sede_id;
+  if (!activeSedeId) {
+    const { data: sedes } = await supabase.from('sedes').select('id').eq('empresa_id', profile.empresa_id).limit(1).single();
+    if (sedes) activeSedeId = sedes.id;
+    else return { error: 'Crea una sede primero.' };
   }    
   // 2. Extraer datos del formulario   
   let insumo_id = formData.get('insumo_id') as string;   
@@ -45,7 +46,7 @@ export async function registrarCompra(formData: FormData) {
       .from('inventario_insumos')       
       .insert({         
         empresa_id: profile.empresa_id,         
-        sede_id: profile.sede_id,         
+        sede_id: activeSedeId,         
         nombre: nombre_nuevo_insumo,         
         unidad_medida: unidad_medida_nueva,         
         cantidad_actual: 0,         
@@ -82,17 +83,19 @@ export async function getInsumos() {
   const supabase = await createClient();      
   const { data: { user } } = await supabase.auth.getUser();   
   if (!user) return [];    
-  const { data: profile } = await supabase     
-    .from('perfiles')     
-    .select('sede_id')     
-    .eq('id', user.id)     
-    .single();    
-  if (!profile?.sede_id) return [];    
+  const { data: profile } = await supabase.from('perfiles').select('empresa_id, sede_id').eq('id', user.id).single();
+  if (!profile) return [];
+
+  let activeSedeId = profile.sede_id;
+  if (!activeSedeId) {
+    const { data: sedes } = await supabase.from('sedes').select('id').eq('empresa_id', profile.empresa_id).limit(1).single();
+    if (sedes) activeSedeId = sedes.id;
+  }    
   // Filtramos estrictamente por sede_id (tienda) para que no se crucen insumos   
   const { data, error } = await supabase     
     .from('inventario_insumos')     
     .select('id, nombre, unidad_medida')     
-    .eq('sede_id', profile.sede_id)     
+    .eq('sede_id', activeSedeId)     
     .order('nombre', { ascending: true })     
     .limit(50);    
   if (error) {     
@@ -123,8 +126,15 @@ export async function registrarFacturaInsumos(factura: {
   const supabase = await createClient();   
   const { data: { user } } = await supabase.auth.getUser();   
   if (!user) return { error: 'No autorizado.' };    
-  const { data: profile } = await supabase.from('perfiles').select('empresa_id, sede_id').eq('id', user.id).single();   
-  if (!profile) return { error: 'Perfil no encontrado.' };    
+  const { data: profile } = await supabase.from('perfiles').select('empresa_id, sede_id').eq('id', user.id).single();
+  if (!profile) return { error: 'Perfil no encontrado.' };
+
+  let activeSedeId = profile.sede_id;
+  if (!activeSedeId) {
+    const { data: sedes } = await supabase.from('sedes').select('id').eq('empresa_id', profile.empresa_id).limit(1).single();
+    if (sedes) activeSedeId = sedes.id;
+    else return { error: 'Crea una sede primero.' };
+  }    
   let montoTotalDivisas = 0;   
   let montoTotalBs = 0;    
   for (const item of factura.items) {     
@@ -137,7 +147,7 @@ export async function registrarFacturaInsumos(factura: {
   montoTotalBs = montoTotalDivisas * factura.tasa;    
   const { data: header, error: headErr } = await supabase.from('compras_puntuales').insert({     
     id_empresa: profile.empresa_id,     
-    id_sede: profile.sede_id,     
+    id_sede: activeSedeId,     
     proveedor: factura.proveedor,     
     monto_divisas: montoTotalDivisas,     
     monto_bs: montoTotalBs,     
@@ -152,7 +162,7 @@ export async function registrarFacturaInsumos(factura: {
     if (item.is_new && item.nombre_nuevo) {       
       const { data: newIns } = await supabase.from('inventario_insumos').insert({         
         empresa_id: profile.empresa_id,         
-        sede_id: profile.sede_id,         
+        sede_id: activeSedeId,         
         nombre: item.nombre_nuevo,         
         unidad_medida: item.unidad_nueva,         
         cantidad_actual: 0,         
@@ -175,3 +185,6 @@ export async function registrarFacturaInsumos(factura: {
   revalidatePath('/dashboard/compras');   
   return { success: true }; 
 }
+
+
+
