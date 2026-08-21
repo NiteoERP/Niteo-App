@@ -11,17 +11,21 @@ export default function BillingPage() {
   const handleActivarTrial = async () => {
     setLoading(true);
     setErrorMsg('');
-    const supabase = createClient();
-    
-    // Llamar a la función RPC
-    const { error } = await supabase.rpc('rpc_activar_trial');
-    
-    if (error) {
-      setErrorMsg("Error al activar Trial: " + error.message);
+    try {
+      // Usar Server Action importado dinámicamente o fetch a un API si no es Server Component puro.
+      // Mejor importar la acción en la parte superior: import { activarTrialAction } from '@/actions/billing-actions';
+      const { activarTrialAction } = await import('@/actions/billing-actions');
+      const res = await activarTrialAction();
+      
+      if (res.success) {
+        window.location.href = '/dashboard';
+      } else {
+        setErrorMsg("Error de validación: " + res.error);
+        setLoading(false);
+      }
+    } catch (e: any) {
+      setErrorMsg("Fallo crítico en el navegador: " + e.message);
       setLoading(false);
-    } else {
-      // Recargar la página fuerte para que el middleware valide la nueva suscripción
-      window.location.href = '/dashboard';
     }
   };
 
