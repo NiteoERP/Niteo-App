@@ -4,6 +4,8 @@ import React, { useOptimistic, useTransition, useState } from 'react';
 import { updateMemberRole } from './actions';
 import { UserCircle, Shield, ShieldAlert, Loader2, CheckCircle2 } from 'lucide-react';
 
+import AddUserModal from './AddUserModal';
+
 type Member = {
   id: string;
   nombre_completo: string;
@@ -46,8 +48,11 @@ export default function TeamManager({ initialMembers, currentUserId }: { initial
   return (
     <div className="bg-neutral-900 border border-neutral-800 rounded-2xl shadow-xl overflow-hidden">
       <div className="p-4 border-b border-neutral-800 flex items-center justify-between">
-        <h2 className="font-medium text-white">Miembros del equipo ({optimisticMembers.length})</h2>
-        {isPending && <span className="text-xs text-indigo-400 flex items-center gap-1 animate-pulse"><Loader2 size={12} className="animate-spin" /> Sincronizando...</span>}
+        <h2 className="font-medium text-white flex items-center gap-3">Miembros del equipo ({optimisticMembers.length})</h2>
+        <div className="flex items-center gap-4">
+          {isPending && <span className="text-xs text-indigo-400 flex items-center gap-1 animate-pulse"><Loader2 size={12} className="animate-spin" /> Sincronizando...</span>}
+          <AddUserModal />
+        </div>
       </div>
 
       <div className="overflow-x-auto">
