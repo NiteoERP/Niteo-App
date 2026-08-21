@@ -13,9 +13,9 @@ export default async function InventarioPage({ searchParams }: { searchParams: {
 
   const currentTab = searchParams.tab || 'insumos';
 
-  let insumos = [];
-  let productos = [];
-  let recetas = [];
+  let insumos: any[] = [];
+  let productos: any[] = [];
+  let recetas: any[] = [];
 
   if (currentTab === 'insumos') {
     const { data } = await supabase.from('insumos').select('*').eq('empresa_id', empresaId).order('creado_en', { ascending: false });

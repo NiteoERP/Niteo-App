@@ -35,19 +35,7 @@ export default function ProductosEnriquecidos({ productos, insumos, recetas, emp
     });
   };
 
-  const handleAddIngredient = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const form = e.target as HTMLFormElement;
-    const insumoId = (form.elements.namedItem('insumo_id') as HTMLSelectElement).value;
-    const cantidad = parseFloat((form.elements.namedItem('cantidad') as HTMLInputElement).value);
-    
-    if (!insumoId || !cantidad || !selectedProduct) return;
-    
-    startTransition(async () => {
-      await addInsumoToReceta(empresaId, selectedProduct.id_producto, insumoId, cantidad);
-      form.reset();
-    });
-  };
+
 
   const handleRemoveIngredient = async (recetaId: string) => {
     startTransition(async () => {
