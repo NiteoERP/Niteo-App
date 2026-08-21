@@ -255,7 +255,7 @@ export default function ComprasPage() {
           <p className="text-neutral-400 text-sm mt-1">Registra gastos, ingresos de mercancía y audita el historial</p>
         </div>
 
-        <div className="flex p-1 bg-neutral-900 border border-neutral-800 rounded-xl overflow-x-auto max-w-full">
+        <div className="flex p-1 bg-neutral-900 border border-neutral-800 rounded-xl overflow-x-auto hide-scrollbar max-w-full">
           <button onClick={() => setActiveTab('insumos')} className={`flex items-center whitespace-nowrap gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'insumos' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-neutral-200'}`}>
             <Package size={16} /> Compra Insumos (Móvil)
           </button>
@@ -344,7 +344,7 @@ export default function ComprasPage() {
         <div className="mt-12 pt-8 border-t border-neutral-800 animate-in fade-in duration-700">
           <h3 className="text-lg font-medium text-white mb-6 flex items-center gap-2"><History className="text-indigo-400" size={20} /> Últimos Movimientos Operativos</h3>
           <div className="bg-neutral-900/50 border border-neutral-800 rounded-2xl overflow-hidden shadow-sm">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse text-sm min-w-[600px]">
                 <thead>
                   <tr className="bg-black/40 border-b border-neutral-800 text-neutral-400">
@@ -395,7 +395,7 @@ export default function ComprasPage() {
               </div>
             </div>
           </div>
-          <div className="p-6 overflow-x-auto">
+          <div className="p-6 overflow-x-auto custom-scrollbar">
             <table className="w-full text-left border-collapse min-w-[700px]">
               <thead>
                 <tr className="text-neutral-400 text-sm border-b border-neutral-800">
@@ -462,7 +462,7 @@ export default function ComprasPage() {
 
           {/* Tabla de Historial */}
           <div className="bg-neutral-900/50 border border-neutral-800 rounded-2xl overflow-hidden shadow-sm">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse text-sm min-w-[900px]">
                 <thead>
                   <tr className="bg-black/40 border-b border-neutral-800 text-neutral-400">
