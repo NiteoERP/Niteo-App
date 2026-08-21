@@ -64,6 +64,11 @@ export default function BillingPage() {
           {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Probar Versión PRO (7 Días)'}
         </button>
       </div>
+
+      <p className="text-xs text-neutral-600 mt-8 font-mono">
+        Debug Info: <br/>
+        {typeof window !== 'undefined' ? window.location.search : 'Server'}
+      </p>
     </div>
   );
 }

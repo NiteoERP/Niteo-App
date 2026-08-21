@@ -84,19 +84,18 @@ export async function middleware(request: NextRequest) {
       }
 
       if (profile) {
-        // Validar suscripción (Ahora con RLS seguro basado en JWT, no necesitamos Service Role)
-        const { data: sub } = await supabase
-          .from('suscripciones_empresas')
-          .select('estado')
-          .eq('empresa_id', profile.empresa_id)
-          .single();
+        // DESACTIVADO TEMPORALMENTE PARA EVITAR BLOQUEOS
+        // const { data: sub } = await supabase
+        //  .from('suscripciones_empresas')
+        //  .select('estado')
+        //  .eq('empresa_id', profile.empresa_id)
+        //  .single();
 
-        // Si no tiene suscripción o está vencida/suspendida -> Bloqueo total
-        if (!sub || sub.estado === 'VENCIDA' || sub.estado === 'SUSPENDIDA') {
-          const url = request.nextUrl.clone();
-          url.pathname = '/dashboard/billing';
-          return NextResponse.redirect(url);
-        }
+        // if (!sub || sub.estado === 'VENCIDA' || sub.estado === 'SUSPENDIDA') {
+        //  const url = request.nextUrl.clone();
+        //  url.pathname = '/dashboard/billing';
+        //  return NextResponse.redirect(url);
+        // }
 
         // 4. HARDENING DE ROLES EN FRONTEND
         const protectedAdminRoutes = ['/dashboard/gastos', '/dashboard/finanzas', '/dashboard/cierre'];
