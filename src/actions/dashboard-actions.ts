@@ -39,7 +39,7 @@ export async function getDashboardData(range: string, sedeId?: string | null) {
       break;
   }
 
-  const { data: metrics, error } = await supabase.rpc('get_dashboard_metrics_real', {
+  const { data: metrics, error } = await supabase.rpc('get_dashboard_rentabilidad', {
     p_empresa_id: profile.empresa_id,
     p_fecha_inicio: startDate.toISOString(),
     p_fecha_fin: endDate.toISOString(),
