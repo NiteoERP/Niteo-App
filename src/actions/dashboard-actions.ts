@@ -9,13 +9,15 @@ export async function getDashboardData(range: string, sedeId?: string | null) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("No autenticado");
 
+  // Fetch rol as well to know if they are global
   const { data: profile } = await supabase
     .from('perfiles')
-    .select('sede_id, empresa_id')
+    .select('sede_id, empresa_id, rol')
     .eq('id', user.id)
     .single();
 
   if (!profile) throw new Error("Perfil no encontrado");
+  const isGlobalUser = ['MASTER', 'ADMIN', 'GERENTE'].includes(profile.rol);
 
   // Definir rangos de fechas
   const now = new Date();
@@ -39,8 +41,9 @@ export async function getDashboardData(range: string, sedeId?: string | null) {
       break;
   }
 
-  // Si el perfil tiene una sede fija, OBLIGATORIAMENTE usamos esa sede. Si no, usamos la que pida el cliente (o null para global)
-  const finalSedeId = profile.sede_id ? profile.sede_id : (sedeId || null);
+  // Si el perfil tiene una sede fija y NO es global, OBLIGATORIAMENTE usamos esa sede. 
+  // Si es global, usamos la que pida el cliente (o null para todas)
+  const finalSedeId = (!isGlobalUser && profile.sede_id) ? profile.sede_id : (sedeId === 'ALL' ? null : (sedeId || null));
 
   const { data: metrics, error } = await supabase.rpc('get_dashboard_rentabilidad', {
     p_empresa_id: profile.empresa_id,
@@ -62,15 +65,17 @@ export async function getSedes() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const { data: profile } = await supabase.from('perfiles').select('empresa_id, sede_id').eq('id', user.id).single();
+  const { data: profile } = await supabase.from('perfiles').select('empresa_id, sede_id, rol').eq('id', user.id).single();
   if (!profile) return [];
 
-  // Si el perfil ya está anclado a una sede, devolvemos vacío para NO mostrar el selector global en la UI
-  if (profile.sede_id) {
+  const isGlobalUser = ['MASTER', 'ADMIN', 'GERENTE'].includes(profile.rol);
+
+  // Si el perfil está anclado a una sede Y no es un usuario global, no mostramos selector
+  if (profile.sede_id && !isGlobalUser) {
     return [];
   }
 
-  // Si tiene acceso global (sede_id IS NULL), devolvemos todas las sedes de la empresa
+  // Devolvemos todas las sedes de la empresa para que puedan filtrar
   const { data } = await supabase.from('sedes').select('id, nombre, direccion').eq('empresa_id', profile.empresa_id);
   return data || [];
 }

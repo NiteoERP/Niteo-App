@@ -142,18 +142,6 @@ export default async function DashboardLayout({
           </div>
           
           <div className="flex items-center gap-6">
-            <div className="relative hidden sm:block">
-              <select className="appearance-none bg-neutral-900 border border-neutral-700 text-neutral-300 text-sm rounded-lg pl-3 pr-8 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
-                <option>Sede Principal</option>
-                <option>Sucursal Cabimas</option>
-              </select>
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg className="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                </svg>
-              </div>
-            </div>
-            
             <div className="flex items-center gap-4">
               
               {/* BADGE DE SUSCRIPCIÓN */}
