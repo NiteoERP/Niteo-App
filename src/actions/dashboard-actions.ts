@@ -39,11 +39,14 @@ export async function getDashboardData(range: string, sedeId?: string | null) {
       break;
   }
 
+  // Si el perfil tiene una sede fija, OBLIGATORIAMENTE usamos esa sede. Si no, usamos la que pida el cliente (o null para global)
+  const finalSedeId = profile.sede_id ? profile.sede_id : (sedeId || null);
+
   const { data: metrics, error } = await supabase.rpc('get_dashboard_rentabilidad', {
     p_empresa_id: profile.empresa_id,
     p_fecha_inicio: startDate.toISOString(),
     p_fecha_fin: endDate.toISOString(),
-    p_sede_id: sedeId || null
+    p_sede_id: finalSedeId
   });
 
   if (error) {
@@ -59,9 +62,15 @@ export async function getSedes() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const { data: profile } = await supabase.from('perfiles').select('empresa_id, rol').eq('id', user.id).single();
-  if (!profile || profile.rol !== 'MASTER') return [];
+  const { data: profile } = await supabase.from('perfiles').select('empresa_id, sede_id').eq('id', user.id).single();
+  if (!profile) return [];
 
+  // Si el perfil ya está anclado a una sede, devolvemos vacío para NO mostrar el selector global en la UI
+  if (profile.sede_id) {
+    return [];
+  }
+
+  // Si tiene acceso global (sede_id IS NULL), devolvemos todas las sedes de la empresa
   const { data } = await supabase.from('sedes').select('id, nombre, direccion').eq('empresa_id', profile.empresa_id);
   return data || [];
 }
