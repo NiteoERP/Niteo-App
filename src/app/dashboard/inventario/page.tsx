@@ -4,14 +4,15 @@ import InsumosManager from './InsumosManager';
 import ProductosEnriquecidos from './ProductosEnriquecidos';
 import { Package, Beaker, FileBox } from 'lucide-react';
 
-export default async function InventarioPage({ searchParams }: { searchParams: { tab?: string } }) {
+export default async function InventarioPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  const params = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const empresaId = user?.app_metadata?.empresa_id;
 
   if (!empresaId) return <div className="p-8 text-rose-400">Error: No tienes empresa configurada.</div>;
 
-  const currentTab = searchParams.tab || 'insumos';
+  const currentTab = params.tab || 'insumos';
 
   let insumos: any[] = [];
   let productos: any[] = [];
