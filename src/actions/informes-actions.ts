@@ -48,6 +48,10 @@ export async function generateReport(
       rpcName = 'get_reporte_cuentas_por_cobrar';
       rpcParams = { p_empresa_id: profile.empresa_id, p_sede_id };
       break;
+    case 'cuentas_abiertas':
+      rpcName = 'get_reporte_cuentas_abiertas';
+      rpcParams = { p_empresa_id: profile.empresa_id, p_sede_id };
+      break;
     default:
       return { success: false, error: "Reporte no implementado todavía." };
   }
