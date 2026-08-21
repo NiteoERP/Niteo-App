@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useTransition } from 'react';
 import { getInsumos, getTasaDelDia } from '@/actions/compras-actions';
@@ -39,6 +39,7 @@ export default function MobileCompraForm() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [cantidad, setCantidad] = useState('');
   const [costo, setCosto] = useState('');
+  const [tipoCosto, setTipoCosto] = useState<'total' | 'unitario'>('total');
   const [monedaInput, setMonedaInput] = useState<'USD'|'VES'>('USD');
 
   // Cart
@@ -67,14 +68,18 @@ export default function MobileCompraForm() {
     if (isNewInsumo && !newInsumoName) return;
     if (!isNewInsumo && !selectedInsumo) return;
 
+    const c = parseFloat(costo);
+    const qty = parseFloat(cantidad);
+    const finalCostoTotal = tipoCosto === 'total' ? c : c * qty;
+
     const newItem: CartItem = {
       id: Math.random().toString(),
       insumo_id: isNewInsumo ? null : selectedInsumo!.id,
       is_new: isNewInsumo,
       nombre_nuevo: isNewInsumo ? newInsumoName : selectedInsumo!.nombre,
       unidad_nueva: isNewInsumo ? newInsumoUnit : selectedInsumo!.unidad_medida,
-      cantidad: parseFloat(cantidad),
-      costoTotal: parseFloat(costo),
+      cantidad: qty,
+      costoTotal: finalCostoTotal,
       monedaItem: monedaInput
     };
 
@@ -310,7 +315,18 @@ export default function MobileCompraForm() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-400 mb-1">Costo Total</label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-sm font-medium text-neutral-400">
+                    {tipoCosto === 'total' ? 'Costo Total' : 'Costo Unit.'}
+                  </label>
+                  <button 
+                    type="button"
+                    onClick={() => setTipoCosto(tipoCosto === 'total' ? 'unitario' : 'total')}
+                    className="text-[10px] bg-neutral-800 text-neutral-400 hover:text-white px-1.5 py-0.5 rounded cursor-pointer transition-colors"
+                  >
+                    Usar {tipoCosto === 'total' ? 'Unitario' : 'Total'}
+                  </button>
+                </div>
                 <input 
                   type="number" 
                   min="0.01" step="0.01"
@@ -338,7 +354,7 @@ export default function MobileCompraForm() {
               disabled={!cantidad || !costo || (!selectedInsumo && !isNewInsumo)}
               className="w-full bg-neutral-800 hover:bg-neutral-700 text-white font-medium py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              <Plus size={18} /> AÃ±adir a la Lista
+              <Plus size={18} /> Añadir a la Lista
             </button>
           </div>
 
@@ -381,4 +397,5 @@ export default function MobileCompraForm() {
     </div>
   );
 }
+
 
