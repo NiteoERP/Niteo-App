@@ -60,6 +60,7 @@ export default function OnboardingPage() {
       }
       
       // Forzar la actualización del JWT para que el middleware vea el empresa_id
+      const supabase = createClient();
       await supabase.auth.refreshSession();
       
       setMasterKey(res.masterKey);
@@ -245,6 +246,7 @@ export default function OnboardingPage() {
             <button
             onClick={async () => {
               // Refrescar el token JWT para que el middleware lea el nuevo empresa_id
+              const supabase = createClient();
               await supabase.auth.refreshSession();
               window.location.href = '/dashboard';
             }}
