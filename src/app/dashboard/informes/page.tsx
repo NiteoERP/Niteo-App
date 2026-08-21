@@ -285,8 +285,9 @@ export default function InformesPage() {
                  </table>
                </div>
 
+              </div>
             </div>
-         </div>
+          </div>
       )}
 
     </div>
