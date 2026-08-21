@@ -1,32 +1,27 @@
 'use client';
 
-import React, { useState } from 'react';
-import { createClient } from '@/utils/supabase/client';
+import React, { useState, useTransition } from 'react';
 import { Loader2 } from 'lucide-react';
+import { activarTrialAction } from '@/actions/billing-actions';
 
 export default function BillingPage() {
-  const [loading, setLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [errorMsg, setErrorMsg] = useState('');
 
-  const handleActivarTrial = async () => {
-    setLoading(true);
+  const handleActivarTrial = () => {
     setErrorMsg('');
-    try {
-      // Usar Server Action importado dinámicamente o fetch a un API si no es Server Component puro.
-      // Mejor importar la acción en la parte superior: import { activarTrialAction } from '@/actions/billing-actions';
-      const { activarTrialAction } = await import('@/actions/billing-actions');
-      const res = await activarTrialAction();
-      
-      if (res.success) {
-        window.location.href = '/dashboard';
-      } else {
-        setErrorMsg("Error de validación: " + res.error);
-        setLoading(false);
+    startTransition(async () => {
+      try {
+        const res = await activarTrialAction();
+        if (res.success) {
+          window.location.href = '/dashboard';
+        } else {
+          setErrorMsg("Servidor rechazó activación: " + res.error);
+        }
+      } catch (e: any) {
+        setErrorMsg("Error de red: " + e.message);
       }
-    } catch (e: any) {
-      setErrorMsg("Fallo crítico en el navegador: " + e.message);
-      setLoading(false);
-    }
+    });
   };
 
   return (
@@ -45,13 +40,13 @@ export default function BillingPage() {
             <div className="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">Error de Activación</h3>
+            <h3 className="text-xl font-bold text-white mb-2">Alerta del Sistema</h3>
             <p className="text-sm text-neutral-400 mb-6">{errorMsg}</p>
             <button 
               onClick={() => setErrorMsg('')}
               className="w-full bg-neutral-800 hover:bg-neutral-700 text-white font-medium py-3 rounded-xl transition-colors"
             >
-              Entendido
+              Cerrar Alerta
             </button>
           </div>
         </div>
@@ -63,10 +58,10 @@ export default function BillingPage() {
         </a>
         <button 
           onClick={handleActivarTrial}
-          disabled={loading}
+          disabled={isPending}
           className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-medium transition-colors shadow-lg shadow-indigo-600/20 flex items-center justify-center min-w-[200px]"
         >
-          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Probar Versión PRO (7 Días)'}
+          {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Probar Versión PRO (7 Días)'}
         </button>
       </div>
     </div>
