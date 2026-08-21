@@ -2,7 +2,13 @@
 
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Users, Receipt, Clock, CircleDollarSign } from 'lucide-react';
+import { Users, Receipt, Clock, CircleDollarSign, ChevronDown, ChevronUp, ShoppingBag } from 'lucide-react';
+
+interface CuentaAbiertaDetalle {
+  producto: string;
+  cantidad: number;
+  total: number;
+}
 
 interface CuentaAbierta {
   id: string;
@@ -10,11 +16,13 @@ interface CuentaAbierta {
   nombre_cuenta: string;
   total: number;
   fecha_apertura: string;
+  detalles?: CuentaAbiertaDetalle[];
 }
 
 export default function CuentasAbiertasWidget({ sedeId }: { sedeId: string }) {
   const [cuentas, setCuentas] = useState<CuentaAbierta[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const supabase = createClient();
 
   // Función para cargar los datos iniciales
@@ -99,49 +107,83 @@ export default function CuentasAbiertasWidget({ sedeId }: { sedeId: string }) {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      {cuentas.map((cuenta) => (
-        <div 
-          key={cuenta.id} 
-          className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 shadow-sm hover:border-indigo-500/50 transition-colors relative overflow-hidden group"
-        >
-          {/* Decorative indicator */}
-          <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-start">
+      {cuentas.map((cuenta) => {
+        const isExpanded = expandedId === cuenta.id;
+        
+        return (
+          <div 
+            key={cuenta.id} 
+            className="bg-neutral-900 border border-neutral-800 rounded-2xl shadow-sm hover:border-indigo-500/50 transition-all relative overflow-hidden group flex flex-col"
+          >
+            {/* Decorative indicator */}
+            <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
 
-          <div className="flex justify-between items-start mb-4">
-            <div className="flex items-center gap-2">
-              <div className="bg-indigo-500/10 p-2 rounded-lg text-indigo-400">
-                <Users size={20} />
+            <div className="p-5 cursor-pointer" onClick={() => setExpandedId(isExpanded ? null : cuenta.id)}>
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="bg-indigo-500/10 p-2 rounded-lg text-indigo-400">
+                    <Users size={20} />
+                  </div>
+                  <h3 className="font-bold text-white text-lg line-clamp-1" title={cuenta.nombre_cuenta}>
+                    {cuenta.nombre_cuenta}
+                  </h3>
+                </div>
+                <span className="text-xs font-mono text-neutral-500 bg-neutral-800 px-2 py-1 rounded-md">
+                  #{cuenta.numero_documento}
+                </span>
               </div>
-              <h3 className="font-bold text-white text-lg line-clamp-1" title={cuenta.nombre_cuenta}>
-                {cuenta.nombre_cuenta}
-              </h3>
-            </div>
-            <span className="text-xs font-mono text-neutral-500 bg-neutral-800 px-2 py-1 rounded-md">
-              #{cuenta.numero_documento}
-            </span>
-          </div>
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-neutral-400 flex items-center gap-1.5">
-                <Clock size={14} /> Apertura
-              </span>
-              <span className="text-neutral-300">
-                {new Date(cuenta.fecha_apertura).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-neutral-400 flex items-center gap-1.5">
+                    <Clock size={14} /> Apertura
+                  </span>
+                  <span className="text-neutral-300">
+                    {new Date(cuenta.fecha_apertura).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+
+                <div className="pt-3 border-t border-neutral-800 flex items-center justify-between">
+                  <span className="text-sm font-medium text-neutral-400">Total a Pagar</span>
+                  <span className="text-xl font-bold text-emerald-400 flex items-center gap-1">
+                    <CircleDollarSign size={18} className="text-emerald-500" />
+                    {cuenta.total.toFixed(2)}
+                  </span>
+                </div>
+                
+                {/* Expand Toggle */}
+                {cuenta.detalles && cuenta.detalles.length > 0 && (
+                  <div className="pt-2 flex justify-center text-neutral-500 hover:text-indigo-400 transition-colors">
+                    {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="pt-3 border-t border-neutral-800 flex items-center justify-between">
-              <span className="text-sm font-medium text-neutral-400">Total a Pagar</span>
-              <span className="text-xl font-bold text-emerald-400 flex items-center gap-1">
-                <CircleDollarSign size={18} className="text-emerald-500" />
-                {cuenta.total.toFixed(2)}
-              </span>
-            </div>
+            {/* Expanded Content (Items) */}
+            {isExpanded && cuenta.detalles && cuenta.detalles.length > 0 && (
+              <div className="bg-neutral-950 px-5 py-4 border-t border-neutral-800 max-h-60 overflow-y-auto custom-scrollbar">
+                <div className="flex items-center gap-2 mb-3">
+                  <ShoppingBag size={14} className="text-neutral-400" />
+                  <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Productos en curso</span>
+                </div>
+                <div className="space-y-2">
+                  {cuenta.detalles.map((item, idx) => (
+                    <div key={idx} className="flex justify-between items-start text-sm">
+                      <div className="flex flex-col">
+                        <span className="text-neutral-200 line-clamp-1">{item.producto}</span>
+                        <span className="text-xs text-neutral-500">{item.cantidad} x ${(item.total / item.cantidad).toFixed(2)}</span>
+                      </div>
+                      <span className="text-neutral-300 font-mono">${item.total.toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
