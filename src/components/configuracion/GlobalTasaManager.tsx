@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, DollarSign, Loader2, CheckCircle2 } from 'lucide-react';
+import { Save, DollarSign, Loader2, CheckCircle2 } from 'lucide-react';
 import { updateTasaBcvAction, getTasaBcvAction } from '@/actions/config-actions';
 
 export default function GlobalTasaManager() {
   const [tasaActual, setTasaActual] = useState<number>(36.5);
+  const [tasaInput, setTasaInput] = useState<string>('36.5');
   const [fechaActualizacion, setFechaActualizacion] = useState<string>('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -16,32 +17,30 @@ export default function GlobalTasaManager() {
 
   const cargarTasa = async () => {
     const data = await getTasaBcvAction();
-    if (data.tasa) setTasaActual(data.tasa);
+    if (data.tasa) {
+      setTasaActual(data.tasa);
+      setTasaInput(data.tasa.toString());
+    }
     if (data.fecha) setFechaActualizacion(data.fecha);
   };
 
   const handleUpdate = async () => {
+    const newRate = parseFloat(tasaInput);
+    if (isNaN(newRate) || newRate <= 0) return;
+
     setIsUpdating(true);
     setSuccess(false);
     
-    // Fetch from external API
     try {
-      const response = await fetch('https://pydolarvenezuela-api.vercel.app/api/v1/dollar/page?page=bcv', { cache: 'no-store' });
-      const apiData = await response.json();
-      const newRate = apiData.monitors?.bcv?.price;
-
-      if (newRate) {
-        // Save centrally
-        const res = await updateTasaBcvAction(newRate);
-        if (res.success) {
-          setTasaActual(newRate);
-          setFechaActualizacion(new Date().toLocaleString());
-          setSuccess(true);
-          setTimeout(() => setSuccess(false), 3000);
-        }
+      const res = await updateTasaBcvAction(newRate);
+      if (res.success) {
+        setTasaActual(newRate);
+        setFechaActualizacion(new Date().toLocaleString());
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 3000);
       }
     } catch (e) {
-      console.error('Error fetching BCV', e);
+      console.error('Error guardando tasa', e);
     } finally {
       setIsUpdating(false);
     }
@@ -65,22 +64,32 @@ export default function GlobalTasaManager() {
         <div className="flex-1 w-full space-y-4">
           <p className="text-neutral-300 text-sm">
             Esta es la tasa central que usarán todos los módulos de la empresa (Ventas, Compras, Reportes). 
-            Se conecta directamente a <strong>DolarApi Venezuela</strong>.
+            Configúrala manualmente.
           </p>
           
-          <button 
-            onClick={handleUpdate}
-            disabled={isUpdating}
-            className="w-full bg-neutral-800 hover:bg-neutral-700 text-white font-medium py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 border border-neutral-700 disabled:opacity-50"
-          >
-            {isUpdating ? (
-              <><Loader2 size={18} className="animate-spin text-emerald-400" /> Sincronizando con DolarApi...</>
-            ) : success ? (
-              <><CheckCircle2 size={18} className="text-emerald-400" /> ¡Tasa Actualizada!</>
-            ) : (
-              <><RefreshCw size={18} className="text-emerald-400" /> Sincronizar Ahora</>
-            )}
-          </button>
+          <div className="flex gap-2">
+            <input 
+              type="number"
+              step="0.01"
+              value={tasaInput}
+              onChange={(e) => setTasaInput(e.target.value)}
+              className="flex-1 bg-neutral-950 border border-neutral-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-500"
+              placeholder="Ej: 42.50"
+            />
+            <button 
+              onClick={handleUpdate}
+              disabled={isUpdating}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-3 rounded-xl transition-all flex items-center justify-center gap-2 border border-emerald-500 disabled:opacity-50"
+            >
+              {isUpdating ? (
+                <Loader2 size={18} className="animate-spin text-white" />
+              ) : success ? (
+                <CheckCircle2 size={18} className="text-white" />
+              ) : (
+                <><Save size={18} className="text-white" /> Guardar</>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>

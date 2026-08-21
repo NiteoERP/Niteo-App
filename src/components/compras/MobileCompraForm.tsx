@@ -204,8 +204,8 @@ export default function MobileCompraForm() {
                 onChange={(e) => setMonedaGlobal(e.target.value as 'USD'|'VES')}
                 className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-indigo-500"
               >
-                <option value="USD">DÃ³lares (USD)</option>
-                <option value="VES">BolÃ­vares (VES)</option>
+                <option value="USD">Dólares (USD)</option>
+                <option value="VES">Bolívares (VES)</option>
               </select>
             </div>
           </div>

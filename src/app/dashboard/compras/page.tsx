@@ -248,16 +248,18 @@ export default function ComprasPage() {
       {/* CABECERA Y TABS */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-white tracking-tight flex items-center gap-2">
-            <ShoppingCart className="text-indigo-500" />
-            GestiÃ³n de Compras
-          </h1>
-          <p className="text-neutral-400 text-sm mt-1">Registra gastos, ingresos de mercancÃ­a y audita el historial</p>
+          <div className="flex items-center gap-3">
+            <ShoppingCart className="text-indigo-400" size={28} />
+            <h1 className="text-2xl font-bold text-white tracking-tight">
+              Gestión de Compras
+            </h1>
+          </div>
+          <p className="text-neutral-400 text-sm mt-1">Registra gastos, ingresos de mercancía y audita el historial</p>
         </div>
 
         <div className="flex p-1 bg-neutral-900 border border-neutral-800 rounded-xl overflow-x-auto hide-scrollbar max-w-full">
           <button onClick={() => setActiveTab('insumos')} className={`flex items-center whitespace-nowrap gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'insumos' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-neutral-200'}`}>
-            <Package size={16} /> Compra Insumos (MÃ³vil)
+            <Package size={16} /> Compra Insumos (Móvil)
           </button>
           <button onClick={() => setActiveTab('puntual')} className={`flex items-center whitespace-nowrap gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'puntual' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-neutral-200'}`}>
             <Receipt size={16} /> Gastos Operativos
