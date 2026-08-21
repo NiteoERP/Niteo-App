@@ -76,6 +76,13 @@ export async function getSedes() {
   }
 
   // Devolvemos todas las sedes de la empresa para que puedan filtrar
-  const { data } = await supabase.from('sedes').select('id, nombre, direccion').eq('empresa_id', profile.empresa_id);
-  return data || [];
+  const { data } = await supabase.from('sedes').select('id, nombre_sede, direccion').eq('empresa_id', profile.empresa_id);
+  
+  if (!data) return [];
+  
+  return data.map(s => ({
+    id: s.id,
+    nombre: s.nombre_sede, // mapeamos nombre_sede a nombre para el frontend
+    direccion: s.direccion
+  }));
 }

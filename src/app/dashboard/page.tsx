@@ -73,8 +73,8 @@ export default function DashboardPage() {
                 onChange={(e) => setSedeId(e.target.value)}
                 className="bg-transparent border-none text-sm font-semibold focus:ring-0 text-gray-700 dark:text-gray-300 pr-8 cursor-pointer outline-none"
               >
-                <option value="ALL">Todas las Sedes</option>
-                {sedes.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                <option value="ALL" className="bg-neutral-900 text-white">Todas las Sedes</option>
+                {sedes.map(s => <option key={s.id} value={s.id} className="bg-neutral-900 text-white">{s.nombre}</option>)}
               </select>
             </div>
           )}
@@ -85,10 +85,10 @@ export default function DashboardPage() {
               onChange={(e) => setRange(e.target.value)}
               className="bg-transparent border-none text-sm font-semibold focus:ring-0 text-gray-700 dark:text-gray-300 pr-8 cursor-pointer outline-none"
             >
-              <option value="today">Hoy</option>
-              <option value="7days">Últimos 7 Días</option>
-              <option value="thisMonth">Este Mes (MTD)</option>
-              <option value="lastMonth">Mes Anterior</option>
+              <option value="today" className="bg-neutral-900 text-white">Hoy</option>
+              <option value="7days" className="bg-neutral-900 text-white">Últimos 7 Días</option>
+              <option value="thisMonth" className="bg-neutral-900 text-white">Este Mes (MTD)</option>
+              <option value="lastMonth" className="bg-neutral-900 text-white">Mes Anterior</option>
             </select>
           </div>
           <button 
