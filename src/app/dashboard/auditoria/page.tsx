@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { createClient } from '@/utils/supabase/server';
 import { ShieldAlert, Clock, Database, Plus, Edit2, Trash2, ChevronRight, Activity } from 'lucide-react';
 import { format } from 'date-fns';
@@ -53,25 +53,25 @@ export default async function AuditoriaPage() {
 
   const getFriendlyDescription = (log: any) => {
     const data = log.datos_nuevos || log.datos_anteriores || {};
-    let identifier = data.nombre || data.nombre_producto || data.proveedor || data.nombre_comercial || data.nombre_completo || data.nombre_sede || data.detalles || (data.id ? \#\\ : 'Registro');
+    let identifier = data.nombre || data.nombre_producto || data.proveedor || data.nombre_comercial || data.nombre_completo || data.nombre_sede || data.detalles || (data.id ? `#${data.id.toString().substring(0,6)}` : 'Registro');
 
     if (log.tabla_afectada === 'inventario_insumos' && log.accion === 'UPDATE') {
        const oldQ = log.datos_anteriores?.cantidad_actual;
        const newQ = log.datos_nuevos?.cantidad_actual;
        if (oldQ !== newQ) {
-          return \Actualizó el stock de '\': de \ a \\;
+          return `Actualizó el stock de '${identifier}': de ${oldQ} a ${newQ}`;
        }
     }
 
     if (log.tabla_afectada === 'compras_puntuales' && log.accion === 'INSERT') {
-       return \Registró una compra de \$ a '\'\;
+       return `Registró una compra de ${data.monto_divisas}$ a '${identifier}'`;
     }
 
     switch(log.accion) {
-      case 'INSERT': return \Creó un nuevo registro en \: '\'\;
-      case 'UPDATE': return \Modificó información de: '\'\;
-      case 'DELETE': return \Eliminó definitivamente: '\'\;
-      default: return \Interactuó con '\'\;
+      case 'INSERT': return `Creó un nuevo registro en ${getFriendlyTableName(log.tabla_afectada)}: '${identifier}'`;
+      case 'UPDATE': return `Modificó información de: '${identifier}'`;
+      case 'DELETE': return `Eliminó definitivamente: '${identifier}'`;
+      default: return `Interactuó con '${identifier}'`;
     }
   };
 

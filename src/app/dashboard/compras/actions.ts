@@ -1,4 +1,4 @@
-﻿'use server';
+'use server';
 
 import { createClient } from '@/utils/supabase/server';
 
@@ -150,7 +150,6 @@ export async function registrarCompraPuntual(data: {
         monto_bs: montoBsCalculado,
         detalles: data.detalles,
         modalidad_pago: data.metodoPago,
-        /* documento_externo */ || data.documentoExterno, 
         id_empresa: idEmpresa,
         id_usuario: user.id
       }]);
