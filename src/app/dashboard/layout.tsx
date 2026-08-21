@@ -9,7 +9,8 @@ import {
   Users, 
   Settings, 
   UserCircle,
-  ShieldAlert
+  ShieldAlert,
+  FileText
 } from 'lucide-react';
 import { LogoutButton } from '@/components/LogoutButton';
 
@@ -84,6 +85,13 @@ export default async function DashboardLayout({
             <LayoutDashboard size={20} />
             <span className="text-sm font-medium">Ventas</span>
           </Link>
+
+          {userRole !== 'CAJERO' && (
+            <Link href="/dashboard/informes" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
+              <FileText size={20} />
+              <span className="text-sm font-medium">Informes</span>
+            </Link>
+          )}
           
           <Link href="/dashboard/despachos" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
             <Truck size={20} />
