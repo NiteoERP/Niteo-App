@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { Receipt, FileText, Plus, Trash2, Save, ShoppingCart, UserPlus, Loader2, CheckCircle2, History, Search, Calendar, Edit2, X, Lock, Package } from 'lucide-react';
@@ -200,8 +200,8 @@ export default function ComprasPage() {
     }
   };
 
-  const handleEliminarCompra = async (id: number) => {
-    if (confirm('Â¿EstÃ¡s seguro de eliminar este registro?')) {
+  const handleEliminarCompra = async (id: string) => {
+    if (confirm('¿Estás seguro de eliminar este registro?')) {
       const res = await eliminarCompraPuntual(id);
       if (res.success) {
         mostrarAlerta('Registro eliminado', 'success');

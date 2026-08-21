@@ -10,7 +10,7 @@ export default async function AuditoriaPage() {
   // Obtener los últimos 50 registros de auditoría
   const { data: logs, error } = await supabase
     .from('auditoria_logs')
-    .select(
+    .select(`
       id,
       accion,
       tabla_afectada,
@@ -19,7 +19,7 @@ export default async function AuditoriaPage() {
       datos_nuevos,
       usuario_id,
       perfiles (nombre_completo, rol)
-    )
+    `)
     .order('creado_en', { ascending: false })
     .limit(50);
 
