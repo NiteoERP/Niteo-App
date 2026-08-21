@@ -126,24 +126,89 @@ export async function getInsumos() {
 }
 
 export async function getTasaDelDia(): Promise<number> {
-  const supabase = await createClient();
-  const today = new Date().toISOString().split('T')[0];
-
   try {
-    const { data, error } = await supabase
-      .from('tasas_cambio')
-      .select('tasa')
-      .gte('fecha', today)
-      .order('fecha', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (error || !data) {
-      return 36.50; 
-    }
-
-    return Number(data.tasa);
+    const response = await fetch('https://pydolarvenezuela-api.vercel.app/api/v1/dollar/page?page=bcv', { next: { revalidate: 3600 } });
+    if (!response.ok) return 36.50;
+    const data = await response.json();
+    return data.monitors?.bcv?.price || 36.50;
   } catch (err) {
     return 36.50;
   }
+}
+export async function registrarFacturaInsumos(factura: {
+  proveedor: string;
+  moneda: 'USD' | 'VES';
+  tasa: number;
+  items: Array<{
+    insumo_id: string | null;
+    is_new: boolean;
+    nombre_nuevo: string;
+    unidad_nueva: string;
+    cantidad: number;
+    costoTotal: number;
+  }>;
+}) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'No autorizado.' };
+
+  const { data: profile } = await supabase.from('perfiles').select('empresa_id, sede_id').eq('id', user.id).single();
+  if (!profile) return { error: 'Perfil no encontrado.' };
+
+  let montoTotalDivisas = 0;
+  let montoTotalBs = 0;
+
+  for (const item of factura.items) {
+    let costoUSD = item.costoTotal;
+    if (factura.moneda === 'VES') {
+      costoUSD = item.costoTotal / factura.tasa;
+    }
+    montoTotalDivisas += costoUSD;
+  }
+  montoTotalBs = montoTotalDivisas * factura.tasa;
+
+  const { data: header, error: headErr } = await supabase.from('compras_puntuales').insert({
+    id_empresa: profile.empresa_id,
+    id_sede: profile.sede_id,
+    proveedor: factura.proveedor,
+    monto_divisas: montoTotalDivisas,
+    monto_bs: montoTotalBs,
+    tasa_cambio: factura.tasa,
+    detalles: \Compra Insumos - \ items\,
+    metodo_pago: factura.moneda === 'USD' ? 'Efectivo USD' : 'Transferencia BS',
+    estado: 'PROCESADA'
+  }).select('id').single();
+
+  if (headErr) return { error: 'Error guardando factura: ' + headErr.message };
+
+  for (const item of factura.items) {
+    let idInsumo = item.insumo_id;
+    if (item.is_new && item.nombre_nuevo) {
+      const { data: newIns } = await supabase.from('inventario_insumos').insert({
+        empresa_id: profile.empresa_id,
+        sede_id: profile.sede_id,
+        nombre: item.nombre_nuevo,
+        unidad_medida: item.unidad_nueva,
+        cantidad_actual: 0,
+        costo_promedio: 0
+      }).select('id').single();
+      if (newIns) idInsumo = newIns.id;
+    }
+
+    if (idInsumo) {
+      let usd = item.costoTotal;
+      if (factura.moneda === 'VES') usd = usd / factura.tasa;
+
+      await supabase.rpc('registrar_compra_insumo', {
+        p_insumo_id: idInsumo,
+        p_usuario_id: user.id,
+        p_cantidad: item.cantidad,
+        p_costo_total: usd
+      });
+    }
+  }
+
+  revalidatePath('/dashboard/inventario');
+  revalidatePath('/dashboard/compras');
+  return { success: true };
 }

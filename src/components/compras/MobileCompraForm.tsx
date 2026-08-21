@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useTransition } from 'react';
-import { registrarCompra, getInsumos, getTasaDelDia } from '@/actions/compras-actions';
-import { Loader2, CheckCircle2, ShoppingCart, Search, Package } from 'lucide-react';
+import { getInsumos, getTasaDelDia } from '@/actions/compras-actions';
+import { registrarFacturaInsumos } from '@/actions/compras-actions';
+import { Loader2, CheckCircle2, ShoppingCart, Search, Plus, Trash2, Building2 } from 'lucide-react';
 
 type Insumo = {
   id: string;
@@ -10,27 +11,43 @@ type Insumo = {
   unidad_medida: string;
 };
 
+type CartItem = {
+  id: string; // temp id for UI
+  insumo_id: string | null;
+  is_new: boolean;
+  nombre_nuevo: string;
+  unidad_nueva: string;
+  cantidad: number;
+  costoTotal: number;
+  monedaItem: 'USD' | 'VES';
+};
+
 export default function MobileCompraForm() {
   const [insumos, setInsumos] = useState<Insumo[]>([]);
   const [tasaDelDia, setTasaDelDia] = useState<number>(36.5);
   
+  // Header
+  const [proveedor, setProveedor] = useState('');
+  const [monedaGlobal, setMonedaGlobal] = useState<'USD'|'VES'>('USD');
+  
+  // Add Item Form
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedInsumo, setSelectedInsumo] = useState<Insumo | null>(null);
   const [isNewInsumo, setIsNewInsumo] = useState(false);
   const [newInsumoName, setNewInsumoName] = useState('');
   const [newInsumoUnit, setNewInsumoUnit] = useState('KG');
-
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
   const [cantidad, setCantidad] = useState('');
-  const [costoUSD, setCostoUSD] = useState('');
-  const [costoVES, setCostoVES] = useState('');
+  const [costo, setCosto] = useState('');
+  const [monedaInput, setMonedaInput] = useState<'USD'|'VES'>('USD');
+
+  // Cart
+  const [cart, setCart] = useState<CartItem[]>([]);
 
   const [isPending, startTransition] = useTransition();
   const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Cargar insumos y tasa al montar el componente
   useEffect(() => {
     const initData = async () => {
       const [data, tasa] = await Promise.all([getInsumos(), getTasaDelDia()]);
@@ -43,286 +60,324 @@ export default function MobileCompraForm() {
   const filteredInsumos = insumos.filter(i => 
     i.nombre.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
   const exactMatchExists = insumos.some(i => i.nombre.toLowerCase() === searchTerm.toLowerCase().trim());
 
-  // Lógica de Autocalculado Bi-direccional
-  const handleUSDChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setCostoUSD(val);
-    if (!isNaN(Number(val)) && val !== '') {
-      setCostoVES((Number(val) * tasaDelDia).toFixed(2));
-    } else {
-      setCostoVES('');
-    }
+  const handleAddToCart = () => {
+    if (!cantidad || !costo) return;
+    if (isNewInsumo && !newInsumoName) return;
+    if (!isNewInsumo && !selectedInsumo) return;
+
+    const newItem: CartItem = {
+      id: Math.random().toString(),
+      insumo_id: isNewInsumo ? null : selectedInsumo!.id,
+      is_new: isNewInsumo,
+      nombre_nuevo: isNewInsumo ? newInsumoName : selectedInsumo!.nombre,
+      unidad_nueva: isNewInsumo ? newInsumoUnit : selectedInsumo!.unidad_medida,
+      cantidad: parseFloat(cantidad),
+      costoTotal: parseFloat(costo) * parseFloat(cantidad),
+      monedaItem: monedaInput
+    };
+
+    setCart([...cart, newItem]);
+
+    // Reset add form
+    setSearchTerm('');
+    setSelectedInsumo(null);
+    setIsNewInsumo(false);
+    setNewInsumoName('');
+    setCantidad('');
+    setCosto('');
   };
 
-  const handleVESChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setCostoVES(val);
-    if (!isNaN(Number(val)) && val !== '') {
-      setCostoUSD((Number(val) / tasaDelDia).toFixed(2));
-    } else {
-      setCostoUSD('');
-    }
+  const removeFromCart = (id: string) => {
+    setCart(cart.filter(item => item.id !== id));
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleRegistrarFactura = () => {
+    if (cart.length === 0) return;
     setErrorMsg('');
-    setSuccess(false);
-
-    if (!isNewInsumo && !selectedInsumo) {
-      setErrorMsg('Debes seleccionar un insumo.');
-      return;
-    }
-
-    const formData = new FormData();
-    if (isNewInsumo) {
-      formData.set('nombre_nuevo_insumo', newInsumoName);
-      formData.set('unidad_medida_nueva', newInsumoUnit);
-    } else if (selectedInsumo) {
-      formData.set('insumo_id', selectedInsumo.id);
-    }
-
-    formData.set('cantidad', cantidad);
-    formData.set('costo_total', costoUSD);
-
+    
     startTransition(async () => {
-      const result = await registrarCompra(formData);
+      // Normalizamos todo a la moneda global elegida o se lo pasamos y que el server asuma que cada item es de esa moneda
+      // Wait, let's normalize everything to the item's declared currency here so we only send the cost in the Global currency
+      const normalizedItems = cart.map(item => {
+        let costoUSD = item.costoTotal;
+        if (item.monedaItem === 'VES') costoUSD = item.costoTotal / tasaDelDia;
+        else costoUSD = item.costoTotal;
 
-      if (result?.error) {
-        setErrorMsg(result.error);
-      } else if (result?.success) {
+        // Convert back to Global if needed
+        let finalCosto = costoUSD;
+        if (monedaGlobal === 'VES') finalCosto = costoUSD * tasaDelDia;
+
+        return {
+          ...item,
+          costoTotal: finalCosto
+        };
+      });
+
+      const res = await registrarFacturaInsumos({
+        proveedor: proveedor || 'Proveedor General',
+        moneda: monedaGlobal,
+        tasa: tasaDelDia,
+        items: normalizedItems
+      });
+
+      if (res.error) {
+        setErrorMsg(res.error);
+      } else {
         setSuccess(true);
-        
-        // Reset form
-        setSelectedInsumo(null);
-        setIsNewInsumo(false);
-        setSearchTerm('');
-        setNewInsumoName('');
-        setCantidad('');
-        setCostoUSD('');
-        setCostoVES('');
-        
-        // Auto-ocultar mensaje de éxito
+        setCart([]);
+        setProveedor('');
         setTimeout(() => setSuccess(false), 3000);
-        
-        // Actualizar lista de insumos
-        const data = await getInsumos();
-        setInsumos(data);
       }
     });
   };
 
+  const getTotalGlobal = () => {
+    let usd = 0;
+    cart.forEach(item => {
+      if (item.monedaItem === 'USD') usd += item.costoTotal;
+      else usd += item.costoTotal / tasaDelDia;
+    });
+    if (monedaGlobal === 'USD') return usd.toFixed(2);
+    return (usd * tasaDelDia).toFixed(2);
+  };
+
   return (
-    <div className="w-full max-w-md mx-auto p-4 sm:p-6 bg-white dark:bg-gray-900 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-800">
-      
+    <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 md:p-8 max-w-2xl mx-auto shadow-2xl relative">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
-            <Package size={24} strokeWidth={2.5} />
+          <div className="bg-indigo-500/20 p-2.5 rounded-xl border border-indigo-500/30">
+            <ShoppingCart className="text-indigo-400" size={24} />
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Nueva Compra</h2>
-          </div>
+          <h2 className="text-xl font-bold text-white">Factura de Compra</h2>
         </div>
-        <div className="bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
-          Tasa BCV: <span className="text-green-600 dark:text-green-400 font-bold ml-1">{tasaDelDia}</span> Bs
+        <div className="bg-neutral-950 px-4 py-2 rounded-xl border border-neutral-800 flex items-center gap-2">
+          <span className="text-neutral-400 text-sm">Tasa BCV:</span>
+          <span className="text-emerald-400 font-bold">{tasaDelDia.toFixed(2)} Bs</span>
         </div>
       </div>
 
-      {success && (
-        <div className="mb-6 p-4 rounded-2xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
-          <CheckCircle2 className="text-green-600 dark:text-green-400" size={24} />
-          <p className="text-green-800 dark:text-green-300 font-medium text-sm">¡Compra registrada con éxito!</p>
+      {success ? (
+        <div className="flex flex-col items-center justify-center py-12 animate-in fade-in zoom-in">
+          <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mb-4">
+            <CheckCircle2 size={32} />
+          </div>
+          <h3 className="text-xl font-bold text-white mb-2">Factura Procesada</h3>
+          <p className="text-neutral-400 text-center mb-6">Los insumos han ingresado al inventario.</p>
+          <button onClick={() => setSuccess(false)} className="bg-neutral-800 hover:bg-neutral-700 text-white px-6 py-2 rounded-xl font-medium">
+            Nueva Compra
+          </button>
         </div>
-      )}
-
-      {errorMsg && (
-        <div className="mb-6 p-4 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-          <p className="text-red-800 dark:text-red-300 text-sm font-medium">{errorMsg}</p>
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        
-        {/* Autocomplete de Insumo */}
-        <div className="relative">
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1 mb-2">
-            Insumo a comprar
-          </label>
-          
-          {selectedInsumo || isNewInsumo ? (
-            <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 h-14 px-4 rounded-2xl">
-              <span className="text-base text-gray-900 dark:text-white font-medium">
-                {isNewInsumo ? (
-                  <span className="flex items-center gap-2">
-                    <span className="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs px-2 py-1 rounded-md">NUEVO</span>
-                    {newInsumoName}
-                  </span>
-                ) : selectedInsumo?.nombre}
-              </span>
-              <button 
-                type="button" 
-                onClick={() => { setSelectedInsumo(null); setIsNewInsumo(false); setSearchTerm(''); }}
-                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 text-sm font-medium"
-              >
-                Cambiar
-              </button>
+      ) : (
+        <div className="space-y-6">
+          {errorMsg && (
+            <div className="bg-rose-500/10 border border-rose-500/20 p-4 rounded-xl text-rose-400 text-sm">
+              {errorMsg}
             </div>
-          ) : (
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Search size={18} className="text-gray-400" />
+          )}
+
+          {/* Factura Header */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-neutral-950/50 p-4 rounded-xl border border-neutral-800/50">
+            <div>
+              <label className="block text-sm font-medium text-neutral-400 mb-1">Proveedor / Tienda</label>
+              <div className="relative">
+                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" size={18} />
+                <input 
+                  type="text" 
+                  value={proveedor}
+                  onChange={(e) => setProveedor(e.target.value)}
+                  placeholder="Ej. Distribuidora XYZ"
+                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-10 pr-4 py-2.5 text-white outline-none focus:border-indigo-500"
+                />
               </div>
-              <input
-                type="text"
-                placeholder="Buscar insumo..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setIsDropdownOpen(true);
-                }}
-                onFocus={() => setIsDropdownOpen(true)}
-                className="w-full h-14 pl-11 pr-4 text-base rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none text-gray-900 dark:text-white"
-              />
-              
-              {isDropdownOpen && searchTerm.length > 0 && (
-                <ul className="absolute z-10 mt-2 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl max-h-60 overflow-y-auto">
-                  {filteredInsumos.map(insumo => (
-                    <li 
-                      key={insumo.id} 
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-400 mb-1">Medio / Moneda de Pago</label>
+              <select 
+                value={monedaGlobal}
+                onChange={(e) => setMonedaGlobal(e.target.value as 'USD'|'VES')}
+                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-indigo-500"
+              >
+                <option value="USD">Dólares (USD)</option>
+                <option value="VES">Bolívares (VES)</option>
+              </select>
+            </div>
+          </div>
+
+          <hr className="border-neutral-800" />
+
+          {/* Add Item Form */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-white">Agregar Insumos</h3>
+            <div>
+              <label className="block text-sm font-medium text-neutral-400 mb-1">Insumo</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                  <Search size={18} className="text-neutral-500" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Buscar insumo..."
+                  className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:border-indigo-500"
+                  value={searchTerm}
+                  onFocus={() => setIsDropdownOpen(true)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setIsDropdownOpen(true);
+                    setSelectedInsumo(null);
+                    setIsNewInsumo(false);
+                  }}
+                />
+              </div>
+
+              {/* Autocomplete Dropdown */}
+              {isDropdownOpen && searchTerm && !selectedInsumo && !isNewInsumo && (
+                <div className="absolute z-10 w-full mt-2 bg-neutral-800 border border-neutral-700 rounded-xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto">
+                  {filteredInsumos.map(ins => (
+                    <button
+                      key={ins.id}
                       onClick={() => {
-                        setSelectedInsumo(insumo);
+                        setSelectedInsumo(ins);
+                        setSearchTerm(ins.nombre);
                         setIsDropdownOpen(false);
                       }}
-                      className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer text-base text-gray-900 dark:text-white flex justify-between items-center border-b border-gray-100 dark:border-gray-700 last:border-0"
+                      className="w-full text-left px-4 py-3 text-white hover:bg-neutral-700 flex justify-between items-center"
                     >
-                      {insumo.nombre}
-                      <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-900 px-2 py-1 rounded-lg">{insumo.unidad_medida}</span>
-                    </li>
+                      <span>{ins.nombre}</span>
+                      <span className="text-xs text-neutral-400 bg-neutral-900 px-2 py-1 rounded">{ins.unidad_medida}</span>
+                    </button>
                   ))}
-                  
-                  {!exactMatchExists && searchTerm.trim().length > 0 && (
-                    <li 
+
+                  {/* Option to create new */}
+                  {!exactMatchExists && searchTerm.length > 1 && (
+                    <button
                       onClick={() => {
-                        setNewInsumoName(searchTerm.trim());
                         setIsNewInsumo(true);
+                        setNewInsumoName(searchTerm);
                         setIsDropdownOpen(false);
                       }}
-                      className="px-4 py-3 bg-blue-50 dark:bg-blue-900/10 hover:bg-blue-100 dark:hover:bg-blue-900/30 cursor-pointer text-base text-blue-700 dark:text-blue-400 flex items-center gap-2 border-t border-gray-100 dark:border-gray-700"
+                      className="w-full text-left px-4 py-3 text-indigo-400 hover:bg-neutral-700 border-t border-neutral-700 flex items-center gap-2"
                     >
-                      <Package size={16} />
-                      Crear "{searchTerm.trim()}"
-                    </li>
+                      <Plus size={16} /> Crear nuevo "{searchTerm}"
+                    </button>
                   )}
-                </ul>
+                </div>
               )}
+            </div>
+
+            {/* If New Insumo */}
+            {isNewInsumo && (
+              <div className="bg-indigo-500/10 border border-indigo-500/30 rounded-xl p-4 animate-in fade-in">
+                <p className="text-sm text-indigo-300 font-medium mb-3">Estás creando un nuevo insumo</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-neutral-400 mb-1">Nombre</label>
+                    <input 
+                      type="text" 
+                      value={newInsumoName}
+                      onChange={e => setNewInsumoName(e.target.value)}
+                      className="w-full bg-neutral-900 border border-neutral-800 text-white rounded-lg px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-neutral-400 mb-1">Unidad Medida</label>
+                    <select 
+                      value={newInsumoUnit}
+                      onChange={e => setNewInsumoUnit(e.target.value)}
+                      className="w-full bg-neutral-900 border border-neutral-800 text-white rounded-lg px-3 py-2 text-sm"
+                    >
+                      <option value="KG">Kilogramos (KG)</option>
+                      <option value="LT">Litros (LT)</option>
+                      <option value="UND">Unidades (UND)</option>
+                      <option value="GR">Gramos (GR)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-neutral-400 mb-1">Cantidad</label>
+                <input 
+                  type="number" 
+                  min="0.01" step="0.01"
+                  value={cantidad}
+                  onChange={e => setCantidad(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2.5 text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-400 mb-1">Costo Unit.</label>
+                <input 
+                  type="number" 
+                  min="0.01" step="0.01"
+                  value={costo}
+                  onChange={e => setCosto(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2.5 text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-400 mb-1">Moneda</label>
+                <select 
+                  value={monedaInput}
+                  onChange={e => setMonedaInput(e.target.value as 'USD'|'VES')}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2.5 text-white"
+                >
+                  <option value="USD">$</option>
+                  <option value="VES">Bs</option>
+                </select>
+              </div>
+            </div>
+
+            <button 
+              onClick={handleAddToCart}
+              disabled={!cantidad || !costo || (!selectedInsumo && !isNewInsumo)}
+              className="w-full bg-neutral-800 hover:bg-neutral-700 text-white font-medium py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              <Plus size={18} /> Añadir a la Lista
+            </button>
+          </div>
+
+          {/* Cart List */}
+          {cart.length > 0 && (
+            <div className="mt-6">
+              <h4 className="text-neutral-400 text-sm mb-3">Insumos en esta factura:</h4>
+              <div className="space-y-2 mb-4">
+                {cart.map(item => (
+                  <div key={item.id} className="bg-neutral-950 border border-neutral-800 rounded-lg p-3 flex justify-between items-center">
+                    <div>
+                      <p className="text-white font-medium text-sm">{item.nombre_nuevo} {item.is_new && <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded ml-1">NUEVO</span>}</p>
+                      <p className="text-neutral-500 text-xs">{item.cantidad} {item.unidad_nueva} x {item.costoTotal} {item.monedaItem}</p>
+                    </div>
+                    <button onClick={() => removeFromCart(item.id)} className="text-rose-400 hover:bg-rose-500/20 p-2 rounded-lg">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="bg-indigo-600/10 border border-indigo-500/30 rounded-xl p-4 flex justify-between items-center mb-6">
+                <span className="text-indigo-200 font-medium">Total Factura:</span>
+                <span className="text-2xl font-bold text-white">
+                  {monedaGlobal === 'USD' ? '$' : 'Bs'} {getTotalGlobal()}
+                </span>
+              </div>
+
+              <button
+                onClick={handleRegistrarFactura}
+                disabled={isPending}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 text-lg"
+              >
+                {isPending ? <><Loader2 className="animate-spin" /> Procesando...</> : 'Procesar Factura'}
+              </button>
             </div>
           )}
         </div>
-
-        {/* Unidad de medida (solo si es nuevo) */}
-        {isNewInsumo && (
-          <div className="animate-in fade-in slide-in-from-top-2">
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1 mb-2">
-              Unidad de Medida
-            </label>
-            <select
-              value={newInsumoUnit}
-              onChange={(e) => setNewInsumoUnit(e.target.value)}
-              className="w-full h-14 px-4 text-base rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 appearance-none text-gray-900 dark:text-white"
-            >
-              <option value="KG">KG</option>
-              <option value="LITROS">LITROS</option>
-              <option value="UNIDADES">UNIDADES</option>
-              <option value="CAJAS">CAJAS</option>
-            </select>
-          </div>
-        )}
-
-        {/* Cantidad */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1 mb-2">
-            Cantidad Ingresada
-          </label>
-          <div className="relative">
-            <input
-              type="number"
-              step="any"
-              required
-              min="0.01"
-              value={cantidad}
-              onChange={(e) => setCantidad(e.target.value)}
-              placeholder="0.00"
-              className="w-full h-14 px-4 text-lg font-medium rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
-            />
-            <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-              <span className="text-gray-500 font-medium bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded-md text-sm">
-                {isNewInsumo ? newInsumoUnit : (selectedInsumo ? selectedInsumo.unidad_medida : 'UND')}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Calculadora Inversa */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1 mb-2">
-              Costo Total ($)
-            </label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-green-600 dark:text-green-500 font-bold pointer-events-none">$</span>
-              <input
-                type="number"
-                step="any"
-                required
-                min="0.01"
-                value={costoUSD}
-                onChange={handleUSDChange}
-                placeholder="0.00"
-                className="w-full h-14 pl-8 pr-4 text-lg font-bold rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-green-500 text-gray-900 dark:text-white"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1 mb-2">
-              Costo Total (Bs)
-            </label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-500 dark:text-gray-400 font-bold pointer-events-none">Bs</span>
-              <input
-                type="number"
-                step="any"
-                value={costoVES}
-                onChange={handleVESChange}
-                placeholder="0.00"
-                className="w-full h-14 pl-10 pr-4 text-base font-medium rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Botón de Enviar */}
-        <div className="pt-4">
-          <button
-            type="submit"
-            disabled={isPending || (!selectedInsumo && !isNewInsumo) || !costoUSD || !cantidad}
-            className="w-full h-14 flex justify-center items-center gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-lg font-semibold rounded-2xl transition-colors disabled:opacity-50 shadow-lg shadow-blue-600/20"
-          >
-            {isPending ? (
-              <>
-                <Loader2 className="animate-spin" size={24} />
-                <span>Registrando...</span>
-              </>
-            ) : (
-              <span>Registrar Compra</span>
-            )}
-          </button>
-        </div>
-      </form>
+      )}
     </div>
   );
 }
