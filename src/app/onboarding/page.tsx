@@ -59,6 +59,9 @@ export default function OnboardingPage() {
         return;
       }
       
+      // Forzar la actualización del JWT para que el middleware vea el empresa_id
+      await supabase.auth.refreshSession();
+      
       setMasterKey(res.masterKey);
       setStep(3);
     } catch (err: any) {
@@ -240,7 +243,11 @@ export default function OnboardingPage() {
             </div>
 
             <button
-            onClick={() => window.location.href = '/dashboard'}
+            onClick={async () => {
+              // Refrescar el token JWT para que el middleware lea el nuevo empresa_id
+              await supabase.auth.refreshSession();
+              window.location.href = '/dashboard';
+            }}
             className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-600/20"
           >
             Ir al Dashboard <ArrowRight size={18} />
