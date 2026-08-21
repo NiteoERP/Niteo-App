@@ -20,15 +20,26 @@ export default function RecentSalesWidget() {
 
   useEffect(() => {
     const loadInitial = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: profile } = await supabase.from('perfiles').select('sede_id').eq('id', user.id).single();
-      if (profile?.sede_id) {
-        setSedeId(profile.sede_id);
-        const initial = await getVentasRecientes(profile.sede_id);
-        setSales(initial.slice(0, 5));
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setIsLoading(false);
+          return;
+        }
+        
+        const { data: profile } = await supabase.from('perfiles').select('sede_id').eq('id', user.id).single();
+        if (profile?.sede_id) {
+          setSedeId(profile.sede_id);
+          const initial = await getVentasRecientes(profile.sede_id);
+          setSales(initial.slice(0, 5));
+        } else {
+          // If no sede (e.g. Admin), optionally fetch all sales or leave empty
+        }
+      } catch (err) {
+        console.error("Error loading recent sales:", err);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
     loadInitial();
   }, [supabase]);
