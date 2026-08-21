@@ -32,12 +32,16 @@ export default async function DashboardLayout({
   const userRole = user.app_metadata?.user_role || 'CAJERO';
   const userName = user.user_metadata?.full_name || user.email;
 
+  const { data: dbProfile } = await supabase.from('perfiles').select('permisos').eq('id', user.id).single();
+  const permisos = dbProfile?.permisos || [];
+  const hasPerm = (p: string) => permisos.includes(p) || userRole === 'MASTER';
+
   let subPlan = 'BASICO';
   let subEstado = 'INACTIVA';
   let daysLeft = 0;
 
   if (empresa_id) {
-    // Leemos la suscripción de forma segura (nuestro RLS ya lo protege por empresa_id)
+    // Leemos la suscripciÃƒÂ³n de forma segura (nuestro RLS ya lo protege por empresa_id)
     const { data: sub } = await supabase
       .from('suscripciones_empresas')
       .select('plan, fecha_vencimiento, estado')
@@ -67,72 +71,84 @@ export default async function DashboardLayout({
           <span className="font-bold text-xl tracking-tight text-neutral-100">Niteo</span>
         </div>
         
-        {/* NavegaciÃ³n Condicional por Roles */}
-        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
-          {userRole !== 'CAJERO' && (
+        {/* Navegacion Condicional por Permisos */}
+        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto custom-scrollbar">
+          {hasPerm('dashboard') && (
             <Link href="/dashboard" className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-indigo-500/10 text-indigo-400 transition-colors border border-indigo-500/10">
               <LayoutDashboard size={20} />
               <span className="text-sm font-medium">Inicio</span>
             </Link>
           )}
           
-          <Link href="/dashboard/inventario" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
-            <Package size={20} />
-            <span className="text-sm font-medium">Inventario</span>
-          </Link>
+          {hasPerm('inventario') && (
+            <Link href="/dashboard/inventario" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
+              <Package size={20} />
+              <span className="text-sm font-medium">Inventario</span>
+            </Link>
+          )}
 
-          <Link href="/dashboard/ventas" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300 transition-colors border border-transparent hover:border-indigo-500/20">
-            <LayoutDashboard size={20} />
-            <span className="text-sm font-medium">Ventas</span>
-          </Link>
+          {hasPerm('pos') && (
+            <Link href="/dashboard/ventas" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
+              <ShoppingCart size={20} />
+              <span className="text-sm font-medium">Ventas</span>
+            </Link>
+          )}
 
-          {userRole !== 'CAJERO' && (
+          {hasPerm('reportes') && (
             <Link href="/dashboard/informes" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
               <FileText size={20} />
               <span className="text-sm font-medium">Informes</span>
             </Link>
           )}
           
-          <Link href="/dashboard/despachos" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
-            <Truck size={20} />
-            <span className="text-sm font-medium">Despachos</span>
-          </Link>
+          {(hasPerm('inventario') || hasPerm('pos')) && (
+            <Link href="/dashboard/despachos" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
+              <Truck size={20} />
+              <span className="text-sm font-medium">Despachos</span>
+            </Link>
+          )}
 
-          {/* Ocultar Compras y Clientes (Finanzas/Usuarios) a Cajeros y Gerentes */}
-          {userRole === 'MASTER' && (
-            <>
-              <Link href="/dashboard/compras" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
-                <ShoppingCart size={20} />
-                <span className="text-sm font-medium">Compras</span>
-              </Link>
-              <Link href="/dashboard/clientes" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
-                <Users size={20} />
-                <span className="text-sm font-medium">Clientes</span>
-              </Link>
-              <Link href="/dashboard/equipo" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
-                <UserCircle size={20} />
-                <span className="text-sm font-medium">Equipo</span>
-              </Link>
-            </>
+          {hasPerm('compras') && (
+            <Link href="/dashboard/compras" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
+              <ShoppingCart size={20} />
+              <span className="text-sm font-medium">Compras</span>
+            </Link>
+          )}
+
+          {hasPerm('clientes') && (
+            <Link href="/dashboard/clientes" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
+              <Users size={20} />
+              <span className="text-sm font-medium">Clientes</span>
+            </Link>
+          )}
+
+          {hasPerm('usuarios') && (
+            <Link href="/dashboard/equipo" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
+              <UserCircle size={20} />
+              <span className="text-sm font-medium">Equipo</span>
+            </Link>
           )}
         </nav>
 
-        {/* Ajustes al fondo (Solo MASTER) */}
-        {userRole === 'MASTER' && (
+        {(hasPerm('auditoria') || hasPerm('ajustes')) && (
           <div className="p-4 border-t border-neutral-800 shrink-0 space-y-1">
-            <Link href="/dashboard/auditoria" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
-              <ShieldAlert size={20} />
-              <span className="text-sm font-medium">Auditoría</span>
-            </Link>
-            <Link href="/dashboard/configuracion" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
-              <Settings size={20} />
-              <span className="text-sm font-medium">Ajustes</span>
-            </Link>
+            {hasPerm('auditoria') && (
+              <Link href="/dashboard/auditoria" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
+                <ShieldAlert size={20} />
+                <span className="text-sm font-medium">Auditoría</span>
+              </Link>
+            )}
+            {hasPerm('ajustes') && (
+              <Link href="/dashboard/configuracion" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
+                <Settings size={20} />
+                <span className="text-sm font-medium">Ajustes</span>
+              </Link>
+            )}
           </div>
         )}
       </aside>
 
-      {/* ÃREA PRINCIPAL */}
+      {/* ÃƒÆ’Ã‚Â REA PRINCIPAL */}
       <div className="flex-1 flex flex-col min-w-0">
         
         {/* TOPBAR */}
@@ -144,10 +160,10 @@ export default async function DashboardLayout({
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-4">
               
-              {/* BADGE DE SUSCRIPCIÓN */}
+              {/* BADGE DE SUSCRIPCIÃƒâ€œN */}
               {isTrial && (
                 <div className="hidden md:flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 px-3 py-1.5 rounded-full">
-                  <span className="text-orange-400 text-xs font-semibold tracking-wide">TRIAL: Quedan {daysLeft} días</span>
+                  <span className="text-orange-400 text-xs font-semibold tracking-wide">TRIAL: Quedan {daysLeft} dÃƒÂ­as</span>
                   <Link href="/dashboard/billing" className="text-orange-300 hover:text-white text-xs underline decoration-orange-500/30 font-medium transition-colors">
                     Actualizar a PRO
                   </Link>
@@ -155,7 +171,7 @@ export default async function DashboardLayout({
               )}
               {!isTrial && subEstado === 'ACTIVA' && subPlan === 'PRO' && (
                 <div className="hidden md:flex items-center bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-full">
-                  <span className="text-indigo-400 text-xs font-bold tracking-widest uppercase">VERSIÓN PRO</span>
+                  <span className="text-indigo-400 text-xs font-bold tracking-widest uppercase">VERSIÃƒâ€œN PRO</span>
                 </div>
               )}
 
@@ -167,7 +183,7 @@ export default async function DashboardLayout({
                 <UserCircle size={22} className="text-indigo-400" />
               </div>
               
-              {/* Botón de Cerrar Sesión */}
+              {/* BotÃƒÂ³n de Cerrar SesiÃƒÂ³n */}
               <LogoutButton />
             </div>
           </div>
@@ -181,4 +197,6 @@ export default async function DashboardLayout({
     </div>
   );
 }
+
+
 
