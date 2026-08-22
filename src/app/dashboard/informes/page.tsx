@@ -214,11 +214,21 @@ export default function InformesPage() {
                   <div className="flex-1 space-y-4">
                     <div>
                       <p className="text-xs font-bold text-neutral-400 uppercase mb-2">Fecha Inicio</p>
-                      <input type="date" value={format(startDate, 'yyyy-MM-dd')} onChange={(e) => setStartDate(new Date(e.target.value))} className="w-full bg-neutral-950 border border-neutral-800 text-white text-sm py-2 px-3 rounded-lg focus:outline-none focus:border-indigo-500" />
+                      <input type="date" value={format(startDate, 'yyyy-MM-dd')} onChange={(e) => {
+                          if(e.target.value) {
+                            const d = new Date(e.target.value + 'T00:00:00');
+                            if(!isNaN(d.getTime())) setStartDate(d);
+                          }
+                        }} className="w-full bg-neutral-950 border border-neutral-800 text-white text-sm py-2 px-3 rounded-lg focus:outline-none focus:border-indigo-500 [color-scheme:dark]" />
                     </div>
                     <div>
                       <p className="text-xs font-bold text-neutral-400 uppercase mb-2">Fecha Fin</p>
-                      <input type="date" value={format(endDate, 'yyyy-MM-dd')} onChange={(e) => setEndDate(new Date(e.target.value))} className="w-full bg-neutral-950 border border-neutral-800 text-white text-sm py-2 px-3 rounded-lg focus:outline-none focus:border-indigo-500" />
+                      <input type="date" value={format(endDate, 'yyyy-MM-dd')} onChange={(e) => {
+                          if(e.target.value) {
+                            const d = new Date(e.target.value + 'T00:00:00');
+                            if(!isNaN(d.getTime())) setEndDate(d);
+                          }
+                        }} className="w-full bg-neutral-950 border border-neutral-800 text-white text-sm py-2 px-3 rounded-lg focus:outline-none focus:border-indigo-500 [color-scheme:dark]" />
                     </div>
                   </div>
                   <div className="w-full sm:w-48 sm:border-l border-neutral-800 sm:pl-5">
