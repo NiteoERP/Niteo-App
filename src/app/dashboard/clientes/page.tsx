@@ -19,7 +19,7 @@ export default async function ClientesPage() {
 
   // Fetch customers
   const { data: clientes, error } = await supabase
-    .from('pos_clientes')
+    .from('clientes')
     .select('*')
     .eq('empresa_id', empresaId)
     .order('nombre', { ascending: true })
