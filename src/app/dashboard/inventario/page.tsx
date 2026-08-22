@@ -2,8 +2,7 @@ import React from 'react';
 import { createClient } from '@/utils/supabase/server';
 import InsumosManager from './InsumosManager';
 import ProductosEnriquecidos from './ProductosEnriquecidos';
-import DespachosManager from './DespachosManager';
-import { Package, Beaker, FileBox, Truck } from 'lucide-react';
+import { Package, Beaker, FileBox } from 'lucide-react';
 
 export default async function InventarioPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const params = await searchParams;
@@ -61,12 +60,6 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
         >
           <Beaker size={16} /> Catálogo y Recetas
         </a>
-        <a 
-          href="?tab=despachos" 
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${currentTab === 'despachos' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:border-neutral-700'}`}
-        >
-          <Truck size={16} /> Despachos (Traslados)
-        </a>
       </div>
 
       {/* Contenido Dinámico */}
@@ -82,10 +75,6 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
             recetas={recetas} 
             empresaId={empresaId} 
           />
-        )}
-
-        {currentTab === 'despachos' && (
-          <DespachosManager empresaId={empresaId} />
         )}
       </div>
       
