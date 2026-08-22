@@ -12,8 +12,9 @@ const REPORT_MENU = [
     reports: [
       { id: 'ventas_diarias', name: 'Ventas Diarias' },
       { id: 'ventas_productos', name: 'Ventas por Producto' },
-      { id: 'ventas_metodos_pago', name: 'Ventas por Método de Pago' },
-      { id: 'ventas_usuarios', name: 'Desempeño de Cajeros' },
+      { id: 'ventas_productos_clientes', name: 'Ventas por Producto y Cliente' },
+      { id: 'ventas_metodos_pago', name: 'Ventas por Mtodo de Pago' },
+      { id: 'ventas_usuarios', name: 'Desempeo de Cajeros' },
       { id: 'cuentas_por_cobrar', name: 'Cuentas por Cobrar (Créditos)' },
       { id: 'cuentas_abiertas', name: 'Cuentas Abiertas (Mesas)' }
     ]
@@ -65,13 +66,43 @@ export default function InformesPage() {
     try {
       const res = await generateReport(selectedReportId, sedeId, startDate, endDate);
       if (res.success) {
-        setReportData(res.data);
+        let finalData = res.data;
+
+        // Si es el reporte de mtodos de pago, hacemos un pivot table por fecha
+        if (selectedReportId === 'ventas_metodos_pago' && finalData.length > 0 && finalData[0]['Fecha']) {
+           const pivotMap = new Map();
+           const metodosSet = new Set<string>();
+
+           finalData.forEach((row: any) => {
+             const fecha = row['Fecha'];
+             const metodo = row['Metodo de Pago'];
+             const monto = row['Monto Total'] || 0;
+             metodosSet.add(metodo);
+
+             if (!pivotMap.has(fecha)) {
+               pivotMap.set(fecha, { Fecha: fecha });
+             }
+             pivotMap.get(fecha)[metodo] = monto;
+           });
+
+           // Convertir a array
+           const metodosArray = Array.from(metodosSet).sort();
+           finalData = Array.from(pivotMap.values()).map((row: any) => {
+             // Asegurar que todos los mtodos tengan un valor (0 si no hay)
+             metodosArray.forEach(m => {
+               if (row[m] === undefined) row[m] = 0;
+             });
+             return row;
+           });
+        }
+
+        setReportData(finalData);
         setShowPreviewModal(true);
       } else {
         setReportError(res.error || 'Error desconocido');
       }
     } catch (err: any) {
-      setReportError(err.message || 'Error de conexión');
+      setReportError(err.message || 'Error de conexin');
     } finally {
       setIsLoading(false);
     }
@@ -155,7 +186,7 @@ export default function InformesPage() {
           <h2 className="text-base font-bold text-white flex items-center gap-2">Filtros Activos</h2>
         </div>
         
-        <div className="flex-1 overflow-y-auto p-5 space-y-6">
+        <div className="flex-1 p-5 space-y-6 overflow-visible">
           <div className="space-y-2">
             <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Sucursal / Sede</label>
             <div className="relative">
@@ -239,6 +270,32 @@ export default function InformesPage() {
                    Vista Previa del Reporte
                  </h3>
                  <div className="flex items-center gap-3">
+                   <button onClick={() => {
+                      if (!reportData || reportData.length === 0) return;
+                      const columns = Object.keys(reportData[0]);
+                      let csvContent = "data:text/csv;charset=utf-8,\uFEFF" + columns.join(";") + "\n";
+                      reportData.forEach(row => {
+                        const rowString = columns.map(col => {
+                          let val = row[col];
+                          if (val === null || val === undefined) val = "";
+                          if (typeof val === 'string') {
+                             val = val.replace(/"/g, '""');
+                             val = `"${val}"`;
+                          }
+                          return val;
+                        }).join(";");
+                        csvContent += rowString + "\n";
+                      });
+                      const encodedUri = encodeURI(csvContent);
+                      const link = document.createElement("a");
+                      link.setAttribute("href", encodedUri);
+                      link.setAttribute("download", `${selectedReportName?.replace(/ /g, '_')}_${format(new Date(), 'yyyyMMdd')}.csv`);
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                   }} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm">
+                     <FileSpreadsheet size={18} /> Exportar Excel
+                   </button>
                    <button onClick={()=>window.print()} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm">
                      <Printer size={18} /> Imprimir / PDF
                    </button>

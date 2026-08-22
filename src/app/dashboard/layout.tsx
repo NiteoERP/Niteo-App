@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation';
+﻿import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
 import { 
@@ -11,7 +11,7 @@ import {
   UserCircle,
   ShieldAlert,
   FileText
-} from 'lucide-react';
+, Wallet } from 'lucide-react';
 import { LogoutButton } from '@/components/LogoutButton';
 
 export default async function DashboardLayout({
@@ -41,7 +41,7 @@ export default async function DashboardLayout({
   let daysLeft = 0;
 
   if (empresa_id) {
-    // Leemos la suscripciÃƒÆ’Ã‚Â³n de forma segura (nuestro RLS ya lo protege por empresa_id)
+    // Leemos la suscripciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n de forma segura (nuestro RLS ya lo protege por empresa_id)
     const { data: sub } = await supabase
       .from('suscripciones_empresas')
       .select('plan, fecha_vencimiento, estado')
@@ -116,17 +116,20 @@ export default async function DashboardLayout({
           )}
 
           {hasPerm('clientes') && (
-            <Link href="/dashboard/clientes" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
-              <Users size={20} />
-              <span className="text-sm font-medium">Clientes</span>
-            </Link>
-          )}
-
-          {hasPerm('usuarios') && (
-            <Link href="/dashboard/equipo" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
-              <UserCircle size={20} />
-              <span className="text-sm font-medium">Equipo</span>
-            </Link>
+            <>
+              <Link href="/dashboard/clientes" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
+                <Users size={20} className="shrink-0" />
+                <span className="font-medium">Directorio</span>
+              </Link>
+              <Link href="/dashboard/creditos" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
+                <Wallet size={20} className="shrink-0 text-emerald-400" />
+                <span className="font-medium">Cuentas por Cobrar</span>
+              </Link>
+              <Link href="/dashboard/equipo" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
+                <UserCircle size={20} />
+                <span className="text-sm font-medium">Equipo</span>
+              </Link>
+            </>
           )}
         </nav>
 
@@ -135,7 +138,7 @@ export default async function DashboardLayout({
             {hasPerm('auditoria') && (
               <Link href="/dashboard/auditoria" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
                 <ShieldAlert size={20} />
-                <span className="text-sm font-medium">AuditorÃ­a</span>
+                <span className="text-sm font-medium">AuditorÃƒÂ­a</span>
               </Link>
             )}
             {hasPerm('ajustes') && (
@@ -148,7 +151,7 @@ export default async function DashboardLayout({
         )}
       </aside>
 
-      {/* ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ REA PRINCIPAL */}
+      {/* ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€š REA PRINCIPAL */}
       <div className="flex-1 flex flex-col min-w-0">
         
         {/* TOPBAR */}
@@ -160,10 +163,10 @@ export default async function DashboardLayout({
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-4">
               
-              {/* BADGE DE SUSCRIPCIÓN */}
+              {/* BADGE DE SUSCRIPCIÃ“N */}
               {isTrial && (
                 <div className="hidden md:flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 px-3 py-1.5 rounded-full">
-                  <span className="text-orange-400 text-xs font-semibold tracking-wide">TRIAL: Quedan {daysLeft} días</span>
+                  <span className="text-orange-400 text-xs font-semibold tracking-wide">TRIAL: Quedan {daysLeft} dÃ­as</span>
                   <Link href="/dashboard/billing" className="text-orange-300 hover:text-white text-xs underline decoration-orange-500/30 font-medium transition-colors">
                     Actualizar a PRO
                   </Link>
@@ -171,7 +174,7 @@ export default async function DashboardLayout({
               )}
               {!isTrial && subEstado === 'ACTIVA' && subPlan === 'PRO' && (
                 <div className="hidden md:flex items-center bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-full">
-                  <span className="text-indigo-400 text-xs font-bold tracking-widest uppercase">VERSIÓN PRO</span>
+                  <span className="text-indigo-400 text-xs font-bold tracking-widest uppercase">VERSIÃ“N PRO</span>
                 </div>
               )}
 
@@ -183,7 +186,7 @@ export default async function DashboardLayout({
                 <UserCircle size={22} className="text-indigo-400" />
               </div>
               
-              {/* BotÃƒÆ’Ã‚Â³n de Cerrar SesiÃƒÆ’Ã‚Â³n */}
+              {/* BotÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n de Cerrar SesiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n */}
               <LogoutButton />
             </div>
           </div>

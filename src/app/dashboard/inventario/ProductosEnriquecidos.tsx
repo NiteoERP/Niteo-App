@@ -17,7 +17,7 @@ export default function ProductosEnriquecidos({ productos, insumos, recetas, emp
   );
 
   // Recetas del producto seleccionado
-  const productRecipes = selectedProduct ? recetas.filter(r => r.producto_id === selectedProduct.id_producto) : [];
+  const productRecipes = selectedProduct ? recetas.filter(r => r.producto_id === selectedProduct.id) : [];
   
   const handleSaveProductInfo = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,9 +25,9 @@ export default function ProductosEnriquecidos({ productos, insumos, recetas, emp
     
     setFeedback('');
     startTransition(async () => {
-      const res = await updateProducto(selectedProduct.id_producto, selectedProduct.descripcion, selectedProduct.es_compuesto);
+      const res = await updateProducto(selectedProduct.id, selectedProduct.descripcion, selectedProduct.es_compuesto, selectedProduct.estado_activo);
       if (res.success) {
-        setFeedback('Información guardada.');
+        setFeedback('InformaciÃ³n guardada.');
         setTimeout(() => setFeedback(''), 2000);
       } else {
         setFeedback('Error: ' + res.error);
@@ -46,7 +46,7 @@ export default function ProductosEnriquecidos({ productos, insumos, recetas, emp
   return (
     <div className="flex flex-col lg:flex-row gap-6 h-[700px]">
       
-      {/* Lista de Productos (Catálogo) */}
+      {/* Lista de Productos (CatÃ¡logo) */}
       <div className="w-full lg:w-1/3 bg-neutral-900 border border-neutral-800 rounded-2xl flex flex-col overflow-hidden shadow-xl">
         <div className="p-4 border-b border-neutral-800">
           <div className="relative">
@@ -64,14 +64,14 @@ export default function ProductosEnriquecidos({ productos, insumos, recetas, emp
           <ul className="divide-y divide-neutral-800/50">
             {filteredProducts.map(prod => (
               <li 
-                key={prod.id_producto}
+                key={prod.id}
                 onClick={() => setSelectedProduct(prod)}
-                className={`p-4 cursor-pointer hover:bg-white/[0.02] transition-colors ${selectedProduct?.id_producto === prod.id_producto ? 'bg-indigo-500/10 border-l-2 border-indigo-500' : 'border-l-2 border-transparent'}`}
+                className={`p-4 cursor-pointer hover:bg-white/[0.02] transition-colors ${selectedProduct?.id === prod.id ? 'bg-indigo-500/10 border-l-2 border-indigo-500' : 'border-l-2 border-transparent'}`}
               >
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-sm font-medium text-white">{prod.nombre}</p>
-                    <p className="text-xs text-neutral-500 mt-1 font-mono">{prod.codigo_barras || 'Sin código'}</p>
+                    <p className="text-xs text-neutral-500 mt-1 font-mono">{prod.codigo_barras || 'Sin cÃ³digo'}</p>
                   </div>
                   {prod.es_compuesto && (
                     <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded flex items-center gap-1">
@@ -111,7 +111,7 @@ export default function ProductosEnriquecidos({ productos, insumos, recetas, emp
               </div>
               
               <div>
-                <label className="block text-xs font-medium text-neutral-400 mb-1.5">Descripción para E-commerce o Menú Web</label>
+                <label className="block text-xs font-medium text-neutral-400 mb-1.5">DescripciÃ³n para E-commerce o MenÃº Web</label>
                 <textarea 
                   rows={2}
                   className="w-full bg-neutral-900 border border-neutral-800 text-white rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none"
@@ -130,7 +130,20 @@ export default function ProductosEnriquecidos({ productos, insumos, recetas, emp
                   className="w-4 h-4 rounded border-neutral-700 text-indigo-600 focus:ring-indigo-600 bg-neutral-900"
                 />
                 <label htmlFor="compuesto" className="text-sm text-indigo-300 font-medium">
-                  Es un producto compuesto (Usa receta para descontar insumos del almacén)
+                  Es un producto compuesto (Usa receta para descontar insumos del almacÃ©n)
+                </label>
+              </div>
+
+              <div className="flex items-center gap-3 bg-neutral-900 p-3 rounded-lg border border-neutral-800">
+                <input 
+                  type="checkbox" 
+                  id="activo"
+                  checked={selectedProduct.estado_activo !== false}
+                  onChange={(e) => setSelectedProduct({...selectedProduct, estado_activo: e.target.checked})}
+                  className="w-4 h-4 rounded border-neutral-700 text-emerald-600 focus:ring-emerald-600 bg-neutral-900"
+                />
+                <label htmlFor="activo" className="text-sm text-neutral-300 font-medium">
+                  Producto Activo (Visible en catálogos y ventas)
                 </label>
               </div>
 
@@ -154,7 +167,7 @@ export default function ProductosEnriquecidos({ productos, insumos, recetas, emp
                     <thead className="bg-neutral-900/80 text-neutral-500">
                       <tr>
                         <th className="px-4 py-3 font-medium">Insumo</th>
-                        <th className="px-4 py-3 font-medium">Porción a Descontar</th>
+                        <th className="px-4 py-3 font-medium">PorciÃ³n a Descontar</th>
                         <th className="px-4 py-3 font-medium text-right">Costo Calculado</th>
                         <th className="px-4 py-3"></th>
                       </tr>
@@ -163,7 +176,7 @@ export default function ProductosEnriquecidos({ productos, insumos, recetas, emp
                       {productRecipes.map(r => {
                         const isSubproduct = !!r.subproducto_id;
                         const itemNombre = isSubproduct 
-                          ? (productos.find(p => p.id_producto === r.subproducto_id)?.nombre || 'Subproducto Desconocido')
+                          ? (productos.find(p => p.id === r.subproducto_id)?.nombre || 'Subproducto Desconocido')
                           : (insumos.find(i => i.id === r.insumo_id)?.nombre || 'Insumo Desconocido');
                           
                         const itemUnidad = isSubproduct 
@@ -171,7 +184,7 @@ export default function ProductosEnriquecidos({ productos, insumos, recetas, emp
                           : (insumos.find(i => i.id === r.insumo_id)?.unidad_medida || '');
                           
                         const costoReceta = isSubproduct 
-                          ? 0 // Cálculo recursivo complejo para frontend, dejamos en 0 por ahora
+                          ? 0 // CÃ¡lculo recursivo complejo para frontend, dejamos en 0 por ahora
                           : (r.cantidad_necesaria * (insumos.find(i => i.id === r.insumo_id)?.costo_unitario || 0));
 
                         return (
@@ -220,7 +233,7 @@ export default function ProductosEnriquecidos({ productos, insumos, recetas, emp
                   const [tipo, id] = itemValue.split('||'); // 'insumo||123' o 'producto||456'
                   
                   startTransition(async () => {
-                    await addInsumoToReceta(empresaId, selectedProduct.id_producto, id, tipo as 'insumo'|'producto', cantidad);
+                    await addInsumoToReceta(empresaId, selectedProduct.id, id, tipo as 'insumo'|'producto', cantidad);
                     form.reset();
                   });
                 }} className="flex gap-2 items-end">
@@ -232,8 +245,8 @@ export default function ProductosEnriquecidos({ productos, insumos, recetas, emp
                         {insumos.map(i => <option key={`i-${i.id}`} value={`insumo||${i.id}`}>{i.nombre} ({i.unidad_medida})</option>)}
                       </optgroup>
                       <optgroup label="Subproductos (Para Combos)">
-                        {productos.filter(p => p.id_producto !== selectedProduct.id_producto).map(p => (
-                           <option key={`p-${p.id_producto}`} value={`producto||${p.id_producto}`}>{p.nombre}</option>
+                        {productos.filter(p => p.id !== selectedProduct.id).map(p => (
+                           <option key={`p-${p.id}`} value={`producto||${p.id}`}>{p.nombre}</option>
                         ))}
                       </optgroup>
                     </select>
@@ -254,7 +267,7 @@ export default function ProductosEnriquecidos({ productos, insumos, recetas, emp
           <div className="flex-1 flex flex-col items-center justify-center text-neutral-500 p-8 text-center bg-neutral-900/50">
             <Beaker size={48} className="mb-4 opacity-20" />
             <h3 className="text-lg font-medium text-neutral-300 mb-1">Selecciona un producto</h3>
-            <p className="text-sm max-w-sm">Haz clic en cualquier producto del catálogo de la izquierda para configurar su receta y atributos.</p>
+            <p className="text-sm max-w-sm">Haz clic en cualquier producto del catÃ¡logo de la izquierda para configurar su receta y atributos.</p>
           </div>
         )}
       </div>

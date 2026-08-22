@@ -94,6 +94,7 @@ export async function getProductosCatalogo(empresaId: string): Promise<ProductoP
     .from('productos')
     .select('id, codigo_barras, nombre, precio_venta, costo')
     .eq('empresa_id', empresaId)
+    .eq('estado_activo', true)
     .order('nombre', { ascending: true });
 
   if (error) {

@@ -37,8 +37,8 @@ export default function InsumosManager({ initialInsumos, empresaId }: { initialI
       empresa_id: empresaId,
       nombre,
       unidad_medida: unidad,
-      costo_unitario: parseFloat(costo),
-      stock_actual: parseFloat(stock)
+      costo_promedio: parseFloat(costo),
+      cantidad_actual: parseFloat(stock)
     };
 
     // Reset form immediately
@@ -49,7 +49,7 @@ export default function InsumosManager({ initialInsumos, empresaId }: { initialI
       addOptimisticInsumo({ type: 'add', payload: newInsumo });
       
       // 2. Operación Real
-      const res = await createInsumo(empresaId, newInsumo.nombre, newInsumo.unidad_medida, newInsumo.costo_unitario, newInsumo.stock_actual);
+      const res = await createInsumo(empresaId, newInsumo.nombre, newInsumo.unidad_medida, newInsumo.costo_promedio, newInsumo.cantidad_actual);
       
       if (!res.success) {
         setError('Error al crear insumo: ' + res.error);
@@ -124,7 +124,7 @@ export default function InsumosManager({ initialInsumos, empresaId }: { initialI
             <tr>
               <th className="px-6 py-3">Insumo</th>
               <th className="px-6 py-3">Costo ($)</th>
-              <th className="px-6 py-3">Stock Actual</th>
+              <th className="px-6 py-3">Cantidad Actual</th>
               <th className="px-6 py-3 text-right">Acciones</th>
             </tr>
           </thead>
@@ -132,10 +132,10 @@ export default function InsumosManager({ initialInsumos, empresaId }: { initialI
             {optimisticInsumos.map(insumo => (
               <tr key={insumo.id} className={`hover:bg-white/[0.02] transition-colors ${insumo.isOptimistic ? 'opacity-50 animate-pulse' : ''}`}>
                 <td className="px-6 py-3 font-medium text-neutral-200">{insumo.nombre}</td>
-                <td className="px-6 py-3 text-neutral-400">${Number(insumo.costo_unitario).toFixed(2)} / {insumo.unidad_medida}</td>
+                <td className="px-6 py-3 text-neutral-400">${Number(insumo.costo_promedio).toFixed(2)} / {insumo.unidad_medida}</td>
                 <td className="px-6 py-3">
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${insumo.stock_actual <= 0 ? 'bg-rose-500/10 text-rose-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
-                    {Number(insumo.stock_actual).toFixed(2)} {insumo.unidad_medida}
+                  <span className={`px-2 py-1 rounded text-xs font-medium ${insumo.cantidad_actual <= 0 ? 'bg-rose-500/10 text-rose-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
+                    {Number(insumo.cantidad_actual).toFixed(2)} {insumo.unidad_medida}
                   </span>
                 </td>
                 <td className="px-6 py-3 text-right">
