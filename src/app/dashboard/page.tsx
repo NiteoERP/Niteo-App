@@ -1,4 +1,5 @@
 'use client';
+import { useEmpresa } from '@/components/providers/EmpresaProvider';
 
 import React, { useState, useEffect } from 'react';
 import { getDashboardData, getSedes } from '@/actions/dashboard-actions';
@@ -11,6 +12,7 @@ import RecentSalesWidget from '@/components/pos/RecentSalesWidget';
 import ReportPreviewModal from '@/components/reports/ReportPreviewModal';
 
 export default function DashboardPage() {
+  const { formatCurrency } = useEmpresa();
   const [range, setRange] = useState('thisMonth');
   const [sedeId, setSedeId] = useState('ALL');
   const [sedes, setSedes] = useState<any[]>([]);
@@ -53,7 +55,7 @@ export default function DashboardPage() {
     utilidad: acc.utilidad + Number(curr.utilidad_neta)
   }), { ventas: 0, cogs: 0, gastos: 0, mermas: 0, utilidad: 0 });
 
-  const formatMoney = (val: number) => `$${val.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+  const formatMoney = formatCurrency;
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">

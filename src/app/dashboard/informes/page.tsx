@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Calendar as CalendarIcon, Store, Users, Printer, FileSpreadsheet, Search, Check, X, Box, Tag } from 'lucide-react';
 import { getSedes } from '@/actions/dashboard-actions'; 
+import { useEmpresa } from '@/components/providers/EmpresaProvider'; 
 import { generateReport } from '@/actions/informes-actions';
 import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, subWeeks } from 'date-fns';
 
@@ -35,6 +36,7 @@ const REPORT_MENU = [
 ];
 
 export default function InformesPage() {
+  const { formatCurrency, empresa } = useEmpresa();
   const [selectedReportId, setSelectedReportId] = useState('ventas_diarias');
   const [sedes, setSedes] = useState<any[]>([]);
   

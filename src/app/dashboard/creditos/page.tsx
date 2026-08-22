@@ -4,9 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { getSedes } from '@/actions/dashboard-actions';
 import { getClientesConDeuda, getDetalleDeudaCliente, registrarAbono, getMetodosPago } from '@/actions/creditos-actions';
 import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, subWeeks } from 'date-fns';
+import { useEmpresa } from '@/components/providers/EmpresaProvider';
 import { Calendar as CalendarIcon, Store, Wallet, Search, Check, FileText, ShoppingCart, User, Users, PlusCircle, X } from 'lucide-react';
 
 export default function CreditosPage() {
+  const { formatCurrency } = useEmpresa();
   const [sedes, setSedes] = useState<any[]>([]);
   const [metodosDisponibles, setMetodosDisponibles] = useState<string[]>(['Efectivo']);
   const [sedeId, setSedeId] = useState('ALL');
@@ -193,7 +195,7 @@ export default function CreditosPage() {
               >
                 <div className="flex justify-between items-start mb-1">
                   <h3 className={`font-bold ${selectedClienteId === c.id_cliente ? 'text-emerald-400' : 'text-white'}`}>{c.nombre_cliente}</h3>
-                  <span className="font-black text-rose-400">${c.monto_adeudado?.toLocaleString('en-US', {minimumFractionDigits:2})}</span>
+                  <span className="font-black text-rose-400">{formatCurrency(c.monto_adeudado || 0)}</span>
                 </div>
                 <p className="text-xs text-neutral-500">Última compra: {format(new Date(c.ultima_compra), 'dd/MM/yyyy')}</p>
               </button>
@@ -214,7 +216,7 @@ export default function CreditosPage() {
           <>
             <div className="p-6 border-b border-neutral-800 bg-neutral-900/50">
               <h2 className="text-2xl font-black text-white">{clienteSeleccionado?.nombre_cliente}</h2>
-              <p className="text-rose-400 font-bold mt-1">Deuda Total: ${clienteSeleccionado?.monto_adeudado?.toLocaleString('en-US', {minimumFractionDigits:2})}</p>
+              <p className="text-rose-400 font-bold mt-1">Deuda Total: {formatCurrency(clienteSeleccionado?.monto_adeudado || 0)}</p>
             </div>
             
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -236,11 +238,11 @@ export default function CreditosPage() {
                       <div className="flex items-center gap-6">
                         <div className="text-right">
                           <p className="text-xs font-bold text-neutral-400 uppercase">Total Factura</p>
-                          <p className="font-medium text-white">${fac.total_factura?.toLocaleString('en-US', {minimumFractionDigits:2})}</p>
+                          <p className="font-medium text-white">{formatCurrency(fac.total_factura || 0)}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-xs font-bold text-rose-500 uppercase">Falta por Pagar</p>
-                          <p className="font-black text-rose-400 text-lg">${fac.saldo_pendiente?.toLocaleString('en-US', {minimumFractionDigits:2})}</p>
+                          <p className="font-black text-rose-400 text-lg">{formatCurrency(fac.saldo_pendiente || 0)}</p>
                         </div>
                         <button 
                           onClick={() => { setFacturaPagar(fac); setMontoAbonar(fac.saldo_pendiente); setShowPagoModal(true); }}
@@ -257,7 +259,7 @@ export default function CreditosPage() {
                         {fac.productos_detalle?.map((p:any, j:number) => (
                           <div key={j} className="flex justify-between items-center p-2 rounded bg-neutral-900/50 border border-neutral-800/50">
                             <span className="text-sm font-medium text-neutral-300 truncate pr-2">{p.cantidad}x {p.producto}</span>
-                            <span className="text-sm font-bold text-neutral-400">${p.total?.toLocaleString('en-US', {minimumFractionDigits:2})}</span>
+                            <span className="text-sm font-bold text-neutral-400">{formatCurrency(p.total || 0)}</span>
                           </div>
                         ))}
                       </div>

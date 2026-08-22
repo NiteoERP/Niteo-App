@@ -1,3 +1,5 @@
+'use client';
+import { useEmpresa } from '@/components/providers/EmpresaProvider';
 import React from 'react';
 import { Printer, Download, FileText, FileSpreadsheet, X } from 'lucide-react';
 
@@ -9,8 +11,9 @@ interface ReportPreviewProps {
 }
 
 export default function ReportPreviewModal({ data, kpis, range, onClose }: ReportPreviewProps) {
+  const { formatCurrency } = useEmpresa();
   
-  const formatMoney = (val: number) => `$${Number(val).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+  const formatMoney = formatCurrency;
 
   const getRangeLabel = () => {
     switch(range) {
