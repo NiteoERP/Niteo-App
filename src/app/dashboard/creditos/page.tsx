@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { getSedes } from '@/actions/dashboard-actions';
 import { getClientesConDeuda, getDetalleDeudaCliente, registrarAbono, getMetodosPago } from '@/actions/creditos-actions';
 import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, subWeeks } from 'date-fns';
-import { Calendar as CalendarIcon, Store, Wallet, Search, Check, FileText, ShoppingCart, User, PlusCircle, X } from 'lucide-react';
+import { Calendar as CalendarIcon, Store, Wallet, Search, Check, FileText, ShoppingCart, User, Users, PlusCircle, X } from 'lucide-react';
 
 export default function CreditosPage() {
   const [sedes, setSedes] = useState<any[]>([]);
