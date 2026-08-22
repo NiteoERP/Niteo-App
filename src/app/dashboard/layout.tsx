@@ -1,4 +1,4 @@
-﻿import { redirect } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
 import { 
@@ -13,6 +13,7 @@ import {
   FileText
 , Wallet } from 'lucide-react';
 import { LogoutButton } from '@/components/LogoutButton';
+import EmpresaProvider from '@/components/providers/EmpresaProvider';
 
 export default async function DashboardLayout({
   children,
@@ -39,9 +40,14 @@ export default async function DashboardLayout({
   let subPlan = 'BASICO';
   let subEstado = 'INACTIVA';
   let daysLeft = 0;
+  let empresaData = null;
 
   if (empresa_id) {
-    // Leemos la suscripciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n de forma segura (nuestro RLS ya lo protege por empresa_id)
+    // Leemos datos de la empresa para el contexto SaaS
+    const { data: emp } = await supabase.from('empresas').select('nombre_comercial, moneda, simbolo_moneda, zona_horaria').eq('id', empresa_id).single();
+    if(emp) empresaData = emp;
+
+    // Leemos la suscripción de forma segura (nuestro RLS ya lo protege por empresa_id)
     const { data: sub } = await supabase
       .from('suscripciones_empresas')
       .select('plan, fecha_vencimiento, estado')
@@ -194,7 +200,9 @@ export default async function DashboardLayout({
 
         {/* CONTENIDO */}
         <main className="flex-1 overflow-y-auto p-6 bg-[#0a0a0a]">
-          {children}
+          <EmpresaProvider empresa={empresaData}>
+            {children}
+          </EmpresaProvider>
         </main>
       </div>
     </div>

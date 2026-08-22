@@ -8,15 +8,15 @@ export default async function SettingsPage() {
   const { data: { user } } = await supabase.auth.getUser();
   const empresaId = user?.app_metadata?.empresa_id;
 
-  let empresaName = '';
+  let empresaObj = null;
   if (empresaId) {
     const { data: empresa } = await supabase
       .from('empresas')
-      .select('nombre_comercial')
+      .select('*')
       .eq('id', empresaId)
       .single();
     
-    empresaName = empresa?.nombre_comercial || '';
+    empresaObj = empresa;
   }
 
   return (
@@ -32,8 +32,8 @@ export default async function SettingsPage() {
           <h2 className="text-lg font-medium text-white">Perfil de la Empresa</h2>
         </div>
 
-        {empresaId ? (
-          <SettingsForm initialName={empresaName} empresaId={empresaId} />
+        {empresaObj ? (
+          <SettingsForm empresa={empresaObj} />
         ) : (
           <p className="text-rose-400 text-sm">Error: No se encontró la empresa asociada a tu perfil.</p>
         )}
