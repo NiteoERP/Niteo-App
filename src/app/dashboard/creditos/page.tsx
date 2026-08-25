@@ -22,6 +22,7 @@ export default function CreditosPage() {
   
   // Datos
   const [clientes, setClientes] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [isLoadingClientes, setIsLoadingClientes] = useState(false);
   
   const [selectedClienteId, setSelectedClienteId] = useState<string | null>(null);
@@ -104,6 +105,10 @@ export default function CreditosPage() {
 
   const clienteSeleccionado = clientes.find(c => c.id_cliente === selectedClienteId);
 
+  const filteredClientes = clientes.filter(c => 
+    c.nombre_cliente?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const generatePDF = () => {
     if (!clienteSeleccionado) return;
     
@@ -170,8 +175,27 @@ export default function CreditosPage() {
         </div>
         
         <div className="flex-1 p-5 space-y-6 overflow-visible">
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Sucursal</label>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Buscar Cliente</label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 w-4 h-4" />
+                <input 
+                  type="text" 
+                  placeholder="Ej. Juan Perez" 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-neutral-900 border border-neutral-800 text-white text-sm py-2.5 pl-10 pr-3 rounded-lg focus:outline-none focus:border-emerald-500 placeholder-neutral-600"
+                />
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white">
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Sucursal</label>
             <div className="relative">
               <Store className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 w-4 h-4" />
               <select value={sedeId} onChange={(e) => setSedeId(e.target.value)} className="w-full bg-neutral-900 border border-neutral-800 text-white text-sm py-2.5 pl-10 pr-3 rounded-lg focus:outline-none focus:border-emerald-500 appearance-none">
@@ -238,10 +262,10 @@ export default function CreditosPage() {
         <div className="flex-1 overflow-y-auto max-h-[40vh] lg:max-h-full p-4 space-y-3 custom-scrollbar">
           {isLoadingClientes ? (
             <p className="text-neutral-500 text-center py-10 text-sm font-medium">Cargando...</p>
-          ) : clientes.length === 0 ? (
-            <p className="text-neutral-500 text-center py-10 text-sm font-medium">No hay deudas en este período.</p>
+          ) : filteredClientes.length === 0 ? (
+            <p className="text-neutral-500 text-center py-10 text-sm font-medium">No hay deudas o clientes coincidentes.</p>
           ) : (
-            clientes.map((cli) => (
+            filteredClientes.map((cli) => (
               <button
                 key={cli.id_cliente}
                 onClick={() => fetchDetalle(cli.id_cliente)}
