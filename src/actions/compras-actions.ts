@@ -152,7 +152,7 @@ export async function registrarFacturaInsumos(factura: {
     monto_divisas: montoTotalDivisas,     
     monto_bs: montoTotalBs,     
     tasa_cambio: factura.tasa,     
-    detalles: `Compra Insumos - ${factura.items.length} items`,     
+    detalles: JSON.stringify({ texto: `Compra Insumos - ${factura.items.length} items`, is_insumos: true, items: factura.items }),     
     metodo_pago: factura.moneda === 'USD' ? 'Efectivo USD' : 'Transferencia BS',     
     estado: 'PROCESADA'   
   }).select('id').single();    
@@ -187,4 +187,110 @@ export async function registrarFacturaInsumos(factura: {
 }
 
 
+
+
+
+
+export async function editarFacturaInsumos(
+  id_compra: string,
+  factura: {
+    proveedor: string;
+    moneda: 'USD' | 'VES';
+    tasa: number;
+    metodo_pago: string;
+    items_viejos: Array<{ insumo_id: string; cantidad: number; costoTotal: number }>;
+    items_nuevos: Array<{
+      insumo_id: string | null;
+      is_new: boolean;
+      nombre_nuevo: string;
+      unidad_nueva: string;
+      cantidad: number;
+      costoTotal: number;
+    }>;
+  }
+) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'No autorizado.' };
+  const { data: profile } = await supabase.from('perfiles').select('empresa_id, sede_id').eq('id', user.id).single();
+  if (!profile) return { error: 'Perfil no encontrado.' };
+
+  let activeSedeId = profile.sede_id;
+  if (!activeSedeId) {
+    const { data: sedes } = await supabase.from('sedes').select('id').eq('empresa_id', profile.empresa_id).limit(1).single();
+    if (sedes) activeSedeId = sedes.id;
+  }
+
+  // 1. Revertir inventario de items viejos
+  for (const oldItem of factura.items_viejos) {
+    if (oldItem.insumo_id) {
+      let usd = oldItem.costoTotal;
+      if (factura.moneda === 'VES') usd = usd / factura.tasa;
+      
+      const { data: insumo } = await supabase.from('inventario_insumos').select('cantidad_actual, costo_promedio').eq('id', oldItem.insumo_id).single();
+      if (insumo) {
+         let newCant = Number(insumo.cantidad_actual) - Number(oldItem.cantidad);
+         if (newCant < 0) newCant = 0;
+         await supabase.from('inventario_insumos').update({ cantidad_actual: newCant }).eq('id', oldItem.insumo_id);
+      }
+    }
+  }
+
+  // 2. Procesar y aplicar nuevos items
+  let montoTotalDivisas = 0;
+  let montoTotalBs = 0;
+
+  for (const item of factura.items_nuevos) {
+    let costoUSD = item.costoTotal;
+    if (factura.moneda === 'VES') {
+      costoUSD = item.costoTotal / factura.tasa;
+    }
+    montoTotalDivisas += costoUSD;
+
+    let idInsumo = item.insumo_id;
+    if (item.is_new && item.nombre_nuevo) {
+      const { data: newIns } = await supabase.from('inventario_insumos').insert({
+        empresa_id: profile.empresa_id,
+        sede_id: activeSedeId,
+        nombre: item.nombre_nuevo,
+        unidad_medida: item.unidad_nueva,
+        cantidad_actual: 0,
+        costo_promedio: 0
+      }).select('id').single();
+      if (newIns) idInsumo = newIns.id;
+    }
+
+    if (idInsumo) {
+      item.insumo_id = idInsumo; // Actualizar para guardar en el JSON final
+      await supabase.rpc('registrar_compra_insumo', {
+        p_insumo_id: idInsumo,
+        p_usuario_id: user.id,
+        p_cantidad: item.cantidad,
+        p_costo_total: costoUSD
+      });
+    }
+  }
+
+  montoTotalBs = montoTotalDivisas * factura.tasa;
+
+  // 3. Actualizar la metadata de la compra puntual
+  const { error: headErr } = await supabase.from('compras_puntuales').update({
+    proveedor: factura.proveedor,
+    monto_divisas: montoTotalDivisas,
+    monto_bs: montoTotalBs,
+    tasa_cambio: factura.tasa,
+    detalles: JSON.stringify({ 
+      texto: `Compra Insumos - ${factura.items_nuevos.length} items`, 
+      is_insumos: true, 
+      items: factura.items_nuevos 
+    }),
+    metodo_pago: factura.metodo_pago
+  }).eq('id', id_compra);
+
+  if (headErr) return { error: 'Error actualizando compra: ' + headErr.message };
+
+  revalidatePath('/dashboard/inventario');
+  revalidatePath('/dashboard/compras');
+  return { success: true };
+}
 
