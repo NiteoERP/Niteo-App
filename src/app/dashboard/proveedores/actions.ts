@@ -60,7 +60,7 @@ export async function registrarPagoProveedor(facturaId: string, monto: number, m
   return { success: true };
 }
 
-export async function getDeudaHistorica(sedeId: string, diasAtras: number) {
+export async function getHistoricoProveedores(meses: number = 6) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'No autenticado' };
@@ -68,15 +68,9 @@ export async function getDeudaHistorica(sedeId: string, diasAtras: number) {
   const { data: profile } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
   if (!profile) return { success: false, error: 'Perfil no encontrado' };
 
-  const p_sede_id = sedeId === 'ALL' ? null : sedeId;
-  const d = new Date();
-  d.setDate(d.getDate() - diasAtras);
-  const p_fecha_corte = d.toISOString();
-
-  const { data, error } = await supabase.rpc('get_deuda_proveedores_a_fecha', {
+  const { data, error } = await supabase.rpc('get_historico_proveedores', {
     p_empresa_id: profile.empresa_id,
-    p_fecha_corte,
-    p_sede_id
+    p_meses: meses
   });
 
   if (error) return { success: false, error: error.message };

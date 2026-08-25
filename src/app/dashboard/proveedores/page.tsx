@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getProveedoresConDeuda, getFacturasProveedor, registrarPagoProveedor, getDeudaHistorica } from './actions';
+import { getProveedoresConDeuda, getFacturasProveedor, registrarPagoProveedor, getHistoricoProveedores } from './actions';
 import { getSedes } from '@/actions/dashboard-actions';
 import { useEmpresa } from '@/components/providers/EmpresaProvider';
-import { Truck, Search, ChevronDown, ChevronUp, DollarSign, Building2, Check, FileText, CreditCard, X, TrendingDown, TrendingUp } from 'lucide-react';
+import { Truck, Search, ChevronDown, ChevronUp, DollarSign, Building2, Check, FileText, CreditCard, X, TrendingDown, TrendingUp, BarChart3, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function ProveedoresPage() {
   const { formatCurrency, metodos_pago } = useEmpresa();
@@ -14,7 +15,8 @@ export default function ProveedoresPage() {
   
   const [proveedores, setProveedores] = useState<any[]>([]);
   const [filteredProveedores, setFilteredProveedores] = useState<any[]>([]);
-  const [deudaPasada, setDeudaPasada] = useState<number>(0);
+  const [historico, setHistorico] = useState<any[]>([]);
+  const [showHistoricoModal, setShowHistoricoModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -39,7 +41,7 @@ export default function ProveedoresPage() {
     
     const [res, histRes] = await Promise.all([
       getProveedoresConDeuda(sedeId),
-      getDeudaHistorica(sedeId, 30) // hace 30 días
+      getHistoricoProveedores(12) // 12 meses para la gráfica
     ]);
 
     if (res.success) {
@@ -47,7 +49,8 @@ export default function ProveedoresPage() {
       setFilteredProveedores(res.data);
     }
     if (histRes.success) {
-      setDeudaPasada(Number(histRes.data));
+      // Revertimos para que el mes actual salga al final de la gráfica
+      setHistorico(histRes.data.reverse());
     }
     setLoading(false);
   };
@@ -102,17 +105,12 @@ export default function ProveedoresPage() {
 
     if (res.success) {
       setShowPagoModal(false);
-      // Reload current expanded data
+      fetchInit();
       if (expandedId) {
         setLoadingFacturas(true);
         const fRes = await getFacturasProveedor(expandedId, sedeId);
         if (fRes.success) setFacturasProveedor(fRes.data);
         setLoadingFacturas(false);
-      }
-      // Reload master list
-      const pRes = await getProveedoresConDeuda(sedeId);
-      if (pRes.success) {
-        setProveedores(pRes.data);
       }
     } else {
       alert("Error al registrar pago: " + res.error);
@@ -120,6 +118,7 @@ export default function ProveedoresPage() {
   };
 
   const deudaTotal = proveedores.reduce((acc, curr) => acc + Number(curr.monto_adeudado), 0);
+  const deudaMesPasado = historico.length > 1 ? Number(historico[historico.length - 2].deuda_acumulada) : 0;
 
   return (
     <div className="space-y-6 max-w-7xl animate-in fade-in duration-300">
@@ -145,9 +144,8 @@ export default function ProveedoresPage() {
             <option value="ALL">Todas las Sucursales</option>
             {sedes.map(s => <option key={s.id} value={s.id}>{s.nombre_comercial || s.nombre}</option>)}
           </select>
-          {/* Botón para registrar nueva factura (a futuro o si desean usar el actual) */}
-          <button onClick={() => alert('Para registrar una nueva deuda, usa el módulo de Compras / Ingreso de Mercancía.')} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm">
-            Nueva Deuda
+          <button onClick={() => setShowHistoricoModal(true)} className="bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30 border border-indigo-500/30 px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center gap-2">
+            <BarChart3 size={18} /> Ver Histórico
           </button>
         </div>
       </div>
@@ -162,16 +160,12 @@ export default function ProveedoresPage() {
             <p className="text-sm font-medium text-neutral-400">Total Cuentas por Pagar</p>
             <div className="flex items-end gap-3">
               <h2 className="text-3xl font-black text-white tracking-tight">{formatCurrency(deudaTotal)}</h2>
-              {!loading && (
-                <div className={`flex items-center gap-1 text-sm font-medium mb-1 ${deudaTotal <= deudaPasada ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {deudaTotal <= deudaPasada ? <TrendingDown size={16} /> : <TrendingUp size={16} />}
-                  {deudaPasada > 0 ? (
-                    <span>
-                      {deudaTotal <= deudaPasada ? '-' : '+'}{formatCurrency(Math.abs(deudaTotal - deudaPasada))} vs mes anterior
-                    </span>
-                  ) : (
-                    <span>Sin deuda anterior</span>
-                  )}
+              {!loading && historico.length > 1 && (
+                <div className={`flex items-center gap-1 text-sm font-medium mb-1 ${deudaTotal <= deudaMesPasado ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {deudaTotal <= deudaMesPasado ? <TrendingDown size={16} /> : <TrendingUp size={16} />}
+                  <span>
+                    {deudaTotal <= deudaMesPasado ? '-' : '+'}{formatCurrency(Math.abs(deudaTotal - deudaMesPasado))} vs mes anterior
+                  </span>
                 </div>
               )}
             </div>
@@ -376,6 +370,67 @@ export default function ProveedoresPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE HISTORICO (CHART) */}
+      {showHistoricoModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-neutral-900 w-full max-w-4xl rounded-2xl border border-neutral-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+            <div className="bg-neutral-950 p-5 border-b border-neutral-800 flex justify-between items-center shrink-0">
+              <h3 className="font-bold text-white text-lg flex items-center gap-2">
+                <BarChart3 className="text-indigo-400" />
+                Histórico de Cuentas por Pagar (Últimos 12 meses)
+              </h3>
+              <button onClick={() => setShowHistoricoModal(false)} className="text-neutral-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-neutral-800"><X size={20}/></button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto">
+              <div className="h-[400px] w-full mb-8">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={historico} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
+                    <XAxis dataKey="mes" stroke="#888" tick={{ fill: '#888' }} />
+                    <YAxis yAxisId="left" stroke="#888" tickFormatter={(val) => `$${val}`} />
+                    <YAxis yAxisId="right" orientation="right" stroke="#f59e0b" tickFormatter={(val) => `$${val}`} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#171717', borderColor: '#333', borderRadius: '8px' }}
+                      formatter={(value: any) => formatCurrency(value)}
+                      labelStyle={{ color: '#fff', fontWeight: 'bold', marginBottom: '8px' }}
+                    />
+                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                    
+                    <Bar yAxisId="left" dataKey="nuevas_deudas" fill="#ef4444" name="Nuevas Deudas" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                    <Bar yAxisId="left" dataKey="pagos_realizados" fill="#10b981" name="Abonos/Pagos" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                    <Line yAxisId="right" type="monotone" dataKey="deuda_acumulada" stroke="#f59e0b" name="Deuda Pendiente Final" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="border border-neutral-800 rounded-xl overflow-hidden">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-neutral-950 text-neutral-400 border-b border-neutral-800">
+                    <tr>
+                      <th className="px-4 py-3 font-semibold">Mes</th>
+                      <th className="px-4 py-3 font-semibold text-right">Nuevas Deudas</th>
+                      <th className="px-4 py-3 font-semibold text-right">Pagos Realizados</th>
+                      <th className="px-4 py-3 font-semibold text-right">Deuda Pendiente (Fin de Mes)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-800/50">
+                    {historico.slice().reverse().map((h, i) => (
+                      <tr key={i} className="hover:bg-neutral-800/20">
+                        <td className="px-4 py-3 font-medium text-white">{h.mes}</td>
+                        <td className="px-4 py-3 text-right text-rose-400">{formatCurrency(h.nuevas_deudas)}</td>
+                        <td className="px-4 py-3 text-right text-emerald-400">{formatCurrency(h.pagos_realizados)}</td>
+                        <td className="px-4 py-3 text-right font-bold text-orange-400">{formatCurrency(h.deuda_acumulada)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       )}
