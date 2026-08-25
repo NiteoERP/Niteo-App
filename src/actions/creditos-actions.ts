@@ -3,7 +3,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { startOfDay, endOfDay } from 'date-fns';
 
-export async function getClientesConDeuda(sedeId: string, startDate: Date, endDate: Date) {
+export async function getClientesConDeuda(sedeId: string, startDate: Date, endDate: Date, page: number = 1, limit: number = 20, searchQuery: string = '') {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "No autenticado" };
@@ -15,15 +15,24 @@ export async function getClientesConDeuda(sedeId: string, startDate: Date, endDa
   const p_fecha_fin = endOfDay(new Date(endDate)).toISOString();
   const p_sede_id = sedeId === 'ALL' ? null : sedeId;
 
-  const { data, error } = await supabase.rpc('get_clientes_con_deuda', {
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+
+  let query = supabase.rpc('get_clientes_con_deuda', {
     p_empresa_id: profile.empresa_id,
     p_sede_id,
     p_fecha_inicio,
     p_fecha_fin
-  });
+  }, { count: 'exact' });
+
+  if (searchQuery && searchQuery.trim() !== '') {
+    query = query.ilike('nombre_cliente', `%${searchQuery.trim()}%`);
+  }
+
+  const { data, error, count } = await query.range(from, to);
 
   if (error) return { success: false, error: error.message };
-  return { success: true, data };
+  return { success: true, data, totalCount: count || 0 };
 }
 
 export async function getMetodosPago() {

@@ -2,7 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server';
 
-export async function getProveedoresConDeuda(sedeId: string) {
+export async function getProveedoresConDeuda(sedeId: string, page: number = 1, limit: number = 20, searchQuery: string = '') {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'No autenticado' };
@@ -12,13 +12,22 @@ export async function getProveedoresConDeuda(sedeId: string) {
 
   const p_sede_id = sedeId === 'ALL' ? null : sedeId;
 
-  const { data, error } = await supabase.rpc('get_proveedores_con_deuda', {
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+
+  let query = supabase.rpc('get_proveedores_con_deuda', {
     p_empresa_id: profile.empresa_id,
     p_sede_id
-  });
+  }, { count: 'exact' });
+
+  if (searchQuery && searchQuery.trim() !== '') {
+    query = query.ilike('nombre_proveedor', `%${searchQuery.trim()}%`);
+  }
+
+  const { data, error, count } = await query.range(from, to);
 
   if (error) return { success: false, error: error.message };
-  return { success: true, data };
+  return { success: true, data, totalCount: count || 0 };
 }
 
 export async function getFacturasProveedor(proveedorId: string, sedeId: string) {
