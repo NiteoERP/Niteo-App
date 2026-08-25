@@ -254,16 +254,39 @@ export default function CreditosPage() {
                     </div>
                     
                     <div className="p-4 bg-neutral-950">
-                      <p className="text-xs font-bold text-neutral-500 uppercase mb-3 flex items-center gap-2"><ShoppingCart size={14} /> Qué Llevó</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {fac.productos_detalle?.map((p:any, j:number) => (
-                          <div key={j} className="flex justify-between items-center p-2 rounded bg-neutral-900/50 border border-neutral-800/50">
-                            <span className="text-sm font-medium text-neutral-300 truncate pr-2">{p.cantidad}x {p.producto}</span>
-                            <span className="text-sm font-bold text-neutral-400">{formatCurrency(p.total || 0)}</span>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          <div>
+                            <p className="text-xs font-bold text-neutral-500 uppercase mb-3 flex items-center gap-2"><ShoppingCart size={14} /> Qué Llevó</p>
+                            <div className="space-y-2">
+                              {fac.productos_detalle?.map((p:any, j:number) => (
+                                <div key={j} className="flex justify-between items-center p-2 rounded bg-neutral-900/50 border border-neutral-800/50">
+                                  <span className="text-sm font-medium text-neutral-300 truncate pr-2">{p.cantidad}x {p.producto}</span>
+                                  <span className="text-sm font-bold text-neutral-400">{formatCurrency(p.total || 0)}</span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        ))}
+                          
+                          <div>
+                            <p className="text-xs font-bold text-neutral-500 uppercase mb-3 flex items-center gap-2"><Wallet size={14} /> Historial de Abonos</p>
+                            <div className="space-y-2">
+                              {!fac.abonos_detalle || fac.abonos_detalle.length === 0 ? (
+                                <p className="text-sm text-neutral-500 italic p-2">Sin abonos registrados.</p>
+                              ) : (
+                                fac.abonos_detalle.map((a:any, j:number) => (
+                                  <div key={j} className="flex justify-between items-center p-2 rounded bg-neutral-900/50 border border-emerald-900/30">
+                                    <div>
+                                      <span className="text-sm font-medium text-emerald-400 block">{formatCurrency(a.monto)}</span>
+                                      <span className="text-xs text-neutral-500">{a.metodo}</span>
+                                    </div>
+                                    <span className="text-xs font-medium text-neutral-400">{format(new Date(a.fecha), 'dd/MM/yy HH:mm')}</span>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
                   </div>
                 ))
               )}

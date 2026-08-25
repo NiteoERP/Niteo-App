@@ -69,10 +69,16 @@ export function SidebarNav({ permisos, userRole }: NavProps) {
       )}
 
       {hasPerm('compras') && (
-        <Link href="/dashboard/compras" className={getLinkClass('/dashboard/compras')}>
-          <ShoppingCart size={20} />
-          <span className="text-sm font-medium">Compras</span>
-        </Link>
+        <>
+          <Link href="/dashboard/compras" className={getLinkClass('/dashboard/compras')}>
+            <ShoppingCart size={20} />
+            <span className="text-sm font-medium">Compras</span>
+          </Link>
+          <Link href="/dashboard/proveedores" className={getLinkClass('/dashboard/proveedores')}>
+            <Truck size={20} />
+            <span className="text-sm font-medium">Proveedores (CxP)</span>
+          </Link>
+        </>
       )}
 
       {hasPerm('clientes') && (

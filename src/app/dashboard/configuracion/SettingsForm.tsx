@@ -11,6 +11,7 @@ export default function SettingsForm({ empresa }: { empresa: any }) {
     simbolo_moneda: empresa.simbolo_moneda || '$',
     zona_horaria: empresa.zona_horaria || 'America/Caracas',
     metodo_costeo_despachos: empresa.metodo_costeo_despachos || 'PROMEDIO',
+    metodos_pago: empresa.metodos_pago || [],
   });
   
   const [isPending, startTransition] = useTransition();
@@ -117,6 +118,21 @@ export default function SettingsForm({ empresa }: { empresa: any }) {
               <option value="ULTIMO">Último Costo</option>
             </select>
           </div>
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-neutral-300 mb-1.5">Métodos de Pago Personalizados (Separados por coma)</label>
+          <div className="relative">
+            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Efectivo, Pago Móvil, Zelle, Tarjeta, Binance..."
+              value={formData.metodos_pago?.join(', ')} 
+              onChange={(e) => setFormData({...formData, metodos_pago: e.target.value.split(',').map(m => m.trim()).filter(m => m)})}
+              className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+            />
+          </div>
+          <p className="text-xs text-neutral-500 mt-1.5">Estos métodos aparecerán como opciones al registrar compras o gastos.</p>
         </div>
       </div>
       
