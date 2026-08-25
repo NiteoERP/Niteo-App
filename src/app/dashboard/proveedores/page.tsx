@@ -199,29 +199,39 @@ export default function ProveedoresPage() {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Truck className="text-orange-400" />
+          <h1 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+            <Truck className="text-orange-400" size={24} />
             Proveedores y Cuentas por Pagar
           </h1>
-          <p className="text-neutral-400 text-sm mt-1">
+          <p className="text-neutral-400 text-xs md:text-sm mt-1">
             Gestión de deudas, facturas pendientes y pagos a proveedores.
           </p>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
           <select 
             value={sedeId} 
             onChange={(e) => setSedeId(e.target.value)}
-            className="bg-neutral-900 border border-neutral-800 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange-500"
+            className="flex-1 md:flex-none min-w-[130px] bg-neutral-900 border border-neutral-800 text-white rounded-lg px-3 py-2 text-xs md:text-sm focus:outline-none focus:ring-1 focus:ring-orange-500"
           >
             <option value="ALL">Todas las Sucursales</option>
             {sedes.map(s => <option key={s.id} value={s.id}>{s.nombre_comercial || s.nombre}</option>)}
           </select>
-          <a href="/dashboard/compras" className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm text-center inline-block">
-            Nueva Factura / Deuda
-          </a>
-          <button onClick={() => setShowHistoricoModal(true)} className="bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30 border border-indigo-500/30 px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center gap-2">
-            <BarChart3 size={18} /> Ver Histórico
+          <button 
+            onClick={() => setShowAddModal(true)} 
+            className="flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded-lg font-medium transition-colors text-xs md:text-sm"
+          >
+            <Plus size={16} />
+            <span className="hidden sm:inline">Nueva Deuda</span>
+            <span className="sm:hidden">Deuda</span>
+          </button>
+          <button 
+            onClick={() => setShowHistoricoModal(true)} 
+            className="bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30 border border-indigo-500/30 px-3 py-2 rounded-lg font-medium transition-colors text-xs md:text-sm flex items-center justify-center gap-1"
+          >
+            <BarChart3 size={16} /> 
+            <span className="hidden sm:inline">Histórico</span>
+            <span className="sm:hidden">Histórico</span>
           </button>
         </div>
       </div>
