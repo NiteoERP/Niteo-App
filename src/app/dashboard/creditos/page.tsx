@@ -23,6 +23,7 @@ export default function CreditosPage() {
   // Datos
   const [clientes, setClientes] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [visibleCount, setVisibleCount] = useState(20);
   const [isLoadingClientes, setIsLoadingClientes] = useState(false);
   
   const [selectedClienteId, setSelectedClienteId] = useState<string | null>(null);
@@ -265,7 +266,7 @@ export default function CreditosPage() {
           ) : filteredClientes.length === 0 ? (
             <p className="text-neutral-500 text-center py-10 text-sm font-medium">No hay deudas o clientes coincidentes.</p>
           ) : (
-            filteredClientes.map((cli) => (
+            filteredClientes.slice(0, visibleCount).map((cli) => (
               <button
                 key={cli.id_cliente}
                 onClick={() => fetchDetalle(cli.id_cliente)}
@@ -293,6 +294,15 @@ export default function CreditosPage() {
                 </p>
               </button>
             ))
+          )}
+          
+          {visibleCount < filteredClientes.length && (
+            <button 
+              onClick={() => setVisibleCount(v => v + 20)}
+              className="w-full py-3 mt-4 bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 hover:border-neutral-700 text-neutral-300 font-medium rounded-xl transition-colors text-sm"
+            >
+              Cargar más ({filteredClientes.length - visibleCount} restantes)
+            </button>
           )}
         </div>
       </div>
@@ -447,3 +457,4 @@ export default function CreditosPage() {
     </div>
   );
 }
+

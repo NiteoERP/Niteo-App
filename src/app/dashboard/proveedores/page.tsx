@@ -20,6 +20,7 @@ export default function ProveedoresPage() {
   const [historico, setHistorico] = useState<any[]>([]);
   const [showHistoricoModal, setShowHistoricoModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [visibleCount, setVisibleCount] = useState(20);
   const [loading, setLoading] = useState(true);
 
   // Acordeón de facturas
@@ -40,6 +41,7 @@ export default function ProveedoresPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [todosProveedores, setTodosProveedores] = useState<any[]>([]);
   const [provSearch, setProvSearch] = useState('');
+  const [visibleCount, setVisibleCount] = useState(20);
   const [selectedNewProvId, setSelectedNewProvId] = useState<string>('');
   const [newFacSede, setNewFacSede] = useState('');
   const [newFacNum, setNewFacNum] = useState('');
@@ -363,6 +365,17 @@ export default function ProveedoresPage() {
                 )}
               </div>
             ))}
+            
+            {visibleCount < filteredProveedores.length && (
+              <div className="p-4">
+                <button 
+                  onClick={() => setVisibleCount(v => v + 20)}
+                  className="w-full py-3 bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 hover:border-neutral-700 text-neutral-300 font-medium rounded-xl transition-colors text-sm"
+                >
+                  Cargar más ({filteredProveedores.length - visibleCount} restantes)
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -668,3 +681,4 @@ export default function ProveedoresPage() {
     </div>
   );
 }
+
