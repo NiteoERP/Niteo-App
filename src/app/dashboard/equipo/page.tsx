@@ -22,8 +22,8 @@ export default async function EquipoPage() {
     <div className="space-y-8 max-w-5xl animate-in fade-in duration-300">
       
       <div className="border-b border-neutral-800 pb-5">
-        <h1 className="text-2xl font-bold text-white">Gestión de Equipo</h1>
-        <p className="text-neutral-400 mt-1">Administra los accesos y roles de tu personal en la plataforma.</p>
+        <h1 className="text-xl md:text-2xl font-bold text-white">Gestión de Equipo</h1>
+        <p className="text-neutral-400 text-xs md:text-sm mt-1">Administra los accesos y roles de tu personal en la plataforma.</p>
       </div>
 
       <TeamManager initialMembers={miembros || []} currentUserId={user.id} />
@@ -31,3 +31,4 @@ export default async function EquipoPage() {
     </div>
   );
 }
+

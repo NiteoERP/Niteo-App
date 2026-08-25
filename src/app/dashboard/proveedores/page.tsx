@@ -41,7 +41,6 @@ export default function ProveedoresPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [todosProveedores, setTodosProveedores] = useState<any[]>([]);
   const [provSearch, setProvSearch] = useState('');
-  const [visibleCount, setVisibleCount] = useState(20);
   const [selectedNewProvId, setSelectedNewProvId] = useState<string>('');
   const [newFacSede, setNewFacSede] = useState('');
   const [newFacNum, setNewFacNum] = useState('');
@@ -681,4 +680,5 @@ export default function ProveedoresPage() {
     </div>
   );
 }
+
 
