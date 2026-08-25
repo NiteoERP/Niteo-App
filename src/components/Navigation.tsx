@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
-  LayoutDashboard, 
+  LayoutDashboard, TrendingUp, 
   Package, 
   Truck, 
   ShoppingCart, 
@@ -61,6 +61,12 @@ export function SidebarNav({ permisos, userRole }: NavProps) {
         <Link href="/dashboard/informes" className={getLinkClass('/dashboard/informes')}>
           <FileText size={20} />
           <span className="text-sm font-medium">Informes</span>
+        </Link>
+      )}
+      {(hasPerm('reportes') || userRole === 'MASTER') && (
+        <Link href="/dashboard/finanzas" className={getLinkClass('/dashboard/finanzas')}>
+          <TrendingUp size={20} />
+          <span className="text-sm font-medium">Finanzas</span>
         </Link>
       )}
       
@@ -185,6 +191,11 @@ export function MobileNav({ permisos, userRole }: NavProps) {
                 <FileText size={20} /> Informes
               </Link>
             )}
+            {(hasPerm('reportes') || userRole === 'MASTER') && (
+              <Link href="/dashboard/finanzas" onClick={() => setMenuOpen(false)} className={getMenuItemClass('/dashboard/finanzas')}>
+                <TrendingUp size={20} /> Finanzas
+              </Link>
+            )}
             {(hasPerm('inventario') || hasPerm('pos')) && (
               <Link href="/dashboard/despachos" onClick={() => setMenuOpen(false)} className={getMenuItemClass('/dashboard/despachos')}>
                 <Truck size={20} /> Despachos
@@ -260,3 +271,6 @@ export function MobileNav({ permisos, userRole }: NavProps) {
     </>
   );
 }
+
+
+
