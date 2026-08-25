@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Receipt, FileText, Plus, Trash2, Save, ShoppingCart, UserPlus, Loader2, CheckCircle2, History, Search, Calendar, Edit2, X, Lock, Package } from 'lucide-react';
-import { getProveedoresYProductos, crearProveedor, registrarCompraPuntual, registrarFactura, getUltimasCompras, getHistorialCompras, actualizarCompraPuntual, eliminarCompraPuntual, getTasaDelDia } from './actions';
+import { getProveedoresYProductos, crearProveedor, crearProductoBase, registrarCompraPuntual, registrarFactura, getUltimasCompras, getHistorialCompras, actualizarCompraPuntual, eliminarCompraPuntual, getTasaDelDia } from './actions';
 import MobileCompraForm from '@/components/compras/MobileCompraForm';
 import { useEmpresa } from '@/components/providers/EmpresaProvider';
 
@@ -117,6 +117,29 @@ export default function ComprasPage() {
   const removeProducto = (rowId: number) => { if (productos.length > 1) setProductos(productos.filter(p => p.rowId !== rowId)); };
   
   const handleProductoChange = (rowId: number, field: string, value: string) => {
+    if (field === 'id_producto' && value === 'NEW_PRODUCT') {
+      const nombre = prompt('Ingresa el nombre del nuevo producto base:');
+      if (nombre && nombre.trim()) {
+        setIsSubmitting(true);
+        crearProductoBase(nombre.trim()).then(res => {
+          if (res.success) {
+            setProductosDb(prev => [...prev, res.producto!]);
+            mostrarAlerta('Producto creado.', 'success');
+            setProductos(prev => prev.map(p => {
+              if (p.rowId === rowId) {
+                return { ...p, id_producto: res.producto!.id, precio: '0', total: '0' };
+              }
+              return p;
+            }));
+          } else {
+            mostrarAlerta(res.error, 'error');
+          }
+          setIsSubmitting(false);
+        });
+      }
+      return;
+    }
+
     setProductos(productos.map(p => {
       if (p.rowId === rowId) {
         let newP = { ...p, [field]: value };
@@ -448,6 +471,7 @@ export default function ComprasPage() {
                     <td className="py-4 pr-4">
                       <select value={prod.id_producto} onChange={(e) => handleProductoChange(prod.rowId, 'id_producto', e.target.value)} className="w-full bg-black/30 border border-neutral-800 rounded-lg text-white px-3 py-1.5 focus:outline-none focus:border-indigo-500 transition-colors">
                         <option value="">(Selecciona Producto)</option>
+                          <option value="NEW_PRODUCT">+ Crear Nuevo Producto...</option>
                         {productosDb.map(pDb => (<option key={pDb.id} value={pDb.id}>{pDb.nombre_producto || pDb.nombre}</option>))}
                       </select>
                     </td>
@@ -638,5 +662,7 @@ export default function ComprasPage() {
     </div>
   );
 }
+
+
 
 
