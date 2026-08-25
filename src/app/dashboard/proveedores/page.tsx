@@ -149,7 +149,7 @@ export default function ProveedoresPage() {
     if (!targetProvId && provSearch) {
       // Create new provider on the fly
       const cRes = await crearProveedorRapido(provSearch);
-      if (cRes.success) {
+      if (cRes.success && cRes.data) {
         targetProvId = cRes.data.id;
         setTodosProveedores([...todosProveedores, cRes.data]);
         setSelectedNewProvId(targetProvId);
