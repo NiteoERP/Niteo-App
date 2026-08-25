@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { getSedes } from "@/actions/dashboard-actions";
 import { getProveedoresConDeuda, getFacturasProveedor, registrarPagoProveedor, getHistoricoProveedores, getTodosProveedores, crearFacturaProveedor, crearProveedorRapido } from "./actions";
 import { useEmpresa } from "@/components/providers/EmpresaProvider";
@@ -83,7 +83,7 @@ export default function ProveedoresPage() {
     fetchInit();
   }, [sedeId, debouncedSearch]);
 
-  const handleLoadMore = async () => {
+  const handleLoadMore = useCallback(async () => {
     if (loadingMore) return;
     setLoadingMore(true);
     const nextPage = page + 1;
@@ -94,7 +94,21 @@ export default function ProveedoresPage() {
       setPage(nextPage);
     }
     setLoadingMore(false);
-  };
+  }, [loadingMore, page, sedeId, debouncedSearch]);;
+
+  const observerTarget = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && !loadingMore && proveedores.length < totalCount) {
+          handleLoadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    if (observerTarget.current) observer.observe(observerTarget.current);
+    return () => observer.disconnect();
+  }, [handleLoadMore, loadingMore, proveedores.length, totalCount]);
 
   const toggleExpand = async (provId: string) => {
     if (expandedId === provId) {
@@ -367,14 +381,8 @@ export default function ProveedoresPage() {
             ))}
             
             {!loading && proveedores.length < totalCount && (
-              <div className="p-4">
-                <button 
-                  onClick={handleLoadMore}
-                  disabled={loadingMore}
-                  className="w-full py-3 bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 hover:border-neutral-700 text-neutral-300 font-medium rounded-xl transition-colors text-sm disabled:opacity-50"
-                >
-                  {loadingMore ? "Cargando..." : `Cargar más (${totalCount - proveedores.length} restantes)`}
-                </button>
+              <div ref={observerTarget} className="p-5">
+                <div className="h-20 bg-neutral-800/30 animate-pulse rounded-xl border border-neutral-800 w-full"></div>
               </div>
             )}
           </div>
@@ -508,5 +516,6 @@ export default function ProveedoresPage() {
     </div>
   );
 }
+
 
 

@@ -185,7 +185,12 @@ export default function CreditosPage() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar" onScroll={(e) => {
+          const target = e.currentTarget;
+          if (target.scrollHeight - target.scrollTop <= target.clientHeight + 50 && !isLoadingMore && clientes.length < totalCount) {
+            handleLoadMore();
+          }
+        }}>
           {isLoadingClientes ? (
             // Skeleton Loader
             [1,2,3,4,5,6].map((i) => (
@@ -218,14 +223,8 @@ export default function CreditosPage() {
             ))
           )}
           
-          {!isLoadingClientes && clientes.length < totalCount && (
-            <button 
-              onClick={handleLoadMore}
-              disabled={isLoadingMore}
-              className="w-full py-3 mt-4 bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 hover:border-neutral-700 text-neutral-300 font-medium rounded-xl transition-colors text-sm disabled:opacity-50"
-            >
-              {isLoadingMore ? "Cargando..." : `Cargar más (${totalCount - clientes.length} restantes)`}
-            </button>
+          {!isLoadingClientes && isLoadingMore && (
+            <div className="w-full p-4 rounded-xl border border-neutral-800 bg-neutral-900/30 animate-pulse h-24"></div>
           )}
         </div>
       </div>
@@ -380,4 +379,5 @@ export default function CreditosPage() {
     </div>
   );
 }
+
 
