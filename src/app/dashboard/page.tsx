@@ -63,7 +63,7 @@ export default function DashboardPage() {
       {/* HEADER & FILTROS */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
         <div>
-          <h1 className="text-2xl font-black text-gray-900 dark:text-white">Company Highlights</h1>
+          <h1 className="text-2xl font-black text-gray-900 dark:text-white">Resumen de la Empresa</h1>
           <p className="text-gray-500">Rentabilidad Neta y Desempeño Operativo</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
