@@ -115,11 +115,15 @@ export default async function DashboardLayout({
           </div>
         </header>
 
-        {/* CONTENIDO */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 bg-[#0a0a0a]">
-          <EmpresaProvider empresa={empresaData}>
-            {children}
-          </EmpresaProvider>
+        {/* CONTENIDO ESTRICTO 16:9 */}
+        <main className="flex-1 overflow-y-auto p-0 md:p-6 pb-24 md:pb-6 bg-[#0a0a0a] flex items-center justify-center">
+          <div className="w-full h-auto aspect-video max-w-screen-2xl bg-neutral-950 shadow-2xl relative overflow-hidden md:rounded-2xl border-y md:border border-neutral-800">
+            <div className="absolute inset-0 overflow-y-auto custom-scrollbar p-4 md:p-6">
+              <EmpresaProvider empresa={empresaData}>
+                {children}
+              </EmpresaProvider>
+            </div>
+          </div>
         </main>
         
         {/* BOTTOM NAVIGATION BAR (MOBILE ONLY) */}

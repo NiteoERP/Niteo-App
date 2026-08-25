@@ -122,71 +122,74 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
         {sales.length === 0 ? (
           <div className="p-12 text-center text-neutral-500">
             <Receipt className="mx-auto h-12 w-12 opacity-20 mb-4" />
-            <p>Esperando por nuevas ventas...</p>
+            <p>No hay ventas recientes hoy.</p>
             <p className="text-xs mt-1">Las transacciones del POS aparecerán aquí automáticamente.</p>
           </div>
         ) : (
-          <div className="divide-y divide-neutral-800">
-            {sales.map((sale) => (
-              <div key={sale.id_factura} className="group flex flex-col hover:bg-neutral-800/30 transition-colors duration-200">
-                {/* Row Header */}
+          <div className="flex flex-row md:flex-col overflow-x-auto md:overflow-visible snap-x snap-mandatory gap-4 md:gap-0 p-4 md:p-0 md:divide-y md:divide-neutral-800 custom-scrollbar">
+            {sales.map((sale) => {
+              const isExpanded = expandedRow === sale.id_factura;
+              return (
+              <div key={sale.id_factura} className="min-w-[280px] md:min-w-0 shrink-0 snap-center group flex flex-col bg-neutral-950 md:bg-transparent border border-neutral-800 md:border-none rounded-xl md:rounded-none md:hover:bg-neutral-800/30 transition-colors duration-200">
+                
+                {/* Header (Resumen) */}
                 <div 
-                  className="flex items-center justify-between p-4 cursor-pointer"
-                  onClick={() => toggleRow(sale.id_factura)}
+                  className="flex flex-col md:flex-row md:items-center justify-between p-4 cursor-pointer gap-4 md:gap-0"
+                  onClick={() => setExpandedRow(isExpanded ? null : sale.id_factura)}
                 >
+                  {/* Izquierda: Info Cliente y Hora */}
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 text-indigo-400">
-                      <Receipt size={20} />
+                    <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 text-indigo-400 shrink-0">
+                      <Receipt size={18} />
                     </div>
                     <div>
                       <p className="text-neutral-200 font-medium flex items-center gap-2">
-                        #{sale.numero_documento}
+                        {sale.tipo_documento}
                         {sale.esta_pagado && <CheckCircle2 size={14} className="text-emerald-500" />}
                       </p>
                       <p className="text-neutral-500 text-sm flex items-center gap-1 mt-0.5">
-                        <Clock size={12} /> {formatTime(sale.fecha_venta)} • {sale.tipo_documento}
+                        <Clock size={12} /> {formatTime(sale.fecha_venta)}
+                        <span className="mx-1">•</span>
+                        #{sale.numero_documento}
                       </p>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center gap-6">
+
+                  {/* Derecha: Total y Flecha */}
+                  <div className="flex items-center justify-between md:justify-end gap-6 border-t md:border-t-0 border-neutral-800 pt-3 md:pt-0 mt-3 md:mt-0">
                     <div className="text-right">
                       <p className="text-neutral-200 font-bold text-lg">{formatCurrency(sale.total)}</p>
-                      {sale.descuento > 0 && !privacyMode && (
+                      {sale.descuento > 0 && (
                         <p className="text-amber-500 text-xs">- {formatCurrency(sale.descuento)} desc.</p>
                       )}
                     </div>
                     <div className="text-neutral-600 group-hover:text-neutral-400 transition-colors">
-                      {expandedRow === sale.id_factura ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                      {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                     </div>
                   </div>
                 </div>
 
-                {/* Expanded Details */}
-                {expandedRow === sale.id_factura && (
-                  <div className="px-4 pb-4 pt-2 bg-neutral-950/50 border-t border-neutral-800/50">
-                    <div className="pl-14">
+                {/* Body (Detalles Expandidos) */}
+                {isExpanded && (
+                  <div className="px-4 pb-4 pt-2 bg-neutral-900/50 md:bg-neutral-950/50 border-t border-neutral-800/50">
+                    <div className="md:pl-14">
                       <h4 className="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3">Items del Ticket</h4>
                       <div className="space-y-2">
-                        {sale.detalles.length === 0 ? (
-                          <p className="text-sm text-neutral-600 italic">No hay detalles registrados para esta factura.</p>
-                        ) : (
-                          sale.detalles.map((detalle, idx) => (
-                            <div key={idx} className="flex items-center justify-between text-sm">
-                              <div className="flex items-center gap-2">
-                                <span className="text-neutral-500 w-6">{detalle.cantidad}x</span>
-                                <span className="text-neutral-300">{detalle.producto_nombre || 'Producto Desconocido'}</span>
-                              </div>
-                              <span className="text-neutral-400">{formatCurrency(detalle.total)}</span>
-                            </div>
-                          ))
-                        )}
+                        {sale.detalles.map((d: any) => (
+                          <div key={d.id_detalle} className="flex justify-between items-center bg-black/20 p-2 rounded text-sm">
+                            <span className="text-neutral-300">
+                              <span className="text-neutral-500 mr-2">{d.cantidad}x</span> 
+                              {privacyMode ? 'Producto Oculto' : (d.producto_nombre || 'Producto S/N')}
+                            </span>
+                            <span className="text-neutral-400 font-medium">{formatCurrency(d.total)}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
                 )}
               </div>
-            ))}
+            )})}
           </div>
         )}
       </div>

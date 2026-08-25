@@ -61,15 +61,15 @@ export default function CatalogView({ catalog }: { catalog: any[] }) {
           </tbody>
         </table>
 
-        {/* Vista Móvil (Tarjetas) */}
-        <div className="md:hidden flex flex-col p-4 gap-3">
+        {/* Vista Móvil (Tarjetas Deslizables) */}
+        <div className="md:hidden flex flex-row overflow-x-auto snap-x snap-mandatory gap-4 p-4 pb-6 custom-scrollbar">
           {filteredCatalog.length === 0 ? (
-            <div className="text-center py-10 text-neutral-500">
+            <div className="text-center py-10 text-neutral-500 w-full">
               {catalog.length === 0 ? 'No hay productos sincronizados.' : 'No se encontraron resultados.'}
             </div>
           ) : (
             filteredCatalog.map((prod) => (
-              <div key={prod.id_producto} className="bg-neutral-950 border border-neutral-800 rounded-xl p-4 flex flex-col gap-2">
+              <div key={prod.id_producto} className="min-w-[260px] shrink-0 snap-center bg-neutral-950 border border-neutral-800 rounded-xl p-4 flex flex-col gap-2 shadow-lg">
                 <div className="flex justify-between items-start">
                   <span className="font-bold text-white text-base leading-tight">{prod.nombre}</span>
                   <span className="font-mono text-xs text-neutral-500 bg-neutral-900 px-2 py-1 rounded">{prod.codigo_barras || 'S/N'}</span>
