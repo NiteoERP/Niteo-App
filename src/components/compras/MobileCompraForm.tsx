@@ -40,7 +40,7 @@ export default function MobileCompraForm() {
   const [cantidad, setCantidad] = useState('');
   const [costoUnitario, setCostoUnitario] = useState('');
   const [costoTotal, setCostoTotal] = useState('');
-  const [monedaInput, setMonedaInput] = useState<'USD'|'VES'>('USD');
+
 
   const handleCantidadChange = (val: string) => {
     setCantidad(val);
@@ -106,7 +106,7 @@ export default function MobileCompraForm() {
       unidad_nueva: isNewInsumo ? newInsumoUnit : selectedInsumo!.unidad_medida,
       cantidad: qty,
       costoTotal: finalCostoTotal,
-      monedaItem: monedaInput
+      monedaItem: monedaGlobal
     };
 
     setCart([...cart, newItem]);
@@ -367,14 +367,9 @@ export default function MobileCompraForm() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-400 mb-1">Moneda</label>
-                  <select 
-                    value={monedaInput}
-                    onChange={e => setMonedaInput(e.target.value as 'USD'|'VES')}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2.5 text-white"
-                  >
-                    <option value="USD">$</option>
-                    <option value="VES">Bs</option>
-                  </select>
+                  <div className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2.5 text-neutral-500 cursor-not-allowed">
+                    {monedaGlobal === 'USD' ? '$ USD' : 'Bs VES'}
+                  </div>
                 </div>
               </div>
             </div>
