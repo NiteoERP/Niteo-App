@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getProveedoresConDeuda, getFacturasProveedor, registrarPagoProveedor, getHistoricoProveedores } from './actions';
+import { getProveedoresConDeuda, getFacturasProveedor, registrarPagoProveedor, getHistoricoProveedores, getTodosProveedores, crearProveedorRapido, crearFacturaProveedor } from './actions';
 import { getSedes } from '@/actions/dashboard-actions';
 import { useEmpresa } from '@/components/providers/EmpresaProvider';
-import { Truck, Search, ChevronDown, ChevronUp, DollarSign, Building2, Check, FileText, CreditCard, X, TrendingDown, TrendingUp, BarChart3, XCircle } from 'lucide-react';
+import { Truck, Search, ChevronDown, ChevronUp, DollarSign, Building2, Check, FileText, CreditCard, X, TrendingDown, TrendingUp, BarChart3, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -36,14 +36,28 @@ export default function ProveedoresPage() {
   const [bancoOrigen, setBancoOrigen] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Nueva Deuda/Factura
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [todosProveedores, setTodosProveedores] = useState<any[]>([]);
+  const [provSearch, setProvSearch] = useState('');
+  const [selectedNewProvId, setSelectedNewProvId] = useState<string>('');
+  const [newFacSede, setNewFacSede] = useState('');
+  const [newFacNum, setNewFacNum] = useState('');
+  const [newFacConcepto, setNewFacConcepto] = useState('');
+  const [newFacTotal, setNewFacTotal] = useState('');
+  const [newFacFecha, setNewFacFecha] = useState(new Date().toISOString().split('T')[0]);
+  const [isCreatingFac, setIsCreatingFac] = useState(false);
+
   const fetchInit = async () => {
     setLoading(true);
     const s = await getSedes();
     setSedes(s);
+    if (s.length > 0) setNewFacSede(s[0].id);
     
-    const [res, histRes] = await Promise.all([
+    const [res, histRes, provRes] = await Promise.all([
       getProveedoresConDeuda(sedeId),
-      getHistoricoProveedores(12) // 12 meses para la gráfica
+      getHistoricoProveedores(12), // 12 meses para la gráfica
+      getTodosProveedores()
     ]);
 
     if (res.success) {
@@ -53,6 +67,9 @@ export default function ProveedoresPage() {
     if (histRes.success) {
       // Revertimos para que el mes actual salga al final de la gráfica
       setHistorico((histRes.data || []).reverse());
+    }
+    if (provRes.success) {
+      setTodosProveedores(provRes.data || []);
     }
     setLoading(false);
   };
@@ -119,6 +136,60 @@ export default function ProveedoresPage() {
     }
   };
 
+  const filteredProvDropdown = todosProveedores.filter(p => p.nombre_comercial.toLowerCase().includes(provSearch.toLowerCase()));
+  const showCreateProvButton = provSearch && !todosProveedores.some(p => p.nombre_comercial.toLowerCase() === provSearch.toLowerCase());
+
+  const handleCreateFactura = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newFacTotal) return;
+    
+    setIsCreatingFac(true);
+    let targetProvId = selectedNewProvId;
+
+    if (!targetProvId && provSearch) {
+      // Create new provider on the fly
+      const cRes = await crearProveedorRapido(provSearch);
+      if (cRes.success) {
+        targetProvId = cRes.data.id;
+        setTodosProveedores([...todosProveedores, cRes.data]);
+        setSelectedNewProvId(targetProvId);
+      } else {
+        alert("Error al crear proveedor: " + cRes.error);
+        setIsCreatingFac(false);
+        return;
+      }
+    }
+
+    if (!targetProvId) {
+      alert("Selecciona o crea un proveedor.");
+      setIsCreatingFac(false);
+      return;
+    }
+
+    const res = await crearFacturaProveedor(
+      targetProvId, 
+      newFacSede, 
+      newFacNum, 
+      newFacConcepto, 
+      Number(newFacTotal), 
+      newFacFecha
+    );
+
+    setIsCreatingFac(false);
+
+    if (res.success) {
+      setShowAddModal(false);
+      setProvSearch('');
+      setSelectedNewProvId('');
+      setNewFacNum('');
+      setNewFacConcepto('');
+      setNewFacTotal('');
+      fetchInit();
+    } else {
+      alert("Error al registrar factura: " + res.error);
+    }
+  };
+
   const deudaTotal = proveedores.reduce((acc, curr) => acc + Number(curr.monto_adeudado), 0);
   const deudaMesPasado = historico.length > 1 ? Number(historico[historico.length - 2].deuda_acumulada) : 0;
 
@@ -146,6 +217,9 @@ export default function ProveedoresPage() {
             <option value="ALL">Todas las Sucursales</option>
             {sedes.map(s => <option key={s.id} value={s.id}>{s.nombre_comercial || s.nombre}</option>)}
           </select>
+          <button onClick={() => setShowAddModal(true)} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm">
+            Nueva Deuda
+          </button>
           <button onClick={() => setShowHistoricoModal(true)} className="bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30 border border-indigo-500/30 px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center gap-2">
             <BarChart3 size={18} /> Ver Histórico
           </button>
@@ -441,6 +515,145 @@ export default function ProveedoresPage() {
                 </table>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* FAB (Floating Action Button) */}
+      <button 
+        onClick={() => setShowAddModal(true)}
+        className="fixed bottom-8 right-8 bg-orange-600 hover:bg-orange-500 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-110 z-40"
+      >
+        <Plus size={28} />
+      </button>
+
+      {/* MODAL NUEVA FACTURA/DEUDA */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-neutral-900 w-full max-w-lg rounded-2xl border border-neutral-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-neutral-950 p-5 border-b border-neutral-800 flex justify-between items-center">
+              <h3 className="font-bold text-white text-lg flex items-center gap-2">
+                <Truck className="text-orange-400" />
+                Registrar Nueva Factura/Deuda
+              </h3>
+              <button onClick={() => setShowAddModal(false)} className="text-neutral-500 hover:text-white p-1"><X size={20}/></button>
+            </div>
+            <form onSubmit={handleCreateFactura} className="p-6 space-y-4">
+              
+              <div>
+                <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Proveedor (Buscar o Crear)</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Escribe el nombre del proveedor..."
+                    value={provSearch}
+                    onChange={(e) => {
+                      setProvSearch(e.target.value);
+                      setSelectedNewProvId(''); // Reset si cambian el texto manual
+                    }}
+                    className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  />
+                  {/* Dropdown de sugerencias */}
+                  {provSearch && !selectedNewProvId && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-neutral-800 border border-neutral-700 rounded-lg shadow-xl max-h-48 overflow-y-auto z-10">
+                      {filteredProvDropdown.map(p => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedNewProvId(p.id);
+                            setProvSearch(p.nombre_comercial);
+                          }}
+                          className="w-full text-left px-4 py-2 hover:bg-neutral-700 text-white text-sm"
+                        >
+                          {p.nombre_comercial} {p.rif_cedula ? `(${p.rif_cedula})` : ''}
+                        </button>
+                      ))}
+                      {showCreateProvButton && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            // Al hacer submit, el código lo creará automáticamente si no hay selectedNewProvId
+                            // o podemos simular selección y crearlo al enviar
+                          }}
+                          className="w-full text-left px-4 py-2 bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 font-bold text-sm border-t border-neutral-700"
+                        >
+                          + Crear nuevo: "{provSearch}"
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Sucursal/Sede</label>
+                  <select 
+                    value={newFacSede}
+                    onChange={(e) => setNewFacSede(e.target.value)}
+                    required
+                    className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  >
+                    {sedes.map(s => <option key={s.id} value={s.id}>{s.nombre_comercial || s.nombre}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Fecha Emisión</label>
+                  <input
+                    type="date"
+                    required
+                    value={newFacFecha}
+                    onChange={(e) => setNewFacFecha(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Nº Factura (Opcional)</label>
+                  <input
+                    type="text"
+                    placeholder="Ej. F-00123"
+                    value={newFacNum}
+                    onChange={(e) => setNewFacNum(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Total Deuda ($)</label>
+                  <input
+                    type="number"
+                    required
+                    min="0" step="0.01"
+                    placeholder="Ej. 1500.50"
+                    value={newFacTotal}
+                    onChange={(e) => setNewFacTotal(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Concepto (Opcional)</label>
+                <input
+                  type="text"
+                  placeholder="Ej. Compra de mercancía semanal"
+                  value={newFacConcepto}
+                  onChange={(e) => setNewFacConcepto(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                />
+              </div>
+
+              <button 
+                type="submit"
+                disabled={isCreatingFac}
+                className="w-full bg-orange-600 hover:bg-orange-500 disabled:opacity-50 text-white font-bold py-3 rounded-xl mt-4 transition-colors"
+              >
+                {isCreatingFac ? 'Registrando...' : 'Confirmar Factura/Deuda'}
+              </button>
+            </form>
           </div>
         </div>
       )}
