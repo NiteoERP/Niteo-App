@@ -5,7 +5,9 @@ import { getSedes } from '@/actions/dashboard-actions';
 import { getClientesConDeuda, getDetalleDeudaCliente, registrarAbono, getMetodosPago } from '@/actions/creditos-actions';
 import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, subWeeks } from 'date-fns';
 import { useEmpresa } from '@/components/providers/EmpresaProvider';
-import { Calendar as CalendarIcon, Store, Wallet, Search, Check, FileText, ShoppingCart, User, Users, PlusCircle, X } from 'lucide-react';
+import { Calendar as CalendarIcon, Store, Wallet, Search, Check, FileText, ShoppingCart, User, Users, PlusCircle, X, Download } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function CreditosPage() {
   const { formatCurrency } = useEmpresa();
@@ -101,6 +103,59 @@ export default function CreditosPage() {
   };
 
   const clienteSeleccionado = clientes.find(c => c.id_cliente === selectedClienteId);
+
+  const generatePDF = () => {
+    if (!clienteSeleccionado) return;
+    
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(20);
+    doc.text("Estado de Cuenta", 14, 22);
+    
+    doc.setFontSize(12);
+    doc.setTextColor(100);
+    doc.text(`Cliente: ${clienteSeleccionado.nombre_cliente}`, 14, 32);
+    doc.text(`Deuda Total: ${formatCurrency(clienteSeleccionado.monto_adeudado)}`, 14, 40);
+    doc.text(`Fecha de Reporte: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 48);
+
+    let startY = 60;
+    
+    detalle.forEach((fac, index) => {
+      doc.setFontSize(14);
+      doc.setTextColor(0);
+      doc.text(`Factura: ${fac.numero_documento} (${format(new Date(fac.fecha_venta), 'dd/MM/yyyy')})`, 14, startY);
+      doc.setFontSize(11);
+      doc.text(`Total: ${formatCurrency(fac.total_factura)} | Saldo: ${formatCurrency(fac.saldo_pendiente)}`, 14, startY + 6);
+      
+      let tableData: any[] = [];
+      
+      if (fac.productos_detalle && fac.productos_detalle.length > 0) {
+        fac.productos_detalle.forEach((p: any) => {
+          tableData.push([
+            `${p.cantidad}x ${p.producto}`,
+            formatCurrency(p.total)
+          ]);
+        });
+      } else {
+        tableData.push(["Sin detalles", "-"]);
+      }
+
+      autoTable(doc, {
+        startY: startY + 10,
+        head: [['Producto / Item', 'Total']],
+        body: tableData,
+        theme: 'grid',
+        headStyles: { fillColor: [79, 70, 229] },
+        margin: { left: 14 }
+      });
+
+      // @ts-ignore
+      startY = doc.lastAutoTable.finalY + 15;
+    });
+
+    doc.save(`Deudas_${clienteSeleccionado.nombre_cliente.replace(/\s+/g, '_')}.pdf`);
+  };
 
   return (
     <div className="flex min-h-full w-full bg-neutral-950 text-white flex-col lg:flex-row relative lg:h-[calc(100vh-6rem)] lg:overflow-hidden rounded-xl border border-neutral-800">
@@ -228,9 +283,18 @@ export default function CreditosPage() {
           </div>
         ) : (
           <>
-            <div className="p-6 border-b border-neutral-800 bg-neutral-900/50">
-              <h2 className="text-2xl font-black text-white">{clienteSeleccionado?.nombre_cliente}</h2>
-              <p className="text-rose-400 font-bold mt-1">Deuda Total: {formatCurrency(clienteSeleccionado?.monto_adeudado || 0)}</p>
+            <div className="p-6 border-b border-neutral-800 bg-neutral-900/50 flex justify-between items-start">
+              <div>
+                <h2 className="text-2xl font-black text-white">{clienteSeleccionado?.nombre_cliente}</h2>
+                <p className="text-rose-400 font-bold mt-1">Deuda Total: {formatCurrency(clienteSeleccionado?.monto_adeudado || 0)}</p>
+              </div>
+              <button
+                onClick={generatePDF}
+                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+              >
+                <Download size={16} />
+                Exportar PDF
+              </button>
             </div>
             
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
