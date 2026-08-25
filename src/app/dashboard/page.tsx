@@ -36,7 +36,14 @@ export default function DashboardPage() {
       try {
         const targetSede = sedeId === 'ALL' ? null : sedeId;
         const res = await getDashboardData(range, targetSede);
-        setData(res);
+        
+        // Normalize data to ensure 'dia' exists (some RPCs might return 'fecha' or 'date')
+        const normalizedRes = (res || []).map((r: any) => ({
+          ...r,
+          dia: r.dia || r.fecha || r.date || 'N/A'
+        }));
+        
+        setData(normalizedRes);
       } catch (err) {
         console.error(err);
       } finally {
@@ -171,7 +178,7 @@ export default function DashboardPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                    <XAxis dataKey="dia" stroke="#6b7280" tick={{fontSize: 12}} tickFormatter={(val) => val.split('-').slice(1).join('/')} />
+                    <XAxis dataKey="dia" stroke="#6b7280" tick={{fontSize: 12}} tickFormatter={(val) => val && typeof val === 'string' && val.includes('-') ? val.split('-').slice(1).join('/') : val} />
                     <YAxis stroke="#6b7280" tick={{fontSize: 12}} tickFormatter={(val) => `$${val/1000}k`} />
                     <Tooltip 
                       formatter={(value: any) => [formatMoney(Number(value)), '']}
@@ -199,10 +206,44 @@ export default function DashboardPage() {
 
           </div>
           
-          {/* DATA TABLE */}
-          <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+          {/* DATA TABLE / LIST */}
+          <div className="bg-white dark:bg-neutral-900 p-4 md:p-6 rounded-2xl shadow-sm border border-neutral-100 dark:border-neutral-800 overflow-hidden">
             <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Desglose por Día</h2>
-            <div className="overflow-x-auto">
+            
+            {/* VISTA MÓVIL (Tarjetas) */}
+            <div className="grid grid-cols-1 gap-4 md:hidden">
+              {data.map((row, i) => (
+                <div key={i} className="bg-neutral-50 dark:bg-neutral-800/50 rounded-xl p-4 border border-neutral-100 dark:border-neutral-800">
+                  <div className="flex justify-between items-center mb-3 pb-3 border-b border-neutral-200 dark:border-neutral-700/50">
+                    <span className="font-bold text-neutral-900 dark:text-white">{row.dia}</span>
+                    <span className={`font-black ${row.utilidad_neta >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-500'}`}>
+                      {formatMoney(row.utilidad_neta)} Neta
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-neutral-500 dark:text-neutral-400 text-xs uppercase mb-1">Ventas</p>
+                      <p className="text-green-600 font-bold">{formatMoney(row.ventas_brutas)}</p>
+                    </div>
+                    <div>
+                      <p className="text-neutral-500 dark:text-neutral-400 text-xs uppercase mb-1">COGS</p>
+                      <p className="text-orange-500 font-medium">{formatMoney(row.cogs)}</p>
+                    </div>
+                    <div>
+                      <p className="text-neutral-500 dark:text-neutral-400 text-xs uppercase mb-1">Mermas</p>
+                      <p className="text-red-500 font-medium">{formatMoney(row.mermas)}</p>
+                    </div>
+                    <div>
+                      <p className="text-neutral-500 dark:text-neutral-400 text-xs uppercase mb-1">Gastos</p>
+                      <p className="text-purple-500 font-medium">{formatMoney(row.gastos_operativos)}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* VISTA DESKTOP (Tabla) */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm text-left">
                 <thead className="text-xs text-gray-500 uppercase bg-gray-50 dark:bg-gray-800">
                   <tr>
@@ -237,3 +278,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
