@@ -2,18 +2,26 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Trash2, Wallet, CreditCard, Smartphone, DollarSign, CheckCircle2, Building2, Hash, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Trash2, Wallet, CreditCard, Smartphone, DollarSign, CheckCircle2, Building2, Hash, ChevronDown, ChevronUp, GripHorizontal, X } from 'lucide-react';
 import { getCierrePrevio, guardarCierre, getBancosUtilizados } from '@/actions/cierres-actions';
 
-type MetodoPago = 'Pago Móvil' | 'Punto de Venta' | 'Zelle' | 'Efectivo';
+type Moneda = 'USD' | 'VES';
+
+interface MetodoConfig {
+  id: string;
+  icon: any;
+  color: string;
+  defaultMoneda: Moneda;
+  isCustom?: boolean;
+}
 
 interface Transaccion {
   id: string;
-  metodo: MetodoPago;
+  metodo: string;
   banco: string;
   referencia: string;
   monto: string;
-  moneda: 'USD' | 'VES';
+  moneda: Moneda;
 }
 
 export default function NuevoCierreCaja() {
@@ -33,14 +41,20 @@ export default function NuevoCierreCaja() {
   
   // Transacciones
   const [transacciones, setTransacciones] = useState<Transaccion[]>([]);
-  const [expandedMetodo, setExpandedMetodo] = useState<MetodoPago | null>('Pago Móvil');
+  const [expandedMetodo, setExpandedMetodo] = useState<string | null>('Pago Móvil');
 
-  const metodos: { id: MetodoPago, icon: any, color: string }[] = [
-    { id: 'Pago Móvil', icon: Smartphone, color: 'text-indigo-400' },
-    { id: 'Punto de Venta', icon: CreditCard, color: 'text-emerald-400' },
-    { id: 'Zelle', icon: DollarSign, color: 'text-purple-400' },
-    { id: 'Efectivo', icon: Wallet, color: 'text-amber-400' },
-  ];
+  // Metodos dinámicos
+  const [metodos, setMetodos] = useState<MetodoConfig[]>([
+    { id: 'Pago Móvil', icon: Smartphone, color: 'text-indigo-400', defaultMoneda: 'VES' },
+    { id: 'Punto de Venta', icon: CreditCard, color: 'text-emerald-400', defaultMoneda: 'VES' },
+    { id: 'Zelle', icon: DollarSign, color: 'text-purple-400', defaultMoneda: 'USD' },
+    { id: 'Efectivo', icon: Wallet, color: 'text-amber-400', defaultMoneda: 'USD' },
+  ]);
+
+  // Modal para nuevo método
+  const [showNewMetodo, setShowNewMetodo] = useState(false);
+  const [newMetodoName, setNewMetodoName] = useState('');
+  const [newMetodoMoneda, setNewMetodoMoneda] = useState<Moneda>('VES');
 
   useEffect(() => {
     async function loadData() {
@@ -64,17 +78,32 @@ export default function NuevoCierreCaja() {
     loadData();
   }, []);
 
-  const handleAddTransaccion = (metodo: MetodoPago) => {
+  const handleCreateMetodo = () => {
+    if (!newMetodoName.trim()) return;
+    const newConfig: MetodoConfig = {
+      id: newMetodoName.trim(),
+      icon: GripHorizontal,
+      color: 'text-sky-400',
+      defaultMoneda: newMetodoMoneda,
+      isCustom: true
+    };
+    setMetodos([...metodos, newConfig]);
+    setExpandedMetodo(newConfig.id);
+    setNewMetodoName('');
+    setShowNewMetodo(false);
+  };
+
+  const handleAddTransaccion = (metodoId: string, defaultMoneda: Moneda) => {
     const newTx: Transaccion = {
       id: Math.random().toString(36).substr(2, 9),
-      metodo,
+      metodo: metodoId,
       banco: '',
       referencia: '',
       monto: '',
-      moneda: metodo === 'Zelle' ? 'USD' : 'VES'
+      moneda: defaultMoneda
     };
     setTransacciones([...transacciones, newTx]);
-    setExpandedMetodo(metodo);
+    setExpandedMetodo(metodoId);
   };
 
   const updateTransaccion = (id: string, field: keyof Transaccion, value: string) => {
@@ -103,7 +132,7 @@ export default function NuevoCierreCaja() {
     return total;
   };
 
-  const getTotalByMetodo = (metodo: MetodoPago) => {
+  const getTotalByMetodo = (metodo: string) => {
     let total = 0;
     transacciones.filter(t => t.metodo === metodo).forEach(t => {
       const val = parseFloat(t.monto) || 0;
@@ -114,6 +143,20 @@ export default function NuevoCierreCaja() {
       }
     });
     return total;
+  };
+
+  const getBanksSummary = (metodo: string) => {
+    const txs = transacciones.filter(t => t.metodo === metodo && t.banco.trim() !== '');
+    const summary: Record<string, { count: number, totalBs: number, totalUsd: number }> = {};
+    
+    txs.forEach(tx => {
+      const b = tx.banco.trim();
+      if (!summary[b]) summary[b] = { count: 0, totalBs: 0, totalUsd: 0 };
+      summary[b].count++;
+      if (tx.moneda === 'VES') summary[b].totalBs += (parseFloat(tx.monto) || 0);
+      else summary[b].totalUsd += (parseFloat(tx.monto) || 0);
+    });
+    return summary;
   };
 
   const handleGuardarCierre = async () => {
@@ -129,7 +172,7 @@ export default function NuevoCierreCaja() {
       const transaccionesCleaned = transacciones.map(t => {
         const val = parseFloat(t.monto) || 0;
         
-        if (t.metodo === 'Efectivo') {
+        if (t.metodo === 'Efectivo' || t.metodo.toLowerCase().includes('efectivo')) {
           if (t.moneda === 'VES') real_efectivo_bs += val;
           else real_efectivo_usd += val;
         } else {
@@ -193,7 +236,7 @@ export default function NuevoCierreCaja() {
             <p className="text-neutral-400 text-sm mt-1">Tasa BCV: <span className="text-emerald-400 font-medium">{tasaCambio.toFixed(2)} Bs/$</span></p>
           </div>
           <div className="text-right hidden sm:block">
-            <p className="text-xs text-neutral-500 uppercase tracking-widest">Esperado Sistema</p>
+            <p className="text-xs text-neutral-500 uppercase tracking-widest">Venta del Sistema</p>
             <p className="text-xl font-bold text-neutral-300">${totalEsperado.toFixed(2)}</p>
           </div>
         </div>
@@ -206,6 +249,8 @@ export default function NuevoCierreCaja() {
           const isExpanded = expandedMetodo === metodo.id;
           const txs = transacciones.filter(t => t.metodo === metodo.id);
           const totalMetodo = getTotalByMetodo(metodo.id);
+          const banksSummary = getBanksSummary(metodo.id);
+          const hasBanks = Object.keys(banksSummary).length > 0;
 
           return (
             <div key={metodo.id} className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden transition-all duration-300">
@@ -219,7 +264,10 @@ export default function NuevoCierreCaja() {
                     <Icon size={24} />
                   </div>
                   <div className="text-left">
-                    <h3 className="font-bold text-lg">{metodo.id}</h3>
+                    <h3 className="font-bold text-lg flex items-center gap-2">
+                      {metodo.id}
+                      {metodo.isCustom && <span className="text-[10px] bg-neutral-800 px-2 py-0.5 rounded-full text-neutral-400">Custom</span>}
+                    </h3>
                     <p className="text-xs text-neutral-400">{txs.length} transacciones registradas</p>
                   </div>
                 </div>
@@ -236,6 +284,29 @@ export default function NuevoCierreCaja() {
               {/* Accordion Body */}
               {isExpanded && (
                 <div className="p-4 border-t border-neutral-800 bg-black/20 space-y-4">
+                  
+                  {/* SUMMARY POR BANCO */}
+                  {hasBanks && (
+                    <div className="mb-4 bg-neutral-950/50 border border-neutral-800 rounded-xl p-4">
+                      <p className="text-xs text-neutral-500 uppercase tracking-widest mb-3 font-semibold">Resumen por Banco</p>
+                      <div className="flex flex-wrap gap-3">
+                        {Object.entries(banksSummary).map(([bank, data]) => (
+                          <div key={bank} className="bg-neutral-900 border border-neutral-800 px-3 py-2 rounded-lg flex items-center gap-3">
+                            <div>
+                              <p className="text-sm font-medium text-white">{bank}</p>
+                              <p className="text-[10px] text-neutral-500">{data.count} txs</p>
+                            </div>
+                            <div className="text-right">
+                              {data.totalBs > 0 && <p className="text-xs text-indigo-300 font-bold">{data.totalBs.toFixed(2)} Bs</p>}
+                              {data.totalUsd > 0 && <p className="text-xs text-emerald-400 font-bold">${data.totalUsd.toFixed(2)}</p>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TRANSACTIONS */}
                   {txs.map((tx, idx) => (
                     <div key={tx.id} className="p-4 bg-neutral-950 border border-neutral-800 rounded-xl relative group animate-in slide-in-from-top-2 duration-300">
                       <div className="absolute -left-3 -top-3 w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center text-xs font-bold shadow-lg">
@@ -275,43 +346,41 @@ export default function NuevoCierreCaja() {
                           )}
                         </div>
 
-                        {/* BANCO (Solo si no es efectivo) */}
-                        {metodo.id !== 'Efectivo' && (
-                          <div className="space-y-2 relative">
-                            <label className="block text-xs font-medium text-neutral-400 uppercase tracking-wider">Banco Emisor / Receptor</label>
-                            <div className="relative">
-                              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" size={16} />
-                              <input 
-                                type="text" 
-                                placeholder="Ej: Banesco"
-                                value={tx.banco}
-                                onChange={(e) => updateTransaccion(tx.id, 'banco', e.target.value)}
-                                onFocus={() => setMostrarSugerencias(tx.id)}
-                                onBlur={() => setTimeout(() => setMostrarSugerencias(null), 200)}
-                                className="w-full bg-neutral-900 border border-neutral-800 focus:border-indigo-500 rounded-xl py-3 pl-10 pr-4 text-white outline-none transition-colors"
-                              />
-                            </div>
-                            {/* Autocomplete Dropdown */}
-                            {mostrarSugerencias === tx.id && (
-                              <div className="absolute z-10 w-full mt-1 bg-neutral-800 border border-neutral-700 rounded-xl shadow-xl overflow-hidden max-h-40 overflow-y-auto custom-scrollbar">
-                                {bancosSugeridos.filter(b => b.toLowerCase().includes(tx.banco.toLowerCase())).length > 0 ? (
-                                  bancosSugeridos.filter(b => b.toLowerCase().includes(tx.banco.toLowerCase())).map(b => (
-                                    <button 
-                                      key={b}
-                                      onMouseDown={(e) => e.preventDefault()} 
-                                      onClick={() => selectBanco(tx.id, b)}
-                                      className="w-full text-left px-4 py-2 hover:bg-indigo-600 text-white text-sm transition-colors"
-                                    >
-                                      {b}
-                                    </button>
-                                  ))
-                                ) : (
-                                  <div className="px-4 py-2 text-sm text-neutral-400">Presiona enter para crear "{tx.banco}"</div>
-                                )}
-                              </div>
-                            )}
+                        {/* BANCO */}
+                        <div className="space-y-2 relative">
+                          <label className="block text-xs font-medium text-neutral-400 uppercase tracking-wider">Banco Emisor / Receptor</label>
+                          <div className="relative">
+                            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" size={16} />
+                            <input 
+                              type="text" 
+                              placeholder={metodo.id === 'Efectivo' ? 'N/A' : 'Ej: Banesco, Mercantil...'}
+                              value={tx.banco}
+                              onChange={(e) => updateTransaccion(tx.id, 'banco', e.target.value)}
+                              onFocus={() => setMostrarSugerencias(tx.id)}
+                              onBlur={() => setTimeout(() => setMostrarSugerencias(null), 200)}
+                              className="w-full bg-neutral-900 border border-neutral-800 focus:border-indigo-500 rounded-xl py-3 pl-10 pr-4 text-white outline-none transition-colors"
+                            />
                           </div>
-                        )}
+                          {/* Autocomplete Dropdown */}
+                          {mostrarSugerencias === tx.id && (
+                            <div className="absolute z-10 w-full mt-1 bg-neutral-800 border border-neutral-700 rounded-xl shadow-xl overflow-hidden max-h-40 overflow-y-auto custom-scrollbar">
+                              {bancosSugeridos.filter(b => b.toLowerCase().includes(tx.banco.toLowerCase())).length > 0 ? (
+                                bancosSugeridos.filter(b => b.toLowerCase().includes(tx.banco.toLowerCase())).map(b => (
+                                  <button 
+                                    key={b}
+                                    onMouseDown={(e) => e.preventDefault()} 
+                                    onClick={() => selectBanco(tx.id, b)}
+                                    className="w-full text-left px-4 py-2 hover:bg-indigo-600 text-white text-sm transition-colors"
+                                  >
+                                    {b}
+                                  </button>
+                                ))
+                              ) : (
+                                <div className="px-4 py-2 text-sm text-neutral-400">Presiona enter para crear "{tx.banco}"</div>
+                              )}
+                            </div>
+                          )}
+                        </div>
 
                         {/* REFERENCIA */}
                         <div className="space-y-2 sm:col-span-2">
@@ -320,7 +389,7 @@ export default function NuevoCierreCaja() {
                             <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" size={16} />
                             <input 
                               type="text" 
-                              placeholder="Últimos 4 dígitos o concepto"
+                              placeholder="Últimos dígitos o concepto"
                               value={tx.referencia}
                               onChange={(e) => updateTransaccion(tx.id, 'referencia', e.target.value)}
                               className="w-full bg-neutral-900 border border-neutral-800 focus:border-indigo-500 rounded-xl py-3 pl-10 pr-4 text-white outline-none transition-colors"
@@ -332,7 +401,7 @@ export default function NuevoCierreCaja() {
                   ))}
 
                   <button 
-                    onClick={() => handleAddTransaccion(metodo.id)}
+                    onClick={() => handleAddTransaccion(metodo.id, metodo.defaultMoneda)}
                     className="w-full py-4 border-2 border-dashed border-neutral-800 rounded-xl text-neutral-400 hover:text-white hover:border-neutral-700 hover:bg-neutral-800/50 flex items-center justify-center gap-2 transition-all font-medium"
                   >
                     <Plus size={18} /> Agregar Transacción en {metodo.id}
@@ -342,13 +411,63 @@ export default function NuevoCierreCaja() {
             </div>
           );
         })}
+
+        {/* CREAR NUEVO MÉTODO */}
+        {showNewMetodo ? (
+          <div className="bg-neutral-900 border border-indigo-500/50 rounded-2xl p-4 animate-in fade-in">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-lg">Nuevo Método Dinámico</h3>
+              <button onClick={() => setShowNewMetodo(false)} className="text-neutral-400 hover:text-white">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="block text-xs font-medium text-neutral-400 uppercase">Nombre</label>
+                <input 
+                  type="text" 
+                  autoFocus
+                  placeholder="Ej: Biopago, Binance, etc."
+                  value={newMetodoName}
+                  onChange={(e) => setNewMetodoName(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-white outline-none focus:border-indigo-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="block text-xs font-medium text-neutral-400 uppercase">Moneda Predeterminada</label>
+                <select 
+                  value={newMetodoMoneda}
+                  onChange={(e) => setNewMetodoMoneda(e.target.value as Moneda)}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-white outline-none focus:border-indigo-500 cursor-pointer"
+                >
+                  <option value="VES">Bolívares (VES)</option>
+                  <option value="USD">Dólares (USD)</option>
+                </select>
+              </div>
+            </div>
+            <button 
+              onClick={handleCreateMetodo}
+              disabled={!newMetodoName.trim()}
+              className="mt-4 w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-neutral-800 disabled:text-neutral-500 text-white rounded-xl py-3 font-bold transition-colors"
+            >
+              Confirmar Nuevo Método
+            </button>
+          </div>
+        ) : (
+          <button 
+            onClick={() => setShowNewMetodo(true)}
+            className="w-full py-4 border-2 border-dashed border-indigo-500/30 rounded-xl text-indigo-400 hover:text-white hover:border-indigo-500 hover:bg-indigo-500/10 flex items-center justify-center gap-2 transition-all font-medium"
+          >
+            <Plus size={18} /> Crear Nuevo Método de Pago
+          </button>
+        )}
       </div>
 
       {/* FOOTER FIJO (BOTTOM BAR) */}
       <div className="fixed bottom-0 left-0 w-full bg-neutral-950 border-t border-neutral-900 p-4 md:p-6 z-30 pb-safe shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div>
-            <p className="text-xs text-neutral-400 uppercase tracking-widest">Total Declarado</p>
+            <p className="text-xs text-neutral-400 uppercase tracking-widest">Verificación Física</p>
             <p className="text-3xl font-black text-emerald-400">${granTotalUSD.toFixed(2)}</p>
             {totalEsperado > 0 && (
               <p className={`text-xs mt-1 font-medium ${granTotalUSD >= totalEsperado ? 'text-emerald-500' : 'text-rose-500'}`}>
