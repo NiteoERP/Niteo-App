@@ -14,6 +14,7 @@ const REPORT_MENU = [
     reports: [
       { id: 'ventas_diarias', name: 'Ventas Diarias' },
       { id: 'ventas_productos', name: 'Ventas por Producto' },
+      { id: 'ventas_clientes', name: 'Frecuencia de Compras por Cliente' },
       { id: 'ventas_productos_clientes', name: 'Ventas por Producto y Cliente' },
       { id: 'ventas_metodos_pago', name: 'Ventas por Método de Pago' },
       { id: 'ventas_usuarios', name: 'Desempeo de Cajeros' },

@@ -40,6 +40,10 @@ export async function generateReport(
       rpcName = 'get_reporte_ventas_productos';
       rpcParams = { p_empresa_id: profile.empresa_id, p_sede_id, p_fecha_inicio, p_fecha_fin };
       break;
+    case 'ventas_clientes':
+      rpcName = 'get_reporte_ventas_clientes';
+      rpcParams = { p_empresa_id: profile.empresa_id, p_sede_id, p_fecha_inicio, p_fecha_fin };
+      break;
     case 'ventas_productos_clientes':
       rpcName = 'get_reporte_ventas_productos_clientes';
       rpcParams = { p_empresa_id: profile.empresa_id, p_sede_id, p_fecha_inicio, p_fecha_fin };
