@@ -43,6 +43,13 @@ export function SidebarNav({ permisos, userRole }: NavProps) {
         </Link>
       )}
       
+            {hasPerm('caja') && (
+        <Link href="/dashboard/caja/nuevo" className={getLinkClass('/dashboard/caja/nuevo')}>
+          <Wallet size={20} />
+          <span className="text-sm font-medium">Cierre de Caja</span>
+        </Link>
+      )}
+
       {hasPerm('inventario') && (
         <Link href="/dashboard/inventario" className={getLinkClass('/dashboard/inventario')}>
           <Package size={20} />
@@ -176,7 +183,14 @@ export function MobileNav({ permisos, userRole }: NavProps) {
                 <LayoutDashboard size={20} /> Inicio
               </Link>
             )}
-            {hasPerm('inventario') && (
+                  {hasPerm('caja') && (
+        <Link href="/dashboard/caja/nuevo" className={getLinkClass('/dashboard/caja/nuevo')}>
+          <Wallet size={20} />
+          <span className="text-sm font-medium">Cierre de Caja</span>
+        </Link>
+      )}
+
+      {hasPerm('inventario') && (
               <Link href="/dashboard/inventario" onClick={() => setMenuOpen(false)} className={getMenuItemClass('/dashboard/inventario')}>
                 <Package size={20} /> Inventario
               </Link>
@@ -271,6 +285,7 @@ export function MobileNav({ permisos, userRole }: NavProps) {
     </>
   );
 }
+
 
 
 

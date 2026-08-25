@@ -137,3 +137,26 @@ export async function guardarCierre(cierreData: any, transacciones: any[]) {
   return { success: true };
 }
 
+
+
+export async function getBancosUtilizados() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data: profile } = await supabase.from('perfiles').select('id_empresa').eq('id', user.id).single();
+  if (!profile) return [];
+  
+  // Try to get distinct bancos used by this empresa
+  // Since Supabase RPC or distinct might not be trivial without a custom function, we just fetch a subset of unique ones via a simple query
+  const { data, error } = await supabase
+    .from('cierres_transacciones')
+    .select('banco')
+    .not('banco', 'is', null)
+    .limit(100);
+    
+  if (error || !data) return ['Banesco', 'Mercantil', 'Provincial', 'Venezuela', 'BNC'];
+  
+  const bancos = Array.from(new Set(data.map(d => d.banco))).filter(Boolean);
+  if (bancos.length === 0) return ['Banesco', 'Mercantil', 'Provincial', 'Venezuela', 'BNC'];
+  return bancos;
+}

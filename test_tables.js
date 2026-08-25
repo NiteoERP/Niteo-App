@@ -7,8 +7,8 @@ const supabaseKey = env.match(/SUPABASE_SERVICE_ROLE_KEY=(.*)/)[1].trim();
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function run() {
-  const { data, error } = await supabase.from('ventas_facturas').select('*').limit(1);
-  console.log('ventas_facturas:', data || error);
+  const { data, error } = await supabase.from('cierres_transacciones').select('banco').limit(1);
+  console.log('cierres_transacciones:', data || error);
 }
 run();
 
