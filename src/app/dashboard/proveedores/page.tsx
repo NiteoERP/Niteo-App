@@ -9,7 +9,9 @@ import { format } from 'date-fns';
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function ProveedoresPage() {
-  const { formatCurrency, metodos_pago } = useEmpresa();
+  const { formatCurrency, empresa } = useEmpresa();
+  const metodos_pago = empresa?.metodos_pago || [];
+  
   const [sedes, setSedes] = useState<any[]>([]);
   const [sedeId, setSedeId] = useState('ALL');
   
@@ -29,7 +31,7 @@ export default function ProveedoresPage() {
   const [showPagoModal, setShowPagoModal] = useState(false);
   const [selectedFactura, setSelectedFactura] = useState<any>(null);
   const [montoPago, setMontoPago] = useState<number | string>('');
-  const [metodoPago, setMetodoPago] = useState(metodos_pago?.[0] || 'Transferencia');
+  const [metodoPago, setMetodoPago] = useState(metodos_pago[0] || 'Transferencia');
   const [referencia, setReferencia] = useState('');
   const [bancoOrigen, setBancoOrigen] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,12 +47,12 @@ export default function ProveedoresPage() {
     ]);
 
     if (res.success) {
-      setProveedores(res.data);
-      setFilteredProveedores(res.data);
+      setProveedores(res.data || []);
+      setFilteredProveedores(res.data || []);
     }
     if (histRes.success) {
       // Revertimos para que el mes actual salga al final de la gráfica
-      setHistorico(histRes.data.reverse());
+      setHistorico((histRes.data || []).reverse());
     }
     setLoading(false);
   };
@@ -78,7 +80,7 @@ export default function ProveedoresPage() {
     setLoadingFacturas(true);
     const res = await getFacturasProveedor(provId, sedeId);
     if (res.success) {
-      setFacturasProveedor(res.data);
+      setFacturasProveedor(res.data || []);
     }
     setLoadingFacturas(false);
   };
@@ -109,7 +111,7 @@ export default function ProveedoresPage() {
       if (expandedId) {
         setLoadingFacturas(true);
         const fRes = await getFacturasProveedor(expandedId, sedeId);
-        if (fRes.success) setFacturasProveedor(fRes.data);
+        if (fRes.success) setFacturasProveedor(fRes.data || []);
         setLoadingFacturas(false);
       }
     } else {
