@@ -183,21 +183,32 @@ export default function CreditosPage() {
           ) : clientes.length === 0 ? (
             <p className="text-neutral-500 text-center py-10 text-sm font-medium">No hay deudas en este período.</p>
           ) : (
-            clientes.map((c, i) => (
-              <button 
-                key={i}
-                onClick={() => fetchDetalle(c.id_cliente)}
+            clientes.map((cli) => (
+              <button
+                key={cli.id_cliente}
+                onClick={() => fetchDetalle(cli.id_cliente)}
                 className={`w-full text-left p-4 rounded-xl border transition-all ${
-                  selectedClienteId === c.id_cliente 
-                  ? 'bg-emerald-500/10 border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.1)]' 
-                  : 'bg-neutral-900 border-neutral-800 hover:border-neutral-600'
+                  selectedClienteId === cli.id_cliente 
+                    ? 'bg-emerald-900/20 border-emerald-500/50 shadow-lg' 
+                    : 'bg-neutral-900/50 border-neutral-800 hover:bg-neutral-900'
                 }`}
               >
                 <div className="flex justify-between items-start mb-1">
-                  <h3 className={`font-bold ${selectedClienteId === c.id_cliente ? 'text-emerald-400' : 'text-white'}`}>{c.nombre_cliente}</h3>
-                  <span className="font-black text-rose-400">{formatCurrency(c.monto_adeudado || 0)}</span>
+                  <div>
+                    <h3 className={`font-black uppercase truncate pr-2 ${
+                      selectedClienteId === cli.id_cliente ? 'text-emerald-400' : 'text-white'
+                    }`}>{cli.nombre_cliente}</h3>
+                    {cli.sedes_involucradas && (
+                      <p className="text-xs text-neutral-500 font-medium">{cli.sedes_involucradas}</p>
+                    )}
+                  </div>
+                  <span className={`font-bold ${
+                    selectedClienteId === cli.id_cliente ? 'text-rose-400' : 'text-rose-500'
+                  }`}>{formatCurrency(cli.monto_adeudado)}</span>
                 </div>
-                <p className="text-xs text-neutral-500">Última compra: {format(new Date(c.ultima_compra), 'dd/MM/yyyy')}</p>
+                <p className="text-xs text-neutral-500">
+                  Última compra: {cli.ultima_compra ? format(new Date(cli.ultima_compra), 'dd/MM/yyyy') : '-'}
+                </p>
               </button>
             ))
           )}

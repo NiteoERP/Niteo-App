@@ -207,11 +207,19 @@ export default function ProveedoresPage() {
                     <div className="w-10 h-10 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center text-neutral-400 group-hover:text-orange-400 group-hover:border-orange-500/30 transition-colors">
                       <Building2 size={20} />
                     </div>
-                    <div>
-                      <h3 className="font-bold text-white text-lg">{prov.nombre_proveedor}</h3>
-                      <p className="text-sm text-neutral-500">
-                        {prov.facturas_pendientes} {prov.facturas_pendientes === 1 ? 'factura pendiente' : 'facturas pendientes'}
-                      </p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-bold text-lg text-white truncate">{prov.nombre_proveedor}</h3>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <p className="text-sm text-neutral-400">RIF/Cédula: {prov.rif || 'N/A'}</p>
+                        {prov.sedes_involucradas && (
+                          <p className="text-xs text-neutral-500 font-medium">Sedes: {prov.sedes_involucradas}</p>
+                        )}
+                        <p className="text-sm text-neutral-500">
+                          {prov.facturas_pendientes} {prov.facturas_pendientes === 1 ? 'factura pendiente' : 'facturas pendientes'}
+                        </p>
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center justify-between sm:justify-end gap-6 sm:w-1/3">
