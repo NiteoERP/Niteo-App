@@ -277,10 +277,25 @@ export async function registrarFactura(
       return payload;
     });
 
-    const { error: insertErr } = await supabase.from('compras_mercancia').insert(lineas);
-    if (insertErr) throw insertErr;
+      const { error: insertErr } = await supabase.from('compras_mercancia').insert(lineas);
+      if (insertErr) throw insertErr;
 
-      for (const p of productosFactura) {
+      // ALSO create a debt in Proveedores (compras_facturas)
+      const totalFactura = productosFactura.reduce((sum, p) => sum + Number(p.total), 0);
+      const { error: fError } = await supabase.from('compras_facturas').insert({
+        empresa_id: idEmpresa,
+        sede_id: idSede,
+        proveedor_id: idProveedor,
+        numero_factura: nroFactura || 'S/N',
+        concepto: 'Ingreso de Mercancía',
+        total: totalFactura,
+        saldo_pendiente: totalFactura, // Por defecto entra como deuda a Proveedores
+        fecha_emision: fechaRegistro || new Date().toISOString(),
+        usuario_id: user.id
+      });
+      if (fError) console.error('Error al registrar en compras_facturas:', fError);
+
+        for (const p of productosFactura) {
         if (p.id_producto) {
           const nuevoCostoUnitario = Number(p.precio); 
           const cantidadComprada = Number(p.cantidad);

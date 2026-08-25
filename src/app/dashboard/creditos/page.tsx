@@ -54,6 +54,9 @@ export default function CreditosPage() {
     const res = await getClientesConDeuda(sedeId, startDate, endDate);
     if (res.success) {
       setClientes(res.data || []);
+    } else {
+      console.error(res.error);
+      alert("Error DB: " + res.error);
     }
     setIsLoadingClientes(false);
   };

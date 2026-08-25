@@ -210,16 +210,16 @@ export default function ProveedoresPage() {
         
         <div className="flex items-center gap-3">
           <select 
-            value={sedeId}
+            value={sedeId} 
             onChange={(e) => setSedeId(e.target.value)}
-            className="bg-neutral-900 border border-neutral-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-indigo-500"
+            className="bg-neutral-900 border border-neutral-800 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange-500"
           >
             <option value="ALL">Todas las Sucursales</option>
             {sedes.map(s => <option key={s.id} value={s.id}>{s.nombre_comercial || s.nombre}</option>)}
           </select>
-          <button onClick={() => setShowAddModal(true)} className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm">
-            Nueva Deuda
-          </button>
+          <a href="/dashboard/compras" className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm text-center inline-block">
+            Nueva Factura / Deuda
+          </a>
           <button onClick={() => setShowHistoricoModal(true)} className="bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30 border border-indigo-500/30 px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center gap-2">
             <BarChart3 size={18} /> Ver Histórico
           </button>
@@ -519,13 +519,10 @@ export default function ProveedoresPage() {
         </div>
       )}
 
-      {/* FAB (Floating Action Button) */}
-      <button 
-        onClick={() => setShowAddModal(true)}
-        className="fixed bottom-8 right-8 bg-orange-600 hover:bg-orange-500 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-110 z-40"
-      >
-        <Plus size={28} />
-      </button>
+      {/* MODAL NUEVA FACTURA/DEUDA (Obsoleto, ahora se hace en Compras) */}
+      {/* 
+        showAddModal was here, but we unified with /dashboard/compras 
+      */}
 
       {/* MODAL NUEVA FACTURA/DEUDA */}
       {showAddModal && (
