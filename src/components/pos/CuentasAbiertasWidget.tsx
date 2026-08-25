@@ -122,6 +122,21 @@ export default function CuentasAbiertasWidget({ sedeId }: { sedeId: string }) {
       {cuentas.map((cuenta) => {
         const isExpanded = expandedId === cuenta.id;
         
+        // Defensive parsing for detalles
+        let detallesArray: CuentaAbiertaDetalle[] = [];
+        try {
+          if (typeof cuenta.detalles === 'string') {
+            detallesArray = JSON.parse(cuenta.detalles);
+          } else if (Array.isArray(cuenta.detalles)) {
+            detallesArray = cuenta.detalles;
+          } else if (cuenta.detalles && typeof cuenta.detalles === 'object') {
+            // In case it's an object with an items array or something similar
+            detallesArray = (cuenta.detalles as any).items || Object.values(cuenta.detalles);
+          }
+        } catch (e) {
+          console.error("Error parsing detalles for cuenta", cuenta.id, e);
+        }
+        
         return (
           <div 
             key={cuenta.id} 
@@ -171,7 +186,7 @@ export default function CuentasAbiertasWidget({ sedeId }: { sedeId: string }) {
                 </div>
                 
                 {/* Expand Toggle */}
-                {cuenta.detalles && cuenta.detalles.length > 0 && (
+                {detallesArray && detallesArray.length > 0 && (
                   <div className="pt-2 flex justify-center text-neutral-500 hover:text-indigo-400 transition-colors">
                     {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                   </div>
@@ -180,22 +195,29 @@ export default function CuentasAbiertasWidget({ sedeId }: { sedeId: string }) {
             </div>
 
             {/* Expanded Content (Items) */}
-            {isExpanded && cuenta.detalles && cuenta.detalles.length > 0 && (
+            {isExpanded && detallesArray && detallesArray.length > 0 && (
               <div className="bg-neutral-950 px-5 py-4 border-t border-neutral-800 max-h-60 overflow-y-auto custom-scrollbar">
                 <div className="flex items-center gap-2 mb-3">
                   <ShoppingBag size={14} className="text-neutral-400" />
                   <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Productos en curso</span>
                 </div>
                 <div className="space-y-2">
-                  {cuenta.detalles.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-start text-sm">
-                      <div className="flex flex-col">
-                        <span className="text-neutral-200 line-clamp-1">{item.producto}</span>
-                        <span className="text-xs text-neutral-500">{item.cantidad} x ${(item.total / item.cantidad).toFixed(2)}</span>
+                  {detallesArray.map((item: any, idx: number) => {
+                    const cant = item.cantidad || item.Quantity || 1;
+                    const prodName = item.producto || item.Product || item.ProductName || 'Producto Desconocido';
+                    const tot = item.total || item.Total || 0;
+                    const price = cant > 0 ? (tot / cant) : 0;
+                    
+                    return (
+                      <div key={idx} className="flex justify-between items-start text-sm">
+                        <div className="flex flex-col">
+                          <span className="text-neutral-200 line-clamp-1">{prodName}</span>
+                          <span className="text-xs text-neutral-500">{cant} x ${price.toFixed(2)}</span>
+                        </div>
+                        <span className="text-neutral-300 font-mono">${tot.toFixed(2)}</span>
                       </div>
-                      <span className="text-neutral-300 font-mono">${item.total.toFixed(2)}</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
