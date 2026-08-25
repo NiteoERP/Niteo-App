@@ -103,10 +103,10 @@ export default function CreditosPage() {
   const clienteSeleccionado = clientes.find(c => c.id_cliente === selectedClienteId);
 
   return (
-    <div className="flex h-full w-full bg-neutral-950 text-white overflow-hidden flex-col lg:flex-row relative">
+    <div className="flex min-h-full w-full bg-neutral-950 text-white flex-col lg:flex-row relative lg:h-[calc(100vh-6rem)] lg:overflow-hidden rounded-xl border border-neutral-800">
       
-      {/* FILTROS (IZQUIERDA) */}
-      <div className="w-full lg:w-72 border-r border-neutral-800 bg-neutral-950 flex flex-col shrink-0 overflow-visible">
+      {/* 1. PANEL LATERAL DE FILTROS */}
+      <div className="w-full lg:w-72 border-b lg:border-b-0 lg:border-r border-neutral-800 bg-neutral-950 flex flex-col shrink-0">
         <div className="p-5 border-b border-neutral-800">
           <h2 className="text-base font-bold text-white flex items-center gap-2">
             <Search size={18} className="text-emerald-400" />
@@ -169,7 +169,7 @@ export default function CreditosPage() {
       </div>
 
       {/* LISTA DE DEUDORES (CENTRO) */}
-      <div className="w-full lg:w-1/3 border-r border-neutral-800 bg-neutral-950 flex flex-col shrink-0">
+      <div className="w-full lg:w-1/3 border-b lg:border-b-0 lg:border-r border-neutral-800 bg-neutral-950 flex flex-col shrink-0">
         <div className="p-5 border-b border-neutral-800 flex justify-between items-center">
           <h2 className="text-base font-bold text-white flex items-center gap-2">
             <Users size={18} className="text-emerald-400" />
@@ -180,7 +180,7 @@ export default function CreditosPage() {
           </span>
         </div>
         
-        <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-neutral-900/30">
+        <div className="flex-1 overflow-y-auto max-h-[40vh] lg:max-h-full p-4 space-y-3 custom-scrollbar">
           {isLoadingClientes ? (
             <p className="text-neutral-500 text-center py-10 text-sm font-medium">Cargando...</p>
           ) : clientes.length === 0 ? (

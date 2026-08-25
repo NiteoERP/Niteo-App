@@ -492,8 +492,8 @@ export default function ProveedoresPage() {
                 </ResponsiveContainer>
               </div>
 
-              <div className="border border-neutral-800 rounded-xl overflow-hidden">
-                <table className="w-full text-sm text-left">
+              <div className="border border-neutral-800 rounded-xl overflow-x-auto">
+                <table className="w-full text-sm text-left min-w-[500px]">
                   <thead className="bg-neutral-950 text-neutral-400 border-b border-neutral-800">
                     <tr>
                       <th className="px-4 py-3 font-semibold">Mes</th>
