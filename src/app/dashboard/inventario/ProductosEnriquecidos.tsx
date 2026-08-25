@@ -27,7 +27,7 @@ export default function ProductosEnriquecidos({ productos, insumos, recetas, emp
     startTransition(async () => {
       const res = await updateProducto(selectedProduct.id, selectedProduct.descripcion, selectedProduct.es_compuesto, selectedProduct.estado_activo);
       if (res.success) {
-        setFeedback('InformaciÃ³n guardada.');
+        setFeedback('Información guardada.');
         setTimeout(() => setFeedback(''), 2000);
       } else {
         setFeedback('Error: ' + res.error);
@@ -46,7 +46,7 @@ export default function ProductosEnriquecidos({ productos, insumos, recetas, emp
   return (
     <div className="flex flex-col lg:flex-row gap-6 h-[700px]">
       
-      {/* Lista de Productos (CatÃ¡logo) */}
+      {/* Lista de Productos (Catálogo) */}
       <div className="w-full lg:w-1/3 bg-neutral-900 border border-neutral-800 rounded-2xl flex flex-col overflow-hidden shadow-xl">
         <div className="p-4 border-b border-neutral-800">
           <div className="relative">
@@ -71,7 +71,7 @@ export default function ProductosEnriquecidos({ productos, insumos, recetas, emp
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-sm font-medium text-white">{prod.nombre}</p>
-                    <p className="text-xs text-neutral-500 mt-1 font-mono">{prod.codigo_barras || 'Sin cÃ³digo'}</p>
+                    <p className="text-xs text-neutral-500 mt-1 font-mono">{prod.codigo_barras || 'Sin código'}</p>
                   </div>
                   {prod.es_compuesto && (
                     <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded flex items-center gap-1">
@@ -111,7 +111,7 @@ export default function ProductosEnriquecidos({ productos, insumos, recetas, emp
               </div>
               
               <div>
-                <label className="block text-xs font-medium text-neutral-400 mb-1.5">DescripciÃ³n para E-commerce o MenÃº Web</label>
+                <label className="block text-xs font-medium text-neutral-400 mb-1.5">Descripción para E-commerce o Menú Web</label>
                 <textarea 
                   rows={2}
                   className="w-full bg-neutral-900 border border-neutral-800 text-white rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none"
@@ -130,7 +130,7 @@ export default function ProductosEnriquecidos({ productos, insumos, recetas, emp
                   className="w-4 h-4 rounded border-neutral-700 text-indigo-600 focus:ring-indigo-600 bg-neutral-900"
                 />
                 <label htmlFor="compuesto" className="text-sm text-indigo-300 font-medium">
-                  Es un producto compuesto (Usa receta para descontar insumos del almacÃ©n)
+                  Es un producto compuesto (Usa receta para descontar insumos del almacén)
                 </label>
               </div>
 
@@ -167,7 +167,7 @@ export default function ProductosEnriquecidos({ productos, insumos, recetas, emp
                     <thead className="bg-neutral-900/80 text-neutral-500">
                       <tr>
                         <th className="px-4 py-3 font-medium">Insumo</th>
-                        <th className="px-4 py-3 font-medium">PorciÃ³n a Descontar</th>
+                        <th className="px-4 py-3 font-medium">Porción a Descontar</th>
                         <th className="px-4 py-3 font-medium text-right">Costo Calculado</th>
                         <th className="px-4 py-3"></th>
                       </tr>
@@ -184,7 +184,7 @@ export default function ProductosEnriquecidos({ productos, insumos, recetas, emp
                           : (insumos.find(i => i.id === r.insumo_id)?.unidad_medida || '');
                           
                         const costoReceta = isSubproduct 
-                          ? 0 // CÃ¡lculo recursivo complejo para frontend, dejamos en 0 por ahora
+                          ? 0 // Cálculo recursivo complejo para frontend, dejamos en 0 por ahora
                           : (r.cantidad_necesaria * (insumos.find(i => i.id === r.insumo_id)?.costo_unitario || 0));
 
                         return (
@@ -267,7 +267,7 @@ export default function ProductosEnriquecidos({ productos, insumos, recetas, emp
           <div className="flex-1 flex flex-col items-center justify-center text-neutral-500 p-8 text-center bg-neutral-900/50">
             <Beaker size={48} className="mb-4 opacity-20" />
             <h3 className="text-lg font-medium text-neutral-300 mb-1">Selecciona un producto</h3>
-            <p className="text-sm max-w-sm">Haz clic en cualquier producto del catÃ¡logo de la izquierda para configurar su receta y atributos.</p>
+            <p className="text-sm max-w-sm">Haz clic en cualquier producto del catálogo de la izquierda para configurar su receta y atributos.</p>
           </div>
         )}
       </div>

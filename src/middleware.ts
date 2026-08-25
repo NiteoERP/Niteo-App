@@ -84,11 +84,13 @@ export async function middleware(request: NextRequest) {
       }
 
       if (profile) {
-        // 3. Validación de Suscripción (ZERO-LATENCY a través del JWT)
-        const subscription_status = user.app_metadata?.subscription_status;
-        
-        // Si no tiene suscripción activa o trial -> Bloqueo total
-        if (subscription_status !== 'ACTIVA') {
+        // 3. Validación de Suscripción (Ahora leemos DB para LIFETIME bypass)
+        const { data: sub } = await supabase.from('suscripciones_empresas').select('plan, estado').eq('empresa_id', profile.empresa_id).single();
+        const isLifetime = sub?.plan === 'LIFETIME';
+        const isActiva = sub?.estado === 'activa' || sub?.estado === 'ACTIVA';
+
+        // Si NO es LIFETIME y tampoco esta ACTIVA, lo bloqueamos al billing
+        if (!isLifetime && !isActiva) {
           const url = request.nextUrl.clone();
           url.pathname = '/dashboard/billing';
           return NextResponse.redirect(url);

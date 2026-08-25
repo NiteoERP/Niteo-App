@@ -8,6 +8,7 @@ interface EmpresaContextType {
     moneda: string;
     simbolo_moneda: string;
     zona_horaria: string;
+    metodos_pago?: string[];
   } | null;
   formatCurrency: (amount: number) => string;
 }

@@ -6,6 +6,7 @@ import { getSedes } from '@/actions/dashboard-actions';
 import { useEmpresa } from '@/components/providers/EmpresaProvider'; 
 import { generateReport } from '@/actions/informes-actions';
 import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, subWeeks } from 'date-fns';
+import * as XLSX from 'xlsx';
 
 const REPORT_MENU = [
   {
@@ -14,7 +15,7 @@ const REPORT_MENU = [
       { id: 'ventas_diarias', name: 'Ventas Diarias' },
       { id: 'ventas_productos', name: 'Ventas por Producto' },
       { id: 'ventas_productos_clientes', name: 'Ventas por Producto y Cliente' },
-      { id: 'ventas_metodos_pago', name: 'Ventas por Mtodo de Pago' },
+      { id: 'ventas_metodos_pago', name: 'Ventas por Método de Pago' },
       { id: 'ventas_usuarios', name: 'Desempeo de Cajeros' },
       { id: 'cuentas_por_cobrar', name: 'Cuentas por Cobrar (Créditos)' },
       { id: 'cuentas_abiertas', name: 'Cuentas Abiertas (Mesas)' }
@@ -193,7 +194,7 @@ export default function InformesPage() {
             <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Sucursal / Sede</label>
             <div className="relative">
               <Store className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 w-4 h-4" />
-              <select value={sedeId} onChange={(e) => setSedeId(e.target.value)} className="w-full bg-neutral-900 border border-neutral-800 text-white text-sm py-2.5 pl-10 pr-3 rounded-lg focus:outline-none focus:border-indigo-500 appearance-none">
+              <select value={sedeId} onChange={(e) => setSedeId(e.target.value)} className="w-full h-14 bg-neutral-900 border border-neutral-800 text-white text-sm pl-10 pr-3 rounded-xl focus:outline-none focus:border-indigo-500 appearance-none">
                 <option value="ALL">Todas las sedes</option>
                 {sedes.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
               </select>
@@ -205,7 +206,7 @@ export default function InformesPage() {
             <div className="relative">
               <button 
                 onClick={() => setShowDatePicker(!showDatePicker)}
-                className="w-full bg-neutral-900 border border-neutral-800 hover:border-neutral-600 text-white text-sm py-2.5 px-3 rounded-lg flex items-center justify-center gap-3 transition-colors"
+                className="w-full h-14 bg-neutral-900 border border-neutral-800 hover:border-neutral-600 text-white text-sm px-3 rounded-xl flex items-center justify-center gap-3 transition-colors"
               >
                 <CalendarIcon size={16} className="text-indigo-400" />
                 <span className="font-medium">{format(startDate, 'dd/MM/yy')} - {format(endDate, 'dd/MM/yy')}</span>
@@ -221,7 +222,7 @@ export default function InformesPage() {
                             const d = new Date(e.target.value + 'T00:00:00');
                             if(!isNaN(d.getTime())) setStartDate(d);
                           }
-                        }} className="w-full bg-neutral-950 border border-neutral-800 text-white text-sm py-2 px-3 rounded-lg focus:outline-none focus:border-indigo-500 [color-scheme:dark]" />
+                        }} className="w-full h-14 bg-neutral-950 border border-neutral-800 text-white text-sm px-3 rounded-xl focus:outline-none focus:border-indigo-500 [color-scheme:dark]" />
                     </div>
                     <div>
                       <p className="text-xs font-bold text-neutral-400 uppercase mb-2">Fecha Fin</p>
@@ -230,7 +231,7 @@ export default function InformesPage() {
                             const d = new Date(e.target.value + 'T00:00:00');
                             if(!isNaN(d.getTime())) setEndDate(d);
                           }
-                        }} className="w-full bg-neutral-950 border border-neutral-800 text-white text-sm py-2 px-3 rounded-lg focus:outline-none focus:border-indigo-500 [color-scheme:dark]" />
+                        }} className="w-full h-14 bg-neutral-950 border border-neutral-800 text-white text-sm px-3 rounded-xl focus:outline-none focus:border-indigo-500 [color-scheme:dark]" />
                     </div>
                   </div>
                   <div className="w-full sm:w-48 sm:border-l border-neutral-800 sm:pl-5">
@@ -259,7 +260,7 @@ export default function InformesPage() {
           <button 
             onClick={handleGenerateReport}
             disabled={isLoading}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+            className="w-full h-14 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
           >
             {isLoading ? (
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -283,29 +284,32 @@ export default function InformesPage() {
                  </h3>
                  <div className="flex items-center gap-3">
                    <button onClick={() => {
-                      if (!reportData || reportData.length === 0) return;
-                      const columns = Object.keys(reportData[0]);
-                      let csvContent = "data:text/csv;charset=utf-8,\uFEFF" + columns.join(";") + "\n";
-                      reportData.forEach(row => {
-                        const rowString = columns.map(col => {
-                          let val = row[col];
-                          if (val === null || val === undefined) val = "";
-                          if (typeof val === 'string') {
-                             val = val.replace(/"/g, '""');
-                             val = `"${val}"`;
-                          }
-                          return val;
-                        }).join(";");
-                        csvContent += rowString + "\n";
-                      });
-                      const encodedUri = encodeURI(csvContent);
-                      const link = document.createElement("a");
-                      link.setAttribute("href", encodedUri);
-                      link.setAttribute("download", `${selectedReportName?.replace(/ /g, '_')}_${format(new Date(), 'yyyyMMdd')}.csv`);
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
-                   }} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm">
+                       if (!reportData || reportData.length === 0) return;
+                       
+                       // 1. Convertir JSON a Hoja de Trabajo de SheetJS (Worksheet)
+                       const ws = XLSX.utils.json_to_sheet(reportData);
+                       
+                       // 2. Ajustar el ancho de las columnas (Hacerlo legible)
+                       const objectMaxLength: number[] = []; 
+                       reportData.forEach(row => {
+                         Object.entries(row).forEach(([key, value], idx) => {
+                           const columnValue = value ? value.toString() : "";
+                           objectMaxLength[idx] = Math.max(
+                             objectMaxLength[idx] || 0,
+                             columnValue.length,
+                             key.length
+                           );
+                         });
+                       });
+                       ws['!cols'] = objectMaxLength.map(w => ({ width: w + 2 }));
+                       
+                       // 3. Crear Libro de Trabajo (Workbook) y exportar
+                       const wb = XLSX.utils.book_new();
+                       XLSX.utils.book_append_sheet(wb, ws, "Reporte");
+                       
+                       const fileName = `${selectedReportName?.replace(/ /g, '_')}_${format(new Date(), 'yyyyMMdd')}.xlsx`;
+                       XLSX.writeFile(wb, fileName);
+                    }} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm">
                      <FileSpreadsheet size={18} /> Exportar Excel
                    </button>
                    <button onClick={()=>window.print()} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm">

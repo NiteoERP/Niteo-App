@@ -170,7 +170,7 @@ export default function DespachosManager({ empresaId }: { empresaId: string }) {
           <select 
             value={origenId} 
             onChange={e => setOrigenId(e.target.value)}
-            className="w-full bg-neutral-900 border border-neutral-800 text-white rounded-lg px-3 py-2.5 outline-none focus:border-indigo-500"
+            className="w-full h-14 bg-neutral-900 border border-neutral-800 text-white rounded-xl px-4 outline-none focus:border-indigo-500"
           >
             <option value="">Selecciona el origen...</option>
             {sedes.map(s => <option key={s.id} value={s.id}>{s.nombre_sede}</option>)}
@@ -185,7 +185,7 @@ export default function DespachosManager({ empresaId }: { empresaId: string }) {
           <select 
             value={destinoId} 
             onChange={e => setDestinoId(e.target.value)}
-            className="w-full bg-neutral-900 border border-neutral-800 text-white rounded-lg px-3 py-2.5 outline-none focus:border-emerald-500"
+            className="w-full h-14 bg-neutral-900 border border-neutral-800 text-white rounded-xl px-4 outline-none focus:border-emerald-500"
           >
             <option value="">Selecciona el destino...</option>
             {sedes.map(s => <option key={s.id} value={s.id}>{s.nombre_sede}</option>)}
@@ -204,7 +204,7 @@ export default function DespachosManager({ empresaId }: { empresaId: string }) {
               <input
                 type="text"
                 placeholder="Buscar insumo en origen..."
-                className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-indigo-500"
+                className="w-full h-14 bg-neutral-950 border border-neutral-800 text-white rounded-xl pl-10 pr-4 focus:outline-none focus:border-indigo-500"
                 value={searchTerm}
                 onFocus={() => setIsDropdownOpen(true)}
                 onChange={(e) => {
@@ -242,12 +242,12 @@ export default function DespachosManager({ empresaId }: { empresaId: string }) {
                 value={cantidadInput}
                 onChange={e => setCantidadInput(e.target.value)}
                 placeholder="Cantidad"
-                className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2.5 text-white outline-none focus:border-indigo-500"
+                className="w-full h-14 bg-neutral-950 border border-neutral-800 rounded-xl px-4 text-white outline-none focus:border-indigo-500"
               />
               <button 
                 onClick={handleAddToCart}
                 disabled={!selectedInsumo || !cantidadInput}
-                className="bg-neutral-800 hover:bg-neutral-700 text-white p-2.5 rounded-xl transition-colors disabled:opacity-50 shrink-0"
+                className="bg-neutral-800 hover:bg-neutral-700 text-white w-14 h-14 flex items-center justify-center rounded-xl transition-colors disabled:opacity-50 shrink-0"
               >
                 <Plus size={20} />
               </button>
@@ -283,14 +283,14 @@ export default function DespachosManager({ empresaId }: { empresaId: string }) {
               value={notas}
               onChange={e => setNotas(e.target.value)}
               placeholder="Ej. Traslado semanal de insumos"
-              className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2.5 text-white text-sm outline-none focus:border-indigo-500"
+              className="w-full h-14 bg-neutral-900 border border-neutral-800 rounded-xl px-4 text-white text-sm outline-none focus:border-indigo-500"
             />
           </div>
 
           <button
             onClick={handleDespachar}
             disabled={isSubmitting || !destinoId}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full h-14 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {isSubmitting ? 'Procesando...' : <><Send size={18} /> Confirmar Despacho</>}
           </button>

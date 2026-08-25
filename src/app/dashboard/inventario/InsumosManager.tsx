@@ -81,11 +81,11 @@ export default function InsumosManager({ initialInsumos, empresaId }: { initialI
         <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
           <div className="md:col-span-2">
             <label className="block text-xs font-medium text-neutral-400 mb-1.5">Nombre (Ej. Harina)</label>
-            <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none" required />
+            <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-lg px-4 h-14 text-sm focus:border-indigo-500 outline-none" required />
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-400 mb-1.5">Unidad</label>
-            <select value={unidad} onChange={e => setUnidad(e.target.value)} className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none">
+            <select value={unidad} onChange={e => setUnidad(e.target.value)} className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-lg px-4 h-14 text-sm focus:border-indigo-500 outline-none">
               <option value="Kg">Kg</option>
               <option value="Gramos">Gramos</option>
               <option value="Litros">Litros</option>
@@ -94,14 +94,14 @@ export default function InsumosManager({ initialInsumos, empresaId }: { initialI
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-400 mb-1.5">Costo Unitario ($)</label>
-            <input type="number" step="0.01" value={costo} onChange={e => setCosto(e.target.value)} className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none" required />
+            <input type="number" step="0.01" value={costo} onChange={e => setCosto(e.target.value)} className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-lg px-4 h-14 text-sm focus:border-indigo-500 outline-none" required />
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-400 mb-1.5">Stock Inicial</label>
-            <input type="number" step="0.01" value={stock} onChange={e => setStock(e.target.value)} className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none" required />
+            <input type="number" step="0.01" value={stock} onChange={e => setStock(e.target.value)} className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-lg px-4 h-14 text-sm focus:border-indigo-500 outline-none" required />
           </div>
           <div className="md:col-span-5 flex justify-end mt-2">
-            <button type="submit" disabled={isPending} className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-2 transition-colors disabled:opacity-50">
+            <button type="submit" disabled={isPending} className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 h-14 rounded-lg flex items-center gap-2 transition-colors disabled:opacity-50">
               {isPending ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />} Agregar Insumo
             </button>
           </div>
@@ -119,7 +119,7 @@ export default function InsumosManager({ initialInsumos, empresaId }: { initialI
             {optimisticInsumos.length} Insumos
           </span>
         </div>
-        <table className="w-full text-left text-sm whitespace-nowrap">
+        <table className="hidden md:table w-full text-left text-sm whitespace-nowrap">
           <thead className="bg-neutral-950/80 text-neutral-500 font-medium">
             <tr>
               <th className="px-6 py-3">Insumo</th>
@@ -139,8 +139,8 @@ export default function InsumosManager({ initialInsumos, empresaId }: { initialI
                   </span>
                 </td>
                 <td className="px-6 py-3 text-right">
-                  <button onClick={() => handleDelete(insumo.id)} className="p-1.5 text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 rounded transition-colors" title="Eliminar">
-                    <Trash2 size={16} />
+                  <button onClick={() => handleDelete(insumo.id)} className="p-3 text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors" title="Eliminar">
+                    <Trash2 size={20} />
                   </button>
                 </td>
               </tr>
@@ -154,6 +154,35 @@ export default function InsumosManager({ initialInsumos, empresaId }: { initialI
             )}
           </tbody>
         </table>
+
+        {/* MOBILE CARDS */}
+        <div className="md:hidden flex flex-col p-4 gap-4">
+          {optimisticInsumos.map(insumo => (
+            <div key={insumo.id} className={`bg-neutral-950 border border-neutral-800 rounded-xl p-4 flex flex-col gap-3 ${insumo.isOptimistic ? 'opacity-50 animate-pulse' : ''}`}>
+              <div className="flex justify-between items-start">
+                <span className="font-medium text-neutral-200">{insumo.nombre}</span>
+                <button onClick={() => handleDelete(insumo.id)} className="p-3 text-neutral-500 hover:text-rose-400 bg-neutral-900 rounded-lg transition-colors" title="Eliminar">
+                  <Trash2 size={20} />
+                </button>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-neutral-400">Costo:</span>
+                <span className="text-white">${Number(insumo.costo_promedio).toFixed(2)} / {insumo.unidad_medida}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-neutral-400">Stock:</span>
+                <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${insumo.cantidad_actual <= 0 ? 'bg-rose-500/10 text-rose-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
+                  {Number(insumo.cantidad_actual).toFixed(2)} {insumo.unidad_medida}
+                </span>
+              </div>
+            </div>
+          ))}
+          {optimisticInsumos.length === 0 && (
+            <div className="text-center text-neutral-500 py-8">
+              No hay insumos registrados. Agrega tu primer material arriba.
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

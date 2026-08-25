@@ -106,13 +106,13 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
           <h3 className="text-sm font-medium text-emerald-400 uppercase tracking-widest">Live Sync Activo</h3>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <button 
             onClick={togglePrivacy}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${privacyMode ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20' : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'}`}
+            className={`flex flex-1 sm:flex-none justify-center items-center gap-2 px-6 h-14 rounded-xl text-sm font-medium transition-colors ${privacyMode ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20' : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'}`}
           >
-            {privacyMode ? <EyeOff size={16} /> : <Eye size={16} />}
-            <span className="hidden sm:inline">{privacyMode ? 'Modo Oculto' : 'Ocultar Valores'}</span>
+            {privacyMode ? <EyeOff size={18} /> : <Eye size={18} />}
+            <span>{privacyMode ? 'Modo Oculto' : 'Ocultar Valores'}</span>
           </button>
         </div>
       </div>

@@ -16,18 +16,18 @@ export async function registrarGasto(formData: FormData) {
 
   const monto = parseFloat(montoStr);
   if (isNaN(monto) || monto <= 0) {
-    return { error: 'El monto debe ser un valor numÃ©rico mayor a 0.' };
+    return { error: 'El monto debe ser un valor numérico mayor a 0.' };
   }
 
-  // Obtener la sesiÃ³n
+  // Obtener la sesión
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) {
-    return { error: 'No estÃ¡s autenticado.' };
+    return { error: 'No estás autenticado.' };
   }
 
   // Como la tabla gastos_sede usa RLS estricto, debemos enviar id_empresa e id_sede.
-  // En Supabase, si la tabla usa Security Definer no pasa nada, pero aquÃ­ insertamos desde Next.
-  // Por ende, debemos leer a quÃ© sede pertenece este usuario para inyectarlo en el insert.
+  // En Supabase, si la tabla usa Security Definer no pasa nada, pero aquí insertamos desde Next.
+  // Por ende, debemos leer a qué sede pertenece este usuario para inyectarlo en el insert.
   const { data: profile, error: profileError } = await supabase
     .from('perfiles')
     .select('id_empresa, id_sede')
@@ -35,7 +35,7 @@ export async function registrarGasto(formData: FormData) {
     .single();
 
   if (profileError || !profile) {
-    return { error: 'No se encontrÃ³ el perfil de tu empresa/sede.' };
+    return { error: 'No se encontró el perfil de tu empresa/sede.' };
   }
 
   // Insertar directamente en gastos_sede
@@ -52,7 +52,7 @@ export async function registrarGasto(formData: FormData) {
 
   if (insertError) {
     console.error('Error insertando gasto:', insertError);
-    return { error: 'OcurriÃ³ un error al guardar el gasto operativo.' };
+    return { error: 'Ocurrió un error al guardar el gasto operativo.' };
   }
 
   // Revalidar para que se actualice el flujo de caja

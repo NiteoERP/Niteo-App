@@ -1,19 +1,10 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
-import { 
-  LayoutDashboard, 
-  Package, 
-  Truck, 
-  ShoppingCart, 
-  Users, 
-  Settings, 
-  UserCircle,
-  ShieldAlert,
-  FileText
-, Wallet } from 'lucide-react';
+import { UserCircle } from 'lucide-react';
 import { LogoutButton } from '@/components/LogoutButton';
 import EmpresaProvider from '@/components/providers/EmpresaProvider';
+import { SidebarNav, SidebarBottom, MobileNav } from '@/components/Navigation';
 
 export default async function DashboardLayout({
   children,
@@ -35,7 +26,6 @@ export default async function DashboardLayout({
 
   const { data: dbProfile } = await supabase.from('perfiles').select('permisos').eq('id', user.id).single();
   const permisos = dbProfile?.permisos || [];
-  const hasPerm = (p: string) => permisos.includes(p) || userRole === 'MASTER';
 
   let subPlan = 'BASICO';
   let subEstado = 'INACTIVA';
@@ -44,7 +34,7 @@ export default async function DashboardLayout({
 
   if (empresa_id) {
     // Leemos datos de la empresa para el contexto SaaS
-    const { data: emp } = await supabase.from('empresas').select('nombre_comercial, moneda, simbolo_moneda, zona_horaria').eq('id', empresa_id).single();
+    const { data: emp } = await supabase.from('empresas').select('nombre, moneda, simbolo_moneda, zona_horaria, metodos_pago').eq('id', empresa_id).single();
     if(emp) empresaData = emp;
 
     // Leemos la suscripción de forma segura (nuestro RLS ya lo protege por empresa_id)
@@ -77,87 +67,14 @@ export default async function DashboardLayout({
           <span className="font-bold text-xl tracking-tight text-neutral-100">Niteo</span>
         </div>
         
-        {/* Navegacion Condicional por Permisos */}
-        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto custom-scrollbar">
-          {hasPerm('dashboard') && (
-            <Link href="/dashboard" className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-indigo-500/10 text-indigo-400 transition-colors border border-indigo-500/10">
-              <LayoutDashboard size={20} />
-              <span className="text-sm font-medium">Inicio</span>
-            </Link>
-          )}
-          
-          {hasPerm('inventario') && (
-            <Link href="/dashboard/inventario" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
-              <Package size={20} />
-              <span className="text-sm font-medium">Inventario</span>
-            </Link>
-          )}
-
-          {hasPerm('pos') && (
-            <Link href="/dashboard/ventas" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
-              <ShoppingCart size={20} />
-              <span className="text-sm font-medium">Ventas</span>
-            </Link>
-          )}
-
-          {hasPerm('reportes') && (
-            <Link href="/dashboard/informes" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
-              <FileText size={20} />
-              <span className="text-sm font-medium">Informes</span>
-            </Link>
-          )}
-          
-          {(hasPerm('inventario') || hasPerm('pos')) && (
-            <Link href="/dashboard/despachos" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
-              <Truck size={20} />
-              <span className="text-sm font-medium">Despachos</span>
-            </Link>
-          )}
-
-          {hasPerm('compras') && (
-            <Link href="/dashboard/compras" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
-              <ShoppingCart size={20} />
-              <span className="text-sm font-medium">Compras</span>
-            </Link>
-          )}
-
-          {hasPerm('clientes') && (
-            <>
-              <Link href="/dashboard/clientes" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
-                <Users size={20} className="shrink-0" />
-                <span className="font-medium">Directorio</span>
-              </Link>
-              <Link href="/dashboard/creditos" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
-                <Wallet size={20} className="shrink-0 text-emerald-400" />
-                <span className="font-medium">Cuentas por Cobrar</span>
-              </Link>
-              <Link href="/dashboard/equipo" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
-                <UserCircle size={20} />
-                <span className="text-sm font-medium">Equipo</span>
-              </Link>
-            </>
-          )}
-        </nav>
-
-        {(hasPerm('auditoria') || hasPerm('ajustes')) && (
-          <div className="p-4 border-t border-neutral-800 shrink-0 space-y-1">
-            {hasPerm('auditoria') && (
-              <Link href="/dashboard/auditoria" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
-                <ShieldAlert size={20} />
-                <span className="text-sm font-medium">AuditorÃƒÂ­a</span>
-              </Link>
-            )}
-            {hasPerm('ajustes') && (
-              <Link href="/dashboard/configuracion" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
-                <Settings size={20} />
-                <span className="text-sm font-medium">Ajustes</span>
-              </Link>
-            )}
-          </div>
-        )}
+        {/* Navegacion */}
+        <SidebarNav permisos={permisos} userRole={userRole} />
+        
+        {/* Menu inferior (Ajustes / Auditoria) */}
+        <SidebarBottom permisos={permisos} userRole={userRole} />
       </aside>
 
-      {/* ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€š REA PRINCIPAL */}
+      {/* ÁREA PRINCIPAL */}
       <div className="flex-1 flex flex-col min-w-0">
         
         {/* TOPBAR */}
@@ -169,10 +86,10 @@ export default async function DashboardLayout({
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-4">
               
-              {/* BADGE DE SUSCRIPCIÃ“N */}
+              {/* BADGE DE SUSCRIPCIÓN */}
               {isTrial && (
                 <div className="hidden md:flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 px-3 py-1.5 rounded-full">
-                  <span className="text-orange-400 text-xs font-semibold tracking-wide">TRIAL: Quedan {daysLeft} dÃ­as</span>
+                  <span className="text-orange-400 text-xs font-semibold tracking-wide">TRIAL: Quedan {daysLeft} días</span>
                   <Link href="/dashboard/billing" className="text-orange-300 hover:text-white text-xs underline decoration-orange-500/30 font-medium transition-colors">
                     Actualizar a PRO
                   </Link>
@@ -180,7 +97,7 @@ export default async function DashboardLayout({
               )}
               {!isTrial && subEstado === 'ACTIVA' && subPlan === 'PRO' && (
                 <div className="hidden md:flex items-center bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-full">
-                  <span className="text-indigo-400 text-xs font-bold tracking-widest uppercase">VERSIÃ“N PRO</span>
+                  <span className="text-indigo-400 text-xs font-bold tracking-widest uppercase">VERSIÓN PRO</span>
                 </div>
               )}
 
@@ -192,18 +109,21 @@ export default async function DashboardLayout({
                 <UserCircle size={22} className="text-indigo-400" />
               </div>
               
-              {/* BotÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n de Cerrar SesiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n */}
+              {/* Botón de Cerrar Sesión */}
               <LogoutButton />
             </div>
           </div>
         </header>
 
         {/* CONTENIDO */}
-        <main className="flex-1 overflow-y-auto p-6 bg-[#0a0a0a]">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 bg-[#0a0a0a]">
           <EmpresaProvider empresa={empresaData}>
             {children}
           </EmpresaProvider>
         </main>
+        
+        {/* BOTTOM NAVIGATION BAR (MOBILE ONLY) */}
+        <MobileNav permisos={permisos} userRole={userRole} />
       </div>
     </div>
   );

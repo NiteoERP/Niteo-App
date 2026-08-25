@@ -12,7 +12,8 @@ export async function updateEmpresaSaaS(empresaId: string, data: any) {
       nombre_comercial: data.nombre_comercial,
       moneda: data.moneda,
       simbolo_moneda: data.simbolo_moneda,
-      zona_horaria: data.zona_horaria
+      zona_horaria: data.zona_horaria,
+      metodo_costeo_despachos: data.metodo_costeo_despachos
     })
     .eq('id', empresaId);
 

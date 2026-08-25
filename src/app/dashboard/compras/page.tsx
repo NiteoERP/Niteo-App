@@ -4,8 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { Receipt, FileText, Plus, Trash2, Save, ShoppingCart, UserPlus, Loader2, CheckCircle2, History, Search, Calendar, Edit2, X, Lock, Package } from 'lucide-react';
 import { getProveedoresYProductos, crearProveedor, registrarCompraPuntual, registrarFactura, getUltimasCompras, getHistorialCompras, actualizarCompraPuntual, eliminarCompraPuntual, getTasaDelDia } from './actions';
 import MobileCompraForm from '@/components/compras/MobileCompraForm';
+import { useEmpresa } from '@/components/providers/EmpresaProvider';
 
 export default function ComprasPage() {
+  const { empresa } = useEmpresa();
+  const defaultPaymentMethods = ['Efectivo USD', 'Zelle', 'Pago Móvil', 'Transferencia Bs', 'Punto de Venta'];
+  const metodosPago = empresa?.metodos_pago && empresa.metodos_pago.length > 0 ? empresa.metodos_pago : defaultPaymentMethods;
+
   const [activeTab, setActiveTab] = useState<'insumos' | 'puntual' | 'factura' | 'historial'>('insumos');
   const [isLoadingDatos, setIsLoadingDatos] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,7 +30,7 @@ export default function ComprasPage() {
     fechaFin: ''
   });
 
-  // Modal de EdiciÃ³n
+  // Modal de Edición
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingRow, setEditingRow] = useState<any>(null);
 
@@ -72,10 +77,11 @@ export default function ComprasPage() {
   };
 
   // --- ESTADOS: COMPRA PUNTUAL ---
-  const initialGasto = { proveedor: '', montoDivisas: '', montoBs: '', tasaCambio: '', detalles: '', metodoPago: 'Efectivo USD', documentoExterno: '' };
+  const todayStr = new Date().toISOString().split('T')[0];
+  const initialGasto = { proveedor: '', montoDivisas: '', montoBs: '', tasaCambio: '', detalles: '', metodoPago: metodosPago[0] || 'Efectivo USD', documentoExterno: '', fechaRegistro: todayStr };
   const [gasto, setGasto] = useState(initialGasto);
   
-  // LÃ³gica MatemÃ¡tica Bidireccional
+  // Lógica Matemática Bidireccional
   const handleMontoDivisasChange = (val: string) => {
     const numDiv = Number(val);
     const numTasa = Number(gasto.tasaCambio);
@@ -101,7 +107,7 @@ export default function ComprasPage() {
   };
 
   // --- ESTADOS: FACTURA ---
-  const initialFactura = { proveedor: '', nroFactura: '' };
+  const initialFactura = { proveedor: '', nroFactura: '', fechaRegistro: todayStr };
   const [factura, setFactura] = useState(initialFactura);
   const [productos, setProductos] = useState([{ rowId: Date.now(), id_producto: '', cantidad: 1, precio: '', total: '' }]);
   const totalFactura = productos.reduce((acc, p) => acc + (Number(p.total) || 0), 0);
@@ -160,10 +166,10 @@ export default function ComprasPage() {
     }
     const productosValidos = productos.filter(p => p.id_producto !== '' && Number(p.total) > 0);
     if (productosValidos.length === 0) {
-      mostrarAlerta('Debes aÃ±adir al menos un producto vÃ¡lido a la factura.', 'error'); return;
+      mostrarAlerta('Debes añadir al menos un producto válido a la factura.', 'error'); return;
     }
     setIsSubmitting(true);
-    const res = await registrarFactura(factura.proveedor, factura.nroFactura, productosValidos);
+    const res = await registrarFactura(factura.proveedor, factura.nroFactura, productosValidos, factura.fechaRegistro);
     setIsSubmitting(false);
     if (res.success) {
       mostrarAlerta('Factura registrada y costos actualizados.', 'success');
@@ -215,7 +221,7 @@ export default function ComprasPage() {
   };
 
   const handleCrearProveedorRapido = async () => {
-    const nombre = prompt('Ingresa el nombre del nuevo proveedor (y RIF opcional separados por guiÃ³n):');
+    const nombre = prompt('Ingresa el nombre del nuevo proveedor (y RIF opcional separados por guión):');
     if (nombre && nombre.trim()) {
       setIsSubmitting(true);
       const res = await crearProveedor(nombre.trim());
@@ -258,16 +264,16 @@ export default function ComprasPage() {
         </div>
 
         <div className="flex p-1 bg-neutral-900 border border-neutral-800 rounded-xl overflow-x-auto hide-scrollbar max-w-full">
-          <button onClick={() => setActiveTab('insumos')} className={`flex items-center whitespace-nowrap gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'insumos' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-neutral-200'}`}>
+          <button onClick={() => setActiveTab('insumos')} className={`flex items-center whitespace-nowrap gap-2 px-4 h-14 rounded-lg text-sm font-medium transition-all ${activeTab === 'insumos' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-neutral-200'}`}>
             <Package size={16} /> Compra Insumos (Móvil)
           </button>
-          <button onClick={() => setActiveTab('puntual')} className={`flex items-center whitespace-nowrap gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'puntual' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-neutral-200'}`}>
+          <button onClick={() => setActiveTab('puntual')} className={`flex items-center whitespace-nowrap gap-2 px-4 h-14 rounded-lg text-sm font-medium transition-all ${activeTab === 'puntual' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-neutral-200'}`}>
             <Receipt size={16} /> Gastos Operativos
           </button>
-          <button onClick={() => setActiveTab('factura')} className={`flex items-center whitespace-nowrap gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'factura' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-neutral-200'}`}>
+          <button onClick={() => setActiveTab('factura')} className={`flex items-center whitespace-nowrap gap-2 px-4 h-14 rounded-lg text-sm font-medium transition-all ${activeTab === 'factura' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-neutral-200'}`}>
             <FileText size={16} /> Factura Proveedor
           </button>
-          <button onClick={() => setActiveTab('historial')} className={`flex items-center whitespace-nowrap gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'historial' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-neutral-200'}`}>
+          <button onClick={() => setActiveTab('historial')} className={`flex items-center whitespace-nowrap gap-2 px-4 h-14 rounded-lg text-sm font-medium transition-all ${activeTab === 'historial' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-neutral-200'}`}>
             <History size={16} /> Historial
           </button>
         </div>
@@ -279,7 +285,7 @@ export default function ComprasPage() {
         </div>
       )}
 
-      {/* VISTA 0: COMPRA INSUMOS (MÃ“VIL) */}
+      {/* VISTA 0: COMPRA INSUMOS (MÓVIL) */}
       {activeTab === 'insumos' && !isLoadingDatos && (
         <div className="animate-in slide-in-from-bottom-4 duration-300">
           <MobileCompraForm />
@@ -288,13 +294,18 @@ export default function ComprasPage() {
 
       {/* VISTA 1: COMPRA PUNTUAL */}
       {activeTab === 'puntual' && !isLoadingDatos && (
-        <div className="bg-neutral-900/50 border border-neutral-800 rounded-2xl p-6 shadow-sm animate-in slide-in-from-bottom-4 duration-300">
-          <h2 className="text-lg font-medium text-white mb-6 border-b border-neutral-800 pb-4">Registrar Gasto Operativo</h2>
+        <div className="bg-neutral-900 border border-neutral-800 p-6 rounded-2xl mb-8 shadow-xl animate-in slide-in-from-bottom-4 duration-300">
+          <h2 className="text-lg font-medium text-white mb-6">Registrar Gasto Operativo</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-3">
+            <div className="lg:col-span-2">
               <label className="block text-sm font-medium text-neutral-300 mb-1.5">Comercio / Beneficiario *</label>
-              <input type="text" value={gasto.proveedor} onChange={e => setGasto({...gasto, proveedor: e.target.value})} placeholder="Ej: FerreterÃ­a EPA" className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+              <input type="text" value={gasto.proveedor} onChange={e => setGasto({...gasto, proveedor: e.target.value})} placeholder="Ej: Ferretería EPA" className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+            </div>
+
+            <div className="lg:col-span-1">
+              <label className="block text-sm font-medium text-neutral-300 mb-1.5">Fecha *</label>
+              <input type="date" value={gasto.fechaRegistro} onChange={e => setGasto({...gasto, fechaRegistro: e.target.value})} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
             </div>
 
             <div>
@@ -311,7 +322,7 @@ export default function ComprasPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-neutral-300 mb-1.5">Monto (BolÃ­vares Bs)</label>
+              <label className="block text-sm font-medium text-neutral-300 mb-1.5">Monto (Bolívares Bs)</label>
               <input type="number" value={gasto.montoBs} onChange={e => handleMontoBsChange(e.target.value)} placeholder="0.00" className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
             </div>
 
@@ -321,14 +332,14 @@ export default function ComprasPage() {
             </div>
 
             <div className="lg:col-span-2">
-              <label className="block text-sm font-medium text-neutral-300 mb-1.5">MÃ©todo de Pago</label>
+              <label className="block text-sm font-medium text-neutral-300 mb-1.5">Método de Pago</label>
               <select value={gasto.metodoPago} onChange={e => setGasto({...gasto, metodoPago: e.target.value})} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 appearance-none">
-                <option>Efectivo USD</option><option>Zelle</option><option>Pago MÃ³vil</option><option>Transferencia Bs</option><option>Punto de Venta</option>
+                {metodosPago.map((metodo: string) => <option key={metodo} value={metodo}>{metodo}</option>)}
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-neutral-300 mb-1.5">NÂº Documento / Referencia</label>
+              <label className="block text-sm font-medium text-neutral-300 mb-1.5">Nº Documento / Referencia</label>
               <input type="text" value={gasto.documentoExterno} onChange={e => setGasto({...gasto, documentoExterno: e.target.value})} placeholder="(Opcional)" className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
             </div>
           </div>
@@ -341,13 +352,13 @@ export default function ComprasPage() {
         </div>
       )}
 
-      {/* HISTORIAL RECIENTE COMPACTO (SÃ“LO EN COMPRA PUNTUAL) */}
+      {/* HISTORIAL RECIENTE COMPACTO (SÓLO EN COMPRA PUNTUAL) */}
       {!isLoadingDatos && activeTab === 'puntual' && (
         <div className="mt-12 pt-8 border-t border-neutral-800 animate-in fade-in duration-700">
-          <h3 className="text-lg font-medium text-white mb-6 flex items-center gap-2"><History className="text-indigo-400" size={20} /> Ãšltimos Movimientos Operativos</h3>
+          <h3 className="text-lg font-medium text-white mb-6 flex items-center gap-2"><History className="text-indigo-400" size={20} /> Últimos Movimientos Operativos</h3>
           <div className="bg-neutral-900/50 border border-neutral-800 rounded-2xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto custom-scrollbar">
-              <table className="w-full text-left border-collapse text-sm min-w-[600px]">
+              <table className="hidden md:table w-full text-left border-collapse text-sm min-w-[600px]">
                 <thead>
                   <tr className="bg-black/40 border-b border-neutral-800 text-neutral-400">
                     <th className="py-4 px-6 font-medium">Fecha</th>
@@ -360,7 +371,10 @@ export default function ComprasPage() {
                     <tr key={compra.id} className="hover:bg-white/5 transition-colors text-neutral-300">
                       <td className="py-4 px-6 whitespace-nowrap">{new Date(compra.fecha_registro || compra.fecha).toLocaleDateString('es-VE')}</td>
                       <td className="py-4 px-6 font-medium text-neutral-200">{compra.proveedor}</td>
-                      <td className="py-4 px-6 text-right font-medium text-white">{formatCurrency(compra.monto_divisas)}</td>
+                      <td className="py-4 px-6 text-right font-medium text-white flex flex-col items-end">
+                        <span>{formatCurrency(compra.monto_divisas)}</span>
+                        <span className="text-xs text-neutral-500">Bs. {Number(compra.monto_bs || 0).toLocaleString('es-VE', {minimumFractionDigits: 2})}</span>
+                      </td>
                     </tr>
                   ))}
                   {ultimasCompras.length === 0 && (
@@ -368,19 +382,35 @@ export default function ComprasPage() {
                   )}
                 </tbody>
               </table>
+
+              <div className="md:hidden flex flex-col divide-y divide-neutral-800/50">
+                {ultimasCompras.length === 0 && (
+                  <div className="p-8 text-center text-neutral-500">No hay movimientos.</div>
+                )}
+                {ultimasCompras.map(compra => (
+                  <div key={compra.id} className="p-4 flex justify-between items-center">
+                    <div>
+                      <p className="font-medium text-neutral-200">{compra.proveedor}</p>
+                      <p className="text-xs text-neutral-500">{new Date(compra.fecha_registro || compra.fecha).toLocaleDateString('es-VE')}</p>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <span className="font-bold text-white">{formatCurrency(compra.monto_divisas)}</span>
+                      <span className="text-xs text-neutral-500">Bs. {Number(compra.monto_bs || 0).toLocaleString('es-VE', {minimumFractionDigits: 2})}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       )}
 
       {/* VISTA 2: FACTURA DE PROVEEDOR */}
-      {/* ... (Omitida por legibilidad pero preservada lÃ³gicamente en tu entorno local. Se re-crearÃ­a con los tabs si fuera un diff real, o se asume su permanencia si uso multi_replace, pero como uso write_to_file, la incluyo entera) */}
       {activeTab === 'factura' && !isLoadingDatos && (
         <div className="bg-neutral-900/50 border border-neutral-800 rounded-2xl shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-300 flex flex-col">
-          {/* Conservamos el cÃ³digo de la Factura de Proveedor que ya hicimos */}
           <div className="p-6 border-b border-neutral-800 bg-neutral-900/80">
-            <h2 className="text-lg font-medium text-white mb-6">Ingreso de MercancÃ­a de Proveedor</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <h2 className="text-lg font-medium text-white mb-6">Ingreso de Mercancía de Proveedor</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-medium text-neutral-300 mb-1.5">Proveedor Oficial</label>
                 <div className="flex gap-2">
@@ -392,7 +422,11 @@ export default function ComprasPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-300 mb-1.5">NÃºmero de Factura FÃ­sica</label>
+                <label className="block text-sm font-medium text-neutral-300 mb-1.5">Fecha *</label>
+                <input type="date" value={factura.fechaRegistro} onChange={e => setFactura({...factura, fechaRegistro: e.target.value})} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-300 mb-1.5">Número de Factura Física</label>
                 <input type="text" value={factura.nroFactura} onChange={e => setFactura({...factura, nroFactura: e.target.value})} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
               </div>
             </div>
@@ -401,7 +435,7 @@ export default function ComprasPage() {
             <table className="w-full text-left border-collapse min-w-[700px]">
               <thead>
                 <tr className="text-neutral-400 text-sm border-b border-neutral-800">
-                  <th className="pb-3 font-medium w-[40%]">Producto Base (CatÃ¡logo)</th>
+                  <th className="pb-3 font-medium w-[40%]">Producto Base (Catálogo)</th>
                   <th className="pb-3 font-medium w-[15%]">Cantidad</th>
                   <th className="pb-3 font-medium w-[20%]">Costo Unit. ($)</th>
                   <th className="pb-3 font-medium w-[20%]">Total ($)</th>
@@ -425,7 +459,7 @@ export default function ComprasPage() {
                 ))}
               </tbody>
             </table>
-            <button onClick={addProducto} className="mt-4 flex items-center gap-2 text-sm text-indigo-400 font-medium hover:text-indigo-300 transition-colors px-2 py-1 rounded-lg hover:bg-indigo-500/10"><Plus size={16} /> Agregar lÃ­nea</button>
+            <button onClick={addProducto} className="mt-4 flex items-center gap-2 text-sm text-indigo-400 font-medium hover:text-indigo-300 transition-colors px-2 py-1 rounded-lg hover:bg-indigo-500/10"><Plus size={16} /> Agregar línea</button>
           </div>
           <div className="p-6 bg-black/20 border-t border-neutral-800 flex flex-col md:flex-row justify-between items-center gap-4">
             <div><p className="text-neutral-400 text-sm">Costo Total Factura</p><p className="text-3xl font-bold text-white tracking-tight">{formatCurrency(totalFactura)}</p></div>
@@ -446,18 +480,18 @@ export default function ComprasPage() {
               <label className="block text-xs font-medium text-neutral-400 mb-1.5">Buscar (Proveedor o Concepto)</label>
               <div className="relative">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
-                <input type="text" value={filtros.busqueda} onChange={e => setFiltros({...filtros, busqueda: e.target.value})} onKeyDown={e => e.key === 'Enter' && cargarHistorialCompleto()} placeholder="Escribe para buscar..." className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl pl-9 pr-4 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                <input type="text" value={filtros.busqueda} onChange={e => setFiltros({...filtros, busqueda: e.target.value})} onKeyDown={e => e.key === 'Enter' && cargarHistorialCompleto()} placeholder="Escribe para buscar..." className="w-full h-14 bg-black/50 border border-neutral-800 text-white rounded-xl pl-9 pr-4 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
               </div>
             </div>
             <div className="w-full md:w-auto">
               <label className="block text-xs font-medium text-neutral-400 mb-1.5">Fecha Inicio</label>
-              <input type="date" value={filtros.fechaInicio} onChange={e => setFiltros({...filtros, fechaInicio: e.target.value})} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500 [color-scheme:dark]" />
+              <input type="date" value={filtros.fechaInicio} onChange={e => setFiltros({...filtros, fechaInicio: e.target.value})} className="w-full h-14 bg-black/50 border border-neutral-800 text-white rounded-xl px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 [color-scheme:dark]" />
             </div>
             <div className="w-full md:w-auto">
               <label className="block text-xs font-medium text-neutral-400 mb-1.5">Fecha Fin</label>
-              <input type="date" value={filtros.fechaFin} onChange={e => setFiltros({...filtros, fechaFin: e.target.value})} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500 [color-scheme:dark]" />
+              <input type="date" value={filtros.fechaFin} onChange={e => setFiltros({...filtros, fechaFin: e.target.value})} className="w-full h-14 bg-black/50 border border-neutral-800 text-white rounded-xl px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 [color-scheme:dark]" />
             </div>
-            <button onClick={cargarHistorialCompleto} disabled={isSearching} className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 px-6 rounded-xl flex items-center justify-center gap-2">
+            <button onClick={cargarHistorialCompleto} disabled={isSearching} className="w-full h-14 md:w-auto bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-6 rounded-xl flex items-center justify-center gap-2">
               {isSearching ? <Loader2 className="animate-spin" size={16} /> : <Search size={16} />} Filtrar
             </button>
           </div>
@@ -465,13 +499,14 @@ export default function ComprasPage() {
           {/* Tabla de Historial */}
           <div className="bg-neutral-900/50 border border-neutral-800 rounded-2xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto custom-scrollbar">
-              <table className="w-full text-left border-collapse text-sm min-w-[900px]">
+              <table className="hidden md:table w-full text-left border-collapse text-sm min-w-[900px]">
                 <thead>
                   <tr className="bg-black/40 border-b border-neutral-800 text-neutral-400">
                     <th className="py-4 px-6 font-medium">Fecha</th>
                     <th className="py-4 px-6 font-medium">Proveedor</th>
-                    <th className="py-4 px-6 font-medium">Concepto</th>
-                    <th className="py-4 px-6 font-medium">Ref / Doc</th>
+                      <th className="py-4 px-6 font-medium">Concepto</th>
+                      <th className="py-4 px-6 font-medium">Operador</th>
+                      <th className="py-4 px-6 font-medium">Ref / Doc</th>
                     <th className="py-4 px-6 font-medium text-right">Monto ($)</th>
                     <th className="py-4 px-6 font-medium text-center w-[120px]">Acciones</th>
                   </tr>
@@ -481,18 +516,27 @@ export default function ComprasPage() {
                     <tr key={compra.id} className="hover:bg-white/5 transition-colors text-neutral-300">
                       <td className="py-4 px-6 whitespace-nowrap">{new Date(compra.fecha_registro || compra.fecha).toLocaleString('es-VE')}</td>
                       <td className="py-4 px-6 font-medium text-neutral-200">{compra.proveedor}</td>
-                      <td className="py-4 px-6 max-w-[200px] truncate" title={compra.detalles}>{compra.detalles}</td>
-                      <td className="py-4 px-6">{compra.documento_externo || '-'}</td>
-                      <td className="py-4 px-6 text-right font-medium text-white">{formatCurrency(compra.monto_divisas)}</td>
-                      <td className="py-4 px-6">
-                        <div className="flex justify-center gap-2">
-                          <button onClick={() => { setEditingRow(compra); setIsEditModalOpen(true); }} className="p-1.5 text-neutral-400 hover:text-indigo-400 bg-neutral-800 hover:bg-indigo-500/20 rounded-lg transition-colors" title="Editar"><Edit2 size={16} /></button>
-                          <button onClick={() => handleEliminarCompra(compra.id)} className="p-1.5 text-neutral-400 hover:text-rose-400 bg-neutral-800 hover:bg-rose-500/20 rounded-lg transition-colors" title="Eliminar"><Trash2 size={16} /></button>
+                      <td className="py-4 px-6 text-neutral-400 truncate max-w-xs">{compra.detalles || '-'}</td>
+                      <td className="py-4 px-6 text-neutral-400 font-medium">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-bold">
+                            {(compra.operador || 'D').charAt(0).toUpperCase()}
+                          </div>
+                          {compra.operador}
                         </div>
+                      </td>
+                      <td className="py-4 px-6 text-neutral-400">{compra.metodo_pago || '-'}</td>
+                      <td className="py-4 px-6 text-right font-medium text-white flex flex-col items-end">
+                        <span>{formatCurrency(compra.monto_divisas)}</span>
+                        <span className="text-xs text-neutral-500" title={`Tasa de cambio: Bs. ${compra.tasa_cambio}`}>Bs. {Number(compra.monto_bs || 0).toLocaleString('es-VE', {minimumFractionDigits: 2})}</span>
+                      </td>
+                      <td className="py-4 px-6 text-center space-x-2">
+                        <button onClick={() => { setEditingRow(compra); setIsEditModalOpen(true); }} className="text-indigo-400 hover:text-indigo-300 p-1"><Edit2 size={16}/></button>
+                        <button onClick={() => handleEliminarCompra(compra.id)} className="text-neutral-500 hover:text-rose-400 p-1"><Trash2 size={16}/></button>
                       </td>
                     </tr>
                   ))}
-                  {historialCompleto.length === 0 && !isSearching && (
+                  {historialCompleto.length === 0 && (
                     <tr>
                       <td colSpan={6} className="py-16 text-center text-neutral-500">
                         <History size={48} className="mx-auto mb-4 opacity-20" />
@@ -502,12 +546,45 @@ export default function ComprasPage() {
                   )}
                 </tbody>
               </table>
+
+              <div className="md:hidden flex flex-col divide-y divide-neutral-800/50">
+                {historialCompleto.length === 0 && (
+                  <div className="p-8 text-center text-neutral-500">No se encontraron registros para estos filtros.</div>
+                )}
+                {historialCompleto.map(compra => (
+                  <div key={compra.id} className="p-4 flex flex-col gap-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-bold text-neutral-200">{compra.proveedor}</p>
+                        <p className="text-xs text-neutral-500">{new Date(compra.fecha_registro || compra.fecha).toLocaleString('es-VE')}</p>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <span className="font-bold text-white">{formatCurrency(compra.monto_divisas)}</span>
+                        <span className="text-xs text-neutral-500" title={`Tasa de cambio: Bs. ${compra.tasa_cambio}`}>Bs. {Number(compra.monto_bs || 0).toLocaleString('es-VE', {minimumFractionDigits: 2})}</span>
+                      </div>
+                    </div>
+                    {compra.detalles && (
+                      <div className="text-sm text-neutral-400">{compra.detalles}</div>
+                    )}
+                    <div className="flex justify-between items-center mt-2 border-t border-neutral-800/50 pt-3">
+                      <div className="flex gap-2 items-center">
+                        <span className="text-xs px-2 py-1 bg-neutral-800 rounded-md text-neutral-400">{compra.metodo_pago || 'N/A'}</span>
+                        <span className="text-xs px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded-md border border-indigo-500/20">{compra.operador}</span>
+                      </div>
+                      <div className="flex gap-4">
+                        <button onClick={() => { setEditingRow(compra); setIsEditModalOpen(true); }} className="text-indigo-400 hover:text-indigo-300 p-2"><Edit2 size={18}/></button>
+                        <button onClick={() => handleEliminarCompra(compra.id)} className="text-neutral-500 hover:text-rose-400 p-2"><Trash2 size={18}/></button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* MODAL DE EDICIÃ“N */}
+      {/* MODAL DE EDICIÓN */}
       {isEditModalOpen && editingRow && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
@@ -536,9 +613,9 @@ export default function ComprasPage() {
                   <textarea rows={2} value={editingRow.detalles} onChange={e => setEditingRow({...editingRow, detalles: e.target.value})} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-400 mb-1.5">MÃ©todo de Pago</label>
+                  <label className="block text-sm font-medium text-neutral-400 mb-1.5">Método de Pago</label>
                   <select value={editingRow.metodo_pago} onChange={e => setEditingRow({...editingRow, modalidad_pago: e.target.value})} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 appearance-none">
-                    <option>Efectivo USD</option><option>Zelle</option><option>Pago MÃ³vil</option><option>Transferencia Bs</option><option>Punto de Venta</option>
+                    {metodosPago.map((metodo: string) => <option key={metodo} value={metodo}>{metodo}</option>)}
                   </select>
                 </div>
                 <div>

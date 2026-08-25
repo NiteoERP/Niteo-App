@@ -24,7 +24,7 @@ export default function CatalogView({ catalog }: { catalog: any[] }) {
           <input
             type="text"
             placeholder="Buscar por nombre o código..."
-            className="w-full bg-neutral-950 border border-neutral-800 text-sm text-white rounded-md pl-9 pr-4 py-2 focus:outline-none focus:border-indigo-500 transition-colors"
+            className="w-full h-14 bg-neutral-950 border border-neutral-800 text-sm text-white rounded-xl pl-10 pr-4 focus:outline-none focus:border-indigo-500 transition-colors"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -32,7 +32,7 @@ export default function CatalogView({ catalog }: { catalog: any[] }) {
       </div>
       
       <div className="flex-1 overflow-auto">
-        <table className="w-full text-left text-sm text-neutral-400">
+        <table className="hidden md:table w-full text-left text-sm text-neutral-400">
           <thead className="bg-neutral-950/50 text-xs uppercase text-neutral-500 sticky top-0 backdrop-blur-md">
             <tr>
               <th className="px-6 py-4 font-medium">Código</th>
@@ -60,6 +60,34 @@ export default function CatalogView({ catalog }: { catalog: any[] }) {
             )}
           </tbody>
         </table>
+
+        {/* Vista Móvil (Tarjetas) */}
+        <div className="md:hidden flex flex-col p-4 gap-3">
+          {filteredCatalog.length === 0 ? (
+            <div className="text-center py-10 text-neutral-500">
+              {catalog.length === 0 ? 'No hay productos sincronizados.' : 'No se encontraron resultados.'}
+            </div>
+          ) : (
+            filteredCatalog.map((prod) => (
+              <div key={prod.id_producto} className="bg-neutral-950 border border-neutral-800 rounded-xl p-4 flex flex-col gap-2">
+                <div className="flex justify-between items-start">
+                  <span className="font-bold text-white text-base leading-tight">{prod.nombre}</span>
+                  <span className="font-mono text-xs text-neutral-500 bg-neutral-900 px-2 py-1 rounded">{prod.codigo_barras || 'S/N'}</span>
+                </div>
+                <div className="flex justify-between items-center mt-2 pt-2 border-t border-neutral-800/50">
+                  <div className="flex flex-col">
+                    <span className="text-xs text-neutral-500 uppercase font-bold">Costo</span>
+                    <span className="text-neutral-400">${Number(prod.costo).toFixed(2)}</span>
+                  </div>
+                  <div className="flex flex-col text-right">
+                    <span className="text-xs text-emerald-500/70 uppercase font-bold">Precio Venta</span>
+                    <span className="text-emerald-400 font-bold text-lg">${Number(prod.precio_venta).toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

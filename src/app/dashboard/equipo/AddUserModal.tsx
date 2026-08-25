@@ -16,6 +16,7 @@ const MODULES = [
   { id: 'usuarios', label: 'Gestión de Personal' },
   { id: 'auditoria', label: 'Registro de Auditoría' },
   { id: 'ajustes', label: 'Ajustes de Empresa' },
+  { id: 'ver_todas_compras', label: 'Ver Historial Global de Compras' },
 ];
 
 export default function AddUserModal() {

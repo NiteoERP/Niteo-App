@@ -38,9 +38,36 @@ export default function MobileCompraForm() {
   const [newInsumoUnit, setNewInsumoUnit] = useState('KG');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [cantidad, setCantidad] = useState('');
-  const [costo, setCosto] = useState('');
-  const [tipoCosto, setTipoCosto] = useState<'total' | 'unitario'>('total');
+  const [costoUnitario, setCostoUnitario] = useState('');
+  const [costoTotal, setCostoTotal] = useState('');
   const [monedaInput, setMonedaInput] = useState<'USD'|'VES'>('USD');
+
+  const handleCantidadChange = (val: string) => {
+    setCantidad(val);
+    const c = parseFloat(val);
+    const cu = parseFloat(costoUnitario);
+    if (!isNaN(c) && !isNaN(cu) && c > 0) {
+      setCostoTotal((c * cu).toFixed(2));
+    }
+  };
+
+  const handleCostoUnitarioChange = (val: string) => {
+    setCostoUnitario(val);
+    const c = parseFloat(cantidad);
+    const cu = parseFloat(val);
+    if (!isNaN(c) && !isNaN(cu) && c > 0) {
+      setCostoTotal((c * cu).toFixed(2));
+    }
+  };
+
+  const handleCostoTotalChange = (val: string) => {
+    setCostoTotal(val);
+    const c = parseFloat(cantidad);
+    const ct = parseFloat(val);
+    if (!isNaN(c) && !isNaN(ct) && c > 0) {
+      setCostoUnitario((ct / c).toFixed(2));
+    }
+  };
 
   // Cart
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -64,13 +91,12 @@ export default function MobileCompraForm() {
   const exactMatchExists = insumos.some(i => i.nombre.toLowerCase() === searchTerm.toLowerCase().trim());
 
   const handleAddToCart = () => {
-    if (!cantidad || !costo) return;
+    if (!cantidad || !costoTotal) return;
     if (isNewInsumo && !newInsumoName) return;
     if (!isNewInsumo && !selectedInsumo) return;
 
-    const c = parseFloat(costo);
+    const finalCostoTotal = parseFloat(costoTotal);
     const qty = parseFloat(cantidad);
-    const finalCostoTotal = tipoCosto === 'total' ? c : c * qty;
 
     const newItem: CartItem = {
       id: Math.random().toString(),
@@ -89,9 +115,9 @@ export default function MobileCompraForm() {
     setSearchTerm('');
     setSelectedInsumo(null);
     setIsNewInsumo(false);
-    setNewInsumoName('');
     setCantidad('');
-    setCosto('');
+    setCostoUnitario('');
+    setCostoTotal('');
   };
 
   const removeFromCart = (id: string) => {
@@ -274,7 +300,7 @@ export default function MobileCompraForm() {
             {/* If New Insumo */}
             {isNewInsumo && (
               <div className="bg-indigo-500/10 border border-indigo-500/30 rounded-xl p-4 animate-in fade-in">
-                <p className="text-sm text-indigo-300 font-medium mb-3">EstÃ¡s creando un nuevo insumo</p>
+                <p className="text-sm text-indigo-300 font-medium mb-3">Estás creando un nuevo insumo</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs text-neutral-400 mb-1">Nombre</label>
@@ -302,56 +328,60 @@ export default function MobileCompraForm() {
               </div>
             )}
 
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-neutral-400 mb-1">Cantidad</label>
-                <input 
-                  type="number" 
-                  min="0.01" step="0.01"
-                  value={cantidad}
-                  onChange={e => setCantidad(e.target.value)}
-                  placeholder="0.00"
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2.5 text-white"
-                />
-              </div>
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <label className="block text-sm font-medium text-neutral-400">
-                    {tipoCosto === 'total' ? 'Costo Total' : 'Costo Unit.'}
-                  </label>
-                  <button 
-                    type="button"
-                    onClick={() => setTipoCosto(tipoCosto === 'total' ? 'unitario' : 'total')}
-                    className="text-[10px] bg-neutral-800 text-neutral-400 hover:text-white px-1.5 py-0.5 rounded cursor-pointer transition-colors"
-                  >
-                    Usar {tipoCosto === 'total' ? 'Unitario' : 'Total'}
-                  </button>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-400 mb-1">Cantidad</label>
+                  <input 
+                    type="number" 
+                    min="0.01" step="0.01"
+                    value={cantidad}
+                    onChange={e => handleCantidadChange(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2.5 text-white"
+                  />
                 </div>
-                <input 
-                  type="number" 
-                  min="0.01" step="0.01"
-                  value={costo}
-                  onChange={e => setCosto(e.target.value)}
-                  placeholder="0.00"
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2.5 text-white"
-                />
+                <div>
+                  <label className="block text-sm font-medium text-neutral-400 mb-1">Costo Unit.</label>
+                  <input 
+                    type="number" 
+                    min="0.01" step="0.01"
+                    value={costoUnitario}
+                    onChange={e => handleCostoUnitarioChange(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2.5 text-white"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-400 mb-1">Moneda</label>
-                <select 
-                  value={monedaInput}
-                  onChange={e => setMonedaInput(e.target.value as 'USD'|'VES')}
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2.5 text-white"
-                >
-                  <option value="USD">$</option>
-                  <option value="VES">Bs</option>
-                </select>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-400 mb-1">Costo Total</label>
+                  <input 
+                    type="number" 
+                    min="0.01" step="0.01"
+                    value={costoTotal}
+                    onChange={e => handleCostoTotalChange(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2.5 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-400 mb-1">Moneda</label>
+                  <select 
+                    value={monedaInput}
+                    onChange={e => setMonedaInput(e.target.value as 'USD'|'VES')}
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2.5 text-white"
+                  >
+                    <option value="USD">$</option>
+                    <option value="VES">Bs</option>
+                  </select>
+                </div>
               </div>
             </div>
 
             <button 
               onClick={handleAddToCart}
-              disabled={!cantidad || !costo || (!selectedInsumo && !isNewInsumo)}
+              disabled={!cantidad || !costoTotal || (!selectedInsumo && !isNewInsumo)}
               className="w-full bg-neutral-800 hover:bg-neutral-700 text-white font-medium py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
             >
               <Plus size={18} /> Añadir a la Lista

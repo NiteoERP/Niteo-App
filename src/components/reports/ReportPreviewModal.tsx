@@ -32,19 +32,37 @@ export default function ReportPreviewModal({ data, kpis, range, onClose }: Repor
   };
 
   const handleExportExcel = () => {
-    // Generar CSV
-    let csv = 'Día,Ventas Brutas,Costo Insumos (COGS),Mermas,Gastos Operativos,Utilidad Neta\n';
-    data.forEach(row => {
-      csv += `${row.dia},${row.ventas_brutas},${row.cogs},${row.mermas},${row.gastos_operativos},${row.utilidad_neta}\n`;
-    });
-    // Añadir fila de totales
-    csv += `TOTAL,${kpis.ventas},${kpis.cogs},${kpis.mermas},${kpis.gastos},${kpis.utilidad}\n`;
+    import('xlsx').then(XLSX => {
+      // 1. Preparar datos
+      const wsData = [
+        ['Día', 'Ventas Brutas', 'Costo Insumos (COGS)', 'Mermas', 'Gastos Operativos', 'Utilidad Neta'],
+        ...data.map(row => [
+          row.dia,
+          row.ventas_brutas,
+          row.cogs,
+          row.mermas,
+          row.gastos_operativos,
+          row.utilidad_neta
+        ]),
+        ['TOTAL', kpis.ventas, kpis.cogs, kpis.mermas, kpis.gastos, kpis.utilidad]
+      ];
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `reporte_niteo_${range}.csv`;
-    link.click();
+      // 2. Crear Worksheet y auto-ajustar ancho
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      ws['!cols'] = [
+        { width: 15 },
+        { width: 20 },
+        { width: 20 },
+        { width: 15 },
+        { width: 20 },
+        { width: 20 }
+      ];
+
+      // 3. Crear Workbook y guardar
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Reporte Financiero");
+      XLSX.writeFile(wb, `reporte_niteo_${range}.xlsx`);
+    });
   };
 
   const handleExportWord = () => {
@@ -76,7 +94,7 @@ export default function ReportPreviewModal({ data, kpis, range, onClose }: Repor
               <Printer size={16} /> Imprimir / PDF
             </button>
             <button onClick={handleExportExcel} className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100 dark:bg-emerald-900/30 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 text-sm font-medium rounded-lg transition-colors">
-              <FileSpreadsheet size={16} /> Excel (CSV)
+              <FileSpreadsheet size={16} /> Excel (.xlsx)
             </button>
             <button onClick={handleExportWord} className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-400 text-sm font-medium rounded-lg transition-colors">
               <FileText size={16} /> Word

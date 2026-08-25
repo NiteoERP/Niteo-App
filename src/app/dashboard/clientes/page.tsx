@@ -47,7 +47,7 @@ export default async function ClientesPage() {
               type="text" 
               placeholder="Buscar cliente (Deshabilitado en esta vista beta)..." 
               disabled
-              className="w-full bg-neutral-950 border border-neutral-800 rounded-lg pl-10 pr-4 py-2 text-sm text-white outline-none opacity-50 cursor-not-allowed"
+              className="w-full h-14 bg-neutral-950 border border-neutral-800 rounded-xl pl-10 pr-4 text-sm text-white outline-none opacity-50 cursor-not-allowed"
             />
           </div>
           <span className="text-sm font-medium text-neutral-400">
@@ -56,7 +56,7 @@ export default async function ClientesPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+          <table className="hidden md:table w-full text-left text-sm">
             <thead className="bg-neutral-950/50 text-neutral-500 font-medium border-b border-neutral-800">
               <tr>
                 <th className="px-6 py-4">Nombre / Empresa</th>
@@ -103,13 +103,53 @@ export default async function ClientesPage() {
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-xs text-neutral-500">
-                      {new Date(cliente.creado_en).toLocaleDateString()}
+                      {cliente.creado_en ? new Date(cliente.creado_en).toLocaleDateString() : '-'}
                     </span>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+
+          {/* Mobile view (Cards) */}
+          <div className="md:hidden flex flex-col divide-y divide-neutral-800">
+            {error && (
+              <div className="p-8 text-center text-rose-400">Error al cargar clientes: {error.message}</div>
+            )}
+            {!error && (!clientes || clientes.length === 0) && (
+              <div className="p-12 text-center text-neutral-500">
+                <Users size={32} className="mx-auto mb-3 opacity-20" />
+                <p>No hay clientes sincronizados.</p>
+              </div>
+            )}
+            {clientes && clientes.map((cliente) => (
+              <div key={cliente.id} className="p-4 flex flex-col gap-3">
+                <div>
+                  <div className="font-semibold text-white text-lg">{cliente.nombre}</div>
+                  {cliente.identificacion && <div className="text-xs text-neutral-500 font-mono mt-1">ID: {cliente.identificacion}</div>}
+                </div>
+                
+                <div className="bg-neutral-950 rounded-lg p-3 space-y-2 border border-neutral-800/50">
+                  {cliente.email && (
+                    <div className="flex items-center gap-2 text-neutral-400 text-sm">
+                      <Mail size={14} className="text-indigo-400" /> {cliente.email}
+                    </div>
+                  )}
+                  {cliente.telefono && (
+                    <div className="flex items-center gap-2 text-neutral-400 text-sm">
+                      <Phone size={14} className="text-indigo-400" /> {cliente.telefono}
+                    </div>
+                  )}
+                  {cliente.direccion && (
+                    <div className="flex items-center gap-2 text-neutral-500 text-sm">
+                      <MapPin size={14} className="text-indigo-400" /> <span className="truncate">{cliente.direccion}</span>
+                    </div>
+                  )}
+                  {!cliente.email && !cliente.telefono && !cliente.direccion && <span className="text-neutral-600 italic text-sm">Sin datos de contacto</span>}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

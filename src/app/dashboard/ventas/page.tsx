@@ -6,10 +6,11 @@ import LiveSalesFeed from '@/components/pos/LiveSalesFeed';
 import CuentasAbiertasWidget from '@/components/pos/CuentasAbiertasWidget';
 import CatalogView from '@/components/pos/CatalogView';
 import { Store, PackageSearch, Users } from 'lucide-react';
+import { Metadata } from 'next';
 
-export const metadata = {
-  title: 'Espejo POS | Niteo',
-  description: 'Monitor de ventas en tiempo real',
+export const metadata: Metadata = {
+  title: 'Ventas | Niteo',
+  description: 'Panel de ventas.',
 };
 
 export default async function POSPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
@@ -49,7 +50,7 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
         <div>
           <h1 className="text-3xl font-bold text-white flex items-center gap-3">
             <Store className="text-indigo-500" />
-            Espejo POS
+            Ventas
           </h1>
           <p className="text-neutral-400 mt-1">
             Monitoreo en tiempo real de tu caja local Aronium
@@ -57,10 +58,10 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
         </div>
 
         {/* Tabs Navigation */}
-        <div className="flex bg-neutral-900 border border-neutral-800 rounded-lg p-1">
+        <div className="flex overflow-x-auto bg-neutral-900 border border-neutral-800 rounded-lg p-1 hide-scrollbar">
           <a
             href="?tab=ventas"
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+            className={`flex flex-1 items-center justify-center gap-2 h-14 px-4 rounded-md text-sm font-medium transition-all whitespace-nowrap shrink-0 ${
               tab === 'ventas'
                 ? 'bg-neutral-800 text-white shadow-sm'
                 : 'text-neutral-400 hover:text-white hover:bg-neutral-800/50'
@@ -71,7 +72,7 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
           </a>
           <a
             href="?tab=cuentas"
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+            className={`flex flex-1 items-center justify-center gap-2 h-14 px-4 rounded-md text-sm font-medium transition-all whitespace-nowrap shrink-0 ${
               tab === 'cuentas'
                 ? 'bg-neutral-800 text-white shadow-sm'
                 : 'text-neutral-400 hover:text-white hover:bg-neutral-800/50'
@@ -82,7 +83,7 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
           </a>
           <a
             href="?tab=catalogo"
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+            className={`flex flex-1 items-center justify-center gap-2 h-14 px-4 rounded-md text-sm font-medium transition-all whitespace-nowrap shrink-0 ${
               tab === 'catalogo'
                 ? 'bg-neutral-800 text-white shadow-sm'
                 : 'text-neutral-400 hover:text-white hover:bg-neutral-800/50'

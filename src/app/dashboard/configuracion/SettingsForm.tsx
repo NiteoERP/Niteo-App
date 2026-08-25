@@ -2,7 +2,7 @@
 
 import React, { useState, useTransition } from 'react';
 import { updateEmpresaSaaS } from './actions';
-import { Building2, Save, Loader2, AlertCircle, Globe, DollarSign } from 'lucide-react';
+import { Building2, Save, Loader2, AlertCircle, Globe, DollarSign, Calculator } from 'lucide-react';
 
 export default function SettingsForm({ empresa }: { empresa: any }) {
   const [formData, setFormData] = useState({
@@ -10,6 +10,7 @@ export default function SettingsForm({ empresa }: { empresa: any }) {
     moneda: empresa.moneda || 'USD',
     simbolo_moneda: empresa.simbolo_moneda || '$',
     zona_horaria: empresa.zona_horaria || 'America/Caracas',
+    metodo_costeo_despachos: empresa.metodo_costeo_despachos || 'PROMEDIO',
   });
   
   const [isPending, startTransition] = useTransition();
@@ -100,6 +101,21 @@ export default function SettingsForm({ empresa }: { empresa: any }) {
               onChange={(e) => setFormData({...formData, simbolo_moneda: e.target.value})}
               className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
             />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-neutral-300 mb-1.5">Método de Costeo</label>
+          <div className="relative">
+            <Calculator className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 w-5 h-5" />
+            <select
+              value={formData.metodo_costeo_despachos}
+              onChange={(e) => setFormData({...formData, metodo_costeo_despachos: e.target.value})}
+              className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors appearance-none"
+            >
+              <option value="PROMEDIO">Costo Promedio Ponderado</option>
+              <option value="ULTIMO">Último Costo</option>
+            </select>
           </div>
         </div>
       </div>
