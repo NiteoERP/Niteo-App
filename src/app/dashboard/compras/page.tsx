@@ -81,29 +81,35 @@ export default function ComprasPage() {
   const todayStr = new Date().toISOString().split('T')[0];
   const initialGasto = { proveedor: '', montoDivisas: '', montoBs: '', tasaCambio: '', detalles: '', metodoPago: metodosPago[0] || 'Efectivo USD', documentoExterno: '', fechaRegistro: todayStr };
   const [gasto, setGasto] = useState(initialGasto);
+  const [monedaGasto, setMonedaGasto] = useState<'USD'|'VES'>('USD');
   
   // Lógica Matemática Bidireccional
-  const handleMontoDivisasChange = (val: string) => {
-    const numDiv = Number(val);
-    const numTasa = Number(gasto.tasaCambio);
-    const numBs = numDiv * numTasa;
-    setGasto({ ...gasto, montoDivisas: val, montoBs: numDiv > 0 ? numBs.toFixed(2) : '' });
+  const handleMontoChange = (val: string) => {
+    const num = Number(val) || 0;
+    const numTasa = Number(gasto.tasaCambio) || 0;
+    
+    if (monedaGasto === 'USD') {
+      const numBs = num * numTasa;
+      setGasto({ ...gasto, montoDivisas: val, montoBs: num > 0 ? numBs.toFixed(2) : '' });
+    } else {
+      const numDiv = numTasa > 0 ? (num / numTasa) : 0;
+      setGasto({ ...gasto, montoBs: val, montoDivisas: num > 0 ? numDiv.toFixed(2) : '' });
+    }
   };
 
-  const handleMontoBsChange = (val: string) => {
-    const numBs = Number(val);
-    const numTasa = Number(gasto.tasaCambio);
-    const numDiv = numTasa > 0 ? (numBs / numTasa) : 0;
-    setGasto({ ...gasto, montoBs: val, montoDivisas: numBs > 0 ? numDiv.toFixed(2) : '' });
+  const handleMonedaChange = (nuevaMoneda: 'USD' | 'VES') => {
+    setMonedaGasto(nuevaMoneda);
   };
 
   const handleTasaChange = (val: string) => {
-    const numTasa = Number(val);
-    const numDiv = Number(gasto.montoDivisas);
-    if (numDiv > 0) {
-      setGasto({ ...gasto, tasaCambio: val, montoBs: (numDiv * numTasa).toFixed(2) });
+    const numTasa = Number(val) || 0;
+    if (monedaGasto === 'USD') {
+      const numDiv = Number(gasto.montoDivisas) || 0;
+      setGasto({ ...gasto, tasaCambio: val, montoBs: numDiv > 0 ? (numDiv * numTasa).toFixed(2) : '' });
     } else {
-      setGasto({ ...gasto, tasaCambio: val });
+      const numBs = Number(gasto.montoBs) || 0;
+      const numDiv = numTasa > 0 ? (numBs / numTasa) : 0;
+      setGasto({ ...gasto, tasaCambio: val, montoDivisas: numBs > 0 ? numDiv.toFixed(2) : '' });
     }
   };
 
@@ -345,9 +351,18 @@ export default function ComprasPage() {
               <input type="date" value={gasto.fechaRegistro} onChange={e => setGasto({...gasto, fechaRegistro: e.target.value})} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-neutral-300 mb-1.5">Monto (Divisas $) *</label>
-              <input type="number" value={gasto.montoDivisas} onChange={e => handleMontoDivisasChange(e.target.value)} placeholder="0.00" className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+            <div className="lg:col-span-1">
+              <label className="block text-sm font-medium text-neutral-300 mb-1.5">Monto y Moneda *</label>
+              <div className="flex gap-2">
+                <input type="number" value={monedaGasto === 'USD' ? gasto.montoDivisas : gasto.montoBs} onChange={e => handleMontoChange(e.target.value)} placeholder="0.00" className="flex-1 bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                <select value={monedaGasto} onChange={e => handleMonedaChange(e.target.value as 'USD'|'VES')} className="w-28 bg-black/50 border border-neutral-800 text-white rounded-xl px-2 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 appearance-none text-center">
+                  <option value="USD">USD</option>
+                  <option value="VES">Bs</option>
+                </select>
+              </div>
+              <p className="text-xs text-neutral-500 mt-1 pl-1">
+                ≈ {monedaGasto === 'USD' ? (gasto.montoBs ? Number(gasto.montoBs).toLocaleString('es-VE') + ' Bs' : '0.00 Bs') : (gasto.montoDivisas ? '$' + Number(gasto.montoDivisas).toLocaleString('en-US') : '$0.00')}
+              </p>
             </div>
 
             <div>
@@ -358,9 +373,8 @@ export default function ComprasPage() {
               <input type="number" value={gasto.tasaCambio} onChange={e => handleTasaChange(e.target.value)} placeholder="Ej: 36.50" className="w-full bg-indigo-900/10 border border-indigo-500/30 text-indigo-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors" />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-neutral-300 mb-1.5">Monto (Bolívares Bs)</label>
-              <input type="number" value={gasto.montoBs} onChange={e => handleMontoBsChange(e.target.value)} placeholder="0.00" className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+            <div className="hidden lg:block">
+              {/* Spacer para mantener el grid alineado (ocupaba la 3ra columna) */}
             </div>
 
             <div className="lg:col-span-3">
