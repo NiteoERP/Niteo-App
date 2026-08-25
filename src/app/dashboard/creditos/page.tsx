@@ -23,7 +23,7 @@ export default function CreditosPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   
-  // Paginación
+  // PaginaciÃ³n
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [isLoadingClientes, setIsLoadingClientes] = useState(false);
@@ -66,7 +66,7 @@ export default function CreditosPage() {
       if (res.success) {
         setClientes(res.data || []);
         setTotalCount(res.totalCount || 0);
-        // Si el cliente seleccionado ya no está, limpiar detalle
+        // Si el cliente seleccionado ya no estÃ¡, limpiar detalle
         if (selectedClienteId && !res.data?.find((c:any) => c.id_cliente === selectedClienteId)) {
           setSelectedClienteId(null);
           setDetalle([]);
@@ -217,7 +217,7 @@ export default function CreditosPage() {
                   <span className={`font-bold ${selectedClienteId === cli.id_cliente ? "text-rose-400" : "text-rose-500"}`}>{formatCurrency(cli.monto_adeudado)}</span>
                 </div>
                 <p className="text-xs text-neutral-500">
-                  Última compra: {cli.ultima_compra ? format(new Date(cli.ultima_compra), "dd/MM/yyyy") : "-"}
+                  Ãšltima compra: {cli.ultima_compra ? format(new Date(cli.ultima_compra), "dd/MM/yyyy") : "-"}
                 </p>
               </button>
             ))
@@ -291,7 +291,7 @@ export default function CreditosPage() {
                     <div className="p-4 bg-neutral-950">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div>
-                          <p className="text-xs font-bold text-neutral-500 uppercase mb-3 flex items-center gap-2"><ShoppingCart size={14} /> Qué Llevó</p>
+                          <p className="text-xs font-bold text-neutral-500 uppercase mb-3 flex items-center gap-2"><ShoppingCart size={14} /> QuÃ© LlevÃ³</p>
                           <div className="space-y-2">
                             {fac.productos_detalle?.map((p:any, j:number) => (
                               <div key={j} className="flex justify-between items-center p-2 rounded bg-neutral-900/50 border border-neutral-800/50">
@@ -348,11 +348,11 @@ export default function CreditosPage() {
                   max={facturaPagar.saldo_pendiente}
                   className="w-full bg-neutral-950 border border-emerald-500/30 focus:border-emerald-500 text-emerald-400 font-black text-xl py-3 px-4 rounded-xl outline-none transition-colors"
                 />
-                <p className="text-xs text-neutral-500 mt-1">Saldo pendiente máximo: ${facturaPagar.saldo_pendiente}</p>
+                <p className="text-xs text-neutral-500 mt-1">Saldo pendiente mÃ¡ximo: ${facturaPagar.saldo_pendiente}</p>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Método de Pago</label>
+                <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">MÃ©todo de Pago</label>
                 <select 
                   value={metodoPago} 
                   onChange={(e) => setMetodoPago(e.target.value)} 

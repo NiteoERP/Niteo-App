@@ -45,7 +45,7 @@ export default function FinanzasPage() {
     return new Intl.NumberFormat('es-US', { style: 'currency', currency: 'USD' }).format(val);
   };
 
-  // Preparar datos para el gráfico combinado
+  // Preparar datos para el grÃ¡fico combinado
   let chartData: any[] = [];
   if (data) {
     const dates = new Set([
@@ -102,7 +102,7 @@ export default function FinanzasPage() {
       {errorMsg && (
         <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-4 rounded-xl flex items-center gap-3">
           <AlertCircle size={20} />
-          <p>{errorMsg} (Asegúrate de ejecutar el script SQL en Supabase)</p>
+          <p>{errorMsg} (AsegÃºrate de ejecutar el script SQL en Supabase)</p>
         </div>
       )}
 

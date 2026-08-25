@@ -58,7 +58,7 @@ export default function ProveedoresPage() {
     setLoading(true);
     setPage(1);
     
-    // Solo cargar sedes e histórico si no están
+    // Solo cargar sedes e histÃ³rico si no estÃ¡n
     if (sedes.length === 0) {
       const s = await getSedes();
       setSedes(s);
@@ -241,9 +241,9 @@ export default function ProveedoresPage() {
         <div className="bg-neutral-900 border border-neutral-800 p-6 rounded-2xl shadow-sm relative overflow-hidden group col-span-1 lg:col-span-2 cursor-pointer hover:border-neutral-700 transition-colors" onClick={() => setShowHistoricoModal(true)}>
           <div className="relative z-10 flex justify-between items-center h-full">
             <div>
-              <p className="text-sm font-medium text-neutral-400">Tendencia Histórica (6 Meses)</p>
+              <p className="text-sm font-medium text-neutral-400">Tendencia HistÃ³rica (6 Meses)</p>
               <h3 className="text-lg font-bold text-white mt-1 flex items-center gap-2">
-                <Activity size={18} className="text-indigo-400" /> Ver Gráfica Completa
+                <Activity size={18} className="text-indigo-400" /> Ver GrÃ¡fica Completa
               </h3>
             </div>
             <div className="h-16 w-32 sm:w-48">
@@ -297,7 +297,7 @@ export default function ProveedoresPage() {
         ) : proveedores.length === 0 ? (
           <div className="p-12 text-center flex flex-col items-center justify-center">
             <Check size={48} className="text-emerald-500/50 mb-4" />
-            <h3 className="text-xl font-bold text-white mb-2">¡Todo al día!</h3>
+            <h3 className="text-xl font-bold text-white mb-2">Â¡Todo al dÃ­a!</h3>
             <p className="text-neutral-400">No tienes cuentas por pagar a proveedores o no hay coincidencias.</p>
           </div>
         ) : (
@@ -317,7 +317,7 @@ export default function ProveedoresPage() {
                         <h3 className="font-bold text-lg text-white truncate">{prov.nombre_proveedor}</h3>
                       </div>
                       <div className="flex flex-col gap-1">
-                        <p className="text-sm text-neutral-400">RIF/Cédula: {prov.rif || "N/A"}</p>
+                        <p className="text-sm text-neutral-400">RIF/CÃ©dula: {prov.rif || "N/A"}</p>
                         {prov.sedes_involucradas && <p className="text-xs text-neutral-500 font-medium">Sedes: {prov.sedes_involucradas}</p>}
                         <p className="text-sm text-neutral-500">{prov.facturas_pendientes} {prov.facturas_pendientes === 1 ? "factura pendiente" : "facturas pendientes"}</p>
                       </div>
@@ -346,7 +346,7 @@ export default function ProveedoresPage() {
                          {[1,2].map(i => <div key={i} className="h-16 bg-neutral-900 animate-pulse rounded-xl border border-neutral-800"></div>)}
                       </div>
                     ) : facturasProveedor.length === 0 ? (
-                      <div className="text-neutral-500 text-sm py-4">No hay facturas detalladas (Revisa si están en el sistema).</div>
+                      <div className="text-neutral-500 text-sm py-4">No hay facturas detalladas (Revisa si estÃ¡n en el sistema).</div>
                     ) : (
                       <div className="space-y-3">
                         {facturasProveedor.map(fac => (
@@ -354,7 +354,7 @@ export default function ProveedoresPage() {
                             <div>
                               <div className="flex items-center gap-2">
                                 <h5 className="font-bold text-white">{fac.concepto || "Factura / Deuda"}</h5>
-                                {fac.numero_factura && <span className="text-xs bg-neutral-800 text-neutral-300 px-2 py-0.5 rounded">Nº {fac.numero_factura}</span>}
+                                {fac.numero_factura && <span className="text-xs bg-neutral-800 text-neutral-300 px-2 py-0.5 rounded">NÂº {fac.numero_factura}</span>}
                               </div>
                               <p className="text-xs text-neutral-500 mt-1 flex items-center gap-1"><Clock size={12} /> {format(new Date(fac.fecha_emision), "dd/MM/yyyy")}</p>
                             </div>
@@ -395,7 +395,7 @@ export default function ProveedoresPage() {
             <button onClick={() => setShowHistoricoModal(false)} className="absolute top-4 right-4 text-neutral-500 hover:text-white">
               <X size={20} />
             </button>
-            <h2 className="text-xl font-black text-white mb-6 flex items-center gap-2"><Activity className="text-indigo-400" /> Histórico de Cuentas por Pagar (6 Meses)</h2>
+            <h2 className="text-xl font-black text-white mb-6 flex items-center gap-2"><Activity className="text-indigo-400" /> HistÃ³rico de Cuentas por Pagar (6 Meses)</h2>
             <div className="h-80 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={historico} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
@@ -436,12 +436,12 @@ export default function ProveedoresPage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Método de Pago</label>
+                <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">MÃ©todo de Pago</label>
                 <select value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)} className="w-full bg-neutral-950 border border-neutral-800 focus:border-neutral-600 text-white font-medium py-3 px-4 rounded-xl outline-none">
                   <option value="Transferencia">Transferencia</option>
                   <option value="Efectivo">Efectivo</option>
                   <option value="Zelle">Zelle</option>
-                  <option value="Pago Móvil">Pago Móvil</option>
+                  <option value="Pago MÃ³vil">Pago MÃ³vil</option>
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -494,11 +494,11 @@ export default function ProveedoresPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Nº Factura (Opcional)</label>
+                  <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">NÂº Factura (Opcional)</label>
                   <input type="text" value={newFacNumero} onChange={(e) => setNewFacNumero(e.target.value)} className="w-full bg-neutral-950 border border-neutral-800 text-white py-2.5 px-3 rounded-lg outline-none" />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Fecha Emisión</label>
+                  <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Fecha EmisiÃ³n</label>
                   <input type="date" value={newFacFecha} onChange={(e) => setNewFacFecha(e.target.value)} required className="w-full bg-neutral-950 border border-neutral-800 text-white py-2.5 px-3 rounded-lg outline-none" />
                 </div>
               </div>

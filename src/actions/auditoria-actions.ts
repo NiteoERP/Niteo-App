@@ -12,14 +12,14 @@ export async function getAuditoriaLogs(page: number = 1, limit: number = 50) {
     if (!profile) return { success: false, error: 'Perfil no encontrado' };
 
     if (profile.rol !== 'MASTER') {
-      return { success: false, error: 'Solo el rol MASTER puede ver la auditorÌa' };
+      return { success: false, error: 'Solo el rol MASTER puede ver la auditor√≠a' };
     }
 
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
-    // Obtener logs con el nombre de usuario (requiere join manual o funciÛn, aquÌ traemos el usuario_id y luego buscamos)
-    // Supabase auth.users no se puede joinear f·cilmente desde la UI, usaremos perfiles si existe o el id crudo
+    // Obtener logs con el nombre de usuario (requiere join manual o funci√≥n, aqu√≠ traemos el usuario_id y luego buscamos)
+    // Supabase auth.users no se puede joinear f√°cilmente desde la UI, usaremos perfiles si existe o el id crudo
     const { data: logs, error, count } = await supabase
       .from('auditoria_logs')
       .select('*, perfiles:usuario_id(email, nombre, rol)', { count: 'exact' })
