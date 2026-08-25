@@ -29,11 +29,11 @@ export default async function ClientesPage() {
     <div className="space-y-8 max-w-6xl mx-auto animate-in fade-in duration-300">
       <div className="border-b border-neutral-800 pb-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Users className="text-indigo-500" />
+          <h1 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+            <Users className="text-indigo-500" size={24} />
             Directorio de Clientes
           </h1>
-          <p className="text-neutral-400 mt-1">
+          <p className="text-neutral-400 text-xs md:text-sm mt-1">
             Visualiza todos los clientes sincronizados desde tu caja Aronium.
           </p>
         </div>
@@ -155,3 +155,4 @@ export default async function ClientesPage() {
     </div>
   );
 }
+

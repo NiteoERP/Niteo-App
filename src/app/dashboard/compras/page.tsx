@@ -256,11 +256,11 @@ export default function ComprasPage() {
         <div>
           <div className="flex items-center gap-3">
             <ShoppingCart className="text-indigo-400" size={28} />
-            <h1 className="text-2xl font-bold text-white tracking-tight">
+            <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">
               Gestión de Compras
             </h1>
           </div>
-          <p className="text-neutral-400 text-sm mt-1">Registra gastos, ingresos de mercancía y audita el historial</p>
+          <p className="text-neutral-400 text-xs md:text-sm mt-1">Registra gastos, ingresos de mercancía y audita el historial</p>
         </div>
 
         <div className="flex p-1 bg-neutral-900 border border-neutral-800 rounded-xl overflow-x-auto hide-scrollbar max-w-full">
@@ -638,4 +638,5 @@ export default function ComprasPage() {
     </div>
   );
 }
+
 

@@ -46,13 +46,13 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-            <Store className="text-indigo-500" />
+          <h1 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+            <Store className="text-indigo-500" size={24} />
             Ventas
           </h1>
-          <p className="text-neutral-400 mt-1">
+          <p className="text-neutral-400 text-xs md:text-sm mt-1">
             Monitoreo en tiempo real de tu caja local Aronium
           </p>
         </div>
@@ -108,3 +108,4 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
     </div>
   );
 }
+

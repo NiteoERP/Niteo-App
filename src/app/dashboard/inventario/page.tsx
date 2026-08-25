@@ -39,11 +39,11 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
     <div className="space-y-6 max-w-6xl animate-in fade-in duration-300">
       
       <div className="border-b border-neutral-800 pb-5">
-        <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-          <Package className="text-indigo-400" /> 
+        <h1 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+          <Package className="text-indigo-400" size={24} /> 
           Inventario y Recetas
         </h1>
-        <p className="text-neutral-400 mt-1">Controla tu materia prima y diseña el escandallo de tus productos.</p>
+        <p className="text-neutral-400 text-xs md:text-sm mt-1">Controla tu materia prima y diseña el escandallo de tus productos.</p>
       </div>
 
       {/* Tabs / Navegación */}
@@ -81,3 +81,4 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
     </div>
   );
 }
+
