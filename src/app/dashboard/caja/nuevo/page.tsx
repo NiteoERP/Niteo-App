@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Plus, Trash2, Wallet, CreditCard, Smartphone, DollarSign, CheckCircle2, Building2, Hash, ChevronDown, ChevronUp, GripHorizontal, X } from 'lucide-react';
 import { getCierrePrevio, guardarCierre, getBancosUtilizados } from '@/actions/cierres-actions';
 import { getSedes } from '@/actions/sedes-actions';
+import { useCajaSync } from '@/hooks/useCajaSync';
 
 type Moneda = 'USD' | 'VES';
 
@@ -53,6 +54,9 @@ export default function NuevoCierreCaja() {
     { id: 'Zelle', icon: DollarSign, color: 'text-purple-400', defaultMoneda: 'USD' },
     { id: 'Efectivo', icon: Wallet, color: 'text-amber-400', defaultMoneda: 'USD' },
   ]);
+
+  // Hook de sincronización en tiempo real con Supabase Broadcast
+  useCajaSync(selectedSedeId, transacciones, setTransacciones, metodos, setMetodos);
 
   // Modal para nuevo método
   const [showNewMetodo, setShowNewMetodo] = useState(false);

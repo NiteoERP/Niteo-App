@@ -1,0 +1,67 @@
+{/* VISTA 2: FACTURA DE PROVEEDOR */}
+      {activeTab === 'factura' && !isLoadingDatos && (
+        <div className="bg-neutral-900/50 border border-neutral-800 rounded-2xl shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-300 flex flex-col">
+          <div className="p-6 border-b border-neutral-800 bg-neutral-900/80">
+            <h2 className="text-lg font-medium text-white mb-6">Ingreso de Mercancía de Proveedor</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-neutral-300 mb-1.5">Proveedor Oficial</label>
+                <div className="flex gap-2">
+                  <select value={factura.proveedor} onChange={e => setFactura({...factura, proveedor: e.target.value})} className="flex-1 bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 appearance-none">
+                    <option value="">Selecciona un proveedor de BD...</option>
+                    {proveedoresDb.map(p => (<option key={p.id} value={p.id}>{p.nombre}</option>))}
+                  </select>
+                  <button onClick={handleCrearProveedorRapido} className="bg-neutral-800 hover:bg-neutral-700 text-white p-2.5 rounded-xl transition-colors border border-neutral-700 flex items-center justify-center"><UserPlus size={18} /></button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-300 mb-1.5">Fecha *</label>
+                <input type="date" value={factura.fechaRegistro} onChange={e => setFactura({...factura, fechaRegistro: e.target.value})} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-300 mb-1.5">Número de Factura Física</label>
+                <input type="text" value={factura.nroFactura} onChange={e => setFactura({...factura, nroFactura: e.target.value})} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+              </div>
+            </div>
+          </div>
+          <div className="p-6 overflow-x-auto custom-scrollbar">
+            <table className="w-full text-left border-collapse min-w-[700px]">
+              <thead>
+                <tr className="text-neutral-400 text-sm border-b border-neutral-800">
+                  <th className="pb-3 font-medium w-[40%]">Producto Base (Catálogo)</th>
+                  <th className="pb-3 font-medium w-[15%]">Cantidad</th>
+                  <th className="pb-3 font-medium w-[20%]">Costo Unit. ($)</th>
+                  <th className="pb-3 font-medium w-[20%]">Total ($)</th>
+                  <th className="pb-3 font-medium text-right w-[5%]"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-800/50">
+                {productos.map((prod) => (
+                  <tr key={prod.rowId} className="group">
+                    <td className="py-4 pr-4">
+                      <select value={prod.id_producto} onChange={(e) => handleProductoChange(prod.rowId, 'id_producto', e.target.value)} className="w-full bg-black/30 border border-neutral-800 rounded-lg text-white px-3 py-1.5 focus:outline-none focus:border-indigo-500 transition-colors">
+                        <option value="">(Selecciona Producto)</option>
+                          <option value="NEW_PRODUCT">+ Crear Nuevo Producto...</option>
+                        {productosDb.map(pDb => (<option key={pDb.id} value={pDb.id}>{pDb.nombre_producto || pDb.nombre}</option>))}
+                      </select>
+                    </td>
+                    <td className="py-4 pr-4"><input type="number" min="1" value={prod.cantidad} onChange={(e) => handleProductoChange(prod.rowId, 'cantidad', e.target.value)} className="w-full bg-black/30 border border-neutral-800 rounded-lg text-white px-3 py-1.5" /></td>
+                    <td className="py-4 pr-4"><input type="number" placeholder="0.00" value={prod.precio} onChange={(e) => handleProductoChange(prod.rowId, 'precio', e.target.value)} className="w-full bg-black/30 border border-neutral-800 rounded-lg text-white px-3 py-1.5" /></td>
+                    <td className="py-4 pr-4"><input type="number" placeholder="0.00" value={prod.total} onChange={(e) => handleProductoChange(prod.rowId, 'total', e.target.value)} className="w-full bg-indigo-500/10 border border-indigo-500/30 rounded-lg text-indigo-300 px-3 py-1.5" /></td>
+                    <td className="py-4 text-right"><button onClick={() => removeProducto(prod.rowId)} className="text-neutral-500 hover:text-rose-400 p-1.5"><Trash2 size={18} /></button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <button onClick={addProducto} className="mt-4 flex items-center gap-2 text-sm text-indigo-400 font-medium hover:text-indigo-300 transition-colors px-2 py-1 rounded-lg hover:bg-indigo-500/10"><Plus size={16} /> Agregar línea</button>
+          </div>
+          <div className="p-6 bg-black/20 border-t border-neutral-800 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div><p className="text-neutral-400 text-sm">Costo Total Factura</p><p className="text-3xl font-bold text-white tracking-tight">{formatCurrency(totalFactura)}</p></div>
+            <button onClick={handleGuardarFactura} disabled={isSubmitting} className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 px-8 rounded-xl shadow-[0_0_15px_rgba(79,70,229,0.3)] flex gap-2">
+              {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />} Guardar Factura
+            </button>
+          </div>
+        </div>
+      )}
+
+      
