@@ -227,23 +227,21 @@ export default function NuevoCierreCaja() {
   const granTotalUSD = calcularTotalesUSD();
 
   return (
-    <div className="min-h-screen bg-black text-white pb-32 animate-in fade-in duration-500">
+    <div className="animate-in fade-in duration-500 space-y-6 pb-24 max-w-4xl mx-auto">
       {/* HEADER */}
-      <div className="p-6 md:p-8 bg-neutral-950 border-b border-neutral-900 sticky top-0 z-20">
-        <div className="max-w-2xl mx-auto flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Cierre de Caja</h1>
-            <p className="text-neutral-400 text-sm mt-1">Tasa BCV: <span className="text-emerald-400 font-medium">{tasaCambio.toFixed(2)} Bs/$</span></p>
-          </div>
-          <div className="text-right hidden sm:block">
-            <p className="text-xs text-neutral-500 uppercase tracking-widest">Venta del Sistema</p>
-            <p className="text-xl font-bold text-neutral-300">${totalEsperado.toFixed(2)}</p>
-          </div>
+      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 md:p-8 flex justify-between items-center shadow-sm">
+        <div>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Cierre de Caja</h1>
+          <p className="text-neutral-400 text-sm mt-1">Tasa BCV: <span className="text-emerald-400 font-medium">{tasaCambio.toFixed(2)} Bs/$</span></p>
+        </div>
+        <div className="text-right hidden sm:block bg-black/40 px-6 py-3 rounded-xl border border-neutral-800">
+          <p className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold mb-1">Venta del Sistema</p>
+          <p className="text-xl font-black text-white">${totalEsperado.toFixed(2)}</p>
         </div>
       </div>
 
       {/* BODY */}
-      <div className="p-4 md:p-8 max-w-2xl mx-auto space-y-4">
+      <div className="space-y-4">
         {metodos.map((metodo) => {
           const Icon = metodo.icon;
           const isExpanded = expandedMetodo === metodo.id;
@@ -533,28 +531,26 @@ export default function NuevoCierreCaja() {
         )}
       </div>
 
-      {/* FOOTER FIJO (BOTTOM BAR) */}
-      <div className="fixed bottom-0 left-0 w-full bg-neutral-950 border-t border-neutral-900 p-4 md:p-6 z-30 pb-safe shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <div>
-            <p className="text-xs text-neutral-400 uppercase tracking-widest">Verificación Física</p>
-            <p className="text-3xl font-black text-emerald-400">${granTotalUSD.toFixed(2)}</p>
-            {totalEsperado > 0 && (
-              <p className={`text-xs mt-1 font-medium ${granTotalUSD >= totalEsperado ? 'text-emerald-500' : 'text-rose-500'}`}>
-                {granTotalUSD >= totalEsperado ? '+' : ''}{(granTotalUSD - totalEsperado).toFixed(2)}$ de diferencia
-              </p>
-            )}
-          </div>
-          <button 
-            disabled={saving || transacciones.length === 0}
-            onClick={handleGuardarCierre}
-            className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-neutral-800 disabled:text-neutral-500 text-white px-6 md:px-8 py-3 md:py-4 rounded-xl font-bold flex items-center gap-2 transition-colors shadow-lg shadow-indigo-500/20"
-          >
-            {saving ? <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" /> : <CheckCircle2 size={20} />}
-            <span className="hidden sm:inline">Guardar Cierre</span>
-            <span className="sm:hidden">Guardar</span>
-          </button>
+      {/* FOOTER CONTAINED */}
+      <div className="sticky bottom-6 bg-neutral-900/95 backdrop-blur-xl border border-neutral-800 p-4 md:p-6 z-30 shadow-2xl rounded-2xl mx-2 md:mx-0 flex items-center justify-between mt-8">
+        <div>
+          <p className="text-xs text-neutral-400 uppercase tracking-widest">Verificación Física</p>
+          <p className="text-3xl font-black text-emerald-400">${granTotalUSD.toFixed(2)}</p>
+          {totalEsperado > 0 && (
+            <p className={`text-xs mt-1 font-medium ${granTotalUSD >= totalEsperado ? 'text-emerald-500' : 'text-rose-500'}`}>
+              {granTotalUSD >= totalEsperado ? '+' : ''}{(granTotalUSD - totalEsperado).toFixed(2)}$ de diferencia
+            </p>
+          )}
         </div>
+        <button 
+          disabled={saving || transacciones.length === 0}
+          onClick={handleGuardarCierre}
+          className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-neutral-800 disabled:text-neutral-500 text-white px-6 md:px-8 py-3 md:py-4 rounded-xl font-bold flex items-center gap-2 transition-colors shadow-lg shadow-indigo-500/20"
+        >
+          {saving ? <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" /> : <CheckCircle2 size={20} />}
+          <span className="hidden sm:inline">Guardar Cierre</span>
+          <span className="sm:hidden">Guardar</span>
+        </button>
       </div>
     </div>
   );
