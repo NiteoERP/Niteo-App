@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useOptimistic, useTransition, useState } from 'react';
 import { createInsumo, deleteInsumo, ajustarInventarioBatch } from './actions';
@@ -131,25 +131,22 @@ export default function InsumosManager({ initialInsumos, empresaId }: { initialI
     printWindow.document.close();
   };
 
-  const handleExportCSV = () => {
-    const headers = ['Nombre', 'Unidad de Medida', 'Existencia Sistema', 'Existencia Real'];
-    const rows = optimisticInsumos.map(i => [
-      "\",
-      "\",
-      i.cantidad_actual,
-      ''
-    ]);
-    
-    const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', inventario_\.csv);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleExportExcel = () => {
+    import('xlsx').then(XLSX => {
+      const data = optimisticInsumos.map((i, idx) => ({
+        '#': idx + 1,
+        'Nombre del Insumo': i.nombre,
+        'Unidad de Medida': i.unidad_medida,
+        'Existencia en Sistema': i.cantidad_actual,
+        'Existencia Física Real (Anotar)': ''
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(data);
+      ws['!cols'] = [{wch: 5}, {wch: 40}, {wch: 20}, {wch: 25}, {wch: 30}];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Inventario Físico");
+      XLSX.writeFile(wb, `Inventario_Fisico_${new Date().toISOString().split('T')[0]}.xlsx`);
+    });
   };
 
   const openAdjustModal = () => {
@@ -200,7 +197,7 @@ export default function InsumosManager({ initialInsumos, empresaId }: { initialI
           <button onClick={handlePrint} className="bg-neutral-800 hover:bg-neutral-700 text-white border border-neutral-700 px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap">
             <FileText size={16} /> Imprimir (PDF)
           </button>
-          <button onClick={handleExportCSV} className="bg-neutral-800 hover:bg-neutral-700 text-white border border-neutral-700 px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap">
+          <button onClick={handleExportExcel} className="bg-neutral-800 hover:bg-neutral-700 text-white border border-neutral-700 px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap">
             <Download size={16} /> Exportar (Excel)
           </button>
           <button onClick={openAdjustModal} className="bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 border border-indigo-500/30 px-4 py-2 rounded-xl text-sm font-bold transition-colors flex items-center gap-2 whitespace-nowrap">
