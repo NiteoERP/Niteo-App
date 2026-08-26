@@ -17,6 +17,23 @@ export default function ComprasPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [alertMsg, setAlertMsg] = useState({ text: '', type: '' });
 
+  // --- ESTADO MODAL PROMPT ---
+  const [promptModal, setPromptModal] = useState({
+    isOpen: false,
+    title: '',
+    placeholder: '',
+    value: '',
+    onSubmit: (val: string) => {}
+  });
+
+  const openPrompt = (title: string, placeholder: string, onSubmit: (val: string) => void) => {
+    setPromptModal({ isOpen: true, title, placeholder, value: '', onSubmit });
+  };
+  
+  const closePrompt = () => {
+    setPromptModal(prev => ({...prev, isOpen: false}));
+  };
+
   // Listas desde BD
   const [proveedoresDb, setProveedoresDb] = useState<any[]>([]);
   const [productosDb, setProductosDb] = useState<any[]>([]);
@@ -287,6 +304,44 @@ export default function ComprasPage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12">
       
+      {/* PROMPT MODAL PROPIO */}
+      {promptModal.isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-6 border-b border-neutral-800 bg-neutral-900/50">
+              <h3 className="text-lg font-medium text-white">{promptModal.title}</h3>
+              <button onClick={closePrompt} className="text-neutral-500 hover:text-white transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6">
+              <input 
+                type="text" 
+                autoFocus
+                value={promptModal.value} 
+                onChange={e => setPromptModal(prev => ({...prev, value: e.target.value}))} 
+                onKeyDown={e => {
+                  if(e.key === 'Enter') {
+                    closePrompt();
+                    promptModal.onSubmit(promptModal.value);
+                  }
+                }}
+                placeholder={promptModal.placeholder} 
+                className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-1 focus:ring-indigo-500" 
+              />
+              <div className="flex gap-3 mt-8">
+                <button onClick={closePrompt} className="flex-1 bg-neutral-800 hover:bg-neutral-700 text-white font-medium py-2.5 rounded-xl transition-colors">
+                  Cancelar
+                </button>
+                <button onClick={() => { closePrompt(); promptModal.onSubmit(promptModal.value); }} className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-xl transition-colors">
+                  Aceptar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ALERTA FLOTANTE */}
       {alertMsg.text && (
         <div className={`fixed top-6 right-6 z-50 p-4 rounded-xl shadow-xl flex items-center gap-3 animate-in slide-in-from-right text-white font-medium ${alertMsg.type === 'error' ? 'bg-rose-600' : 'bg-emerald-600'}`}>
