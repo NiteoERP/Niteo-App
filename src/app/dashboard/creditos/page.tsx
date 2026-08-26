@@ -6,7 +6,7 @@ import { getSedes } from "@/actions/dashboard-actions";
 import { getClientesConDeuda, getDetalleDeudaCliente, registrarAbono, getMetodosPago } from "@/actions/creditos-actions";
 import { format, startOfYear } from "date-fns";
 import { useEmpresa } from "@/components/providers/EmpresaProvider";
-import { Calendar as CalendarIcon, Store, Wallet, Search, Check, FileText, ShoppingCart, User, Users, PlusCircle, X, Download } from "lucide-react";
+import { Calendar as CalendarIcon, Store, Wallet, Search, Check, FileText, ShoppingCart, User, Users, PlusCircle, X, Download, Hash } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -265,6 +265,7 @@ export default function CreditosPage() {
                         <div className="flex items-center gap-2 mb-1">
                           <FileText size={16} className="text-indigo-400" />
                           <h3 className="font-bold text-white">Factura {fac.numero_documento}</h3>
+                            {fac.numero_orden && (<span className="flex items-center gap-1 bg-indigo-500/20 text-indigo-300 text-xs px-2 py-0.5 rounded border border-indigo-500/30"><Hash size={12} /> {fac.numero_orden}</span>)}
                           <span className="bg-neutral-800 text-neutral-400 text-xs px-2 py-0.5 rounded">{fac.sede_nombre}</span>
                         </div>
                         <p className="text-xs text-neutral-500">{format(new Date(fac.fecha_venta), "dd/MM/yyyy HH:mm")}</p>

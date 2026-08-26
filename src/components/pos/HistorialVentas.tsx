@@ -150,7 +150,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                 <div className="flex items-center gap-4">
                   <div className="text-right">
                     <p className="text-sm font-bold text-emerald-400">{formatCurrency(venta.total)}</p>
-                    <p className="text-xs text-neutral-500">{venta.pagos?.length > 0 ? venta.pagos.map(p => p.tipo_pago).join(', ') : 'No registrado'}</p>
+                    <p className="text-xs text-neutral-500">{venta.pagos?.length > 0 ? venta.pagos.map(p => p.tipo_pago).join(', ') : (venta.esta_pagado ? 'No registrado' : 'A Crédito / Por pagar')}</p>
                   </div>
                   {expandedId === venta.id_factura.toString() ? <ChevronUp size={20} className="text-neutral-500" /> : <ChevronDown size={20} className="text-neutral-500" />}
                 </div>
