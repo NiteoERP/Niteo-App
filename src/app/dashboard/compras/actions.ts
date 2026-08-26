@@ -95,6 +95,7 @@ export async function getUltimasCompras() {
       .from('compras_puntuales')
       .select('id, fecha_registro, proveedor, detalles, monto_divisas, monto_bs')
       .eq('id_empresa', idEmpresa)
+      .not('detalles', 'ilike', '%is_insumos%')
       .order('fecha_registro', { ascending: false })
       .limit(5);
 
