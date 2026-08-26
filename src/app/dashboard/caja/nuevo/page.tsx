@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Trash2, Wallet, CreditCard, Smartphone, DollarSign, CheckCircle2, Building2, Hash, ChevronDown, ChevronUp, GripHorizontal, X } from 'lucide-react';
 import { getCierrePrevio, guardarCierre, getBancosUtilizados } from '@/actions/cierres-actions';
+import { getSedes } from '@/actions/sedes-actions';
 
 type Moneda = 'USD' | 'VES';
 
@@ -31,6 +32,8 @@ export default function NuevoCierreCaja() {
   
   // Datos del sistema
   const [tasaCambio, setTasaCambio] = useState(1);
+  const [sedes, setSedes] = useState<any[]>([]);
+  const [selectedSedeId, setSelectedSedeId] = useState<string>('');
   const [ventasTotales, setVentasTotales] = useState(0);
   const [gastosTotales, setGastosTotales] = useState(0);
   const [totalEsperado, setTotalEsperado] = useState(0);
@@ -57,26 +60,53 @@ export default function NuevoCierreCaja() {
   const [newMetodoMoneda, setNewMetodoMoneda] = useState<Moneda>('VES');
 
   useEffect(() => {
-    async function loadData() {
+    async function loadInitial() {
       try {
+        const sedesData = await getSedes();
+        setSedes(sedesData);
+        
         const today = new Date().toISOString().split('T')[0];
+        const initialSedeId = sedesData.length > 0 ? sedesData[0].id : undefined;
+        
         const [cierreRes, bancosRes] = await Promise.all([
-          getCierrePrevio(today),
+          getCierrePrevio(today, initialSedeId),
           getBancosUtilizados()
         ]);
+        
+        if (cierreRes.targetSedeId) setSelectedSedeId(cierreRes.targetSedeId);
+        else if (initialSedeId) setSelectedSedeId(initialSedeId);
+
         setTasaCambio(cierreRes.tasaCambio || 36.5);
         setVentasTotales(cierreRes.ventasTotales || 0);
         setGastosTotales(cierreRes.gastosTotales || 0);
         setTotalEsperado(cierreRes.totalEsperado || 0);
         setBancosSugeridos(bancosRes);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error cargando datos de cierre', err);
+        alert(err.message || 'Error cargando datos de cierre');
       } finally {
         setLoading(false);
       }
     }
-    loadData();
+    loadInitial();
   }, []);
+
+  const handleSedeChange = async (newSedeId: string) => {
+    setSelectedSedeId(newSedeId);
+    setLoading(true);
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const cierreRes = await getCierrePrevio(today, newSedeId);
+      setTasaCambio(cierreRes.tasaCambio || 36.5);
+      setVentasTotales(cierreRes.ventasTotales || 0);
+      setGastosTotales(cierreRes.gastosTotales || 0);
+      setTotalEsperado(cierreRes.totalEsperado || 0);
+    } catch (err: any) {
+      alert(err.message || 'Error cambiando de sede');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCreateMetodo = () => {
     if (!newMetodoName.trim()) return;
@@ -193,6 +223,7 @@ export default function NuevoCierreCaja() {
       const diferencia_total = totalRealUSD - totalEsperado;
 
       const cierreData = {
+        sede_id: selectedSedeId,
         fecha_cierre: hoy,
         tasa_cambio: tasaCambio,
         sistema_ventas_brutas: ventasTotales,
@@ -210,7 +241,7 @@ export default function NuevoCierreCaja() {
         alert(res.error);
       } else {
         alert('Cierre guardado correctamente!');
-        router.push('/dashboard');
+        router.push('/dashboard/caja');
       }
     } catch (err) {
       console.error(err);
@@ -232,7 +263,22 @@ export default function NuevoCierreCaja() {
       <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 md:p-8 flex justify-between items-center shadow-sm">
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Cierre de Caja</h1>
-          <p className="text-neutral-400 text-sm mt-1">Tasa BCV: <span className="text-emerald-400 font-medium">{tasaCambio.toFixed(2)} Bs/$</span></p>
+          <p className="text-neutral-400 text-sm mt-1 mb-4">Tasa BCV: <span className="text-emerald-400 font-medium">{tasaCambio.toFixed(2)} Bs/$</span></p>
+          
+          {sedes.length > 1 && (
+            <div className="flex items-center gap-3 bg-black/30 border border-neutral-800 p-2 rounded-xl">
+              <label className="text-xs uppercase font-bold text-neutral-500 ml-2">Sede:</label>
+              <select 
+                value={selectedSedeId} 
+                onChange={(e) => handleSedeChange(e.target.value)}
+                className="bg-neutral-800 text-white text-sm font-medium rounded-lg px-3 py-1.5 outline-none focus:border-indigo-500 cursor-pointer"
+              >
+                {sedes.map(s => (
+                  <option key={s.id} value={s.id}>{s.nombre_sede}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
         <div className="text-right hidden sm:block bg-black/40 px-6 py-3 rounded-xl border border-neutral-800">
           <p className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold mb-1">Venta del Sistema</p>

@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache';
 // ============================================================================
 // 1. OBTENER DATOS PREVIOS DEL SISTEMA PARA EL CIERRE
 // ============================================================================
-export async function getCierrePrevio(fechaStr: string) {
+export async function getCierrePrevio(fechaStr: string, requestedSedeId?: string) {
   const supabase = await createClient();
 
   // Obtener la sesión y el perfil para saber la sede
@@ -20,6 +20,9 @@ export async function getCierrePrevio(fechaStr: string) {
     .single();
 
   if (!profile) throw new Error("Perfil no encontrado");
+
+  const targetSedeId = requestedSedeId || profile.sede_id;
+  if (!targetSedeId) throw new Error("Debe seleccionar una sede para consultar el cierre");
 
   // 1. Consultar la Tasa de Cambio Automática (la más reciente)
   let tasaCambio = 36.50; // Valor de fallback
@@ -38,7 +41,7 @@ export async function getCierrePrevio(fechaStr: string) {
   const { data: ventasData } = await supabase
     .from('ventas_facturas')
     .select('total')
-    .eq('id_sede', profile.sede_id)
+    .eq('sede_id', targetSedeId)
     .gte('fecha_venta', `${fechaStr}T00:00:00.000Z`)
     .lte('fecha_venta', `${fechaStr}T23:59:59.999Z`);
   
@@ -48,7 +51,7 @@ export async function getCierrePrevio(fechaStr: string) {
   const { data: gastosData } = await supabase
     .from('gastos_sede')
     .select('monto')
-    .eq('id_sede', profile.sede_id)
+    .eq('sede_id', targetSedeId)
     .gte('fecha_gasto', `${fechaStr}T00:00:00.000Z`)
     .lte('fecha_gasto', `${fechaStr}T23:59:59.999Z`);
   
@@ -61,7 +64,8 @@ export async function getCierrePrevio(fechaStr: string) {
     tasaCambio,
     ventasTotales,
     gastosTotales,
-    totalEsperado
+    totalEsperado,
+    targetSedeId
   };
 }
 
@@ -82,13 +86,16 @@ export async function guardarCierre(cierreData: any, transacciones: any[]) {
 
   if (!profile) return { error: "Perfil no encontrado" };
 
+  const finalSedeId = cierreData.sede_id || profile.sede_id;
+  if (!finalSedeId) return { error: "No se especificó la sede para el cierre." };
+
   // 1. Insertar en la Tabla Maestra (cierres_caja)
   const { data: nuevoCierre, error: errorCierre } = await supabase
     .from('cierres_caja')
     .insert({
-      id_empresa: profile.empresa_id,
-      id_sede: profile.sede_id,
-      id_usuario: user.id,
+      empresa_id: profile.empresa_id,
+      sede_id: finalSedeId,
+      usuario_id: user.id,
       fecha_cierre: cierreData.fecha_cierre,
       tasa_cambio: cierreData.tasa_cambio,
       sistema_ventas_brutas: cierreData.sistema_ventas_brutas,
@@ -115,7 +122,7 @@ export async function guardarCierre(cierreData: any, transacciones: any[]) {
   // 2. Insertar las Transacciones Bancarias (Bulk Insert) si hay alguna
   if (transacciones.length > 0) {
     const transaccionesConId = transacciones.map(t => ({
-      id_cierre: nuevoCierre.id,
+      cierre_id: nuevoCierre.id,
       metodo: t.metodo,
       banco: t.banco,
       referencia: t.referencia,
@@ -154,7 +161,7 @@ export async function getBancosUtilizados() {
     .from('cierres_transacciones')
     .select('banco')
     .not('banco', 'is', null)
-    .eq('id_empresa', profile.empresa_id)
+    .eq('empresa_id', profile.empresa_id)
     .limit(100);
     
   if (error || !data) return ['Banesco', 'Mercantil', 'Provincial', 'Venezuela', 'BNC'];
@@ -162,4 +169,36 @@ export async function getBancosUtilizados() {
   const bancos = Array.from(new Set(data.map(d => d.banco))).filter(Boolean);
   if (bancos.length === 0) return ['Banesco', 'Mercantil', 'Provincial', 'Venezuela', 'BNC'];
   return bancos;
+}
+
+// ============================================================================
+// 3. OBTENER HISTORIAL DE CIERRES
+// ============================================================================
+export async function getHistorialCierres(sedeId?: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data: profile } = await supabase.from('perfiles').select('empresa_id, sede_id, rol').eq('id', user.id).single();
+  if (!profile) return [];
+
+  let query = supabase
+    .from('cierres_caja')
+    .select('*, sedes(nombre_sede), usuarios(nombre)')
+    .eq('empresa_id', profile.empresa_id)
+    .order('fecha_cierre', { ascending: false });
+
+  // Si no es MASTER, forzar su sede
+  if (profile.rol !== 'MASTER') {
+    query = query.eq('sede_id', profile.sede_id);
+  } else if (sedeId && sedeId !== 'ALL') {
+    query = query.eq('sede_id', sedeId);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.error(error);
+    return [];
+  }
+  return data || [];
 }
