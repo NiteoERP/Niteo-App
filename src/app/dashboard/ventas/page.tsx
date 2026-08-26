@@ -68,7 +68,9 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
             <Store className="text-indigo-500" size={24} />
@@ -86,6 +88,8 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
         )}
 
 
+        
+        </div>
         {/* Tabs Navigation */}
         <div className="flex overflow-x-auto bg-neutral-900 border border-neutral-800 rounded-lg p-1 hide-scrollbar">
           <a
