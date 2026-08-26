@@ -134,7 +134,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                   <p className="text-xs text-neutral-500 mb-1">Cliente / Mesa</p>
                   <div className="flex items-center gap-1.5 text-neutral-300 text-sm font-medium">
                     <Users size={14} className="text-neutral-500" />
-                    {venta.cliente_nombre || 'Consumidor Final'}
+                    {venta.numero_orden ? venta.numero_orden : (venta.cliente_nombre && venta.cliente_nombre !== 'Unknown' ? venta.cliente_nombre : 'Consumidor Final')}
                   </div>
                   {/* NOTA: Aqu se mostrara la Mesa si existe un campo especfico en el futuro */}
                 </div>
