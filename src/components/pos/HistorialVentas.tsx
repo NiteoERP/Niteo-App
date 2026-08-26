@@ -72,9 +72,9 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
               value={fechaFiltro}
               onChange={(e) => setFechaFiltro(e.target.value)}
               title="Seleccionar fecha"
-              className="relative bg-black/40 border border-neutral-800 text-neutral-300 text-sm rounded-lg px-3 py-2 focus:ring-1 focus:ring-indigo-500 outline-none cursor-pointer hover:bg-black/60 w-[150px] [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:top-0 [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+              className="relative bg-neutral-900 border border-neutral-800 text-white text-sm rounded-lg pl-3 pr-10 py-2.5 focus:ring-1 focus:ring-indigo-500 outline-none cursor-pointer hover:bg-neutral-800 [color-scheme:dark] w-[150px] [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:top-0 [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer transition-colors"
             />
-            <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" size={16} />
+            <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-400 pointer-events-none" size={16} />
           </div>
         </div>
       </div>
