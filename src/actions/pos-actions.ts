@@ -7,6 +7,7 @@ export interface VentaPOS {
   id_factura: number;
   id_pos: number;
   numero_documento: string;
+    numero_orden?: string;
   fecha_venta: string;
   total: number;
   descuento: number;
@@ -66,6 +67,7 @@ export async function getVentasRecientes(sedeId: string): Promise<VentaPOS[]> {
     id_factura: v.id,
     id_pos: v.id_pos,
     numero_documento: v.numero_documento,
+      numero_orden: v.numero_orden,
     fecha_venta: v.fecha_venta,
     total: v.total,
     descuento: v.descuento,
@@ -148,6 +150,7 @@ export async function getHistorialVentasCompleto(sedeId: string, fechaFiltro?: s
     id_factura: v.id,
     id_pos: v.id_pos,
     numero_documento: v.numero_documento,
+      numero_orden: v.numero_orden,
     fecha_venta: v.fecha_venta,
     total: v.total,
     descuento: v.descuento,
