@@ -306,99 +306,100 @@ export default function NuevoCierreCaja() {
                     </div>
                   )}
 
-                  {/* TRANSACTIONS */}
-                  {txs.map((tx, idx) => (
-                    <div key={tx.id} className="p-4 bg-neutral-950 border border-neutral-800 rounded-xl relative group animate-in slide-in-from-top-2 duration-300">
-                      <div className="absolute -left-3 -top-3 w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center text-xs font-bold shadow-lg">
-                        {idx + 1}
-                      </div>
-                      <button 
-                        onClick={() => removeTransaccion(tx.id)}
-                        className="absolute -right-3 -top-3 w-8 h-8 bg-rose-500/20 text-rose-500 rounded-full flex items-center justify-center border border-rose-500/30 hover:bg-rose-500 hover:text-white transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {/* MONEDA Y MONTO */}
-                        <div className="space-y-2">
-                          <label className="block text-xs font-medium text-neutral-400 uppercase tracking-wider">Monto y Moneda</label>
-                          <div className="flex rounded-xl overflow-hidden border border-neutral-800 focus-within:border-indigo-500 transition-colors bg-neutral-900">
-                            <select 
-                              value={tx.moneda}
-                              onChange={(e) => updateTransaccion(tx.id, 'moneda', e.target.value as any)}
-                              className="bg-neutral-800 text-white font-medium px-4 py-3 outline-none border-r border-neutral-800 cursor-pointer"
-                            >
-                              <option value="VES">BS</option>
-                              <option value="USD">USD</option>
-                            </select>
-                            <input 
-                              type="text" 
-                              inputMode="decimal"
-                              placeholder="0.00"
-                              value={tx.monto}
-                              onChange={(e) => updateTransaccion(tx.id, 'monto', e.target.value)}
-                              className="flex-1 bg-transparent px-4 py-3 text-white font-bold text-lg outline-none placeholder:text-neutral-600 w-full min-w-0"
-                            />
-                          </div>
-                          {tx.moneda === 'VES' && tx.monto && (
-                            <p className="text-xs text-neutral-500 pl-1">≈ ${(parseFloat(tx.monto) / tasaCambio).toFixed(2)} USD</p>
-                          )}
-                        </div>
-
-                        {/* BANCO */}
-                        <div className="space-y-2 relative">
-                          <label className="block text-xs font-medium text-neutral-400 uppercase tracking-wider">Banco Emisor / Receptor</label>
-                          <div className="relative">
-                            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" size={16} />
-                            <input 
-                              type="text" 
-                              placeholder={metodo.id === 'Efectivo' ? 'N/A' : 'Ej: Banesco, Mercantil...'}
-                              value={tx.banco}
-                              onChange={(e) => updateTransaccion(tx.id, 'banco', e.target.value)}
-                              onFocus={() => setMostrarSugerencias(tx.id)}
-                              onBlur={() => setTimeout(() => setMostrarSugerencias(null), 200)}
-                              className="w-full bg-neutral-900 border border-neutral-800 focus:border-indigo-500 rounded-xl py-3 pl-10 pr-4 text-white outline-none transition-colors"
-                            />
-                          </div>
-                          {/* Autocomplete Dropdown */}
-                          {mostrarSugerencias === tx.id && (
-                            <div className="absolute z-10 w-full mt-1 bg-neutral-800 border border-neutral-700 rounded-xl shadow-xl overflow-hidden max-h-40 overflow-y-auto custom-scrollbar">
-                              {bancosSugeridos.filter(b => b.toLowerCase().includes(tx.banco.toLowerCase())).length > 0 ? (
-                                bancosSugeridos.filter(b => b.toLowerCase().includes(tx.banco.toLowerCase())).map(b => (
-                                  <button 
-                                    key={b}
-                                    onMouseDown={(e) => e.preventDefault()} 
-                                    onClick={() => selectBanco(tx.id, b)}
-                                    className="w-full text-left px-4 py-2 hover:bg-indigo-600 text-white text-sm transition-colors"
-                                  >
-                                    {b}
-                                  </button>
-                                ))
-                              ) : (
-                                <div className="px-4 py-2 text-sm text-neutral-400">Presiona enter para crear "{tx.banco}"</div>
+                  {/* TRANSACTIONS TABLE FORMAT */}
+                  <div className="overflow-x-auto overflow-y-visible mt-2">
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="text-neutral-500 text-xs font-bold uppercase tracking-wider border-b border-neutral-800">
+                          <th className="pb-3 w-8 text-center">#</th>
+                          <th className="pb-3 px-2 min-w-[120px]">Monto</th>
+                          <th className="pb-3 px-2 min-w-[140px]">Referencia</th>
+                          <th className="pb-3 px-2 min-w-[140px]">Banco</th>
+                          <th className="pb-3 px-2 w-10 text-center"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-neutral-800/50">
+                        {txs.map((tx, idx) => (
+                          <tr key={tx.id} className="group hover:bg-neutral-900/30 transition-colors animate-in slide-in-from-top-1 duration-200">
+                            <td className="py-2 text-center text-xs text-neutral-500 font-medium">{idx + 1}</td>
+                            
+                            <td className="py-2 px-2 align-top pt-3">
+                              <div className="flex bg-neutral-900 border border-neutral-800 rounded-lg focus-within:border-indigo-500 overflow-hidden h-9">
+                                <select 
+                                  value={tx.moneda}
+                                  onChange={(e) => updateTransaccion(tx.id, 'moneda', e.target.value as any)}
+                                  className="bg-neutral-800 text-white text-xs font-bold px-2 outline-none border-r border-neutral-800 cursor-pointer"
+                                >
+                                  <option value="VES">BS</option>
+                                  <option value="USD">$</option>
+                                </select>
+                                <input 
+                                  type="text" 
+                                  inputMode="decimal"
+                                  placeholder="0.00"
+                                  value={tx.monto}
+                                  onChange={(e) => updateTransaccion(tx.id, 'monto', e.target.value)}
+                                  className="flex-1 bg-transparent px-2 text-white text-sm font-medium outline-none placeholder:text-neutral-600 w-full min-w-0"
+                                />
+                              </div>
+                              {tx.moneda === 'VES' && tx.monto && (
+                                <p className="text-[10px] text-neutral-500 mt-1 pl-1">≈ ${(parseFloat(tx.monto) / tasaCambio).toFixed(2)} USD</p>
                               )}
-                            </div>
-                          )}
-                        </div>
+                            </td>
 
-                        {/* REFERENCIA */}
-                        <div className="space-y-2 sm:col-span-2">
-                          <label className="block text-xs font-medium text-neutral-400 uppercase tracking-wider">N° Referencia o Concepto</label>
-                          <div className="relative">
-                            <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" size={16} />
-                            <input 
-                              type="text" 
-                              placeholder="Últimos dígitos o concepto"
-                              value={tx.referencia}
-                              onChange={(e) => updateTransaccion(tx.id, 'referencia', e.target.value)}
-                              className="w-full bg-neutral-900 border border-neutral-800 focus:border-indigo-500 rounded-xl py-3 pl-10 pr-4 text-white outline-none transition-colors"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                            <td className="py-2 px-2 align-top pt-3">
+                              <input 
+                                type="text" 
+                                placeholder="Ej: 1234"
+                                value={tx.referencia}
+                                onChange={(e) => updateTransaccion(tx.id, 'referencia', e.target.value)}
+                                className="w-full bg-neutral-900 border border-neutral-800 focus:border-indigo-500 rounded-lg h-9 px-3 text-white text-sm outline-none transition-colors"
+                              />
+                            </td>
+
+                            <td className="py-2 px-2 relative align-top pt-3">
+                              <input 
+                                type="text" 
+                                placeholder={metodo.id === 'Efectivo' ? 'N/A' : 'Ej: VZLA'}
+                                value={tx.banco}
+                                onChange={(e) => updateTransaccion(tx.id, 'banco', e.target.value)}
+                                onFocus={() => setMostrarSugerencias(tx.id)}
+                                onBlur={() => setTimeout(() => setMostrarSugerencias(null), 200)}
+                                className="w-full bg-neutral-900 border border-neutral-800 focus:border-indigo-500 rounded-lg h-9 px-3 text-white text-sm outline-none transition-colors"
+                              />
+                              {mostrarSugerencias === tx.id && (
+                                <div className="absolute z-[100] w-[calc(100%-1rem)] top-[46px] mt-1 bg-neutral-800 border border-neutral-700 rounded-lg shadow-2xl overflow-hidden max-h-40 overflow-y-auto custom-scrollbar">
+                                  {bancosSugeridos.filter(b => b.toLowerCase().includes(tx.banco.toLowerCase())).length > 0 ? (
+                                    bancosSugeridos.filter(b => b.toLowerCase().includes(tx.banco.toLowerCase())).map(b => (
+                                      <button 
+                                        key={b}
+                                        onMouseDown={(e) => e.preventDefault()} 
+                                        onClick={() => selectBanco(tx.id, b)}
+                                        className="w-full text-left px-3 py-2 hover:bg-indigo-600 text-white text-xs transition-colors"
+                                      >
+                                        {b}
+                                      </button>
+                                    ))
+                                  ) : (
+                                    <div className="px-3 py-2 text-xs text-neutral-400">Presiona enter para crear</div>
+                                  )}
+                                </div>
+                              )}
+                            </td>
+
+                            <td className="py-2 px-2 text-center align-top pt-3">
+                              <button 
+                                onClick={() => removeTransaccion(tx.id)}
+                                className="w-8 h-8 bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white rounded-lg flex items-center justify-center border border-rose-500/20 transition-colors mx-auto opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
 
                   <button 
                     onClick={() => handleAddTransaccion(metodo.id, metodo.defaultMoneda)}
