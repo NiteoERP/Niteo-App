@@ -211,12 +211,9 @@ export default function ProveedoresPage() {
           </h1>
           <p className="text-neutral-400 text-sm mt-1">Controla las deudas de insumos, servicios y alquileres.</p>
         </div>
-        <button
-          onClick={() => setIsCreatingFac(true)}
-          className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-bold text-sm transition-colors shadow-lg shadow-emerald-900/20 flex items-center gap-2"
-        >
-          <PlusCircle size={18} /> Registrar Deuda / Gasto
-        </button>
+        <a href="/dashboard/compras?tab=factura" className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-bold text-sm transition-colors shadow-lg shadow-emerald-900/20 flex items-center gap-2">
+            <PlusCircle size={18} /> Registrar Factura de Proveedor
+          </a>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -462,70 +459,7 @@ export default function ProveedoresPage() {
         </div>
       )}
 
-      {isCreatingFac && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex justify-center items-center p-4">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl relative">
-            <button onClick={() => setIsCreatingFac(false)} className="absolute top-4 right-4 text-neutral-500 hover:text-white">
-              <X size={20} />
-            </button>
-            <h2 className="text-xl font-black text-white mb-6 flex items-center gap-2"><PlusCircle className="text-emerald-400" /> Registrar Deuda / Gasto</h2>
-            <div className="mb-6 bg-indigo-900/20 border border-indigo-500/30 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in">
-              <div>
-                <p className="text-sm text-indigo-300 font-medium">¿El proveedor trajo insumos?</p>
-                <p className="text-xs text-indigo-400/80 mt-1">Registra los productos para que ingresen al inventario automáticamente.</p>
-              </div>
-              <a 
-                href={`/dashboard/compras?tab=factura${newFacProveedor && newFacProveedor !== 'NEW' ? '&prov=' + newFacProveedor : ''}`} 
-                className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap transition-colors shadow-lg shadow-indigo-900/20"
-              >
-                <PlusCircle size={16} />
-                Cargar Factura Detallada
-              </a>
-            </div>
-            <form onSubmit={handleCreateFactura} className="space-y-4">
-              <div>
-                <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Proveedor</label>
-                <select value={newFacProveedor} onChange={(e) => setNewFacProveedor(e.target.value)} required className="w-full bg-neutral-950 border border-neutral-800 text-white py-2.5 px-3 rounded-lg outline-none">
-                  <option value="">Selecciona un proveedor</option>
-                  <option value="NEW">+ CREAR NUEVO PROVEEDOR...</option>
-                  {todosProveedores.map(p => (
-                    <option key={p.id} value={p.id}>{p.nombre_comercial}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Sede Destino</label>
-                  <select value={newFacSede} onChange={(e) => setNewFacSede(e.target.value)} required className="w-full bg-neutral-950 border border-neutral-800 text-white py-2.5 px-3 rounded-lg outline-none">
-                    {sedes.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Total Deuda ($)</label>
-                  <input type="number" step="0.01" value={newFacTotal} onChange={(e) => setNewFacTotal(e.target.value)} required className="w-full bg-neutral-950 border border-emerald-500/30 text-emerald-400 font-bold py-2.5 px-3 rounded-lg outline-none" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Nº Factura (Opcional)</label>
-                  <input type="text" value={newFacNumero} onChange={(e) => setNewFacNumero(e.target.value)} className="w-full bg-neutral-950 border border-neutral-800 text-white py-2.5 px-3 rounded-lg outline-none" />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Fecha Emisión</label>
-                  <input type="date" value={newFacFecha} onChange={(e) => setNewFacFecha(e.target.value)} required className="w-full bg-neutral-950 border border-neutral-800 text-white py-2.5 px-3 rounded-lg outline-none" />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Concepto / Detalle (Opcional)</label>
-                <input type="text" value={newFacConcepto} onChange={(e) => setNewFacConcepto(e.target.value)} placeholder="Ej. Alquiler Agosto 2026" className="w-full bg-neutral-950 border border-neutral-800 text-white py-2.5 px-3 rounded-lg outline-none" />
-              </div>
-              <button type="submit" disabled={isSubmitCreating} className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold py-3.5 rounded-xl shadow-lg mt-6 transition-colors">
-                {isSubmitCreating ? "Registrando..." : "Guardar Deuda"}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
+      
     </div>
   );
 }
