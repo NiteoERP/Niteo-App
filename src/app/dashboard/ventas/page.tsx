@@ -6,6 +6,8 @@ import LiveSalesFeed from '@/components/pos/LiveSalesFeed';
 import CuentasAbiertasWidget from '@/components/pos/CuentasAbiertasWidget';
 import CatalogView from '@/components/pos/CatalogView';
 import HistorialVentas from '@/components/pos/HistorialVentas';
+import SedeSelector from '@/components/inventario/SedeSelector';
+import { cookies } from 'next/headers';
 import { Store, PackageSearch, Users, History } from 'lucide-react';
 import { Metadata } from 'next';
 
@@ -27,7 +29,7 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
   // Get user profile to know their sede and empresa
   const { data: perfil } = await supabase
     .from('perfiles')
-    .select('empresa_id, sede_id')
+    .select('empresa_id, sede_id, rol')
     .eq('id', user.id)
     .single();
 
@@ -35,12 +37,31 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
     return <div>Error: Perfil no encontrado</div>;
   }
 
+  // Fetch sedes
+  const { data: sedes } = await supabase
+    .from('sedes')
+    .select('id, nombre_sede')
+    .eq('empresa_id', perfil.empresa_id)
+    .order('nombre_sede');
+
+  const cookieStore = await cookies();
+  const activeSedeCookie = cookieStore.get('active_sede')?.value;
+  
+  let activeSedeId = perfil.sede_id;
+  if (perfil.rol === 'MASTER' && activeSedeCookie) {
+    activeSedeId = activeSedeCookie;
+  }
+  if (!activeSedeId && sedes && sedes.length > 0) {
+    activeSedeId = sedes[0].id;
+  }
+
+
   // Fetch initial data based on tab
   let initialSales: VentaPOS[] = [];
   let catalog: ProductoPOS[] = [];
 
   if (tab === 'ventas') {
-    initialSales = await getVentasRecientes(perfil.sede_id);
+    initialSales = await getVentasRecientes(activeSedeId);
   } else if (tab === 'catalogo') {
     catalog = await getProductosCatalogo(perfil.empresa_id);
   }
@@ -56,7 +77,14 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
           <p className="text-neutral-400 text-xs md:text-sm mt-1">
             Monitoreo en tiempo real de tu caja local Aronium
           </p>
+
         </div>
+        {perfil?.rol === "MASTER" && activeSedeId && (
+          <div className="mt-4 md:mt-0">
+            <SedeSelector sedes={sedes || []} activeSedeId={activeSedeId} />
+          </div>
+        )}
+
 
         {/* Tabs Navigation */}
         <div className="flex overflow-x-auto bg-neutral-900 border border-neutral-800 rounded-lg p-1 hide-scrollbar">
@@ -109,16 +137,16 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
 
       {/* Tab Content */}
       {tab === 'ventas' && (
-        <LiveSalesFeed initialSales={initialSales} sedeId={perfil.sede_id} />
+        <LiveSalesFeed initialSales={initialSales} sedeId={activeSedeId} />
       )}
       {tab === 'cuentas' && (
-        <CuentasAbiertasWidget sedeId={perfil.sede_id} />
+        <CuentasAbiertasWidget sedeId={activeSedeId} />
       )}
       {tab === 'catalogo' && (
         <CatalogView catalog={catalog} />
       )}
       {tab === 'historial' && (
-        <HistorialVentas sedeId={perfil.sede_id} />
+        <HistorialVentas sedeId={activeSedeId} />
       )}
     </div>
   );
