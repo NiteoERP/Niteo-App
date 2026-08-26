@@ -9,6 +9,7 @@ export default function SedeSelector({ sedes, activeSedeId }: { sedes: any[], ac
   const searchParams = useSearchParams();
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    document.cookie = `active_sede=${e.target.value}; path=/; max-age=31536000;`;
     const params = new URLSearchParams(searchParams.toString());
     if (e.target.value === 'ALL') {
       params.delete('sede');

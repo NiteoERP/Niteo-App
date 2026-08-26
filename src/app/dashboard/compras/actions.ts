@@ -1,9 +1,10 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
+import { cookies } from 'next/headers';
 
 /**
- * FunciÃƒÂ³n interna de seguridad para extraer el contexto
+ * Función interna de seguridad para extraer el contexto
  * y forzar arquitectura Multi-inquilino en el servidor.
  */
 async function getAuthContext() {
@@ -18,6 +19,14 @@ async function getAuthContext() {
     .single();
 
   if (perfErr || !perfil) throw new Error('Perfil de usuario no encontrado');
+
+  const cookieStore = await cookies();
+  const activeSedeCookie = cookieStore.get('active_sede')?.value;
+
+  let idSede = perfil.sede_id;
+  if (perfil.rol === 'MASTER' && activeSedeCookie) {
+    idSede = activeSedeCookie;
+  }
 
   const userRole = user.app_metadata?.user_role || perfil.rol || 'CAJERO';
   const userName = user.user_metadata?.full_name || perfil.nombre_completo || user.email;

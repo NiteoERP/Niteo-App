@@ -1,6 +1,7 @@
 'use server'
 import { getTasaBcvAction } from './config-actions';
-import { createClient } from '@/utils/supabase/server'; 
+import { createClient } from '@/utils/supabase/server';
+import { cookies } from 'next/headers'; 
 import { revalidatePath } from 'next/cache';  
 
 export async function registrarCompra(formData: FormData) {   
@@ -12,11 +13,16 @@ export async function registrarCompra(formData: FormData) {
     return { error: 'Debes iniciar sesión para registrar compras.' };   
   }    
   // Obtener perfil para sacar empresa_id y sede_id   
-  const { data: profile } = await supabase.from('perfiles').select('empresa_id, sede_id').eq('id', user.id).single();
+  const { data: profile } = await supabase.from('perfiles').select('empresa_id, sede_id, rol').eq('id', user.id).single();
   if (!profile) return { error: 'No se pudo obtener el perfil del usuario.' };
 
-  let activeSedeId = profile.sede_id;
-  if (!activeSedeId) {
+  const cookieStore = await cookies();
+    const activeSedeCookie = cookieStore.get('active_sede')?.value;
+    let activeSedeId = profile.sede_id;
+    if (profile.rol === 'MASTER' && activeSedeCookie) {
+      activeSedeId = activeSedeCookie;
+    }
+    if (!activeSedeId) {
     const { data: sedes } = await supabase.from('sedes').select('id').eq('empresa_id', profile.empresa_id).limit(1).single();
     if (sedes) activeSedeId = sedes.id;
     else return { error: 'Crea una sede primero.' };
@@ -83,11 +89,16 @@ export async function getInsumos() {
   const supabase = await createClient();      
   const { data: { user } } = await supabase.auth.getUser();   
   if (!user) return [];    
-  const { data: profile } = await supabase.from('perfiles').select('empresa_id, sede_id').eq('id', user.id).single();
+  const { data: profile } = await supabase.from('perfiles').select('empresa_id, sede_id, rol').eq('id', user.id).single();
   if (!profile) return [];
 
-  let activeSedeId = profile.sede_id;
-  if (!activeSedeId) {
+  const cookieStore = await cookies();
+    const activeSedeCookie = cookieStore.get('active_sede')?.value;
+    let activeSedeId = profile.sede_id;
+    if (profile.rol === 'MASTER' && activeSedeCookie) {
+      activeSedeId = activeSedeCookie;
+    }
+    if (!activeSedeId) {
     const { data: sedes } = await supabase.from('sedes').select('id').eq('empresa_id', profile.empresa_id).limit(1).single();
     if (sedes) activeSedeId = sedes.id;
   }    
@@ -126,11 +137,16 @@ export async function registrarFacturaInsumos(factura: {
   const supabase = await createClient();   
   const { data: { user } } = await supabase.auth.getUser();   
   if (!user) return { error: 'No autorizado.' };    
-  const { data: profile } = await supabase.from('perfiles').select('empresa_id, sede_id').eq('id', user.id).single();
+  const { data: profile } = await supabase.from('perfiles').select('empresa_id, sede_id, rol').eq('id', user.id).single();
   if (!profile) return { error: 'Perfil no encontrado.' };
 
-  let activeSedeId = profile.sede_id;
-  if (!activeSedeId) {
+  const cookieStore = await cookies();
+    const activeSedeCookie = cookieStore.get('active_sede')?.value;
+    let activeSedeId = profile.sede_id;
+    if (profile.rol === 'MASTER' && activeSedeCookie) {
+      activeSedeId = activeSedeCookie;
+    }
+    if (!activeSedeId) {
     const { data: sedes } = await supabase.from('sedes').select('id').eq('empresa_id', profile.empresa_id).limit(1).single();
     if (sedes) activeSedeId = sedes.id;
     else return { error: 'Crea una sede primero.' };
@@ -212,11 +228,16 @@ export async function editarFacturaInsumos(
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: 'No autorizado.' };
-  const { data: profile } = await supabase.from('perfiles').select('empresa_id, sede_id').eq('id', user.id).single();
+  const { data: profile } = await supabase.from('perfiles').select('empresa_id, sede_id, rol').eq('id', user.id).single();
   if (!profile) return { error: 'Perfil no encontrado.' };
 
-  let activeSedeId = profile.sede_id;
-  if (!activeSedeId) {
+  const cookieStore = await cookies();
+    const activeSedeCookie = cookieStore.get('active_sede')?.value;
+    let activeSedeId = profile.sede_id;
+    if (profile.rol === 'MASTER' && activeSedeCookie) {
+      activeSedeId = activeSedeCookie;
+    }
+    if (!activeSedeId) {
     const { data: sedes } = await supabase.from('sedes').select('id').eq('empresa_id', profile.empresa_id).limit(1).single();
     if (sedes) activeSedeId = sedes.id;
   }
