@@ -13,6 +13,18 @@ export default function ComprasPage() {
   const metodosPago = empresa?.metodos_pago && empresa.metodos_pago.length > 0 ? empresa.metodos_pago : defaultPaymentMethods;
 
   const [activeTab, setActiveTab] = useState<'insumos' | 'puntual' | 'factura' | 'historial'>('insumos');
+  
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    if (tab === 'factura' || tab === 'insumos' || tab === 'puntual' || tab === 'historial') {
+      setActiveTab(tab);
+    }
+    const prov = params.get('prov');
+    if (prov) {
+      setFactura(f => ({...f, proveedor: prov}));
+    }
+  }, []);
   const [isLoadingDatos, setIsLoadingDatos] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [alertMsg, setAlertMsg] = useState({ text: '', type: '' });

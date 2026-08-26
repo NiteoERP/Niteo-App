@@ -469,12 +469,17 @@ export default function ProveedoresPage() {
               <X size={20} />
             </button>
             <h2 className="text-xl font-black text-white mb-6 flex items-center gap-2"><PlusCircle className="text-emerald-400" /> Registrar Deuda / Gasto</h2>
-            <div className="mb-5 bg-indigo-900/20 border border-indigo-500/30 p-4 rounded-xl flex flex-col gap-2 animate-in fade-in">
-              <p className="text-sm text-indigo-300 leading-relaxed">
-                <strong>¿El proveedor trajo insumos o mercancía?</strong><br/>Si necesitas ingresar productos al inventario, debes registrar esta factura en el módulo de Compras.
-              </p>
-              <a href="/dashboard/compras" className="text-sm font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 w-fit mt-1">
-                Ir a Ingreso de Mercancía &rarr;
+            <div className="mb-6 bg-indigo-900/20 border border-indigo-500/30 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in">
+              <div>
+                <p className="text-sm text-indigo-300 font-medium">¿El proveedor trajo insumos?</p>
+                <p className="text-xs text-indigo-400/80 mt-1">Registra los productos para que ingresen al inventario automáticamente.</p>
+              </div>
+              <a 
+                href={`/dashboard/compras?tab=factura${newFacProveedor && newFacProveedor !== 'NEW' ? '&prov=' + newFacProveedor : ''}`} 
+                className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap transition-colors shadow-lg shadow-indigo-900/20"
+              >
+                <PlusCircle size={16} />
+                Cargar Factura Detallada
               </a>
             </div>
             <form onSubmit={handleCreateFactura} className="space-y-4">
