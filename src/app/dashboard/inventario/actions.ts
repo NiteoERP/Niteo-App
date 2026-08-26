@@ -50,3 +50,21 @@ export async function removeInsumoFromReceta(recetaId: string) {
   revalidatePath('/dashboard/inventario');
   return { success: true };
 }
+
+export async function ajustarInventarioBatch(empresaId, adjustments) {
+  const supabase = await createClient();
+  let hasError = false;
+  for (const adj of adjustments) {
+    const { error } = await supabase
+      .from('inventario_insumos')
+      .update({ cantidad_actual: adj.cantidad_actual })
+      .eq('id', adj.id)
+      .eq('empresa_id', empresaId);
+    if (error) {
+      console.error(error);
+      hasError = true;
+    }
+  }
+  revalidatePath('/dashboard/inventario');
+  return { success: !hasError };
+}
