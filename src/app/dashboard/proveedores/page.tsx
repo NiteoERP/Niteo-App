@@ -469,6 +469,14 @@ export default function ProveedoresPage() {
               <X size={20} />
             </button>
             <h2 className="text-xl font-black text-white mb-6 flex items-center gap-2"><PlusCircle className="text-emerald-400" /> Registrar Deuda / Gasto</h2>
+            <div className="mb-5 bg-indigo-900/20 border border-indigo-500/30 p-4 rounded-xl flex flex-col gap-2 animate-in fade-in">
+              <p className="text-sm text-indigo-300 leading-relaxed">
+                <strong>¿El proveedor trajo insumos o mercancía?</strong><br/>Si necesitas ingresar productos al inventario, debes registrar esta factura en el módulo de Compras.
+              </p>
+              <a href="/dashboard/compras" className="text-sm font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 w-fit mt-1">
+                Ir a Ingreso de Mercancía &rarr;
+              </a>
+            </div>
             <form onSubmit={handleCreateFactura} className="space-y-4">
               <div>
                 <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Proveedor</label>
