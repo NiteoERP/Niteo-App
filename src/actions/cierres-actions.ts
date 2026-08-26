@@ -15,7 +15,7 @@ export async function getCierrePrevio(fechaStr: string) {
 
   const { data: profile } = await supabase
     .from('perfiles')
-    .select('id_empresa, id_sede')
+    .select('empresa_id, sede_id')
     .eq('id', user.id)
     .single();
 
@@ -37,7 +37,7 @@ export async function getCierrePrevio(fechaStr: string) {
   const { data: ventasData } = await supabase
     .from('ventas_facturas')
     .select('total')
-    .eq('id_sede', profile.id_sede)
+    .eq('id_sede', profile.sede_id)
     .gte('fecha_venta', `${fechaStr}T00:00:00.000Z`)
     .lte('fecha_venta', `${fechaStr}T23:59:59.999Z`);
   
@@ -47,7 +47,7 @@ export async function getCierrePrevio(fechaStr: string) {
   const { data: gastosData } = await supabase
     .from('gastos_sede')
     .select('monto')
-    .eq('id_sede', profile.id_sede)
+    .eq('id_sede', profile.sede_id)
     .gte('fecha_gasto', `${fechaStr}T00:00:00.000Z`)
     .lte('fecha_gasto', `${fechaStr}T23:59:59.999Z`);
   
@@ -75,7 +75,7 @@ export async function guardarCierre(cierreData: any, transacciones: any[]) {
 
   const { data: profile } = await supabase
     .from('perfiles')
-    .select('id_empresa, id_sede')
+    .select('empresa_id, sede_id')
     .eq('id', user.id)
     .single();
 
@@ -85,8 +85,8 @@ export async function guardarCierre(cierreData: any, transacciones: any[]) {
   const { data: nuevoCierre, error: errorCierre } = await supabase
     .from('cierres_caja')
     .insert({
-      id_empresa: profile.id_empresa,
-      id_sede: profile.id_sede,
+      id_empresa: profile.empresa_id,
+      id_sede: profile.sede_id,
       id_usuario: user.id,
       fecha_cierre: cierreData.fecha_cierre,
       tasa_cambio: cierreData.tasa_cambio,
