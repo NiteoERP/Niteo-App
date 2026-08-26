@@ -35,10 +35,6 @@ export interface ProductoPOS {
 export async function getVentasRecientes(sedeId: string): Promise<VentaPOS[]> {
   const supabase = await createClient();
 
-  // Obtenemos inicio del día actual (opcional, si se quiere todo el historial quitar el gte)
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
   const { data: ventas, error } = await supabase
     .from('ventas_facturas')
     .select(`
@@ -56,7 +52,6 @@ export async function getVentasRecientes(sedeId: string): Promise<VentaPOS[]> {
       )
     `)
     .eq('sede_id', sedeId)
-    .gte('fecha_venta', today.toISOString())
     .order('fecha_venta', { ascending: false })
     .limit(50);
 
