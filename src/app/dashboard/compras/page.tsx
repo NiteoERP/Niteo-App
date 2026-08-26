@@ -571,7 +571,7 @@ export default function ComprasPage() {
           <div className="p-6 bg-black/20 border-t border-neutral-800 flex flex-col md:flex-row justify-between items-center gap-4">
             <div><p className="text-neutral-400 text-sm">Costo Total Factura</p><p className="text-3xl font-bold text-white tracking-tight">{formatCurrency(totalFactura)}</p></div>
             <button onClick={handleGuardarFactura} disabled={isSubmitting} className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 px-8 rounded-xl shadow-[0_0_15px_rgba(79,70,229,0.3)] flex gap-2">
-              {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />} Guardar Factura Real
+              {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />} Guardar Factura
             </button>
           </div>
         </div>
