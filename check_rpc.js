@@ -1,21 +1,16 @@
+﻿const { createClient } = require('@supabase/supabase-js');
+const fs = require('fs');
+require('dotenv').config({ path: '.env.local' });
 
-const { createClient } = require("@supabase/supabase-js");
-const fs = require("fs");
-const env = fs.readFileSync(".env.local", "utf8");
-const supabaseUrl = env.match(/NEXT_PUBLIC_SUPABASE_URL=(.*)/)[1].trim();
-const supabaseKey = env.match(/NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY=(.*)/)?.[1]?.trim() || env.match(/NEXT_PUBLIC_SUPABASE_ANON_KEY=(.*)/)[1].trim();
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
-async function run() {
-  // Let us fetch the actual user profile to get a valid empresa_id
-  const { data: users } = await supabase.from("perfiles").select("empresa_id").limit(1);
-  const { data, error } = await supabase.rpc("get_dashboard_rentabilidad", {
-    p_empresa_id: users[0]?.empresa_id,
-    p_fecha_inicio: "2026-08-01T00:00:00Z",
-    p_fecha_fin: "2026-08-31T23:59:59Z",
-    p_sede_id: null
+async function check() {
+  const { data, error } = await supabase.rpc('registrar_compra_insumo', {
+    p_insumo_id: '00000000-0000-0000-0000-000000000000',
+    p_usuario_id: '00000000-0000-0000-0000-000000000000',
+    p_cantidad: 1,
+    p_costo_total_usd: 1
   });
-  console.log(JSON.stringify(data?.[0]));
+  console.log(error || data);
 }
-run();
-
+check();

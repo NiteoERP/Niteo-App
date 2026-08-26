@@ -19,15 +19,24 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
   let recetas: any[] = [];
 
   if (currentTab === 'insumos') {
-    const { data } = await supabase.from('inventario_insumos').select('*').eq('empresa_id', empresaId);
+    const { data: profile } = await supabase.from('perfiles').select('sede_id').eq('id', user?.id).single();
+    let query = supabase.from('inventario_insumos').select('*').eq('empresa_id', empresaId);
+    if (profile?.sede_id) {
+      query = query.eq('sede_id', profile.sede_id);
+    }
+    const { data } = await query;
     insumos = data || [];
   } else if (currentTab === 'productos') {
+    const { data: profile } = await supabase.from('perfiles').select('sede_id').eq('id', user?.id).single();
+    let insumosQuery = supabase.from('inventario_insumos').select('*').eq('empresa_id', empresaId);
+    if (profile?.sede_id) insumosQuery = insumosQuery.eq('sede_id', profile.sede_id);
+
     // Para el editor de recetas necesitamos: productos sincronizados, insumos, y las recetas existentes
       const [resProd, resIns, resRecetas] = await Promise.all([
         supabase.from('productos').select('id, nombre, codigo_barras, precio_venta, descripcion, es_compuesto, costo, estado_activo')
           .eq('empresa_id', empresaId)
           .order('nombre'),
-        supabase.from('inventario_insumos').select('*').eq('empresa_id', empresaId),
+        insumosQuery,
         supabase.from('recetas').select('*').eq('empresa_id', empresaId)
       ]);
     productos = resProd.data || [];
