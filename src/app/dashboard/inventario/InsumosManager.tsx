@@ -4,7 +4,7 @@ import React, { useOptimistic, useTransition, useState } from 'react';
 import { createInsumo, deleteInsumo, ajustarInventarioBatch } from './actions';
 import { PackageOpen, Plus, Trash2, Loader2, AlertCircle, FileText, Download, Save, X, Edit3 } from 'lucide-react';
 
-export default function InsumosManager({ initialInsumos, empresaId }: { initialInsumos: any[], empresaId: string }) {
+export default function InsumosManager({ initialInsumos, empresaId, sedeId }: { initialInsumos: any[], empresaId: string, sedeId: string }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState('');
   
@@ -57,7 +57,7 @@ export default function InsumosManager({ initialInsumos, empresaId }: { initialI
 
     startTransition(async () => {
       addOptimisticInsumo({ type: 'add', payload: newInsumo });
-      const res = await createInsumo(empresaId, newInsumo.nombre, newInsumo.unidad_medida, newInsumo.costo_promedio, newInsumo.cantidad_actual);
+      const res = await createInsumo(empresaId, sedeId, newInsumo.nombre, newInsumo.unidad_medida, newInsumo.costo_promedio, newInsumo.cantidad_actual);
       if (!res.success) {
         setError(res.error || 'Error desconocido');
       }
@@ -177,7 +177,7 @@ export default function InsumosManager({ initialInsumos, empresaId }: { initialI
     setIsAdjusting(true);
     startTransition(async () => {
       addOptimisticInsumo({ type: 'update', payload: changes });
-      const res = await ajustarInventarioBatch(empresaId, changes);
+      const res = await ajustarInventarioBatch(empresaId, sedeId, changes);
       setIsAdjusting(false);
       if (res.success) {
         setShowAdjustModal(false);

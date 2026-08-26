@@ -3,7 +3,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 
-export async function createInsumo(empresaId: string, nombre: string, unidad_medida: string, costo_promedio: number, cantidad_actual: number) {
+export async function createInsumo(empresaId: string, sedeId: string, nombre: string, unidad_medida: string, costo_promedio: number, cantidad_actual: number) {
   const supabase = await createClient();
   const { data, error } = await supabase.from('inventario_insumos').insert([{ empresa_id: empresaId, nombre, unidad_medida, costo_promedio, cantidad_actual }]).select().single();
   if (error) return { success: false, error: error.message };
@@ -51,7 +51,7 @@ export async function removeInsumoFromReceta(recetaId: string) {
   return { success: true };
 }
 
-export async function ajustarInventarioBatch(empresaId: string, adjustments: { id: string, cantidad_actual: number }[]) {
+export async function ajustarInventarioBatch(empresaId: string, sedeId: string, adjustments: { id: string, cantidad_actual: number }[]) {
   const supabase = await createClient();
   let hasError = false;
   for (const adj of adjustments) {
@@ -59,7 +59,7 @@ export async function ajustarInventarioBatch(empresaId: string, adjustments: { i
       .from('inventario_insumos')
       .update({ cantidad_actual: adj.cantidad_actual })
       .eq('id', adj.id)
-      .eq('empresa_id', empresaId);
+      .eq('empresa_id', empresaId).eq('sede_id', sedeId);
     if (error) {
       console.error(error);
       hasError = true;

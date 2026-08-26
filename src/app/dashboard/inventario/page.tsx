@@ -1,16 +1,28 @@
-import React from 'react';
+﻿import React from 'react';
 import { createClient } from '@/utils/supabase/server';
 import InsumosManager from './InsumosManager';
 import ProductosEnriquecidos from './ProductosEnriquecidos';
 import { Package, Beaker, FileBox } from 'lucide-react';
+import SedeSelector from '@/components/inventario/SedeSelector';
 
-export default async function InventarioPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+export default async function InventarioPage({ searchParams }: { searchParams: Promise<{ tab?: string, sede?: string }> }) {
   const params = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const empresaId = user?.app_metadata?.empresa_id;
 
   if (!empresaId) return <div className="p-8 text-rose-400">Error: No tienes empresa configurada.</div>;
+
+  const { data: profile } = await supabase.from('perfiles').select('sede_id, rol').eq('id', user?.id).single();
+  const { data: sedesDb } = await supabase.from('sedes').select('id, nombre_sede').eq('empresa_id', empresaId);
+  const sedes = sedesDb || [];
+  
+  let activeSedeId = profile?.sede_id;
+  if (profile?.rol === 'MASTER' && params.sede) {
+    activeSedeId = params.sede;
+  } else if (!activeSedeId && sedes.length > 0) {
+    activeSedeId = sedes[0].id;
+  }
 
   const currentTab = params.tab || 'insumos';
 
@@ -19,17 +31,15 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
   let recetas: any[] = [];
 
   if (currentTab === 'insumos') {
-    const { data: profile } = await supabase.from('perfiles').select('sede_id').eq('id', user?.id).single();
     let query = supabase.from('inventario_insumos').select('*').eq('empresa_id', empresaId);
-    if (profile?.sede_id) {
-      query = query.eq('sede_id', profile.sede_id);
+    if (activeSedeId) {
+      query = query.eq('sede_id', activeSedeId);
     }
     const { data } = await query;
     insumos = data || [];
   } else if (currentTab === 'productos') {
-    const { data: profile } = await supabase.from('perfiles').select('sede_id').eq('id', user?.id).single();
     let insumosQuery = supabase.from('inventario_insumos').select('*').eq('empresa_id', empresaId);
-    if (profile?.sede_id) insumosQuery = insumosQuery.eq('sede_id', profile.sede_id);
+    if (activeSedeId) insumosQuery = insumosQuery.eq('sede_id', activeSedeId);
 
     // Para el editor de recetas necesitamos: productos sincronizados, insumos, y las recetas existentes
       const [resProd, resIns, resRecetas] = await Promise.all([
@@ -48,23 +58,30 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
     <div className="space-y-6 max-w-6xl animate-in fade-in duration-300">
       
       <div className="border-b border-neutral-800 pb-5">
-        <h1 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
-          <Package className="text-indigo-400" size={24} /> 
-          Inventario y Recetas
-        </h1>
-        <p className="text-neutral-400 text-xs md:text-sm mt-1">Controla tu materia prima y diseña el escandallo de tus productos.</p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+              <Package className="text-indigo-400" size={24} /> 
+              Inventario y Recetas
+            </h1>
+            <p className="text-neutral-400 text-xs md:text-sm mt-1">Controla tu materia prima y diseña el escandallo de tus productos.</p>
+          </div>
+          {profile?.rol === 'MASTER' && activeSedeId && (
+            <SedeSelector sedes={sedes} activeSedeId={activeSedeId} />
+          )}
+        </div>
       </div>
 
       {/* Tabs / Navegación */}
       <div className="flex items-center gap-2 border-b border-neutral-800 pb-px">
         <a 
-          href="?tab=insumos" 
+          href={`?tab=insumos${activeSedeId ? `&sede=${activeSedeId}` : ''}`} 
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${currentTab === 'insumos' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:border-neutral-700'}`}
         >
           <FileBox size={16} /> Almacén (Insumos)
         </a>
         <a 
-          href="?tab=productos" 
+          href={`?tab=productos${activeSedeId ? `&sede=${activeSedeId}` : ''}`} 
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${currentTab === 'productos' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:border-neutral-700'}`}
         >
           <Beaker size={16} /> Catálogo y Recetas
@@ -74,7 +91,7 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
       {/* Contenido Dinámico */}
       <div className="pt-2">
         {currentTab === 'insumos' && (
-          <InsumosManager initialInsumos={insumos} empresaId={empresaId} />
+          <InsumosManager initialInsumos={insumos} empresaId={empresaId} sedeId={activeSedeId || ''} />
         )}
         
         {currentTab === 'productos' && (
@@ -90,4 +107,3 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
     </div>
   );
 }
-
