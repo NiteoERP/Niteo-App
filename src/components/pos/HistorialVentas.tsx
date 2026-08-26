@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { HistorialVentaPOS, getHistorialVentasCompleto, toggleVentaVerificada } from '@/actions/pos-actions';
-import { Search, Calendar, ChevronDown, ChevronUp, Receipt, DollarSign, Clock, Users, CheckCircle2, Circle } from 'lucide-react';
+import { Search, Calendar, ChevronDown, ChevronUp, Receipt, DollarSign, Clock, Users, CheckCircle2, Circle, Hash } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
 export default function HistorialVentas({ sedeId }: { sedeId: string }) {
@@ -131,13 +131,20 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                 </div>
 
                 <div className="flex-1 min-w-[150px]">
-                  <p className="text-xs text-neutral-500 mb-1">Cliente / Mesa</p>
-                  <div className="flex items-center gap-1.5 text-neutral-300 text-sm font-medium">
-                    <Users size={14} className="text-neutral-500" />
-                    {venta.numero_orden ? venta.numero_orden : (venta.cliente_nombre && venta.cliente_nombre !== 'Unknown' ? venta.cliente_nombre : 'Consumidor Final')}
+                    <p className="text-xs text-neutral-500 mb-1">Cliente</p>
+                    <div className="flex items-center gap-1.5 text-neutral-300 text-sm font-medium">
+                      <Users size={14} className="text-neutral-500" />
+                      {venta.cliente_nombre && venta.cliente_nombre !== 'Unknown' ? venta.cliente_nombre : 'Consumidor Final'}
+                    </div>
                   </div>
-                  {/* NOTA: Aqu se mostrara la Mesa si existe un campo especfico en el futuro */}
-                </div>
+
+                  <div className="flex-1 min-w-[120px]">
+                    <p className="text-xs text-neutral-500 mb-1">Núm. Orden / Mesa</p>
+                    <div className="flex items-center gap-1.5 text-neutral-300 text-sm font-medium">
+                      <Hash size={14} className="text-neutral-500" />
+                      {venta.numero_orden || '-'}
+                    </div>
+                  </div>
 
                 <div className="flex items-center gap-4">
                   <div className="text-right">
