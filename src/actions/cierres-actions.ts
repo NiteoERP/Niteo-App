@@ -21,12 +21,13 @@ export async function getCierrePrevio(fechaStr: string) {
 
   if (!profile) throw new Error("Perfil no encontrado");
 
-  // 1. Consultar la Tasa de Cambio Automática del Día
+  // 1. Consultar la Tasa de Cambio Automática (la más reciente)
   let tasaCambio = 36.50; // Valor de fallback
   const { data: tasaData } = await supabase
     .from('tasa_cambiaria')
     .select('tasa_bcv')
-    .eq('fecha', fechaStr)
+    .order('fecha', { ascending: false })
+    .limit(1)
     .single();
     
   if (tasaData && tasaData.tasa_bcv) {
@@ -139,11 +140,12 @@ export async function guardarCierre(cierreData: any, transacciones: any[]) {
 
 
 
+
 export async function getBancosUtilizados() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
-  const { data: profile } = await supabase.from('perfiles').select('id_empresa').eq('id', user.id).single();
+  const { data: profile } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
   if (!profile) return [];
   
   // Try to get distinct bancos used by this empresa
@@ -152,6 +154,7 @@ export async function getBancosUtilizados() {
     .from('cierres_transacciones')
     .select('banco')
     .not('banco', 'is', null)
+    .eq('id_empresa', profile.empresa_id)
     .limit(100);
     
   if (error || !data) return ['Banesco', 'Mercantil', 'Provincial', 'Venezuela', 'BNC'];
