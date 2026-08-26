@@ -51,7 +51,7 @@ export async function removeInsumoFromReceta(recetaId: string) {
   return { success: true };
 }
 
-export async function ajustarInventarioBatch(empresaId, adjustments) {
+export async function ajustarInventarioBatch(empresaId: string, adjustments: { id: string, cantidad_actual: number }[]) {
   const supabase = await createClient();
   let hasError = false;
   for (const adj of adjustments) {
