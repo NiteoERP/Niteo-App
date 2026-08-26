@@ -82,17 +82,17 @@ export default function InsumosManager({ initialInsumos, empresaId }: { initialI
 
     let rowsHtml = '';
     optimisticInsumos.forEach((insumo, idx) => {
-      rowsHtml += 
+      rowsHtml += `
         <tr>
-          <td>\</td>
-          <td>\</td>
-          <td>\ \</td>
+          <td>${idx + 1}</td>
+          <td>${insumo.nombre}</td>
+          <td>${insumo.cantidad_actual} ${insumo.unidad_medida}</td>
           <td></td>
         </tr>
-      ;
+      `;
     });
 
-    const html = 
+    const html = `
       <html>
         <head>
           <title>Reporte de Inventario</title>
@@ -109,7 +109,7 @@ export default function InsumosManager({ initialInsumos, empresaId }: { initialI
         </head>
         <body onload="window.print()">
           <h1>Reporte de Inventario (Físico)</h1>
-          <p>Fecha de impresión: \ - \</p>
+          <p>Fecha de impresión: ${new Date().toLocaleDateString('es-VE')} - ${new Date().toLocaleTimeString('es-VE')}</p>
           <table>
             <thead>
               <tr>
@@ -120,12 +120,12 @@ export default function InsumosManager({ initialInsumos, empresaId }: { initialI
               </tr>
             </thead>
             <tbody>
-              \
+              ${rowsHtml}
             </tbody>
           </table>
         </body>
       </html>
-    ;
+    `;
 
     printWindow.document.write(html);
     printWindow.document.close();
