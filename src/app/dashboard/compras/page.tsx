@@ -6,6 +6,7 @@ import { getProveedoresYProductos, crearProveedor, crearProductoBase, registrarC
 import MobileCompraForm from '@/components/compras/MobileCompraForm';
 import { editarFacturaInsumos } from '@/actions/compras-actions';
 import { useEmpresa } from '@/components/providers/EmpresaProvider';
+import { useLiveTable } from '@/hooks/useLiveTable';
 
 export default function ComprasPage() {
   const { empresa } = useEmpresa();
@@ -13,6 +14,20 @@ export default function ComprasPage() {
   const metodosPago = empresa?.metodos_pago && empresa.metodos_pago.length > 0 ? empresa.metodos_pago : defaultPaymentMethods;
 
   const [activeTab, setActiveTab] = useState<'insumos' | 'puntual' | 'factura' | 'historial'>('insumos');
+
+  useLiveTable('compras_facturas', () => {
+    if (activeTab === 'historial') {
+      cargarHistorialCompleto();
+    }
+  });
+
+  useLiveTable('compras_mercancia', () => {
+    if (activeTab === 'puntual') {
+      getUltimasCompras().then(res => {
+        if (res.success) setUltimasCompras(res.compras || []);
+      });
+    }
+  });
   
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
