@@ -5,7 +5,8 @@ import { getVentasRecientes, getProductosCatalogo, VentaPOS, ProductoPOS } from 
 import LiveSalesFeed from '@/components/pos/LiveSalesFeed';
 import CuentasAbiertasWidget from '@/components/pos/CuentasAbiertasWidget';
 import CatalogView from '@/components/pos/CatalogView';
-import { Store, PackageSearch, Users } from 'lucide-react';
+import HistorialVentas from '@/components/pos/HistorialVentas';
+import { Store, PackageSearch, Users, History } from 'lucide-react';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -92,6 +93,17 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
             <PackageSearch size={16} />
             Catálogo
           </a>
+          <a
+            href="?tab=historial"
+            className={`flex flex-1 items-center justify-center gap-2 h-14 px-4 rounded-md text-sm font-medium transition-all whitespace-nowrap shrink-0 ${
+              tab === 'historial'
+                ? 'bg-neutral-800 text-white shadow-sm'
+                : 'text-neutral-400 hover:text-white hover:bg-neutral-800/50'
+            }`}
+          >
+            <History size={16} />
+            Historial de Ventas
+          </a>
         </div>
       </div>
 
@@ -104,6 +116,9 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
       )}
       {tab === 'catalogo' && (
         <CatalogView catalog={catalog} />
+      )}
+      {tab === 'historial' && (
+        <HistorialVentas sedeId={perfil.sede_id} />
       )}
     </div>
   );
