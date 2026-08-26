@@ -134,13 +134,10 @@ export async function getHistorialVentasCompleto(sedeId: string, fechaFiltro?: s
     .order('fecha_venta', { ascending: false });
 
   if (fechaFiltro) {
-    // fechaFiltro viene en formato YYYY-MM-DD
-    const start = new Date(fechaFiltro + 'T00:00:00');
-    const end = new Date(fechaFiltro + 'T23:59:59.999');
-    query = query.gte('fecha_venta', start.toISOString()).lte('fecha_venta', end.toISOString());
-  } else {
-    query = query.limit(100);
+    // Filtra las ms recientes HASTA la fecha seleccionada
+    query = query.lte('fecha_venta', `${fechaFiltro}T23:59:59.999-04:00`);
   }
+  query = query.limit(100);
 
   const { data: ventas, error } = await query;
 

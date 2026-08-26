@@ -71,8 +71,10 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
               type="date" 
               value={fechaFiltro}
               onChange={(e) => setFechaFiltro(e.target.value)}
-              className="bg-black/40 border border-neutral-800 text-neutral-300 text-sm rounded-lg px-3 py-2 focus:ring-1 focus:ring-indigo-500 outline-none"
+              title="Seleccionar fecha"
+              className="relative bg-black/40 border border-neutral-800 text-neutral-300 text-sm rounded-lg px-3 py-2 focus:ring-1 focus:ring-indigo-500 outline-none cursor-pointer hover:bg-black/60 w-[150px] [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:top-0 [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
             />
+            <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" size={16} />
           </div>
         </div>
       </div>
@@ -81,7 +83,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
         <div className="flex justify-center p-12 text-indigo-400 animate-pulse">Cargando historial...</div>
       ) : filtradas.length === 0 ? (
         <div className="text-center p-12 text-neutral-500 border border-neutral-800 border-dashed rounded-xl">
-          No hay ventas registradas {fechaFiltro ? 'en esta fecha' : 'recientemente'}.
+          No hay ventas registradas {fechaFiltro ? 'hasta esta fecha' : 'recientemente'}.
         </div>
       ) : (
         <div className="space-y-3">
