@@ -39,7 +39,12 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
   }, [sedeId, fechaFiltro]);
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
-  const formatTime = (iso: string) => new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  const formatDateTime = (iso: string) => {
+    const d = new Date(iso);
+    const dateOpts: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short' };
+    const timeOpts: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' };
+    return `${d.toLocaleDateString('es-ES', dateOpts)} - ${d.toLocaleTimeString('en-US', timeOpts)}`;
+  };
   
   const handleToggleVerificado = async (e: React.MouseEvent, id: string, estadoActual: boolean) => {
     e.stopPropagation();
@@ -118,9 +123,9 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                       <Receipt size={20} className="text-indigo-400" />
                     </div>
                   <div>
-                    <p className="text-white font-bold">{venta.numero_documento}</p>
+                    <p className="text-white font-bold">{formatDocNumber(venta.numero_documento)}</p>
                     <div className="flex items-center gap-2 text-xs text-neutral-400 mt-1">
-                      <Clock size={12} /> {formatTime(venta.fecha_venta)}
+                      <Clock size={12} /> {formatDateTime(venta.fecha_venta)}
                     </div>
                   </div>
                 </div>
@@ -180,4 +185,14 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
       )}
     </div>
   );
+}
+
+function formatDocNumber(doc: string) {
+  if (!doc) return "";
+  const parts = doc.split("-");
+  if (parts.length === 3) {
+    const num = parseInt(parts[2], 10);
+    return `#${num}`;
+  }
+  return `#${doc}`;
 }

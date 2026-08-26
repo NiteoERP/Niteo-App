@@ -89,8 +89,11 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
   };
 
-  const formatTime = (isoString: string) => {
-    return new Date(isoString).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  const formatDateTime = (isoString: string) => {
+    const d = new Date(isoString);
+    const dateOpts: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short' };
+    const timeOpts: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' };
+    return `${d.toLocaleDateString('es-ES', dateOpts)} - ${d.toLocaleTimeString('en-US', timeOpts)}`;
   };
 
   return (
@@ -148,9 +151,9 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
                         {sale.esta_pagado && <CheckCircle2 size={14} className="text-emerald-500" />}
                       </p>
                       <p className="text-neutral-500 text-sm flex items-center gap-1 mt-0.5">
-                        <Clock size={12} /> {formatTime(sale.fecha_venta)}
+                        <Clock size={12} /> {formatDateTime(sale.fecha_venta)}
                         <span className="mx-1">•</span>
-                        #{sale.numero_documento}
+                        {formatDocNumber(sale.numero_documento)}
                       </p>
                     </div>
                   </div>
@@ -196,4 +199,14 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
 
     </div>
   );
+}
+
+function formatDocNumber(doc: string) {
+  if (!doc) return "";
+  const parts = doc.split("-");
+  if (parts.length === 3) {
+    const num = parseInt(parts[2], 10);
+    return `#${num}`;
+  }
+  return `#${doc}`;
 }

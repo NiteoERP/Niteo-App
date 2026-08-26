@@ -54,6 +54,7 @@ export async function getVentasRecientes(sedeId: string): Promise<VentaPOS[]> {
       )
     `)
     .eq('sede_id', sedeId)
+    .neq('numero_documento', 'TEST')
     .order('fecha_venta', { ascending: false })
     .limit(50);
 
@@ -129,6 +130,7 @@ export async function getHistorialVentasCompleto(sedeId: string, fechaFiltro?: s
       )
     `)
     .eq('sede_id', sedeId)
+    .neq('numero_documento', 'TEST')
     .order('fecha_venta', { ascending: false });
 
   if (fechaFiltro) {
