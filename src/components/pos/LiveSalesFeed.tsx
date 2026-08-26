@@ -43,12 +43,12 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
           // Para esta demostración, hacemos un pequeño fetch del detalle:
           const { data: detalles } = await supabase
             .from('ventas_detalles')
-            .select('id_detalle:id, id_producto, cantidad, precio_unitario, total, productos(nombre, codigo_barras)')
+            .select('id_detalle:id, producto_id, cantidad, precio_unitario, total, productos(nombre, codigo_barras)')
             .eq('factura_id', newVentaRaw.id);
 
           const mappedDetalles = (detalles || []).map((d: any) => ({
             id_detalle: d.id_detalle,
-            id_producto: d.id_producto,
+            producto_id: d.producto_id,
             cantidad: d.cantidad,
             precio_unitario: d.precio_unitario,
             total: d.total,

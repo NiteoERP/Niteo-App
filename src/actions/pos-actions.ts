@@ -16,7 +16,7 @@ export interface VentaPOS {
 
 export interface VentaDetalle {
   id_detalle: number;
-  id_producto: number;
+  producto_id: number;
   cantidad: number;
   precio_unitario: number;
   total: number;
@@ -25,7 +25,7 @@ export interface VentaDetalle {
 }
 
 export interface ProductoPOS {
-  id_producto: number;
+  producto_id: number;
   codigo_barras: string;
   nombre: string;
   precio_venta: number;
@@ -41,7 +41,7 @@ export async function getVentasRecientes(sedeId: string): Promise<VentaPOS[]> {
       *,
       ventas_detalles (
         id,
-        id_producto,
+        producto_id,
         cantidad,
         precio_unitario,
         total,
@@ -72,7 +72,7 @@ export async function getVentasRecientes(sedeId: string): Promise<VentaPOS[]> {
     esta_pagado: v.estado_pago === 1,
     detalles: (v.ventas_detalles || []).map((d: any) => ({
       id_detalle: d.id,
-      id_producto: d.id_producto,
+      producto_id: d.producto_id,
       cantidad: d.cantidad,
       precio_unitario: d.precio_unitario,
       total: d.total,
@@ -98,7 +98,7 @@ export async function getProductosCatalogo(empresaId: string): Promise<ProductoP
   }
 
   return (productos || []).map((p: any) => ({
-    id_producto: p.id,
+    producto_id: p.id,
     codigo_barras: p.codigo_barras,
     nombre: p.nombre,
     precio_venta: p.precio_venta,
@@ -121,7 +121,7 @@ export async function getHistorialVentasCompleto(sedeId: string, fechaFiltro?: s
       clientes ( nombre ),
       ventas_pagos ( tipo_pago, monto ),
       ventas_detalles (
-        id, id_producto, cantidad, precio_unitario, total,
+        id, producto_id, cantidad, precio_unitario, total,
         productos ( nombre, codigo_barras )
       )
     `)
@@ -159,7 +159,7 @@ export async function getHistorialVentasCompleto(sedeId: string, fechaFiltro?: s
     })),
     detalles: (v.ventas_detalles || []).map((d: any) => ({
       id_detalle: d.id,
-      id_producto: d.id_producto,
+      producto_id: d.producto_id,
       cantidad: d.cantidad,
       precio_unitario: d.precio_unitario,
       total: d.total,
