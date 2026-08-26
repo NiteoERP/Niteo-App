@@ -1,8 +1,8 @@
 ﻿'use client';
 
 import React, { useState, useEffect } from 'react';
-import { HistorialVentaPOS, getHistorialVentasCompleto } from '@/actions/pos-actions';
-import { Search, Calendar, ChevronDown, ChevronUp, Receipt, DollarSign, Clock, Users } from 'lucide-react';
+import { HistorialVentaPOS, getHistorialVentasCompleto, toggleVentaVerificada } from '@/actions/pos-actions';
+import { Search, Calendar, ChevronDown, ChevronUp, Receipt, DollarSign, Clock, Users, CheckCircle2, Circle } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
 export default function HistorialVentas({ sedeId }: { sedeId: string }) {
@@ -13,6 +13,9 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
   // Filtros
   const [fechaFiltro, setFechaFiltro] = useState('');
   const [busqueda, setBusqueda] = useState('');
+  const totalVentas = ventas.length;
+  const verificadas = ventas.filter(v => v.verificado).length;
+  const isDiaVerificado = fechaFiltro && totalVentas > 0 && verificadas === totalVentas;
 
   const cargarVentas = async () => {
     setLoading(true);
@@ -37,6 +40,15 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
   const formatTime = (iso: string) => new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  
+  const handleToggleVerificado = async (e: React.MouseEvent, id: string, estadoActual: boolean) => {
+    e.stopPropagation();
+    const nuevoEstado = !estadoActual;
+    // Optimistic update
+    setVentas(prev => prev.map(v => v.id_factura.toString() === id ? { ...v, verificado: nuevoEstado } : v));
+    await toggleVentaVerificada(id, nuevoEstado);
+  };
+
 
   const filtradas = ventas.filter(v => {
     if (busqueda) {
@@ -95,9 +107,16 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                 onClick={() => setExpandedId(expandedId === venta.id_factura.toString() ? null : venta.id_factura.toString())}
               >
                 <div className="flex items-center gap-4 min-w-[200px]">
-                  <div className="bg-neutral-800 p-2 rounded-lg">
-                    <Receipt size={20} className="text-indigo-400" />
-                  </div>
+                    <button 
+                      onClick={(e) => handleToggleVerificado(e, venta.id_factura.toString(), !!venta.verificado)}
+                      className={`p-1 rounded-full transition-colors ${venta.verificado ? 'text-emerald-400 hover:text-emerald-300' : 'text-neutral-600 hover:text-neutral-400'}`}
+                      title={venta.verificado ? "Desmarcar" : "Marcar como verificado"}
+                    >
+                      {venta.verificado ? <CheckCircle2 size={24} /> : <Circle size={24} />}
+                    </button>
+                    <div className="bg-neutral-800 p-2 rounded-lg">
+                      <Receipt size={20} className="text-indigo-400" />
+                    </div>
                   <div>
                     <p className="text-white font-bold">{venta.numero_documento}</p>
                     <div className="flex items-center gap-2 text-xs text-neutral-400 mt-1">

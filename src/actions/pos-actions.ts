@@ -3,6 +3,7 @@
 import { createClient } from '@/utils/supabase/server';
 
 export interface VentaPOS {
+  verificado?: boolean;
   id_factura: number;
   id_pos: number;
   numero_documento: string;
@@ -167,4 +168,19 @@ export async function getHistorialVentasCompleto(sedeId: string, fechaFiltro?: s
       producto_codigo: d.productos?.codigo_barras,
     }))
   }));
+}
+
+
+export async function toggleVentaVerificada(facturaId: string, verificado: boolean) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('ventas_facturas')
+    .update({ verificado })
+    .eq('id', facturaId);
+  
+  if (error) {
+    console.error('Error toggling verificado:', error);
+    return { success: false, error };
+  }
+  return { success: true };
 }
