@@ -83,7 +83,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
         <div className="flex justify-center p-12 text-indigo-400 animate-pulse">Cargando historial...</div>
       ) : filtradas.length === 0 ? (
         <div className="text-center p-12 text-neutral-500 border border-neutral-800 border-dashed rounded-xl">
-          No hay ventas registradas {fechaFiltro ? 'hasta esta fecha' : 'recientemente'}.
+          No hay ventas registradas {fechaFiltro ? 'en esta fecha' : 'recientemente'}.
         </div>
       ) : (
         <div className="space-y-3">

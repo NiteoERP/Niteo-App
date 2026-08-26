@@ -134,8 +134,10 @@ export async function getHistorialVentasCompleto(sedeId: string, fechaFiltro?: s
     .order('fecha_venta', { ascending: false });
 
   if (fechaFiltro) {
-    // Filtra las ms recientes HASTA la fecha seleccionada
-    query = query.lte('fecha_venta', `${fechaFiltro}T23:59:59.999-04:00`);
+    // Filtra exactamente por ese da, usando UTC ya que los datos de Aronium vienen con +00:00
+    query = query
+      .gte('fecha_venta', `${fechaFiltro}T00:00:00+00:00`)
+      .lte('fecha_venta', `${fechaFiltro}T23:59:59.999+00:00`);
   }
   query = query.limit(100);
 
