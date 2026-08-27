@@ -38,7 +38,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
     return () => { supabase.removeChannel(channel); };
   }, [sedeId, fechaFiltro]);
 
-  const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
+  const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + ' USD';
   const formatDateTime = (iso: string) => {
     const d = new Date(iso);
     const dateOpts: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short' };

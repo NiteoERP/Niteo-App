@@ -82,7 +82,7 @@ export default function RecentSalesWidget() {
 
   const formatCurrency = (amount: number) => {
     if (privacyMode) return '****';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+    return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount) + ' USD';
   };
 
   const formatTime = (isoString: string) => {

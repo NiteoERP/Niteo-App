@@ -157,7 +157,7 @@ export async function getHistorialVentasCompleto(sedeId: string, fechaFiltro?: s
     total: v.total,
     descuento: v.descuento,
     tipo_documento: v.tipo_documento,
-    esta_pagado: v.estado_pago === 1 || v.estado_pago === 2,
+    esta_pagado: v.estado_pago === 1,
     cliente_nombre: v.clientes?.nombre,
     pagos: (v.ventas_pagos || []).map((p: any) => ({
       tipo_pago: p.tipo_pago,
