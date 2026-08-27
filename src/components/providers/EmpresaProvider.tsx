@@ -15,7 +15,7 @@ interface EmpresaContextType {
 
 const EmpresaContext = createContext<EmpresaContextType>({
   empresa: null,
-  formatCurrency: (amount: number) => `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+  formatCurrency: (amount: number) => `${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`,
 });
 
 export const useEmpresa = () => useContext(EmpresaContext);

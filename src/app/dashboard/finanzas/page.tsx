@@ -42,7 +42,7 @@ export default function FinanzasPage() {
   }, []);
 
   const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('es-US', { style: 'currency', currency: 'USD' }).format(val);
+    return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + ' USD';
   };
 
   // Preparar datos para el gráfico combinado

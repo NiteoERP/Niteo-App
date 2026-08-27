@@ -327,7 +327,7 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
     setTimeout(() => setAlertMsg({ text: '', type: '' }), 4000);
   };
 
-  const formatCurrency = (val: number) => new Intl.NumberFormat('es-VE', { style: 'currency', currency: 'USD' }).format(val);
+  const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + ' USD';
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12">
