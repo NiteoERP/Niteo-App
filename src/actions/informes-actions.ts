@@ -166,7 +166,7 @@ export async function generateReport(
         p_fecha_inicio,
         p_fecha_fin,
         p_categoria,
-        p_cajero_id,
+        p_cajero_nombre: p_cajero_id,
         p_cliente_id,
       };
       break;
@@ -184,7 +184,7 @@ export async function generateReport(
         p_fecha_inicio,
         p_fecha_fin,
         p_categoria,
-        p_cajero_id,
+        p_cajero_nombre: p_cajero_id,
         p_cliente_id,
       };
       break;
