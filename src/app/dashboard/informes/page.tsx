@@ -328,7 +328,7 @@ export default function InformesPage() {
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-full w-full bg-neutral-950 text-white overflow-hidden flex-col lg:flex-row relative print:block">
+    <div className="flex h-full w-full bg-neutral-950 text-white overflow-hidden print:overflow-visible print:h-auto flex-col lg:flex-row relative print:block">
 
       {/* ══════════════════════════════════════════════════════════════════
           PANEL IZQUIERDO — Catálogo con Acordeones
@@ -353,7 +353,7 @@ export default function InformesPage() {
         </div>
 
         {/* Grupos con Acordeón */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="flex-1 overflow-y-auto print:overflow-visible print:h-auto custom-scrollbar">
           {filteredCatalog.length === 0 ? (
             <p className="text-center text-neutral-600 text-sm py-10 px-4">Sin resultados para "{searchQuery}"</p>
           ) : (
@@ -435,7 +435,7 @@ export default function InformesPage() {
       {/* ══════════════════════════════════════════════════════════════════
           ÁREA CENTRAL — Placeholder + Panel Filtros (Desktop)
       ══════════════════════════════════════════════════════════════════ */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden print:overflow-visible print:h-auto">
 
         {/* Estado vacío / placeholder */}
         {!sheetOpen && (
@@ -533,7 +533,7 @@ export default function InformesPage() {
             </div>
 
             {/* Contenido scrollable */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar px-5 space-y-5 pb-4">
+            <div className="flex-1 overflow-y-auto print:overflow-visible print:h-auto custom-scrollbar px-5 space-y-5 pb-4">
 
               {/* — Sede selector — */}
               <div className="space-y-1.5">
@@ -690,7 +690,7 @@ export default function InformesPage() {
           MODAL PREVISUALIZACIÓN (Print / PDF) — compartido mobile+desktop
       ══════════════════════════════════════════════════════════════════ */}
       {showPreviewModal && reportData && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex justify-center items-start overflow-y-auto p-4 sm:p-8 print:p-0 print:bg-white print:block">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex justify-center items-start overflow-y-auto print:overflow-visible print:h-auto p-4 sm:p-8 print:p-0 print:bg-white print:block">
           <div className="w-full max-w-5xl my-auto flex flex-col print:my-0">
             {/* Toolbar */}
             <div className="w-full flex justify-between items-center mb-4 print:hidden shrink-0 pt-6">
@@ -739,7 +739,7 @@ export default function InformesPage() {
                 </div>
               </div>
 
-              <div className="overflow-x-auto rounded-xl border border-neutral-200">
+              <div className="overflow-x-auto print:overflow-visible print:h-auto rounded-xl border border-neutral-200">
                 <table className="w-full text-sm text-left border-collapse">
                   <thead className="bg-neutral-100 text-neutral-700 font-bold uppercase text-xs">
                     <tr>
@@ -820,9 +820,9 @@ function DesktopReportPanel({
         </button>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden print:overflow-visible print:h-auto">
         {/* Columna Filtros */}
-        <div className="w-72 border-r border-neutral-800 flex flex-col p-5 space-y-5 shrink-0 overflow-y-auto">
+        <div className="w-72 border-r border-neutral-800 flex flex-col p-5 space-y-5 shrink-0 overflow-y-auto print:overflow-visible print:h-auto">
 
           {/* Sede */}
           <div className="space-y-1.5">
@@ -924,7 +924,7 @@ function DesktopReportPanel({
 
 
         {/* Columna Resultados */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto print:overflow-visible print:h-auto custom-scrollbar p-6 space-y-6">
           {!reportData && !isLoading && (
             <div className="h-full flex flex-col items-center justify-center text-neutral-700 gap-3">
               <BarChart2 size={48} className="opacity-20" />
@@ -988,7 +988,7 @@ function MiniBarChart({ data }: { data: any[] }) {
         return (
           <div key={i} className="flex items-center gap-3 group">
             <span className="text-xs text-neutral-500 w-32 truncate shrink-0 text-right">{label}</span>
-            <div className="flex-1 bg-neutral-800 rounded-full h-5 overflow-hidden">
+            <div className="flex-1 bg-neutral-800 rounded-full h-5 overflow-hidden print:overflow-visible print:h-auto">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-indigo-600 to-indigo-400 transition-all duration-500"
                 style={{ width: `${pct}%` }}

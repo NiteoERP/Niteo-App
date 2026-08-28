@@ -4,7 +4,7 @@ import { createClient } from '@/utils/supabase/server';
 
 export interface VentaPOS {
   verificado?: boolean;
-  id_factura: number;
+  id_factura: string;
   id_pos: number;
   numero_documento: string;
   numero_orden?: string;
@@ -14,6 +14,7 @@ export interface VentaPOS {
   tipo_documento: string;
   esta_pagado: boolean;
   cliente_nombre?: string;
+  pagos?: { tipo_pago: string, monto: number }[];
   metodo_pago?: string;       // resumen del primer método de pago registrado
   detalles: VentaDetalle[];
 }
@@ -69,6 +70,7 @@ export async function getVentasRecientes(sedeId: string): Promise<VentaPOS[]> {
 
   // Mapeamos los datos anidados
   return (ventas || []).map((v: any) => ({
+    verificado: v.verificado,
     id_factura: v.id,
     id_pos: v.id_pos,
     numero_documento: v.numero_documento,
@@ -79,6 +81,7 @@ export async function getVentasRecientes(sedeId: string): Promise<VentaPOS[]> {
     tipo_documento: v.tipo_documento,
     esta_pagado: v.estado_pago === 1,
     cliente_nombre: v.clientes?.nombre,
+    pagos: (v.ventas_pagos || []).map((p: any) => ({ tipo_pago: p.tipo_pago, monto: p.monto })),
     metodo_pago: (v.ventas_pagos || [])[0]?.tipo_pago,
     detalles: (v.ventas_detalles || []).map((d: any) => ({
 
@@ -156,6 +159,7 @@ export async function getHistorialVentasCompleto(sedeId: string, fechaFiltro?: s
   }
 
   return (ventas || []).map((v: any) => ({
+    verificado: v.verificado,
     id_factura: v.id,
     id_pos: v.id_pos,
     numero_documento: v.numero_documento,

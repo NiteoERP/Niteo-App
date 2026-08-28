@@ -71,11 +71,17 @@ export function useCajaSync(
     }
 
     if (channelRef.current && sedeId) {
-      channelRef.current.send({
-        type: 'broadcast',
-        event: 'state_update',
-        payload: { transacciones, metodos }
-      });
+      try {
+        if (channelRef.current.state === 'joined') {
+          channelRef.current.send({
+            type: 'broadcast',
+            event: 'state_update',
+            payload: { transacciones, metodos }
+          });
+        }
+      } catch (err) {
+        console.warn('CajaSync: No se pudo enviar el estado local', err);
+      }
     }
   }, [transacciones, metodos, sedeId]);
 }

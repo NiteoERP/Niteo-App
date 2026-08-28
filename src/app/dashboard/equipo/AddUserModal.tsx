@@ -130,7 +130,7 @@ export default function AddUserModal({ onUserCreated }: { onUserCreated?: (membe
             <form onSubmit={handleSubmit} className="space-y-6">
               
               {/* Información Básica */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm text-neutral-400 mb-1">Nombre Completo</label>
                   <input required name="nombre" type="text" className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white outline-none focus:border-indigo-500" placeholder="Ej. Juan Pérez" />
@@ -182,7 +182,7 @@ export default function AddUserModal({ onUserCreated }: { onUserCreated?: (membe
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                <div className="flex flex-wrap gap-4">
                   {MODULES.map(mod => {
                     const isSelected = selectedModules.includes(mod.id);
                     return (

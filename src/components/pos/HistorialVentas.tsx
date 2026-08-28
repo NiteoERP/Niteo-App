@@ -17,6 +17,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
   
   // Filtros
   const [fechaFiltro, setFechaFiltro] = useState('');
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [busqueda, setBusqueda] = useState('');
   
   // Estado del calendario

@@ -6,6 +6,7 @@ import { getProveedoresYProductos, crearProveedor, crearProductoBase, registrarC
 import MobileCompraForm from '@/components/compras/MobileCompraForm';
 import { editarFacturaInsumos } from '@/actions/compras-actions';
 import { useEmpresa } from '@/components/providers/EmpresaProvider';
+import CreatableSelect from 'react-select/creatable';
 import { useLiveTable } from '@/hooks/useLiveTable';
 
 import SedeSelector from "@/components/inventario/SedeSelector";
@@ -44,6 +45,21 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
   const [isLoadingDatos, setIsLoadingDatos] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [alertMsg, setAlertMsg] = useState({ text: '', type: '' });
+
+  const rsStyles = {
+    control: (base: any) => ({
+      ...base,
+      background: 'rgba(0,0,0,0.5)',
+      borderColor: '#262626',
+      minHeight: '3.5rem',
+      borderRadius: '0.75rem',
+    }),
+    menu: (base: any) => ({ ...base, background: '#171717', border: '1px solid #262626' }),
+    option: (base: any, state: any) => ({ ...base, background: state.isFocused ? '#262626' : 'transparent', color: 'white' }),
+    singleValue: (base: any) => ({ ...base, color: 'white' }),
+    input: (base: any) => ({ ...base, color: 'white' })
+  };
+
 
   // --- ESTADO MODAL PROMPT ---
   const [promptModal, setPromptModal] = useState({
@@ -170,25 +186,26 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
   
   const handleProductoChange = (rowId: number, field: string, value: string) => {
     if (field === 'id_producto' && value === 'NEW_PRODUCT') {
-      const nombre = prompt('Ingresa el nombre del nuevo producto base:');
-      if (nombre && nombre.trim()) {
-        setIsSubmitting(true);
-        crearProductoBase(nombre.trim()).then(res => {
-          if (res.success) {
-            setProductosDb(prev => [...prev, res.producto!]);
-            mostrarAlerta('Producto creado.', 'success');
-            setProductos(prev => prev.map(p => {
-              if (p.rowId === rowId) {
-                return { ...p, id_producto: res.producto!.id, precio: '0', total: '0' };
-              }
-              return p;
-            }));
-          } else {
-            mostrarAlerta(res.error, 'error');
-          }
-          setIsSubmitting(false);
-        });
-      }
+      openPrompt('Ingresa el nombre del nuevo producto base:', '', (nombre) => {
+        if (nombre && nombre.trim()) {
+          setIsSubmitting(true);
+          crearProductoBase(nombre.trim()).then(res => {
+            if (res.success) {
+              setProductosDb(prev => [...prev, res.producto!]);
+              mostrarAlerta('Producto creado.', 'success');
+              setProductos(prev => prev.map(p => {
+                if (p.rowId === rowId) {
+                  return { ...p, id_producto: res.producto!.id, precio: '0', total: '0' };
+                }
+                return p;
+              }));
+            } else {
+              mostrarAlerta(res.error || 'Error', 'error');
+            }
+            setIsSubmitting(false);
+          });
+        }
+      });
       return;
     }
 
@@ -309,17 +326,20 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
   };
 
   const handleCrearProveedorRapido = async () => {
-    const nombre = prompt('Ingresa el nombre del nuevo proveedor (y RIF opcional separados por guión):');
-    if (nombre && nombre.trim()) {
-      setIsSubmitting(true);
-      const res = await crearProveedor(nombre.trim());
-      if (res.success) {
-        setProveedoresDb([...proveedoresDb, res.proveedor]);
-        setFactura({...factura, proveedor: res.proveedor?.id?.toString() || ''});
-        mostrarAlerta('Proveedor creado.', 'success');
+    openPrompt('Ingresa el nombre del nuevo proveedor (y RIF opcional separados por guión):', '', async (nombre) => {
+      if (nombre && nombre.trim()) {
+        setIsSubmitting(true);
+        const res = await crearProveedor(nombre.trim());
+        if (res.success && res.proveedor) {
+          setProveedoresDb(prev => [...prev, res.proveedor]);
+          setFactura(prev => ({ ...prev, proveedor: res.proveedor.id?.toString() || '' }));
+          mostrarAlerta('Proveedor creado.', 'success');
+        } else {
+          mostrarAlerta('Error al crear proveedor.', 'error');
+        }
+        setIsSubmitting(false);
       }
-      setIsSubmitting(false);
-    }
+    });
   };
 
   const mostrarAlerta = (text: string, type: string) => {
@@ -388,7 +408,7 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
           </div>
           <p className="text-neutral-400 text-xs md:text-sm mt-1">Registra gastos, ingresos de mercancía y audita el historial</p></div>{profile?.rol === "MASTER" && activeSedeId && (<div className="mt-4 md:mt-0"><SedeSelector sedes={sedes} activeSedeId={activeSedeId} /></div>)}
 
-        <div className="flex p-1 bg-neutral-900 border border-neutral-800 rounded-xl overflow-x-auto hide-scrollbar max-w-full">
+        <div className="flex flex-wrap gap-2 md:gap-4 p-1 bg-transparent max-w-full">
           <button onClick={() => setActiveTab('insumos')} className={`flex items-center whitespace-nowrap gap-2 px-4 h-14 rounded-lg text-sm font-medium transition-all ${activeTab === 'insumos' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-neutral-200'}`}>
             <Package size={16} /> Compra Insumos (Móvil)
           </button>
@@ -466,9 +486,14 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
 
             <div className="lg:col-span-2">
               <label className="block text-sm font-medium text-neutral-300 mb-1.5">Método de Pago</label>
-              <select value={gasto.metodoPago} onChange={e => setGasto({...gasto, metodoPago: e.target.value})} className="w-full h-14 bg-black/50 border border-neutral-800 text-white text-base rounded-xl px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 appearance-none">
-                {metodosPago.map((metodo: string) => <option key={metodo} value={metodo}>{metodo}</option>)}
-              </select>
+              <CreatableSelect
+    options={metodosPago.map((m) => ({ value: m, label: m }))}
+    value={{ value: gasto.metodoPago, label: gasto.metodoPago }}
+    onChange={(selected) => setGasto({...gasto, metodoPago: selected ? selected.value : ''})}
+    styles={rsStyles}
+    placeholder="Selecciona o escribe..."
+    formatCreateLabel={(val) => `Usar "${val}"`}
+  />
             </div>
 
             <div>
@@ -803,9 +828,14 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
 
                 <div>
                   <label className="block text-sm font-medium text-neutral-400 mb-1.5">Método de Pago</label>
-                  <select value={editingRow.metodo_pago} onChange={e => setEditingRow({...editingRow, metodo_pago: e.target.value})} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 appearance-none">
-                    {metodosPago.map((metodo: string) => <option key={metodo} value={metodo}>{metodo}</option>)}
-                  </select>
+                  <CreatableSelect
+    options={metodosPago.map((m) => ({ value: m, label: m }))}
+    value={{ value: editingRow.metodo_pago, label: editingRow.metodo_pago }}
+    onChange={(selected) => setEditingRow({...editingRow, metodo_pago: selected ? selected.value : ''})}
+    styles={rsStyles}
+    placeholder="Selecciona o escribe..."
+    formatCreateLabel={(val) => `Usar "${val}"`}
+  />
                 </div>
                 {!editingRow.parsed_detalles?.is_insumos && (
                   <div>

@@ -143,7 +143,7 @@ export async function getHistorialCompras(busqueda?: string, fechaInicio?: strin
 
     let query = supabase
       .from('compras_puntuales')
-      .select('id, fecha_registro, proveedor, detalles, monto_divisas, tasa_cambio, monto_bs, metodo_pago, usuario_id')
+      .select('id, fecha_registro, proveedor, detalles, monto_divisas, tasa_cambio, monto_bs, metodo_pago, usuario_id, perfiles:usuario_id(nombre_completo)')
       .eq('id_empresa', idEmpresa)
       .order('fecha_registro', { ascending: false });
 
@@ -187,7 +187,7 @@ export async function getHistorialCompras(busqueda?: string, fechaInicio?: strin
       return {
         ...c,
         detalles: concepto,
-        operador: userMap[c.usuario_id] || 'Desconocido',
+        operador: (c as any).perfiles?.nombre_completo || userMap[c.usuario_id] || 'Desconocido',
       };
     }) || [];
 

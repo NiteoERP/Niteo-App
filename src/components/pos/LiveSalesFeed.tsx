@@ -13,7 +13,7 @@ interface LiveSalesFeedProps {
 export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedProps) {
   const [sales, setSales] = useState<VentaPOS[]>(initialSales);
   const [privacyMode, setPrivacyMode] = useState(false);
-  const [expandedRow, setExpandedRow] = useState<number | null>(null);
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
   
   const supabase = createClient();
 
@@ -63,13 +63,14 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
             id_factura: newVentaRaw.id,
             id_pos: newVentaRaw.id_pos,
             numero_documento: newVentaRaw.numero_documento,
+            numero_orden: newVentaRaw.numero_orden,
             fecha_venta: newVentaRaw.fecha_venta,
             total: newVentaRaw.total,
             descuento: newVentaRaw.descuento,
             tipo_documento: newVentaRaw.tipo_documento,
             esta_pagado: newVentaRaw.esta_pagado,
             cliente_nombre: (clienteRes as any).data?.nombre,
-            metodo_pago: (pagosRes.data || [])[0]?.tipo_pago,
+            pagos: (pagosRes.data || []).map(p => ({ tipo_pago: p.tipo_pago, monto: p.monto })),
             detalles: mappedDetalles,
           };
 
@@ -84,7 +85,7 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
   }, [sedeId, supabase]);
 
 
-  const toggleRow = (id: number) => {
+  const toggleRow = (id: string) => {
     if (expandedRow === id) setExpandedRow(null);
     else setExpandedRow(id);
   };
