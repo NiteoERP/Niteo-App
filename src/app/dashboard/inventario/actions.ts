@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 
 export async function createInsumo(empresaId: string, sedeId: string, nombre: string, unidad_medida: string, costo_promedio: number, cantidad_actual: number) {
   const supabase = await createClient();
-  const { data, error } = await supabase.from('inventario_insumos').insert([{ empresa_id: empresaId, nombre, unidad_medida, costo_promedio, cantidad_actual }]).select().single();
+  const { data, error } = await supabase.from('inventario_insumos').insert([{ empresa_id: empresaId, sede_id: sedeId, nombre, unidad_medida, costo_promedio, cantidad_actual }]).select().single();
   if (error) return { success: false, error: error.message };
   revalidatePath('/dashboard/inventario');
   return { success: true, data };

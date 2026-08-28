@@ -102,7 +102,7 @@ export async function generateReport(
 
     case 'ventas_clientes':
       rpcName   = 'get_reporte_ventas_clientes';
-      rpcParams = { p_empresa_id, p_sede_id, p_fecha_inicio, p_fecha_fin };
+      rpcParams = { p_empresa_id, p_sede_id, p_fecha_inicio, p_fecha_fin, p_cajero_nombre: p_cajero_id };
       break;
 
     case 'ventas_productos_clientes':
@@ -117,7 +117,7 @@ export async function generateReport(
 
     case 'cuentas_por_cobrar':
       rpcName   = 'get_reporte_cuentas_por_cobrar';
-      rpcParams = { p_empresa_id, p_sede_id };
+      rpcParams = { p_empresa_id, p_sede_id, p_fecha_inicio, p_fecha_fin };
       break;
 
     case 'cuentas_abiertas':
@@ -150,7 +150,7 @@ export async function generateReport(
         p_fecha_inicio,
         p_fecha_fin,
         p_cliente_id,
-        p_cajero_id,
+        p_cajero_nombre: p_cajero_id, // El backend fue actualizado para recibir el nombre
       };
       break;
 

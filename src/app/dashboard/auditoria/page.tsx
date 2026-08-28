@@ -84,11 +84,11 @@ export default function AuditoriaPage() {
                     <td className="py-4 px-6">
                       {log.perfiles ? (
                         <div>
-                          <p className="text-white font-medium">{log.perfiles.nombre}</p>
-                          <p className="text-xs text-neutral-500">{log.perfiles.email}</p>
+                          <p className="text-white font-medium">{log.perfiles.nombre_completo || 'Usuario sin nombre'}</p>
+                          <p className="text-xs text-neutral-500">{log.perfiles.rol || 'Sin rol'}</p>
                         </div>
                       ) : (
-                        <span className="text-neutral-500 italic">Sincronización (Sistema)</span>
+                        <span className="text-neutral-500 italic">Sistema</span>
                       )}
                     </td>
                     <td className="py-4 px-6">

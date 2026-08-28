@@ -18,11 +18,11 @@ export async function getAuditoriaLogs(page: number = 1, limit: number = 50) {
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
-    // Obtener logs con el nombre de usuario (requiere join manual o función, aquí traemos el usuario_id y luego buscamos)
-    // Supabase auth.users no se puede joinear fácilmente desde la UI, usaremos perfiles si existe o el id crudo
+    // Obtener logs con el nombre de usuario
+    // Supabase auth.users no se puede joinear fácilmente desde la UI, usaremos perfiles
     const { data: logs, error, count } = await supabase
       .from('auditoria_logs')
-      .select('*, perfiles:usuario_id(email, nombre, rol)', { count: 'exact' })
+      .select('*, perfiles:usuario_id(nombre_completo, rol)', { count: 'exact' })
       .eq('empresa_id', profile.empresa_id)
       .order('fecha_registro', { ascending: false })
       .range(from, to);

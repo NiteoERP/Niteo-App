@@ -579,7 +579,7 @@ export default function InformesPage() {
                     className="w-full h-12 bg-neutral-950 border border-neutral-800 text-white text-base rounded-xl px-3 appearance-none focus:outline-none focus:border-indigo-500"
                   >
                     <option value="">Todos los empleados</option>
-                    {cajeros.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                    {cajeros.map(c => <option key={c.id} value={c.nombre}>{c.nombre}</option>)}
                   </select>
                 </div>
               )}
@@ -859,7 +859,7 @@ function DesktopReportPanel({
               <select value={cajeroFilter} onChange={e => setCajeroFilter(e.target.value)}
                 className="w-full h-10 bg-neutral-900 border border-neutral-800 text-white text-sm px-3 rounded-xl appearance-none focus:outline-none focus:border-indigo-500">
                 <option value="">Todos los empleados</option>
-                {cajeros.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                {cajeros.map(c => <option key={c.id} value={c.nombre}>{c.nombre}</option>)}
               </select>
             </div>
           )}
