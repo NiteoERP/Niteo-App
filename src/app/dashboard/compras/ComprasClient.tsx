@@ -425,19 +425,19 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
               <label className="block text-sm font-medium text-neutral-300 mb-1.5">Comercio / Beneficiario *</label>
-              <input type="text" value={gasto.proveedor} onChange={e => setGasto({...gasto, proveedor: e.target.value})} placeholder="Ej: Ferretería EPA" className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+              <input type="text" value={gasto.proveedor} onChange={e => setGasto({...gasto, proveedor: e.target.value})} placeholder="Ej: Ferretería EPA" className="w-full h-14 bg-black/50 border border-neutral-800 text-white text-base rounded-xl px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
             </div>
 
             <div className="lg:col-span-1">
               <label className="block text-sm font-medium text-neutral-300 mb-1.5">Fecha *</label>
-              <input type="date" value={gasto.fechaRegistro} onChange={e => setGasto({...gasto, fechaRegistro: e.target.value})} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+              <input type="date" value={gasto.fechaRegistro} onChange={e => setGasto({...gasto, fechaRegistro: e.target.value})} className="w-full h-14 bg-black/50 border border-neutral-800 text-white text-base rounded-xl px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 [color-scheme:dark]" />
             </div>
 
             <div className="lg:col-span-1">
               <label className="block text-sm font-medium text-neutral-300 mb-1.5">Monto y Moneda *</label>
               <div className="flex gap-2">
-                <input type="number" value={monedaGasto === 'USD' ? gasto.montoDivisas : gasto.montoBs} onChange={e => handleMontoChange(e.target.value)} placeholder="0.00" className="flex-1 bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-                <select value={monedaGasto} onChange={e => handleMonedaChange(e.target.value as 'USD'|'VES')} className="w-28 bg-black/50 border border-neutral-800 text-white rounded-xl px-2 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 appearance-none text-center">
+                <input type="number" inputMode="decimal" value={monedaGasto === 'USD' ? gasto.montoDivisas : gasto.montoBs} onChange={e => handleMontoChange(e.target.value)} placeholder="0.00" className="flex-1 h-14 bg-black/50 border border-neutral-800 text-white text-base rounded-xl px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                <select value={monedaGasto} onChange={e => handleMonedaChange(e.target.value as 'USD'|'VES')} className="w-24 h-14 bg-black/50 border border-neutral-800 text-white text-base rounded-xl px-2 focus:outline-none focus:ring-1 focus:ring-indigo-500 appearance-none text-center">
                   <option value="USD">USD</option>
                   <option value="VES">Bs</option>
                 </select>
@@ -452,7 +452,7 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
                 Tasa de Cambio (Bs) * 
                 <Lock size={12} className="text-indigo-400" />
               </label>
-              <input type="number" value={gasto.tasaCambio} onChange={e => handleTasaChange(e.target.value)} placeholder="Ej: 36.50" className="w-full bg-indigo-900/10 border border-indigo-500/30 text-indigo-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors" />
+              <input type="number" inputMode="decimal" value={gasto.tasaCambio} onChange={e => handleTasaChange(e.target.value)} placeholder="Ej: 36.50" className="w-full h-14 bg-indigo-900/10 border border-indigo-500/30 text-indigo-200 text-base rounded-xl px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors" />
             </div>
 
             <div className="hidden lg:block">
@@ -461,24 +461,24 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
 
             <div className="lg:col-span-3">
               <label className="block text-sm font-medium text-neutral-300 mb-1.5">Detalles del Gasto</label>
-              <textarea rows={3} value={gasto.detalles} onChange={e => setGasto({...gasto, detalles: e.target.value})} placeholder="Detalles de compra..." className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-none" />
+              <textarea rows={3} value={gasto.detalles} onChange={e => setGasto({...gasto, detalles: e.target.value})} placeholder="Detalles de compra..." className="w-full bg-black/50 border border-neutral-800 text-white text-base rounded-xl px-4 py-3.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-none" />
             </div>
 
             <div className="lg:col-span-2">
               <label className="block text-sm font-medium text-neutral-300 mb-1.5">Método de Pago</label>
-              <select value={gasto.metodoPago} onChange={e => setGasto({...gasto, metodoPago: e.target.value})} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 appearance-none">
+              <select value={gasto.metodoPago} onChange={e => setGasto({...gasto, metodoPago: e.target.value})} className="w-full h-14 bg-black/50 border border-neutral-800 text-white text-base rounded-xl px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 appearance-none">
                 {metodosPago.map((metodo: string) => <option key={metodo} value={metodo}>{metodo}</option>)}
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-neutral-300 mb-1.5">Nº Documento / Referencia</label>
-              <input type="text" value={gasto.documentoExterno} onChange={e => setGasto({...gasto, documentoExterno: e.target.value})} placeholder="(Opcional)" className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+              <input type="text" value={gasto.documentoExterno} onChange={e => setGasto({...gasto, documentoExterno: e.target.value})} placeholder="(Opcional)" className="w-full h-14 bg-black/50 border border-neutral-800 text-white text-base rounded-xl px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
             </div>
           </div>
 
           <div className="mt-8 flex justify-end">
-            <button onClick={handleRegistrarGasto} disabled={isSubmitting} className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 px-6 rounded-xl transition-all shadow-[0_0_15px_rgba(79,70,229,0.3)] flex items-center gap-2 disabled:opacity-50">
+            <button onClick={handleRegistrarGasto} disabled={isSubmitting} className="w-full md:w-auto h-14 md:h-auto md:py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-6 rounded-xl transition-all shadow-[0_0_15px_rgba(79,70,229,0.3)] flex items-center justify-center gap-2 disabled:opacity-50">
               {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />} Registrar Gasto
             </button>
           </div>

@@ -19,13 +19,14 @@ const MODULES = [
   { id: 'ver_todas_compras', label: 'Ver Historial Global de Compras' },
 ];
 
-export default function AddUserModal() {
+export default function AddUserModal({ onUserCreated }: { onUserCreated?: (member: { id: string; nombre_completo: string; rol: string }) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   const [sedes, setSedes] = useState<any[]>([]);
   const [selectedSede, setSelectedSede] = useState<string>('ALL');
+  const [selectedRol, setSelectedRol] = useState<string>('CAJERO');
   
   const [selectedModules, setSelectedModules] = useState<string[]>(['pos']);
 
@@ -67,31 +68,54 @@ export default function AddUserModal() {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
 
-    const res = await createUser(email, password, nombre, selectedModules, selectedSede);
+    // FIX: pasar el rol seleccionado para que quede en app_metadata y en perfiles
+    const res = await createUser(email, password, nombre, selectedModules, selectedSede, selectedRol);
     if (!res.success) {
       setError(res.error || 'Error al crear usuario');
       setLoading(false);
     } else {
+      // FIX 3: notificar al padre para actualizar la lista sin recargar la página
+      onUserCreated?.({
+        id: (res as any).userId ?? `temp-${Date.now()}`,
+        nombre_completo: nombre,
+        rol: selectedRol,
+      });
       setIsOpen(false);
       setLoading(false);
       // Reset form state
       setSelectedModules(['pos']);
       setSelectedSede('ALL');
+      setSelectedRol('CAJERO');
     }
   };
+
 
   return (
     <>
       <button 
         onClick={() => setIsOpen(true)}
-        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 flex items-center gap-2 rounded-lg text-sm font-bold transition-colors"
+        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 h-12 w-full sm:w-auto sm:h-auto sm:py-2
+                   flex items-center justify-center gap-2 rounded-xl text-sm font-bold transition-colors"
       >
         <Plus size={18} /> Agregar Usuario
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex justify-center items-center p-4">
-          <div className="bg-neutral-900 border border-neutral-800 p-6 rounded-xl w-full max-w-2xl shadow-2xl relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+        /* REGLA 4: Bottom Sheet en mobile, Dialog centrado en sm+ */
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center sm:justify-center">
+
+
+          <div className="bg-neutral-900 border-t border-neutral-800 sm:border rounded-t-3xl sm:rounded-xl
+                          w-full sm:max-w-2xl
+                          max-h-[92dvh] sm:max-h-[90vh]
+                          overflow-y-auto custom-scrollbar
+                          flex flex-col
+                          animate-in slide-in-from-bottom sm:slide-in-from-bottom-0 sm:fade-in duration-300
+                          shadow-2xl relative">
+            {/* Handle (solo mobile) */}
+            <div className="flex justify-center pt-3 pb-1 shrink-0 sm:hidden">
+              <div className="w-10 h-1 rounded-full bg-neutral-700" />
+            </div>
             <button onClick={() => setIsOpen(false)} className="absolute top-4 right-4 text-neutral-400 hover:text-white">
               <X size={20} />
             </button>
@@ -130,6 +154,19 @@ export default function AddUserModal() {
                     {sedes.map(s => (
                       <option key={s.id} value={s.id}>{s.nombre}</option>
                     ))}
+                  </select>
+                </div>
+                {/* FIX: selector de rol para que quede en app_metadata y en perfiles */}
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1">Rol del Usuario</label>
+                  <select
+                    value={selectedRol}
+                    onChange={(e) => setSelectedRol(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white outline-none focus:border-indigo-500"
+                  >
+                    <option value="CAJERO">Cajero — Acceso básico de operación</option>
+                    <option value="GERENTE">Gerente — Acceso a finanzas y reportes</option>
+                    <option value="COMPRADOR">Comprador — Acceso a compras e inventario</option>
                   </select>
                 </div>
               </div>

@@ -7,12 +7,14 @@ export interface VentaPOS {
   id_factura: number;
   id_pos: number;
   numero_documento: string;
-    numero_orden?: string;
+  numero_orden?: string;
   fecha_venta: string;
   total: number;
   descuento: number;
   tipo_documento: string;
   esta_pagado: boolean;
+  cliente_nombre?: string;
+  metodo_pago?: string;       // resumen del primer método de pago registrado
   detalles: VentaDetalle[];
 }
 
@@ -41,6 +43,8 @@ export async function getVentasRecientes(sedeId: string): Promise<VentaPOS[]> {
     .from('ventas_facturas')
     .select(`
       *,
+      clientes ( nombre ),
+      ventas_pagos ( tipo_pago, monto ),
       ventas_detalles (
         id,
         producto_id,
@@ -68,13 +72,16 @@ export async function getVentasRecientes(sedeId: string): Promise<VentaPOS[]> {
     id_factura: v.id,
     id_pos: v.id_pos,
     numero_documento: v.numero_documento,
-      numero_orden: v.numero_orden,
+    numero_orden: v.numero_orden,
     fecha_venta: v.fecha_venta,
     total: v.total,
     descuento: v.descuento,
     tipo_documento: v.tipo_documento,
     esta_pagado: v.estado_pago === 1,
+    cliente_nombre: v.clientes?.nombre,
+    metodo_pago: (v.ventas_pagos || [])[0]?.tipo_pago,
     detalles: (v.ventas_detalles || []).map((d: any) => ({
+
       id_detalle: d.id,
       producto_id: d.producto_id,
       cantidad: d.cantidad,

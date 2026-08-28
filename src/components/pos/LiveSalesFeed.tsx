@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { VentaPOS } from '@/actions/pos-actions';
-import { Eye, EyeOff, Receipt, Clock, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Eye, EyeOff, Receipt, Clock, CheckCircle2, ChevronDown, ChevronUp, Users, CreditCard } from 'lucide-react';
 
 interface LiveSalesFeedProps {
   initialSales: VentaPOS[];
@@ -18,7 +18,6 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
   const supabase = createClient();
 
   useEffect(() => {
-    // Restaurar preferencia de privacidad
     const savedPrivacy = localStorage.getItem('niteo_privacy_mode');
     if (savedPrivacy === 'true') setPrivacyMode(true);
   }, []);
@@ -38,15 +37,19 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
         async (payload) => {
           const newVentaRaw = payload.new;
           
-          // Como Realtime de INSERT solo trae la fila insertada y no las relaciones (ventas_detalles),
-          // podríamos hacer un fetch rápido del detalle o agregarlo de forma optimista.
-          // Para esta demostración, hacemos un pequeño fetch del detalle:
-          const { data: detalles } = await supabase
-            .from('ventas_detalles')
-            .select('id_detalle:id, producto_id, cantidad, precio_unitario, total, productos(nombre, codigo_barras)')
-            .eq('factura_id', newVentaRaw.id);
+          // Fetch detalles, cliente y pagos para la nueva venta
+          const [detallesRes, clienteRes, pagosRes] = await Promise.all([
+            supabase
+              .from('ventas_detalles')
+              .select('id_detalle:id, producto_id, cantidad, precio_unitario, total, productos(nombre, codigo_barras)')
+              .eq('factura_id', newVentaRaw.id),
+            newVentaRaw.cliente_id
+              ? supabase.from('clientes').select('nombre').eq('id', newVentaRaw.cliente_id).single()
+              : Promise.resolve({ data: null }),
+            supabase.from('ventas_pagos').select('tipo_pago, monto').eq('factura_id', newVentaRaw.id),
+          ]);
 
-          const mappedDetalles = (detalles || []).map((d: any) => ({
+          const mappedDetalles = (detallesRes.data || []).map((d: any) => ({
             id_detalle: d.id_detalle,
             producto_id: d.producto_id,
             cantidad: d.cantidad,
@@ -65,10 +68,11 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
             descuento: newVentaRaw.descuento,
             tipo_documento: newVentaRaw.tipo_documento,
             esta_pagado: newVentaRaw.esta_pagado,
+            cliente_nombre: (clienteRes as any).data?.nombre,
+            metodo_pago: (pagosRes.data || [])[0]?.tipo_pago,
             detalles: mappedDetalles,
           };
 
-          // Añadir la nueva venta al principio de la lista y dar efecto visual
           setSales((current) => [newVenta, ...current]);
         }
       )
@@ -78,6 +82,7 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
       supabase.removeChannel(channel);
     };
   }, [sedeId, supabase]);
+
 
   const toggleRow = (id: number) => {
     if (expandedRow === id) setExpandedRow(null);
@@ -155,6 +160,21 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
                         <span className="mx-1">•</span>
                         {formatDocNumber(sale.numero_documento)}
                       </p>
+                      {/* FIX 5: Cliente y Método de Pago */}
+                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
+                        {sale.cliente_nombre && (
+                          <span className="text-xs text-neutral-400 flex items-center gap-1">
+                            <Users size={11} className="text-indigo-400" />
+                            {privacyMode ? '****' : sale.cliente_nombre}
+                          </span>
+                        )}
+                        {sale.metodo_pago && (
+                          <span className="text-xs text-neutral-400 flex items-center gap-1">
+                            <CreditCard size={11} className="text-emerald-400" />
+                            {sale.metodo_pago}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 

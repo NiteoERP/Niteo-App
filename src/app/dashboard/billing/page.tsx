@@ -1,5 +1,6 @@
 import React from 'react';
 import { createClient } from '@/utils/supabase/server';
+import { redirect } from 'next/navigation';
 import BillingClient from './BillingClient';
 
 export default async function BillingPage() {
@@ -7,6 +8,11 @@ export default async function BillingPage() {
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) return null;
+
+  // FIX: solo el rol MASTER puede acceder a los planes de suscripción
+  const userRole = user.app_metadata?.user_role;
+  if (userRole !== 'MASTER') redirect('/dashboard');
+
   const empresaId = user.app_metadata?.empresa_id;
 
   let sub = null;

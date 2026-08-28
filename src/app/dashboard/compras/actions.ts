@@ -172,10 +172,24 @@ export async function getHistorialCompras(busqueda?: string, fechaInicio?: strin
     const userMap: Record<string, string> = {};
     perfiles?.forEach(p => { userMap[p.id] = p.nombre_completo; });
 
-    const comprasMap = data?.map(c => ({
-      ...c,
-      operador: userMap[c.usuario_id] || 'Desconocido'
-    })) || [];
+    const comprasMap = data?.map(c => {
+      // FIX 5b: detalles se almacena como JSON string en compras de insumos.
+      // Parseamos para extraer el texto legible antes de enviarlo al frontend.
+      let concepto = c.detalles || '-';
+      if (typeof concepto === 'string' && concepto.trim().startsWith('{')) {
+        try {
+          const parsed = JSON.parse(concepto);
+          concepto = parsed.texto ?? parsed.descripcion ?? concepto;
+        } catch (_) {
+          // Si el parse falla, mantenemos el original (puede ser texto libre)
+        }
+      }
+      return {
+        ...c,
+        detalles: concepto,
+        operador: userMap[c.usuario_id] || 'Desconocido',
+      };
+    }) || [];
 
     return { success: true, compras: comprasMap };
   } catch (err: any) {

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Trash2, Wallet, CreditCard, Smartphone, DollarSign, CheckCircle2, Building2, Hash, ChevronDown, ChevronUp, GripHorizontal, X } from 'lucide-react';
+import { Plus, Trash2, Wallet, CreditCard, Smartphone, DollarSign, CheckCircle2, Building2, Hash, ChevronDown, ChevronUp, GripHorizontal, X, RotateCcw } from 'lucide-react';
 import { getCierrePrevio, guardarCierre, getBancosUtilizados } from '@/actions/cierres-actions';
 import { getSedes } from '@/actions/sedes-actions';
 import { useCajaSync } from '@/hooks/useCajaSync';
@@ -26,10 +26,26 @@ interface Transaccion {
   moneda: Moneda;
 }
 
+// Clave de borrador en localStorage
+const DRAFT_KEY = 'niteo_draft_cierre';
+
+const METODOS_DEFAULT: MetodoConfig[] = [
+  { id: 'Pago Móvil', icon: Smartphone, color: 'text-indigo-400', defaultMoneda: 'VES' },
+  { id: 'Punto de Venta', icon: CreditCard, color: 'text-emerald-400', defaultMoneda: 'VES' },
+  { id: 'Zelle', icon: DollarSign, color: 'text-purple-400', defaultMoneda: 'USD' },
+  { id: 'Efectivo', icon: Wallet, color: 'text-amber-400', defaultMoneda: 'USD' },
+];
+
+// Mapa de icon components para rehidratar desde localStorage (solo strings serializables)
+const ICON_MAP: Record<string, any> = {
+  Smartphone, CreditCard, DollarSign, Wallet, GripHorizontal,
+};
+
 export default function NuevoCierreCaja() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [hasDraft, setHasDraft] = useState(false);
   
   // Datos del sistema
   const [tasaCambio, setTasaCambio] = useState(1);
@@ -48,12 +64,7 @@ export default function NuevoCierreCaja() {
   const [expandedMetodo, setExpandedMetodo] = useState<string | null>('Pago Móvil');
 
   // Metodos dinámicos
-  const [metodos, setMetodos] = useState<MetodoConfig[]>([
-    { id: 'Pago Móvil', icon: Smartphone, color: 'text-indigo-400', defaultMoneda: 'VES' },
-    { id: 'Punto de Venta', icon: CreditCard, color: 'text-emerald-400', defaultMoneda: 'VES' },
-    { id: 'Zelle', icon: DollarSign, color: 'text-purple-400', defaultMoneda: 'USD' },
-    { id: 'Efectivo', icon: Wallet, color: 'text-amber-400', defaultMoneda: 'USD' },
-  ]);
+  const [metodos, setMetodos] = useState<MetodoConfig[]>(METODOS_DEFAULT);
 
   // Hook de sincronización en tiempo real con Supabase Broadcast
   useCajaSync(selectedSedeId, transacciones, setTransacciones, metodos, setMetodos);
@@ -62,6 +73,57 @@ export default function NuevoCierreCaja() {
   const [showNewMetodo, setShowNewMetodo] = useState(false);
   const [newMetodoName, setNewMetodoName] = useState('');
   const [newMetodoMoneda, setNewMetodoMoneda] = useState<Moneda>('VES');
+
+  // ─── FIX 1: RESTAURAR BORRADOR DESDE localStorage AL MONTAR ──────────────
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) {
+        const draft = JSON.parse(raw);
+        if (draft.transacciones?.length > 0) {
+          setTransacciones(draft.transacciones);
+          setHasDraft(true);
+        }
+        if (draft.metodos_custom?.length > 0) {
+          // Rehidratar icon component desde el mapa de iconos
+          const customRestored: MetodoConfig[] = draft.metodos_custom.map((m: any) => ({
+            ...m,
+            icon: ICON_MAP[m.iconKey] || GripHorizontal,
+          }));
+          setMetodos([...METODOS_DEFAULT, ...customRestored]);
+        }
+      }
+    } catch (_) {
+      // Si el JSON está corrupto lo ignoramos
+      localStorage.removeItem(DRAFT_KEY);
+    }
+  }, []);
+
+  // ─── FIX 1: GUARDAR BORRADOR EN localStorage EN CADA CAMBIO ─────────────
+  useEffect(() => {
+    if (loading) return; // No guardar antes de que carguen los datos iniciales
+    try {
+      const metodos_custom = metodos
+        .filter(m => m.isCustom)
+        .map(m => ({
+          id: m.id,
+          color: m.color,
+          defaultMoneda: m.defaultMoneda,
+          isCustom: true,
+          iconKey: 'GripHorizontal', // único tipo custom por ahora
+        }));
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ transacciones, metodos_custom }));
+      setHasDraft(transacciones.length > 0);
+    } catch (_) { /* no lanzar en SSR o modo privado */ }
+  }, [transacciones, metodos, loading]);
+
+  const limpiarBorrador = () => {
+    localStorage.removeItem(DRAFT_KEY);
+    setTransacciones([]);
+    setMetodos(METODOS_DEFAULT);
+    setHasDraft(false);
+  };
+  // ─────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     async function loadInitial() {
@@ -94,6 +156,7 @@ export default function NuevoCierreCaja() {
     }
     loadInitial();
   }, []);
+
 
   const handleSedeChange = async (newSedeId: string) => {
     setSelectedSedeId(newSedeId);
@@ -244,6 +307,9 @@ export default function NuevoCierreCaja() {
       if (res.error) {
         alert(res.error);
       } else {
+        // FIX 1: limpiar el borrador al guardar con éxito
+        localStorage.removeItem(DRAFT_KEY);
+        setHasDraft(false);
         alert('Cierre guardado correctamente!');
         router.push('/dashboard/caja');
       }
@@ -263,6 +329,28 @@ export default function NuevoCierreCaja() {
 
   return (
     <div className="animate-in fade-in duration-500 space-y-6 pb-24 max-w-4xl mx-auto">
+
+      {/* FIX 1: BANNER DE BORRADOR ACTIVO */}
+      {hasDraft && (
+        <div className="flex items-center justify-between gap-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl px-5 py-3">
+          <div className="flex items-center gap-3">
+            <RotateCcw size={18} className="text-amber-400 shrink-0" />
+            <div>
+              <p className="text-amber-300 text-sm font-semibold">Borrador restaurado</p>
+              <p className="text-amber-500/80 text-xs">
+                Tienes {transacciones.length} transacción(es) guardada(s) de una sesión anterior.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={limpiarBorrador}
+            className="text-xs text-amber-400 hover:text-white border border-amber-500/30 hover:border-amber-400 hover:bg-amber-500/20 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap flex items-center gap-1.5"
+          >
+            <X size={13} /> Limpiar borrador
+          </button>
+        </div>
+      )}
+
       {/* HEADER */}
       <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 md:p-8 flex justify-between items-center shadow-sm">
         <div>

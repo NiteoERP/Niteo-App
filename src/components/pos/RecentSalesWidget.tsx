@@ -140,7 +140,7 @@ export default function RecentSalesWidget() {
 
       <div className="p-3 border-t border-neutral-800 bg-neutral-950/50">
         <Link 
-          href="/dashboard/pos" 
+          href="/dashboard/ventas" 
           className="flex items-center justify-center gap-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors w-full p-1"
         >
           Ver Todas <ChevronRight size={14} />
