@@ -152,8 +152,8 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
                       <Receipt size={18} />
                     </div>
                     <div>
-                      <p className="text-neutral-200 font-medium flex items-center gap-2">
-                        {sale.tipo_documento}
+                      <p className="text-neutral-200 font-medium flex items-center gap-2 text-base">
+                        <span className="font-bold text-white uppercase">{sale.numero_orden || (sale.tipo_documento === 'Sales' || sale.tipo_documento === 'VENTA' ? 'Venta de Caja' : sale.tipo_documento)}</span>
                         {sale.esta_pagado && <CheckCircle2 size={14} className="text-emerald-500" />}
                       </p>
                       <p className="text-neutral-500 text-sm flex items-center gap-1 mt-0.5">
@@ -169,10 +169,17 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
                             {privacyMode ? '****' : sale.cliente_nombre}
                           </span>
                         )}
-                        {sale.metodo_pago && (
-                          <span className="text-xs text-neutral-400 flex items-center gap-1">
-                            <CreditCard size={11} className="text-emerald-400" />
-                            {sale.metodo_pago}
+                        {sale.pagos && sale.pagos.length > 0 ? (
+                          sale.pagos.map((p, idx) => (
+                            <span key={idx} className="text-[11px] font-medium text-emerald-400 flex items-center gap-1 bg-emerald-400/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                              <CreditCard size={11} />
+                              {p.tipo_pago}: {formatCurrency(p.monto)}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-[11px] font-medium text-neutral-500 flex items-center gap-1 bg-neutral-900 px-1.5 py-0.5 rounded border border-neutral-800">
+                            <CreditCard size={11} />
+                            {sale.esta_pagado ? 'No registrado' : 'A Crédito'}
                           </span>
                         )}
                       </div>
