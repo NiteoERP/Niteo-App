@@ -171,8 +171,9 @@ export async function registrarFacturaInsumos(factura: {
     tasa_cambio: factura.tasa,     
     detalles: JSON.stringify({ texto: `Compra Insumos - ${factura.items.length} items`, is_insumos: true, items: factura.items }),     
     metodo_pago: factura.metodo_pago || (factura.moneda === 'USD' ? 'Efectivo USD' : 'Transferencia BS'),     
-    estado: 'PROCESADA'   
-  }).select('id').single();    
+    estado: 'PROCESADA',
+      usuario_id: user.id
+    }).select('id').single();    
   if (headErr) return { error: 'Error guardando factura: ' + headErr.message };    
   for (const item of factura.items) {     
     let idInsumo = item.insumo_id;     
