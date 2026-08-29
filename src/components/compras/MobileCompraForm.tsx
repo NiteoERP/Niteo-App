@@ -4,6 +4,7 @@ import React, { useState, useEffect, useTransition } from 'react';
 import { getInsumos, getTasaDelDia } from '@/actions/compras-actions';
 import { registrarFacturaInsumos } from '@/actions/compras-actions';
 import { Loader2, CheckCircle2, ShoppingCart, Search, Plus, Trash2, Building2 } from 'lucide-react';
+import CreatableSelect from 'react-select/creatable';
 
 type Insumo = {
   id: string;
@@ -29,6 +30,8 @@ export default function MobileCompraForm() {
   // Header
   const [proveedor, setProveedor] = useState('');
   const [monedaGlobal, setMonedaGlobal] = useState<'USD'|'VES'>('USD');
+  const [metodoPago, setMetodoPago] = useState('Efectivo USD');
+  const metodosDisponibles = ['Efectivo USD', 'Efectivo Bs', 'Pago Móvil', 'Zelle', 'Punto de Venta'];
   
   // Add Item Form
   const [searchTerm, setSearchTerm] = useState('');
@@ -149,7 +152,8 @@ export default function MobileCompraForm() {
       const res = await registrarFacturaInsumos({
         proveedor: proveedor || 'Proveedor General',
         moneda: monedaGlobal,
-        tasa: tasaDelDia,
+          tasa: tasaDelDia,
+          metodo_pago: metodoPago,
         items: normalizedItems
       });
 
