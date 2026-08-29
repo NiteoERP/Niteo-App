@@ -117,7 +117,7 @@ export async function generateReport(
 
     case 'cuentas_por_cobrar':
       rpcName   = 'get_reporte_cuentas_por_cobrar';
-      rpcParams = { p_empresa_id, p_sede_id, p_fecha_inicio, p_fecha_fin };
+      rpcParams = { p_empresa_id, p_sede_id };
       break;
 
     case 'cuentas_abiertas':
