@@ -32,7 +32,7 @@ export async function getClientesConDeuda(sedeId: string, startDate: Date, endDa
   const { data, error, count } = await query.range(from, to);
 
   if (error) return { success: false, error: error.message };
-  const mappedData = (data || []).map(cli => ({
+  const mappedData = (data || []).map((cli: any) => ({
     id_cliente: cli.cliente_id || cli.id_cliente,
     nombre_cliente: cli.nombre_cliente,
     sedes_involucradas: cli.nombre_sede || cli.sedes_involucradas,
