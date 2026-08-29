@@ -6,6 +6,7 @@ import { getSedes } from "@/actions/dashboard-actions";
 import { getClientesConDeuda, getDetalleDeudaCliente, registrarAbono, getMetodosPago, registrarAbonoGlobal } from "@/actions/creditos-actions";
 import { format, startOfYear } from "date-fns";
 import { useEmpresa } from "@/components/providers/EmpresaProvider";
+import CreatableSelect from "react-select/creatable";
 import { Calendar as CalendarIcon, Store, Wallet, Search, Check, FileText, ShoppingCart, User, Users, PlusCircle, X, Download, Hash } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -381,15 +382,19 @@ export default function CreditosPage() {
 
               <div>
                 <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Método de Pago</label>
-                <select 
-                  value={metodoPago} 
-                  onChange={(e) => setMetodoPago(e.target.value)} 
-                  className="w-full bg-neutral-950 border border-neutral-800 focus:border-neutral-600 text-white font-medium py-3 px-4 rounded-xl outline-none appearance-none"
-                >
-                  {metodosDisponibles.map(m => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
+                <CreatableSelect
+                  options={metodosDisponibles.map((m) => ({ value: m, label: m }))}
+                  value={{ value: metodoPago, label: metodoPago }}
+                  onChange={(selected) => setMetodoPago(selected ? selected.value : '')}
+                  placeholder="Escribe o selecciona..."
+                  styles={{
+                    control: (base) => ({ ...base, backgroundColor: '#0a0a0a', borderColor: '#262626', minHeight: '50px', borderRadius: '0.75rem', color: '#fff' }),
+                    menu: (base) => ({ ...base, backgroundColor: '#171717', border: '1px solid #262626', zIndex: 9999 }),
+                    option: (base, state) => ({ ...base, backgroundColor: state.isFocused ? '#262626' : '#171717', color: '#fff' }),
+                    singleValue: (base) => ({ ...base, color: '#fff' }),
+                    input: (base) => ({ ...base, color: '#fff' })
+                  }}
+                />
               </div>
 
               <button 
@@ -427,15 +432,19 @@ export default function CreditosPage() {
 
               <div>
                 <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Método de Pago</label>
-                <select 
-                  value={metodoPago} 
-                  onChange={(e) => setMetodoPago(e.target.value)} 
-                  className="w-full bg-neutral-950 border border-neutral-800 focus:border-neutral-600 text-white font-medium py-3 px-4 rounded-xl outline-none appearance-none"
-                >
-                  {metodosDisponibles.map(m => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
+                <CreatableSelect
+                  options={metodosDisponibles.map((m) => ({ value: m, label: m }))}
+                  value={{ value: metodoPago, label: metodoPago }}
+                  onChange={(selected) => setMetodoPago(selected ? selected.value : '')}
+                  placeholder="Escribe o selecciona..."
+                  styles={{
+                    control: (base) => ({ ...base, backgroundColor: '#0a0a0a', borderColor: '#262626', minHeight: '50px', borderRadius: '0.75rem', color: '#fff' }),
+                    menu: (base) => ({ ...base, backgroundColor: '#171717', border: '1px solid #262626', zIndex: 9999 }),
+                    option: (base, state) => ({ ...base, backgroundColor: state.isFocused ? '#262626' : '#171717', color: '#fff' }),
+                    singleValue: (base) => ({ ...base, color: '#fff' }),
+                    input: (base) => ({ ...base, color: '#fff' })
+                  }}
+                />
               </div>
 
               <button 
