@@ -567,25 +567,7 @@ export default function NuevoCierreCaja() {
                                 onBlur={() => setTimeout(() => setMostrarSugerencias(null), 200)}
                                 className="w-full bg-neutral-900 border border-neutral-800 focus:border-indigo-500 rounded-lg h-9 px-3 text-white text-sm outline-none transition-colors"
                               />
-                              {mostrarSugerencias === tx.id && (
-                                <div className="absolute z-[100] w-[calc(100%-1rem)] top-[46px] mt-1 bg-neutral-800 border border-neutral-700 rounded-lg shadow-2xl overflow-hidden max-h-40 overflow-y-auto custom-scrollbar">
-                                  {bancosSugeridos.filter(b => b.toLowerCase().includes(tx.banco.toLowerCase())).length > 0 ? (
-                                    bancosSugeridos.filter(b => b.toLowerCase().includes(tx.banco.toLowerCase())).map(b => (
-                                      <button 
-                                        key={b}
-                                        onMouseDown={(e) => e.preventDefault()} 
-                                        onClick={() => selectBanco(tx.id, b)}
-                                        className="w-full text-left px-3 py-2 hover:bg-indigo-600 text-white text-xs transition-colors"
-                                      >
-                                        {b}
-                                      </button>
-                                    ))
-                                  ) : (
-                                    <div className="px-3 py-2 text-xs text-neutral-400">Presiona enter para crear</div>
-                                  )}
-                                </div>
-                              )}
-                            </td>
+                              </td>
 
                             <td className="py-2 px-2 text-center align-top pt-3">
                               <button 
