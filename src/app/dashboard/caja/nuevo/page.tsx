@@ -57,6 +57,9 @@ export default function NuevoCierreCaja() {
   
   // Listas sugeridas
   const [bancosSugeridos, setBancosSugeridos] = useState<string[]>([]);
+  
+  const sugerenciasDefault = ['Banesco', 'Mercantil', 'Provincial', 'Venezuela', 'BNC', 'Bancaribe', 'Zelle', 'Bicentenario', 'Bancamiga', 'Tesoro', 'Exterior'];
+  const bancosList = Array.from(new Set([...sugerenciasDefault, ...bancosSugeridos])).sort();
     
   // Transacciones
   const [transacciones, setTransacciones] = useState<Transaccion[]>([]);
@@ -681,7 +684,7 @@ export default function NuevoCierreCaja() {
         })}
 
         <datalist id="bancos-list">
-          {bancosSugeridos.map((b: string) => <option key={b} value={b} />)}
+          {bancosList.map((b: string) => <option key={b} value={b} />)}
         </datalist>
 
         {/* CREAR NUEVO MÉTODO */}
