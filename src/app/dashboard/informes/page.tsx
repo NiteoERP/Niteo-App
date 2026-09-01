@@ -243,24 +243,6 @@ export default function InformesPage() {
       );
       if (res.success) {
         let data = res.data;
-        // Pivot para métodos de pago
-        if (reportId === 'ventas_metodos_pago' && data.length > 0 && data[0]['Fecha']) {
-          const pivotMap = new Map<string, any>();
-          const metodosSet = new Set<string>();
-          data.forEach((row: any) => {
-            const fecha  = row['Fecha'];
-            const metodo = row['Metodo de Pago'];
-            const monto  = row['Monto Total'] || 0;
-            metodosSet.add(metodo);
-            if (!pivotMap.has(fecha)) pivotMap.set(fecha, { Fecha: fecha });
-            pivotMap.get(fecha)[metodo] = monto;
-          });
-          const metodos = Array.from(metodosSet).sort();
-          data = Array.from(pivotMap.values()).map((row: any) => {
-            metodos.forEach(m => { if (row[m] === undefined) row[m] = 0; });
-            return row;
-          });
-        }
         setReportData(data);
         
       } else {

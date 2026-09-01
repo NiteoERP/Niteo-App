@@ -1,3 +1,4 @@
+import { getResumenPagos } from './cierres-actions';
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
@@ -126,9 +127,25 @@ export async function generateReport(
       break;
 
     case 'ventas_metodos_pago':
-      rpcName   = 'get_reporte_metodos_pago';
-      rpcParams = { p_empresa_id, p_sede_id, p_fecha_inicio, p_fecha_fin };
-      break;
+      // Usar la lógica de Resumen de Pagos en JS (pivoteado por día) para evitar errores del RPC
+      const resumenReq = await getResumenPagos(
+        p_fecha_inicio.split('T')[0],
+        p_fecha_fin.split('T')[0],
+        p_sede_id || 'ALL'
+      );
+      if (resumenReq.error || !resumenReq.data) {
+        return { success: false, error: resumenReq.error || 'Error cargando ingresos por método' };
+      }
+      
+      // Formatear los datos para la tabla de informes
+      const formattedData = resumenReq.data.map(row => {
+        const obj: any = { Fecha: row.fecha, 'Total (USD)': row.total_usd };
+        Object.entries(row.metodos).forEach(([m, v]) => {
+          obj[m] = v;
+        });
+        return obj;
+      });
+      return { success: true, data: formattedData.length > 0 ? formattedData : [] };
 
     case 'cierres_caja':
       rpcName   = 'get_reporte_cierres_caja';
