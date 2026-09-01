@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Plus, Trash2, Wallet, CreditCard, Smartphone, DollarSign, CheckCircle2, Building2, Hash, ChevronDown, ChevronUp, GripHorizontal, X, RotateCcw } from 'lucide-react';
-import { getCierrePrevio, actualizarCierre, getBancosUtilizados } from '@/actions/cierres-actions';
+import { getCierrePrevio, actualizarCierre, getBancosUtilizados, getMetodosHistorialSede } from '@/actions/cierres-actions';
 import { createClient } from '@/utils/supabase/client';
 import { getSedes } from '@/actions/sedes-actions';
 import { useCajaSync } from '@/hooks/useCajaSync';
@@ -141,9 +141,10 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
         const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
         const initialSedeId = sedesData.length > 0 ? sedesData[0].id : undefined;
         
-        const [cierreRes, bancosRes] = await Promise.all([
+        const [cierreRes, bancosRes, customMetodos] = await Promise.all([
           getCierrePrevio(today, initialSedeId),
-          getBancosUtilizados()
+          getBancosUtilizados(),
+          initialSedeId ? getMetodosHistorialSede(initialSedeId) : Promise.resolve([])
         ]);
         
         if (cierreRes.targetSedeId) setSelectedSedeId(cierreRes.targetSedeId);
@@ -154,6 +155,22 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
         setGastosTotales(cierreRes.gastosTotales || 0);
         setTotalEsperado(cierreRes.totalEsperado || 0);
         setBancosSugeridos(bancosRes);
+        if (customMetodos && customMetodos.length > 0) {
+          const restoredMetodos = customMetodos.map((mName: string) => ({
+            id: mName,
+            color: 'border-indigo-500/30',
+            defaultMoneda: 'VES' as Moneda,
+            isCustom: true,
+            iconKey: 'GripHorizontal',
+            icon: GripHorizontal
+          }));
+          
+          setMetodos(prev => {
+            const existingIds = new Set(prev.map(p => p.id));
+            const newMets = restoredMetodos.filter((r: any) => !existingIds.has(r.id));
+            return [...prev, ...newMets];
+          });
+        }
       } catch (err: any) {
         console.error('Error cargando datos de cierre', err);
         alert(err.message || 'Error cargando datos de cierre');
@@ -171,7 +188,26 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
     setLoading(true);
     try {
       const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
-      const cierreRes = await getCierrePrevio(today, newSedeId);
+      const [cierreRes, customMetodos] = await Promise.all([
+          getCierrePrevio(today, newSedeId),
+          getMetodosHistorialSede(newSedeId)
+        ]);
+        if (customMetodos && customMetodos.length > 0) {
+          const restoredMetodos = customMetodos.map((mName: string) => ({
+            id: mName,
+            color: 'border-indigo-500/30',
+            defaultMoneda: 'VES' as Moneda,
+            isCustom: true,
+            iconKey: 'GripHorizontal',
+            icon: GripHorizontal
+          }));
+          
+          setMetodos((prev: any[]) => {
+            const existingIds = new Set(prev.map(p => p.id));
+            const newMets = restoredMetodos.filter((r: any) => !existingIds.has(r.id));
+            return [...prev, ...newMets];
+          });
+        }
       setTasaCambio(cierreRes.tasaCambio || 36.5);
       setVentasTotales(cierreRes.ventasTotales || 0);
       setGastosTotales(cierreRes.gastosTotales || 0);
