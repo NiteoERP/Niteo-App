@@ -56,10 +56,7 @@ export default function NuevoCierreCaja() {
   const [totalEsperado, setTotalEsperado] = useState(0);
   
   // Listas sugeridas
-  const [bancosSugeridos, setBancosSugeridos] = useState<string[]>([]);
-  
-  const sugerenciasDefault = ['Banesco', 'Mercantil', 'Provincial', 'Venezuela', 'BNC', 'Bancaribe', 'Zelle', 'Bicentenario', 'Bancamiga', 'Tesoro', 'Exterior'];
-  const bancosList = Array.from(new Set([...sugerenciasDefault, ...bancosSugeridos])).sort();
+  const [bancosPorMetodo, setBancosPorMetodo] = useState<Record<string, string[]>>({});
     
   // Transacciones
   const [transacciones, setTransacciones] = useState<Transaccion[]>([]);
@@ -207,7 +204,7 @@ export default function NuevoCierreCaja() {
         setVentasTotales(cierreRes.ventasTotales || 0);
         setGastosTotales(cierreRes.gastosTotales || 0);
         setTotalEsperado(cierreRes.totalEsperado || 0);
-        setBancosSugeridos(bancosRes);
+        setBancosPorMetodo(bancosRes);
         if (customMetodos && customMetodos.length > 0) {
           const restoredMetodos = customMetodos.map((mName: string) => ({
             id: mName,
@@ -597,7 +594,7 @@ export default function NuevoCierreCaja() {
                                 placeholder={metodo.id === 'Efectivo' ? 'N/A' : 'Ej: VZLA'}
                                 value={tx.banco}
                                 onChange={(e) => updateTransaccion(tx.id, 'banco', e.target.value)}
-                                list="bancos-list"
+                                list={`bancos-list-${metodo.id.replace(/\s+/g, '-')}`}
                                 className="w-full bg-neutral-900 border border-neutral-800 focus:border-indigo-500 rounded-lg h-9 px-3 text-white text-sm outline-none transition-colors"
                               />
                               </td>
@@ -658,7 +655,7 @@ export default function NuevoCierreCaja() {
                               placeholder={metodo.id === 'Efectivo' ? 'N/A' : 'Banco'}
                               value={tx.banco}
                               onChange={(e) => updateTransaccion(tx.id, 'banco', e.target.value)}
-                              list="bancos-list"
+                              list={`bancos-list-${metodo.id.replace(/\s+/g, '-')}`}
                               className="w-full bg-black/40 border border-neutral-800 focus:border-indigo-500 rounded-lg h-10 px-3 text-white text-sm outline-none transition-colors"
                             />
                             
@@ -683,9 +680,11 @@ export default function NuevoCierreCaja() {
           );
         })}
 
-        <datalist id="bancos-list">
-          {bancosList.map((b: string) => <option key={b} value={b} />)}
-        </datalist>
+        {metodos.map(m => (
+          <datalist key={m.id} id={`bancos-list-${m.id.replace(/\s+/g, '-')}`}>
+            {(bancosPorMetodo[m.id] || []).map(b => <option key={b} value={b} />)}
+          </datalist>
+        ))}
 
         {/* CREAR NUEVO MÉTODO */}
         {showNewMetodo ? (

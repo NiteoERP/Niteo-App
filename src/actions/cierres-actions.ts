@@ -150,27 +150,38 @@ export async function guardarCierre(cierreData: any, transacciones: any[]) {
 
 
 
-export async function getBancosUtilizados() {
+export async function getBancosUtilizados(): Promise<Record<string, string[]>> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
+  if (!user) return {};
   const { data: profile } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
-  if (!profile) return [];
+  if (!profile) return {};
   
-  // Try to get distinct bancos used by this empresa
-  // Since Supabase RPC or distinct might not be trivial without a custom function, we just fetch a subset of unique ones via a simple query
   const { data, error } = await supabase
     .from('cierres_transacciones')
-    .select('banco')
+    .select('banco, metodo')
     .not('banco', 'is', null)
+    .neq('banco', 'N/A')
     .eq('empresa_id', profile.empresa_id)
-    .limit(100);
+    .limit(500);
     
-  if (error || !data) return ['Banesco', 'Mercantil', 'Provincial', 'Venezuela', 'BNC'];
+  if (error || !data) return {};
   
-  const bancos = Array.from(new Set(data.map(d => d.banco))).filter(Boolean);
-  if (bancos.length === 0) return ['Banesco', 'Mercantil', 'Provincial', 'Venezuela', 'BNC'];
-  return bancos;
+  const map: Record<string, Set<string>> = {};
+  for (const d of data) {
+    if (!d.banco || !d.metodo) continue;
+    const b = d.banco.trim();
+    if (b === '' || b === 'N/A') continue;
+    if (!map[d.metodo]) map[d.metodo] = new Set();
+    map[d.metodo].add(b);
+  }
+
+  const result: Record<string, string[]> = {};
+  for (const [m, set] of Object.entries(map)) {
+    result[m] = Array.from(set).sort();
+  }
+
+  return result;
 }
 
 // ============================================================================
