@@ -4,14 +4,20 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Clock, ArrowRight } from 'lucide-react';
 
-const DRAFT_KEY = 'niteo_draft_cierre';
 
 export function CierreEnCursoBanner() {
   const [hasDraft, setHasDraft] = useState(false);
 
   useEffect(() => {
     // Check if there is a draft in localStorage
-    const draft = localStorage.getItem(DRAFT_KEY);
+    let draft = null;
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('niteo_draft_cierre_')) {
+        draft = localStorage.getItem(key);
+        break;
+      }
+    }
     if (draft) {
       try {
         const parsed = JSON.parse(draft);

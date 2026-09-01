@@ -95,7 +95,7 @@ export default function NuevoCierreCaja() {
       }
     } catch (_) {
       // Si el JSON está corrupto lo ignoramos
-      localStorage.removeItem(DRAFT_KEY);
+      if (selectedSedeId) localStorage.removeItem(`niteo_draft_cierre_${selectedSedeId}`);
     }
   }, []);
 
@@ -118,7 +118,7 @@ export default function NuevoCierreCaja() {
   }, [transacciones, metodos, loading]);
 
   const limpiarBorrador = () => {
-    localStorage.removeItem(DRAFT_KEY);
+    if (selectedSedeId) localStorage.removeItem(`niteo_draft_cierre_${selectedSedeId}`);
     setTransacciones([]);
     setMetodos(METODOS_DEFAULT);
     setHasDraft(false);
@@ -159,10 +159,6 @@ export default function NuevoCierreCaja() {
 
 
   const handleSedeChange = async (newSedeId: string) => {
-    // Al cambiar de sede, debemos limpiar la información que estaba llenando para no mezclar datos
-    setTransacciones([]);
-    setHasDraft(false);
-    try { localStorage.removeItem('niteo_draft_cierre'); } catch(e){}
     setSelectedSedeId(newSedeId);
     setLoading(true);
     try {
@@ -312,7 +308,7 @@ export default function NuevoCierreCaja() {
         alert(res.error);
       } else {
         // FIX 1: limpiar el borrador al guardar con éxito
-        localStorage.removeItem(DRAFT_KEY);
+        if (selectedSedeId) localStorage.removeItem(`niteo_draft_cierre_${selectedSedeId}`);
         setHasDraft(false);
         alert('Cierre guardado correctamente!');
         router.push('/dashboard/caja');
