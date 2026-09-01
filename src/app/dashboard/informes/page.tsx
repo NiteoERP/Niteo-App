@@ -536,7 +536,7 @@ export default function InformesPage() {
               setCajeroFilter={setCajeroFilter}
               clienteFilter={clienteFilter}
               setClienteFilter={setClienteFilter}
-              onGenerate={() => handleGenerate(selectedReport.id, sheetStartDate, sheetEndDate)}
+              onGenerate={() => setShowPreviewModal(true)}
               onExport={exportExcel}
               onClose={() => setSheetOpen(false)}
             />
@@ -682,7 +682,7 @@ export default function InformesPage() {
 
               {/* — Botón generar — */}
               <button
-                onClick={() => handleGenerate(selectedReport.id, sheetStartDate, sheetEndDate)}
+                onClick={() => setShowPreviewModal(true)}
                 disabled={isLoading}
                 className="w-full h-14 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50
                            text-white font-bold rounded-2xl flex items-center justify-center gap-2
@@ -690,7 +690,7 @@ export default function InformesPage() {
               >
                 {isLoading
                   ? <><Loader2 size={18} className="animate-spin" /> Generando...</>
-                  : <><BarChart2 size={18} /> Generar Informe</>
+                  : <><FileText size={18} /> Generar Documento</>
                 }
               </button>
 
