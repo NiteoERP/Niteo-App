@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Trash2, Wallet, CreditCard, Smartphone, DollarSign, CheckCircle2, Building2, Hash, ChevronDown, ChevronUp, GripHorizontal, X, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Wallet, CreditCard, Smartphone, DollarSign, CheckCircle2, Building2, Hash, ChevronDown, ChevronUp, GripHorizontal, X, RotateCcw } from 'lucide-react';
 import { getCierrePrevio, guardarCierre, getBancosUtilizados } from '@/actions/cierres-actions';
 import { getSedes } from '@/actions/sedes-actions';
 import { useCajaSync } from '@/hooks/useCajaSync';
@@ -354,7 +354,12 @@ export default function NuevoCierreCaja() {
       {/* HEADER */}
       <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 md:p-8 flex justify-between items-center shadow-sm">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Cierre de Caja</h1>
+          <div className="flex items-center gap-3">
+              <button onClick={() => router.push('/dashboard/caja')} className="w-8 h-8 flex items-center justify-center rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white transition-colors" title="Volver al Historial (Se guardará el borrador)">
+                <ArrowLeft size={18} />
+              </button>
+              <h1 className="text-2xl font-bold text-white tracking-tight">Cierre de Caja</h1>
+            </div>
           <p className="text-neutral-400 text-sm mt-1 mb-4">Tasa BCV: <span className="text-emerald-400 font-medium">{tasaCambio.toFixed(2)} Bs/$</span></p>
           
           {sedes.length > 1 && (

@@ -5,6 +5,7 @@ import { getSedes } from '@/actions/sedes-actions';
 import { Plus, Search, Calendar, MapPin, DollarSign, Wallet } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
+import { CierreEnCursoBanner } from '@/components/cierres/CierreEnCursoBanner';
 
 export default async function CajaPage({ searchParams }: { searchParams: { sede?: string } }) {
   const sedes = await getSedes();
@@ -14,6 +15,9 @@ export default async function CajaPage({ searchParams }: { searchParams: { sede?
 
   return (
     <div className="p-6 md:p-10 animate-in fade-in duration-500 max-w-6xl mx-auto space-y-6">
+      {/* BANNER */}
+      <CierreEnCursoBanner />
+
       {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
