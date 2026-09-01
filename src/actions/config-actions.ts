@@ -31,7 +31,7 @@ export async function updateTasaBcvAction(nuevaTasa: number) {
   if (!user) return { success: false, error: 'No autorizado' };
 
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
 
     const { error } = await supabase
       .from('tasa_cambiaria')

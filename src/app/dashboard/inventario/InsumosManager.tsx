@@ -145,7 +145,7 @@ export default function InsumosManager({ initialInsumos, empresaId, sedeId }: { 
       ws['!cols'] = [{wch: 5}, {wch: 40}, {wch: 20}, {wch: 25}, {wch: 30}];
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Inventario Físico");
-      XLSX.writeFile(wb, `Inventario_Fisico_${new Date().toISOString().split('T')[0]}.xlsx`);
+      XLSX.writeFile(wb, `Inventario_Fisico_${new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]}.xlsx`);
     });
   };
 

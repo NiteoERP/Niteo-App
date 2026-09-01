@@ -131,7 +131,7 @@ export default function NuevoCierreCaja() {
         const sedesData = await getSedes();
         setSedes(sedesData);
         
-        const today = new Date().toISOString().split('T')[0];
+        const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
         const initialSedeId = sedesData.length > 0 ? sedesData[0].id : undefined;
         
         const [cierreRes, bancosRes] = await Promise.all([
@@ -162,7 +162,7 @@ export default function NuevoCierreCaja() {
     setSelectedSedeId(newSedeId);
     setLoading(true);
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
       const cierreRes = await getCierrePrevio(today, newSedeId);
       setTasaCambio(cierreRes.tasaCambio || 36.5);
       setVentasTotales(cierreRes.ventasTotales || 0);
@@ -259,7 +259,7 @@ export default function NuevoCierreCaja() {
   const handleGuardarCierre = async () => {
     setSaving(true);
     try {
-      const hoy = new Date().toISOString().split('T')[0];
+      const hoy = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
       
       let real_efectivo_bs = 0;
       let real_efectivo_usd = 0;

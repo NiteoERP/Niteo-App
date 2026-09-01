@@ -13,7 +13,7 @@ type Transaccion = {
 };
 
 export default function CierreTurnoForm() {
-  const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
+  const [fecha, setFecha] = useState(new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]);
   const [tasaCambio, setTasaCambio] = useState(0);
   const [ventasEsperadas, setVentasEsperadas] = useState(0);
   const [gastosEsperados, setGastosEsperados] = useState(0);

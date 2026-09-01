@@ -139,7 +139,7 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
   };
 
   // --- ESTADOS: COMPRA PUNTUAL ---
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
   const initialGasto = { proveedor: '', montoDivisas: '', montoBs: '', tasaCambio: '', detalles: '', metodoPago: metodosPago[0] || 'Efectivo USD', documentoExterno: '', fechaRegistro: todayStr };
   const [gasto, setGasto] = useState(initialGasto);
   const [monedaGasto, setMonedaGasto] = useState<'USD'|'VES'>('USD');

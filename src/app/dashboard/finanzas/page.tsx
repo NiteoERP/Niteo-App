@@ -14,14 +14,14 @@ export default function FinanzasPage() {
   const [fechaInicio, setFechaInicio] = useState(() => {
     const d = new Date();
     d.setDate(1);
-    return d.toISOString().split('T')[0];
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0];
   });
   
   const [fechaFin, setFechaFin] = useState(() => {
     const d = new Date();
     d.setMonth(d.getMonth() + 1);
     d.setDate(0);
-    return d.toISOString().split('T')[0];
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0];
   });
 
   const loadData = async () => {
