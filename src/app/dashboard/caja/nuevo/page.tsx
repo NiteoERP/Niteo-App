@@ -57,8 +57,7 @@ export default function NuevoCierreCaja() {
   
   // Listas sugeridas
   const [bancosSugeridos, setBancosSugeridos] = useState<string[]>([]);
-  const [mostrarSugerencias, setMostrarSugerencias] = useState<string | null>(null);
-  
+    
   // Transacciones
   const [transacciones, setTransacciones] = useState<Transaccion[]>([]);
   const [expandedMetodo, setExpandedMetodo] = useState<string | null>('Pago Móvil');
@@ -306,11 +305,7 @@ export default function NuevoCierreCaja() {
     setTransacciones(transacciones.filter(t => t.id !== id));
   };
 
-  const selectBanco = (id: string, banco: string) => {
-    updateTransaccion(id, 'banco', banco);
-    setMostrarSugerencias(null);
-  };
-
+  
   const calcularTotalesUSD = () => {
     let total = 0;
     transacciones.forEach(t => {
@@ -599,8 +594,7 @@ export default function NuevoCierreCaja() {
                                 placeholder={metodo.id === 'Efectivo' ? 'N/A' : 'Ej: VZLA'}
                                 value={tx.banco}
                                 onChange={(e) => updateTransaccion(tx.id, 'banco', e.target.value)}
-                                onFocus={() => setMostrarSugerencias(tx.id)}
-                                onBlur={() => setTimeout(() => setMostrarSugerencias(null), 200)}
+                                list="bancos-list"
                                 className="w-full bg-neutral-900 border border-neutral-800 focus:border-indigo-500 rounded-lg h-9 px-3 text-white text-sm outline-none transition-colors"
                               />
                               </td>
@@ -661,24 +655,10 @@ export default function NuevoCierreCaja() {
                               placeholder={metodo.id === 'Efectivo' ? 'N/A' : 'Banco'}
                               value={tx.banco}
                               onChange={(e) => updateTransaccion(tx.id, 'banco', e.target.value)}
-                              onFocus={() => setMostrarSugerencias('mob-' + tx.id)}
-                              onBlur={() => setTimeout(() => setMostrarSugerencias(null), 200)}
+                              list="bancos-list"
                               className="w-full bg-black/40 border border-neutral-800 focus:border-indigo-500 rounded-lg h-10 px-3 text-white text-sm outline-none transition-colors"
                             />
-                            {mostrarSugerencias === 'mob-' + tx.id && (
-                              <div className="absolute z-[100] w-full top-[100%] mt-1 bg-neutral-800 border border-neutral-700 rounded-lg shadow-2xl overflow-hidden max-h-40 overflow-y-auto custom-scrollbar">
-                                {bancosSugeridos.filter(b => b.toLowerCase().includes(tx.banco.toLowerCase())).map(b => (
-                                  <button 
-                                    key={b}
-                                    onMouseDown={(e) => e.preventDefault()} 
-                                    onClick={() => selectBanco(tx.id, b)}
-                                    className="w-full text-left px-3 py-2 hover:bg-indigo-600 text-white text-xs transition-colors"
-                                  >
-                                    {b}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
+                            
                           </div>
                         </div>
                         {tx.moneda === 'VES' && tx.monto && (
