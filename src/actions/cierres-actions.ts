@@ -184,7 +184,7 @@ export async function getHistorialCierres(sedeId?: string) {
 
   let query = supabase
     .from('cierres_caja')
-    .select('*, sedes(nombre_sede), usuarios(nombre)')
+    .select('*, sedes(nombre_sede)')
     .eq('empresa_id', profile.empresa_id)
     .order('fecha_cierre', { ascending: false });
 
