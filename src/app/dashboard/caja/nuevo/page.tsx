@@ -159,6 +159,10 @@ export default function NuevoCierreCaja() {
 
 
   const handleSedeChange = async (newSedeId: string) => {
+    // Al cambiar de sede, debemos limpiar la información que estaba llenando para no mezclar datos
+    setTransacciones([]);
+    setHasDraft(false);
+    try { localStorage.removeItem('niteo_draft_cierre'); } catch(e){}
     setSelectedSedeId(newSedeId);
     setLoading(true);
     try {
