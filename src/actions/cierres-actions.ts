@@ -116,7 +116,7 @@ export async function guardarCierre(cierreData: any, transacciones: any[]) {
     if (errorCierre.code === '23505') {
        return { error: 'Ya existe un cierre de caja registrado para esta fecha y sede.' };
     }
-    return { error: 'Error al registrar el resumen del cierre.' };
+    return { error: 'Error al registrar el resumen del cierre. Detalles: ' + errorCierre.message + ' ' + (errorCierre.details || '') };
   }
 
   // 2. Insertar las Transacciones Bancarias (Bulk Insert) si hay alguna
