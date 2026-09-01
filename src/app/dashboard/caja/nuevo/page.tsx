@@ -682,6 +682,10 @@ export default function NuevoCierreCaja() {
           );
         })}
 
+        <datalist id="bancos-list">
+          {bancosSugeridos.map((b: string) => <option key={b} value={b} />)}
+        </datalist>
+
         {/* CREAR NUEVO MÉTODO */}
         {showNewMetodo ? (
           <div className="bg-neutral-900 border border-indigo-500/50 rounded-2xl p-4 animate-in fade-in">
