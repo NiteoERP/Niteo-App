@@ -159,10 +159,10 @@ export async function getBancosUtilizados(): Promise<Record<string, string[]>> {
   
   const { data, error } = await supabase
     .from('cierres_transacciones')
-    .select('banco, metodo')
+    .select('banco, metodo, cierres_caja!inner(empresa_id)')
     .not('banco', 'is', null)
     .neq('banco', 'N/A')
-    .eq('empresa_id', profile.empresa_id)
+    .eq('cierres_caja.empresa_id', profile.empresa_id)
     .limit(500);
     
   if (error || !data) return {};
@@ -198,7 +198,7 @@ export async function getHistorialCierres(sedeId?: string) {
   let query = supabase
     .from('cierres_caja')
     .select('*, sedes(nombre_sede)')
-    .eq('empresa_id', profile.empresa_id)
+    .eq('cierres_caja.empresa_id', profile.empresa_id)
     .order('fecha_cierre', { ascending: false });
 
   // Si no es MASTER, forzar su sede
@@ -354,7 +354,7 @@ export async function verifySupervisor(password: string) {
   const { data: masterProfile } = await supabase
     .from('perfiles')
     .select('id, rol')
-    .eq('empresa_id', profile.empresa_id)
+    .eq('cierres_caja.empresa_id', profile.empresa_id)
     .eq('rol', 'MASTER')
     .single();
 
@@ -423,4 +423,22 @@ export async function getMetodosHistorialSede(sedeId: string) {
   // Filtramos los por defecto
   const defaultIds = ['Efectivo', 'Punto de Venta', 'Pago Móvil'];
   return uniqueMetodos.filter(m => !defaultIds.includes(m));
+}
+
+export async function getCierreParaEditar(cierreId: string) {
+  const supabase = await createClient();
+  const { data: cierre, error } = await supabase
+    .from('cierres_caja')
+    .select('*')
+    .eq('id', cierreId)
+    .single();
+
+  if (error || !cierre) return null;
+
+  const { data: transacciones } = await supabase
+    .from('cierres_transacciones')
+    .select('*')
+    .eq('cierre_id', cierreId);
+
+  return { cierre, transacciones: transacciones || [] };
 }

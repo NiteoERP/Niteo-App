@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Plus, Trash2, Wallet, CreditCard, Smartphone, DollarSign, CheckCircle2, Building2, Hash, ChevronDown, ChevronUp, GripHorizontal, X, RotateCcw } from 'lucide-react';
-import { getCierrePrevio, actualizarCierre, getBancosUtilizados, getMetodosHistorialSede } from '@/actions/cierres-actions';
+import { getCierreParaEditar, actualizarCierre, getBancosUtilizados, getMetodosHistorialSede } from '@/actions/cierres-actions';
 import { createClient } from '@/utils/supabase/client';
 import { getSedes } from '@/actions/sedes-actions';
 import { useCajaSync } from '@/hooks/useCajaSync';
@@ -124,18 +124,23 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
         }
         
         const [cierreRes, bancosRes, customMetodos] = await Promise.all([
-          getCierrePrevio(today, initialSedeId),
+          getCierreParaEditar(cierreId),
           getBancosUtilizados(),
           initialSedeId ? getMetodosHistorialSede(initialSedeId) : Promise.resolve([])
         ]);
         
-        if (cierreRes.targetSedeId) setSelectedSedeId(cierreRes.targetSedeId);
-        else if (initialSedeId) setSelectedSedeId(initialSedeId);
+        
+        
 
-        setTasaCambio(cierreRes.tasaCambio || 36.5);
-        setVentasTotales(cierreRes.ventasTotales || 0);
-        setGastosTotales(cierreRes.gastosTotales || 0);
-        setTotalEsperado(cierreRes.totalEsperado || 0);
+        setTasaCambio((cierreRes || {}).cierre?.tasa_cambio || 36.5);
+        if (((cierreRes || {}).transacciones || []).length > 0) {
+           setTransacciones((cierreRes || {}).transacciones || []);
+        }
+        if ((cierreRes || {}).cierre) setSelectedSedeId((cierreRes || {}).cierre.sede_id);
+  
+        setVentasTotales((cierreRes || {}).cierre?.sistema_ventas_brutas || 0);
+        setGastosTotales((cierreRes || {}).cierre?.sistema_gastos_operativos || 0);
+        setTotalEsperado((cierreRes || {}).cierre?.sistema_total_esperado || 0);
         setBancosPorMetodo(bancosRes);
         if (customMetodos && customMetodos.length > 0) {
           const restoredMetodos = customMetodos.map((mName: string) => ({
@@ -172,7 +177,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
     try {
       const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
       const [cierreRes, customMetodos] = await Promise.all([
-          getCierrePrevio(today, newSedeId),
+          getCierreParaEditar(cierreId),
           getMetodosHistorialSede(newSedeId)
         ]);
         if (customMetodos && customMetodos.length > 0) {
@@ -191,10 +196,15 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
             return [...prev, ...newMets];
           });
         }
-      setTasaCambio(cierreRes.tasaCambio || 36.5);
-      setVentasTotales(cierreRes.ventasTotales || 0);
-      setGastosTotales(cierreRes.gastosTotales || 0);
-      setTotalEsperado(cierreRes.totalEsperado || 0);
+      setTasaCambio((cierreRes || {}).cierre?.tasa_cambio || 36.5);
+        if (((cierreRes || {}).transacciones || []).length > 0) {
+           setTransacciones((cierreRes || {}).transacciones || []);
+        }
+        if ((cierreRes || {}).cierre) setSelectedSedeId((cierreRes || {}).cierre.sede_id);
+  
+      setVentasTotales((cierreRes || {}).cierre?.sistema_ventas_brutas || 0);
+      setGastosTotales((cierreRes || {}).cierre?.sistema_gastos_operativos || 0);
+      setTotalEsperado((cierreRes || {}).cierre?.sistema_total_esperado || 0);
     } catch (err: any) {
       alert(err.message || 'Error cambiando de sede');
     } finally {
@@ -369,9 +379,10 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
           {sedes.length > 1 && (
             <div className="flex items-center gap-3 bg-black/30 border border-neutral-800 p-2 rounded-xl">
               <label className="text-xs uppercase font-bold text-neutral-500 ml-2">Sede:</label>
-              <select 
-                value={selectedSedeId} 
-                onChange={(e) => handleSedeChange(e.target.value)}
+              <select
+                  value={selectedSedeId}
+                  disabled
+                  onChange={(e) => handleSedeChange(e.target.value)}
                 className="bg-neutral-800 text-white text-sm font-medium rounded-lg px-3 py-1.5 outline-none focus:border-indigo-500 cursor-pointer"
               >
                 {sedes.map(s => (
