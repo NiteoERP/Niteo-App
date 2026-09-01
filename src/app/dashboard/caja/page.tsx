@@ -99,21 +99,26 @@ export default async function CajaPage({ searchParams }: { searchParams: { sede?
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="bg-black/30 rounded-xl p-3 border border-neutral-800/50">
                   <p className="text-[10px] text-neutral-500 uppercase font-bold tracking-wider mb-1">Venta Esperada</p>
-                  <p className="text-lg font-black text-neutral-300">\</p>
+                  <p className="text-lg font-black text-neutral-300">${Number(c.total_esperado_usd).toFixed(2)}</p>
                 </div>
                 <div className="bg-black/30 rounded-xl p-3 border border-neutral-800/50">
                   <p className="text-[10px] text-neutral-500 uppercase font-bold tracking-wider mb-1">Físico Registrado</p>
-                  <p className="text-lg font-black text-white">\</p>
+                  <p className="text-lg font-black text-white">${Number(c.total_fisico_usd).toFixed(2)}</p>
                 </div>
               </div>
 
               <div className="flex items-center justify-between text-xs text-neutral-500 pt-3 border-t border-neutral-800">
                 <span>Tasa BCV: {Number(c.tasa_cambio).toFixed(2)} Bs</span>
                 <span>Registrado: {new Date(c.fecha_registro).toLocaleString('es-VE')}</span>
-              </div>
+              
+            <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-neutral-800">
+              <Link href={`/dashboard/caja/${c.id}`} className="px-3 py-1.5 text-xs font-medium bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-lg transition-colors">Ver Detalles</Link>
+              <Link href={`/dashboard/caja/${c.id}/editar`} className="px-3 py-1.5 text-xs font-medium bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 rounded-lg transition-colors">Editar</Link>
             </div>
-          ))
-        )}
+          </div>
+        </div>
+      ))
+    )}
       </div>
     </div>
   );

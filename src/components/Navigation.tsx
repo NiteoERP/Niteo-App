@@ -44,7 +44,7 @@ export function SidebarNav({ permisos, userRole }: NavProps) {
       )}
       
             {hasPerm('caja') && (
-        <Link href="/dashboard/caja/nuevo" className={getLinkClass('/dashboard/caja/nuevo')}>
+        <Link href="/dashboard/caja" className={getLinkClass('/dashboard/caja')}>
           <Wallet size={20} />
           <span className="text-sm font-medium">Cierre de Caja</span>
         </Link>
@@ -294,7 +294,7 @@ export function MobileNav({ permisos, userRole }: NavProps) {
         {hasPerm('caja') && (() => {
           const { link, isActive } = navItem('/dashboard/caja');
           return (
-            <Link href="/dashboard/caja/nuevo" onClick={() => setMenuOpen(false)} className={link}>
+            <Link href="/dashboard/caja" onClick={() => setMenuOpen(false)} className={link}>
               {isActive && <span className="absolute top-2 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-indigo-500" />}
               <Wallet size={22} />
               <span className="text-[10px] font-medium">Caja</span>
