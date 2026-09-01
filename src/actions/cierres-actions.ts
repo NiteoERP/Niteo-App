@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server';
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 
 // ============================================================================
@@ -74,6 +75,7 @@ export async function getCierrePrevio(fechaStr: string, requestedSedeId?: string
 // ============================================================================
 export async function guardarCierre(cierreData: any, transacciones: any[]) {
   const supabase = await createClient();
+  const supabaseAdmin = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "No autenticado" };
@@ -90,8 +92,8 @@ export async function guardarCierre(cierreData: any, transacciones: any[]) {
   if (!finalSedeId) return { error: "No se especificó la sede para el cierre." };
 
   // 1. Insertar en la Tabla Maestra (cierres_caja)
-  const { data: nuevoCierre, error: errorCierre } = await supabase
-    .from('cierres_caja')
+  const { data: nuevoCierre, error: errorCierre } = await supabaseAdmin
+      .from('cierres_caja')
     .insert({
       empresa_id: profile.empresa_id,
       sede_id: finalSedeId,
@@ -130,8 +132,8 @@ export async function guardarCierre(cierreData: any, transacciones: any[]) {
       moneda: t.moneda
     }));
 
-    const { error: errorTransacciones } = await supabase
-      .from('cierres_transacciones')
+    const { error: errorTransacciones } = await supabaseAdmin
+        .from('cierres_transacciones')
       .insert(transaccionesConId);
 
     if (errorTransacciones) {

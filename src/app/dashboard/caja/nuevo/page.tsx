@@ -74,6 +74,64 @@ export default function NuevoCierreCaja() {
   const [newMetodoName, setNewMetodoName] = useState('');
   const [newMetodoMoneda, setNewMetodoMoneda] = useState<Moneda>('VES');
 
+  // --- DRAFT LOGIC ---
+  const saveDraft = (sedeId: string, txs: any[], mets: any[]) => {
+    if (!sedeId) return;
+    try {
+      const draftKey = `niteo_draft_cierre_${sedeId}`;
+      const metodos_custom = mets.filter(m => m.isCustom).map(m => ({
+        id: m.id, color: m.color, defaultMoneda: m.defaultMoneda, isCustom: true, iconKey: 'GripHorizontal',
+      }));
+      localStorage.setItem(draftKey, JSON.stringify({ transacciones: txs, metodos_custom }));
+    } catch (_) {}
+  };
+
+  const loadDraft = (sedeId: string) => {
+    if (!sedeId) return false;
+    try {
+      const draftKey = `niteo_draft_cierre_${sedeId}`;
+      const raw = localStorage.getItem(draftKey);
+      if (raw) {
+        const draft = JSON.parse(raw);
+        let hasData = false;
+        
+        if (draft.transacciones?.length > 0) {
+          setTransacciones(draft.transacciones);
+          hasData = true;
+        } else {
+          setTransacciones([]);
+        }
+
+        if (draft.metodos_custom?.length > 0) {
+          const customRestored: MetodoConfig[] = draft.metodos_custom.map((m: any) => ({
+            ...m, icon: ICON_MAP[m.iconKey] || GripHorizontal,
+          }));
+          setMetodos([...METODOS_DEFAULT, ...customRestored]);
+        } else {
+          setMetodos(METODOS_DEFAULT);
+        }
+        
+        setHasDraft(hasData);
+        return hasData;
+      }
+    } catch (_) {}
+    
+    setTransacciones([]);
+    setMetodos(METODOS_DEFAULT);
+    setHasDraft(false);
+    return false;
+  };
+
+  // Guardar cada vez que transacciones cambie
+  useEffect(() => {
+    if (!loading && selectedSedeId) {
+      saveDraft(selectedSedeId, transacciones, metodos);
+      setHasDraft(transacciones.length > 0);
+    }
+  }, [transacciones, metodos]);
+  // -------------------
+
+
   // ─── FIX 1: RESTAURAR BORRADOR DESDE localStorage AL MONTAR ──────────────
   useEffect(() => {
     try {
@@ -160,6 +218,7 @@ export default function NuevoCierreCaja() {
 
   const handleSedeChange = async (newSedeId: string) => {
     setSelectedSedeId(newSedeId);
+    loadDraft(newSedeId);
     setLoading(true);
     try {
       const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
