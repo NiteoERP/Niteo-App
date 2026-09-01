@@ -29,8 +29,11 @@ if (code.includes(handleGenStart)) {
 }
 
 // 4. Remove the big "Generar Informe" button and replace with PDF/Excel buttons
-const genButtonRegex = /<button[\s\S]*?onClick=\{\(\) => handleGenerate\([\s\S]*?\}[\s\S]*?<\/button>/;
+const genButtonRegex = /<\!-- Botón generar -->[\s\S]*?<\/button>/;
+const genButtonAlternative = /\{\/\* Botón generar \*\/\}[\s\S]*?<\/button>/;
+
 const newExportButtons = `
+          {/* Botones de Exportación */}
           <div className="flex items-center gap-2 pt-2">
             <button
               onClick={exportPDF}
@@ -52,7 +55,8 @@ const newExportButtons = `
             </button>
           </div>
 `;
-code = code.replace(genButtonRegex, newExportButtons);
+code = code.replace(genButtonAlternative, newExportButtons);
+
 
 // 5. Replace exportExcel and add exportPDF
 const exportExcelRegex = /const exportExcel = \(\) => \{[\s\S]*?\.xlsx\`\);\n  \};/;
@@ -117,11 +121,20 @@ const newExports = `
 `;
 code = code.replace(exportExcelRegex, newExports);
 
-// 6. Replace right column rendering (remove MiniBarChart and ResultCards, use a simple Table)
-const rightColumnRegex = /\{\/\* Columna Resultados \*\/\}[\s\S]*?\{showPreviewModal && reportData && \(/;
+// 6. Replace everything from {/* Columna Resultados */} all the way to the end of the return statement.
+const rightColStart = `{/* Columna Resultados */}`;
+const startIndex = code.indexOf(rightColStart);
 
-const newRightColumn = `{/* Columna Resultados */}
-        <div className="flex-1 overflow-x-auto overflow-y-auto print:overflow-visible print:h-auto custom-scrollbar p-6 bg-neutral-950">
+if (startIndex !== -1) {
+  // Find where the component's main return ends.
+  // We can just find `  );` before `}` of the component.
+  // Actually, there's `    </div>\n  );\n}\n\n// --- Mini bar chart ---`
+  const endMarker = '  );\n}';
+  const endIndex = code.indexOf(endMarker, startIndex);
+  
+  if (endIndex !== -1) {
+    const newRightColumn = `{/* Columna Resultados */}
+        <div className="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar p-6 bg-neutral-950">
           {!reportData && !isLoading && (
             <div className="h-full flex flex-col items-center justify-center text-neutral-700 gap-3">
               <BarChart2 size={48} className="opacity-20" />
@@ -129,8 +142,9 @@ const newRightColumn = `{/* Columna Resultados */}
             </div>
           )}
           {isLoading && (
-            <div className="h-full flex items-center justify-center">
+            <div className="h-full flex flex-col items-center justify-center text-neutral-700 gap-3">
               <Loader2 size={32} className="animate-spin text-indigo-400" />
+              <p className="text-sm animate-pulse">Generando reporte...</p>
             </div>
           )}
           {reportData && !isLoading && reportData.length > 0 && (
@@ -172,21 +186,19 @@ const newRightColumn = `{/* Columna Resultados */}
           )}
         </div>
       </div>
-    </div>
-  );
+    </div>`;
+    
+    code = code.substring(0, startIndex) + newRightColumn + code.substring(endIndex);
+  }
 }
 
-// Remove the old preview modal entirely by just stopping here.
-/* PREVIEW MODAL REMOVED */
-`;
-
-code = code.replace(rightColumnRegex, newRightColumn);
-
-// Remove the rest of the file (the old modal and the MiniBarChart/ResultCards definitions)
-// Since we replaced up to `{showPreviewModal && reportData && (` we just need to truncate.
-let truncateIndex = code.indexOf('/* PREVIEW MODAL REMOVED */');
-if (truncateIndex !== -1) {
-  code = code.slice(0, truncateIndex + '/* PREVIEW MODAL REMOVED */'.length);
-}
+// 7. Remove MiniBarChart and ResultCards components from the bottom of the file
+const componentsToRemove = ['function MiniBarChart', 'function ResultCards'];
+componentsToRemove.forEach(comp => {
+  const compIndex = code.indexOf(comp);
+  if (compIndex !== -1) {
+    code = code.substring(0, compIndex);
+  }
+});
 
 fs.writeFileSync('src/app/dashboard/informes/page.tsx', code);

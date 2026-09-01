@@ -15,8 +15,6 @@ import { format, subDays, startOfWeek, endOfWeek, startOfDay, endOfDay,
   subMonths,
 } from 'date-fns';
 import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 
 // ─── Tipos ──────────────────────────────────────────────────────────────────
@@ -210,13 +208,6 @@ export default function InformesPage() {
 
   // ── Generar reporte ────────────────────────────────────────────────────────
 
-
-  useEffect(() => {
-    if (selectedReport && sheetStartDate && sheetEndDate) {
-      handleGenerate(selectedReport.id, sheetStartDate, sheetEndDate);
-    }
-  }, [selectedReport, sheetStartDate, sheetEndDate, categoriaFilter, cajeroFilter, clienteFilter]);
-
   const handleGenerate = async (reportId: string, s: Date, e: Date) => {
     setIsLoading(true);
     setReportError('');
@@ -255,7 +246,7 @@ export default function InformesPage() {
           });
         }
         setReportData(data);
-        
+        setShowPreviewModal(true);
       } else {
         setReportError(res.error || 'Error desconocido.');
       }
@@ -322,7 +313,6 @@ export default function InformesPage() {
 
   // ── Export Excel ──────────────────────────────────────────────────────────
 
-  
   const exportExcel = () => {
     if (!reportData || reportData.length === 0) return;
     const ws = XLSX.utils.json_to_sheet(reportData);
@@ -337,50 +327,6 @@ export default function InformesPage() {
     XLSX.utils.book_append_sheet(wb, ws, 'Reporte');
     XLSX.writeFile(wb, `${selectedReportName.replace(/ /g, '_')}_${format(new Date(), 'yyyyMMdd')}.xlsx`);
   };
-
-  const exportPDF = () => {
-    if (!reportData || reportData.length === 0) return;
-    const doc = new jsPDF('landscape');
-    
-    doc.setFontSize(22);
-    doc.setTextColor(79, 70, 229);
-    doc.text('NITEO ERP', 14, 20);
-    
-    doc.setFontSize(14);
-    doc.setTextColor(10, 10, 10);
-    doc.text(selectedReportName, 14, 30);
-    
-    doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Período: ${format(sheetStartDate, 'dd/MM/yyyy')} - ${format(sheetEndDate, 'dd/MM/yyyy')}`, 14, 36);
-    doc.text(`Generado el: ${new Date().toLocaleString()}`, 14, 42);
-
-    const keys = Object.keys(reportData[0] || {});
-    const head = [keys.map(k => k.replace(/_/g, ' ').toUpperCase())];
-    
-    const body = reportData.map(row => {
-      return keys.map(k => {
-        const val = row[k];
-        if (typeof val === 'number') {
-          return val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        }
-        return String(val ?? '');
-      });
-    });
-
-    autoTable(doc, {
-      startY: 50,
-      head: head,
-      body: body,
-      theme: 'grid',
-      headStyles: { fillColor: [24, 24, 27], textColor: 255 },
-      alternateRowStyles: { fillColor: [250, 250, 250] },
-      styles: { fontSize: 9 },
-    });
-    
-    doc.save(`${selectedReportName.replace(/ /g, '_')}_${format(new Date(), 'yyyyMMdd')}.pdf`);
-  };
-
 
   // ─────────────────────────────────────────────────────────────────────────
   // RENDER
@@ -711,7 +657,7 @@ export default function InformesPage() {
                 {reportData && !isLoading && (
                   <>
                     {/* Gráfico de barras simulado con las primeras columnas numéricas */}
-                    
+                    <MiniBarChart data={reportData} />
                   </>
                 )}
               </div>
@@ -730,7 +676,7 @@ export default function InformesPage() {
                       <FileSpreadsheet size={12} /> Excel
                     </button>
                   </div>
-                  <ResultTable data={reportData} />
+                  <ResultCards data={reportData} />
                 </div>
               )}
 
@@ -1006,7 +952,7 @@ function DesktopReportPanel({
                     <FileSpreadsheet size={12} /> Exportar Excel
                   </button>
                 </div>
-                
+                <MiniBarChart data={reportData} />
               </div>
 
               {/* Tarjetas de resultados */}
@@ -1014,7 +960,7 @@ function DesktopReportPanel({
                 <p className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-3">
                   {reportData.length} resultado{reportData.length !== 1 ? 's' : ''}
                 </p>
-                <ResultTable data={reportData} />
+                <ResultCards data={reportData} />
               </div>
             </>
           )}
@@ -1103,44 +1049,6 @@ function ResultCards({ data }: { data: any[] }) {
           {expanded ? 'Mostrar menos' : `Ver todos (${data.length - LIMIT} más)`}
         </button>
       )}
-    </div>
-  );
-}
-
-function ResultTable({ data }: { data: any[] }) {
-  if (!data || data.length === 0) return null;
-  const keys = Object.keys(data[0]);
-
-  return (
-    <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden shadow-2xl relative w-full">
-      <div className="overflow-x-auto custom-scrollbar">
-        <table className="w-full text-sm text-left">
-          <thead className="text-xs text-neutral-400 uppercase bg-neutral-950/50 border-b border-neutral-800">
-            <tr>
-              {keys.map((key, i) => (
-                <th key={key} className={`px-6 py-4 font-bold ${i === 0 ? 'sticky left-0 bg-neutral-950 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]' : ''}`}>
-                  {key.replace(/_/g, ' ')}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-neutral-800/50">
-            {data.map((row, idx) => (
-              <tr key={idx} className="hover:bg-neutral-800/30 transition-colors">
-                {keys.map((key, i) => {
-                  const val = row[key];
-                  const isNumber = typeof val === 'number';
-                  return (
-                    <td key={key} className={`px-6 py-3 ${i === 0 ? 'font-medium text-white whitespace-nowrap sticky left-0 bg-neutral-900 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)] z-10' : 'text-neutral-300'}`}>
-                      {isNumber ? val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : String(val ?? '')}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
     </div>
   );
 }
