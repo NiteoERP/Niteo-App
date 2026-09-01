@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Edit, Wallet, Calendar, MapPin, CheckCircle, XCircle } from 'lucide-react';
 import { createClient } from '@/utils/supabase/server';
+import { CierreBotonesControl } from './CierreBotonesControl';
 import { redirect } from 'next/navigation';
 
 export default async function CierreDetallePage(props: { params: Promise<{ id: string }> }) {
@@ -9,6 +10,9 @@ export default async function CierreDetallePage(props: { params: Promise<{ id: s
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
+  
+  const { data: profile } = await supabase.from('perfiles').select('rol').eq('id', user.id).single();
+  const isMaster = profile?.rol === 'MASTER';
 
   const { data: cierre, error } = await supabase
     .from('cierres_caja')
@@ -45,9 +49,7 @@ export default async function CierreDetallePage(props: { params: Promise<{ id: s
             <p className="text-neutral-400">{new Date(cierre.fecha_cierre + 'T12:00:00Z').toLocaleDateString('es-VE')} - {cierre.sedes?.nombre_sede}</p>
           </div>
         </div>
-        <Link href={`/dashboard/caja/${cierre.id}/editar`} className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl flex items-center gap-2">
-          <Edit size={16} /> Editar
-        </Link>
+        <CierreBotonesControl cierreId={cierre.id} isMaster={isMaster} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
