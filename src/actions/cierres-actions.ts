@@ -137,7 +137,7 @@ export async function guardarCierre(cierreData: any, transacciones: any[]) {
     if (errorTransacciones) {
       console.error('Error insertando transacciones:', errorTransacciones);
       // Opcional: Aquí se podría hacer un rollback borrando el cierre, pero dejemos el log por ahora
-      return { error: 'El cierre guardó el resumen, pero hubo un error guardando el detalle de los bancos.' };
+      return { error: 'El cierre guardó el resumen, pero hubo un error guardando los bancos. Detalles: ' + errorTransacciones.message + ' ' + (errorTransacciones.details || '') };
     }
   }
 
