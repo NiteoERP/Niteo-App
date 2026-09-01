@@ -7,7 +7,8 @@ import { Plus, Search, Calendar, MapPin, DollarSign, Wallet } from 'lucide-react
 export const dynamic = 'force-dynamic';
 import { CierreEnCursoBanner } from '@/components/cierres/CierreEnCursoBanner';
 
-export default async function CajaPage({ searchParams }: { searchParams: { sede?: string } }) {
+export default async function CajaPage(props: { searchParams: Promise<{ sede?: string }> }) {
+  const searchParams = await props.searchParams;
   const sedes = await getSedes();
   // By default, if no sede is specified, getHistorialCierres will use profile.sede_id (or ALL if master and ALL passed)
   const sedeFiltro = searchParams.sede || 'ALL';
@@ -103,11 +104,11 @@ export default async function CajaPage({ searchParams }: { searchParams: { sede?
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="bg-black/30 rounded-xl p-3 border border-neutral-800/50">
                   <p className="text-[10px] text-neutral-500 uppercase font-bold tracking-wider mb-1">Venta Esperada</p>
-                  <p className="text-lg font-black text-neutral-300">${Number(c.total_esperado_usd).toFixed(2)}</p>
+                  <p className="text-lg font-black text-neutral-300">${Number(c.sistema_total_esperado || 0).toFixed(2)}</p>
                 </div>
                 <div className="bg-black/30 rounded-xl p-3 border border-neutral-800/50">
                   <p className="text-[10px] text-neutral-500 uppercase font-bold tracking-wider mb-1">Físico Registrado</p>
-                  <p className="text-lg font-black text-white">${Number(c.total_fisico_usd).toFixed(2)}</p>
+                  <p className="text-lg font-black text-white">${Number((c.real_efectivo_usd || 0) + (c.real_bancos_usd || 0) + ((c.real_efectivo_bs || 0) / (c.tasa_cambio || 1)) + ((c.real_bancos_bs || 0) / (c.tasa_cambio || 1))).toFixed(2)}</p>
                 </div>
               </div>
 

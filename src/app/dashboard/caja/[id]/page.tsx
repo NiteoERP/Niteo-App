@@ -4,7 +4,8 @@ import { ArrowLeft, Edit, Wallet, Calendar, MapPin, CheckCircle, XCircle } from 
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 
-export default async function CierreDetallePage({ params }: { params: { id: string } }) {
+export default async function CierreDetallePage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
