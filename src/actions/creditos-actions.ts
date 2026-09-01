@@ -3,7 +3,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { startOfDay, endOfDay } from 'date-fns';
 
-export async function getClientesConDeuda(sedeId: string, startDate: Date, endDate: Date, page: number = 1, limit: number = 20, searchQuery: string = '') {
+export async function getClientesConDeuda(sedeId: string, startDate: string | Date, endDate: string | Date, page: number = 1, limit: number = 20, searchQuery: string = '') {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "No autenticado" };
@@ -11,8 +11,8 @@ export async function getClientesConDeuda(sedeId: string, startDate: Date, endDa
   const { data: profile } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
   if (!profile) return { success: false, error: "Perfil no encontrado" };
 
-  const p_fecha_inicio = startOfDay(new Date(startDate)).toISOString();
-  const p_fecha_fin = endOfDay(new Date(endDate)).toISOString();
+  const p_fecha_inicio = typeof startDate === "string" ? startDate : startOfDay(new Date(startDate)).toISOString();
+  const p_fecha_fin = typeof endDate === "string" ? endDate : endOfDay(new Date(endDate)).toISOString();
   const p_sede_id = sedeId === 'ALL' ? null : sedeId;
 
   const from = (page - 1) * limit;

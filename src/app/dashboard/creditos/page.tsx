@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from "react";
 import { getSedes } from "@/actions/dashboard-actions";
 import { getClientesConDeuda, getDetalleDeudaCliente, registrarAbono, getMetodosPago, registrarAbonoGlobal } from "@/actions/creditos-actions";
-import { format, startOfYear } from "date-fns";
+import { format, startOfYear, startOfDay, endOfDay } from "date-fns";
 import { useEmpresa } from "@/components/providers/EmpresaProvider";
 import CreatableSelect from "react-select/creatable";
 import { Calendar as CalendarIcon, Store, Wallet, Search, Check, FileText, ShoppingCart, User, Users, PlusCircle, X, Download, Hash } from "lucide-react";
@@ -65,7 +65,7 @@ export default function CreditosPage() {
     const fetchInit = async () => {
       setIsLoadingClientes(true);
       setPage(1); // Reset page on new filters
-      const res = await getClientesConDeuda(sedeId, startDate, endDate, 1, 20, debouncedSearch);
+      const res = await getClientesConDeuda(sedeId, format(startOfDay(startDate), "yyyy-MM-dd'T'HH:mm:ssXXX"), format(endOfDay(endDate), "yyyy-MM-dd'T'HH:mm:ssXXX"), 1, 20, debouncedSearch);
       if (res.success) {
         setClientes(res.data || []);
         setTotalCount(res.totalCount || 0);
@@ -80,13 +80,13 @@ export default function CreditosPage() {
       setIsLoadingClientes(false);
     };
     fetchInit();
-  }, [sedeId, startDate, endDate, debouncedSearch]);
+  }, [sedeId, format(startOfDay(startDate), "yyyy-MM-dd'T'HH:mm:ssXXX"), format(endOfDay(endDate), "yyyy-MM-dd'T'HH:mm:ssXXX"), debouncedSearch]);
 
   const handleLoadMore = async () => {
     if (isLoadingMore) return;
     setIsLoadingMore(true);
     const nextPage = page + 1;
-    const res = await getClientesConDeuda(sedeId, startDate, endDate, nextPage, 20, debouncedSearch);
+    const res = await getClientesConDeuda(sedeId, format(startOfDay(startDate), "yyyy-MM-dd'T'HH:mm:ssXXX"), format(endOfDay(endDate), "yyyy-MM-dd'T'HH:mm:ssXXX"), nextPage, 20, debouncedSearch);
     if (res.success) {
       setClientes(prev => [...prev, ...(res.data || [])]);
       setTotalCount(res.totalCount || 0);
@@ -112,7 +112,7 @@ export default function CreditosPage() {
     if (res.success) {
       setShowPagoGlobalModal(false);
       await fetchDetalle(selectedClienteId);
-      const resCli = await getClientesConDeuda(sedeId, startDate, endDate, 1, page * 20, debouncedSearch);
+      const resCli = await getClientesConDeuda(sedeId, format(startOfDay(startDate), "yyyy-MM-dd'T'HH:mm:ssXXX"), format(endOfDay(endDate), "yyyy-MM-dd'T'HH:mm:ssXXX"), 1, page * 20, debouncedSearch);
       if (resCli.success) {
         setClientes(resCli.data || []);
         setTotalCount(resCli.totalCount || 0);
@@ -133,7 +133,7 @@ export default function CreditosPage() {
       setShowPagoModal(false);
       // Recargar detalle y lista actual sin resetear
       await fetchDetalle(selectedClienteId);
-      const resCli = await getClientesConDeuda(sedeId, startDate, endDate, 1, page * 20, debouncedSearch);
+      const resCli = await getClientesConDeuda(sedeId, format(startOfDay(startDate), "yyyy-MM-dd'T'HH:mm:ssXXX"), format(endOfDay(endDate), "yyyy-MM-dd'T'HH:mm:ssXXX"), 1, page * 20, debouncedSearch);
       if (resCli.success) {
         setClientes(resCli.data || []);
         setTotalCount(resCli.totalCount || 0);

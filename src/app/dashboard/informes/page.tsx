@@ -10,8 +10,7 @@ import {
 import { getSedes } from '@/actions/dashboard-actions';
 import { useEmpresa } from '@/components/providers/EmpresaProvider';
 import { generateReport, getCategorias, getCajeros, getClientes, ExtraFilters } from '@/actions/informes-actions';
-import {
-  format, subDays, startOfWeek, endOfWeek,
+import { format, subDays, startOfWeek, endOfWeek, startOfDay, endOfDay,
   startOfMonth, endOfMonth, startOfYear, endOfYear,
   subMonths,
 } from 'date-fns';
@@ -219,7 +218,13 @@ export default function InformesPage() {
         cajeroId:        cajeroFilter    || undefined,
         clienteId:       clienteFilter   || undefined,
       };
-      const res = await generateReport(reportId, sedeId, s, e, extra);
+      const res = await generateReport(
+        reportId, 
+        sedeId, 
+        format(startOfDay(s), "yyyy-MM-dd'T'HH:mm:ssXXX"), 
+        format(endOfDay(e), "yyyy-MM-dd'T'HH:mm:ssXXX"), 
+        extra
+      );
       if (res.success) {
         let data = res.data;
         // Pivot para métodos de pago

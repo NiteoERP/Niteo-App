@@ -58,8 +58,8 @@ export interface ExtraFilters {
 export async function generateReport(
   reportId:  string,
   sedeId:    string | null,
-  startDate: Date,
-  endDate:   Date,
+  startDate: string | Date,
+    endDate:   string | Date,
   extra:     ExtraFilters = {}
 ) {
   const supabase = await createClient();
@@ -77,8 +77,8 @@ export async function generateReport(
 
   const p_empresa_id  = profile.empresa_id;
   const p_sede_id     = sedeId === 'ALL' ? null : sedeId;
-  const p_fecha_inicio = startOfDay(new Date(startDate)).toISOString();
-  const p_fecha_fin    = endOfDay(new Date(endDate)).toISOString();
+  const p_fecha_inicio = typeof startDate === "string" ? startDate : startOfDay(new Date(startDate)).toISOString();
+  const p_fecha_fin    = typeof endDate === "string" ? endDate : endOfDay(new Date(endDate)).toISOString();
   const p_categoria    = extra.categoriaFilter || null;
   const p_cajero_id    = extra.cajeroId  || null;
   const p_cliente_id   = extra.clienteId || null;
