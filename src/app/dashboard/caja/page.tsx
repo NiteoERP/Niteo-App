@@ -85,7 +85,7 @@ export default async function CajaPage({ searchParams }: { searchParams: { sede?
                     <Wallet size={24} />
                   </div>
                   <div>
-                    <h4 className="text-lg font-bold text-white">Cierre {new Date(c.fecha_cierre + 'T12:00:00Z').toLocaleDateString('es-VE')}</h4>
+                    <h4 className="text-lg font-bold text-white">Cierre {new Date(c.fecha_cierre + 'T12:00:00Z').toLocaleDateString('es-VE')} - {c.sedes?.nombre_sede || 'Sede'}</h4>
                     <div className="flex items-center gap-2 text-xs text-neutral-400 mt-1">
                       <span className="flex items-center gap-1"><MapPin size={12} /> {c.sedes?.nombre_sede || 'Sede Local'}</span>
                       <span>•</span>
