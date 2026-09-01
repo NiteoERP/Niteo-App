@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { getHistorialCierres } from '@/actions/cierres-actions';
 import { getSedes } from '@/actions/sedes-actions';
-import { Plus, Search, Calendar, MapPin, DollarSign, Wallet } from 'lucide-react';
+import { Plus, Search, Calendar, MapPin, DollarSign, Wallet, BarChart2 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 import { CierreEnCursoBanner } from '@/components/cierres/CierreEnCursoBanner';
@@ -27,6 +27,13 @@ export default async function CajaPage(props: { searchParams: Promise<{ sede?: s
         </div>
         
         <div className="flex items-center gap-3 w-full md:w-auto">
+          <Link 
+            href="/dashboard/caja/resumen" 
+            className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl font-medium transition-colors shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2"
+          >
+            <BarChart2 size={18} />
+            <span>Resumen</span>
+          </Link>
           <Link 
             href="/dashboard/caja/nuevo" 
             className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl font-medium transition-colors shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
