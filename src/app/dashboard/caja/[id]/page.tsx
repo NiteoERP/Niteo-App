@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Edit, Wallet, Calendar, MapPin, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Edit, Wallet, Calendar, MapPin, CheckCircle, XCircle, ChevronDown } from 'lucide-react';
 import { createClient } from '@/utils/supabase/server';
 import { CierreBotonesControl } from './CierreBotonesControl';
 import { redirect } from 'next/navigation';
@@ -69,31 +69,47 @@ export default async function CierreDetallePage(props: { params: Promise<{ id: s
         </div>
       </div>
 
-      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden">
-        <div className="p-4 border-b border-neutral-800 bg-neutral-900/50">
-          <h3 className="font-bold text-white">Desglose por Métodos de Pago</h3>
-        </div>
-        <div className="divide-y divide-neutral-800/50">
-          {txs.length > 0 ? txs.map(t => {
-            return (
-              <div key={t.id} className="p-4 flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-neutral-200 uppercase">{t.metodo}</p>
-                  <div className="flex gap-4 mt-1 text-xs">
-                    <span className="text-neutral-500">
-                      {t.banco && t.banco !== 'N/A' ? t.banco : ''} {t.referencia && t.referencia !== 'N/A' ? 'Ref: ' + t.referencia : ''}
-                    </span>
+      {/* DESGLOSE AGRUPADO POR MTODO */}
+      <div className="space-y-3">
+        <h3 className="font-bold text-white mb-4">Desglose por Métodos de Pago</h3>
+        {txs.length > 0 ? (
+          Object.entries(
+            txs.reduce((acc, t) => {
+              if (!acc[t.metodo]) acc[t.metodo] = { moneda: t.moneda, total: 0, pagos: [] };
+              acc[t.metodo].pagos.push(t);
+              acc[t.metodo].total += Number(t.monto);
+              return acc;
+            }, {} as Record<string, { moneda: string, total: number, pagos: any[] }>)
+          ).map(([metodo, data]: [string, any]) => (
+            <details key={metodo} className="group bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden">
+              <summary className="p-4 flex items-center justify-between cursor-pointer bg-neutral-900/50 hover:bg-neutral-800/50 transition-colors list-none [&::-webkit-details-marker]:hidden">
+                <div className="flex items-center gap-3">
+                  <span className="font-bold text-white uppercase">{metodo}</span>
+                  <span className="text-xs text-neutral-500 bg-neutral-800 px-2 py-1 rounded-md">{data.pagos.length} pagos</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="font-black text-emerald-400">{data.total.toFixed(2)} {data.moneda}</span>
+                  <ChevronDown className="text-neutral-500 group-open:rotate-180 transition-transform" size={18} />
+                </div>
+              </summary>
+              <div className="divide-y divide-neutral-800/50 border-t border-neutral-800">
+                {data.pagos.map((t: any) => (
+                  <div key={t.id} className="p-4 flex items-center justify-between bg-neutral-950/30 pl-8">
+                    <div>
+                      <p className="font-medium text-neutral-300 text-sm">{t.banco && t.banco !== 'N/A' ? t.banco : 'Sin banco/referencia'}</p>
+                      {t.referencia && t.referencia !== 'N/A' && <p className="text-xs text-neutral-500 mt-0.5">Ref: {t.referencia}</p>}
+                    </div>
+                    <span className="font-bold text-emerald-400/80 text-sm">{Number(t.monto).toFixed(2)} {t.moneda}</span>
                   </div>
-                </div>
-                <div className="flex items-center gap-2 font-bold text-emerald-400">
-                  {Number(t.monto).toFixed(2)} {t.moneda}
-                </div>
+                ))}
               </div>
-            );
-          }) : (
-             <div className="p-6 text-center text-neutral-500">No hay métodos registrados</div>
-          )}
-        </div>
+            </details>
+          ))
+        ) : (
+          <div className="p-6 text-center text-neutral-500 bg-neutral-900 border border-neutral-800 rounded-2xl">
+            No hay métodos registrados
+          </div>
+        )}
       </div>
 
       {cierre.observaciones && (
