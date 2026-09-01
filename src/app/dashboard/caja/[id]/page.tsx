@@ -16,6 +16,11 @@ export default async function CierreDetallePage(props: { params: Promise<{ id: s
     .eq('id', params.id)
     .single();
 
+  const { data: transacciones } = await supabase
+    .from('cierres_transacciones')
+    .select('*')
+    .eq('cierre_id', params.id);
+
   if (error || !cierre) {
     return (
       <div className="p-6">
@@ -26,9 +31,7 @@ export default async function CierreDetallePage(props: { params: Promise<{ id: s
   }
 
   // Ensure JSON defaults
-  const mFisico = cierre.montos_fisicos || {};
-  const mEsperado = cierre.montos_esperados || {};
-  const eDiferencias = cierre.desglose_diferencias || {};
+  const txs = transacciones || [];
 
   return (
     <div className="p-6 md:p-10 max-w-4xl mx-auto space-y-6">
@@ -50,11 +53,11 @@ export default async function CierreDetallePage(props: { params: Promise<{ id: s
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-neutral-900 border border-neutral-800 p-5 rounded-2xl">
           <p className="text-neutral-400 text-xs uppercase tracking-wider font-bold mb-1">Esperado (Sistema)</p>
-          <p className="text-2xl font-black text-neutral-200">${Number(cierre.total_esperado_usd).toFixed(2)}</p>
+          <p className="text-2xl font-black text-neutral-200">${Number(cierre.sistema_total_esperado || 0).toFixed(2)}</p>
         </div>
         <div className="bg-neutral-900 border border-neutral-800 p-5 rounded-2xl">
           <p className="text-neutral-400 text-xs uppercase tracking-wider font-bold mb-1">Físico (Declarado)</p>
-          <p className="text-2xl font-black text-white">${Number(cierre.total_fisico_usd).toFixed(2)}</p>
+          <p className="text-2xl font-black text-white">${Number((cierre.real_efectivo_usd || 0) + (cierre.real_bancos_usd || 0) + ((cierre.real_efectivo_bs || 0) / (cierre.tasa_cambio || 1)) + ((cierre.real_bancos_bs || 0) / (cierre.tasa_cambio || 1))).toFixed(2)}</p>
         </div>
         <div className={`border p-5 rounded-2xl ${cierre.diferencia_total >= 0 ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-rose-500/10 border-rose-500/20'}`}>
           <p className={`text-xs uppercase tracking-wider font-bold mb-1 ${cierre.diferencia_total >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>Diferencia</p>
@@ -69,23 +72,19 @@ export default async function CierreDetallePage(props: { params: Promise<{ id: s
           <h3 className="font-bold text-white">Desglose por Métodos de Pago</h3>
         </div>
         <div className="divide-y divide-neutral-800/50">
-          {Object.keys(mEsperado).length > 0 ? Object.keys(mEsperado).map(metodo => {
-            const esperado = Number(mEsperado[metodo] || 0);
-            const fisico = Number(mFisico[metodo] || 0);
-            const dif = fisico - esperado;
-            const isOk = dif >= -0.05 && dif <= 0.05; // Margen de 5 centavos
-            
+          {txs.length > 0 ? txs.map(t => {
             return (
-              <div key={metodo} className="p-4 flex items-center justify-between">
+              <div key={t.id} className="p-4 flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-neutral-200 uppercase">{metodo.replace('_', ' ')}</p>
+                  <p className="font-medium text-neutral-200 uppercase">{t.metodo}</p>
                   <div className="flex gap-4 mt-1 text-xs">
-                    <span className="text-neutral-500">Esperado: {esperado.toFixed(2)}</span>
-                    <span className="text-indigo-400">Declarado: {fisico.toFixed(2)}</span>
+                    <span className="text-neutral-500">
+                      {t.banco && t.banco !== 'N/A' ? t.banco : ''} {t.referencia && t.referencia !== 'N/A' ? 'Ref: ' + t.referencia : ''}
+                    </span>
                   </div>
                 </div>
-                <div className={`flex items-center gap-2 font-bold ${isOk ? 'text-emerald-400' : (dif > 0 ? 'text-indigo-400' : 'text-rose-400')}`}>
-                  {isOk ? <CheckCircle size={18} /> : (dif > 0 ? '+' + dif.toFixed(2) : dif.toFixed(2))}
+                <div className="flex items-center gap-2 font-bold text-emerald-400">
+                  {Number(t.monto).toFixed(2)} {t.moneda}
                 </div>
               </div>
             );
