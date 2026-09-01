@@ -198,7 +198,7 @@ export async function getHistorialCierres(sedeId?: string) {
   let query = supabase
     .from('cierres_caja')
     .select('*, sedes(nombre_sede)')
-    .eq('cierres_caja.empresa_id', profile.empresa_id)
+    .eq('empresa_id', profile.empresa_id)
     .order('fecha_cierre', { ascending: false });
 
   // Si no es MASTER, forzar su sede
@@ -354,7 +354,7 @@ export async function verifySupervisor(password: string) {
   const { data: masterProfile } = await supabase
     .from('perfiles')
     .select('id, rol')
-    .eq('cierres_caja.empresa_id', profile.empresa_id)
+    .eq('empresa_id', profile.empresa_id)
     .eq('rol', 'MASTER')
     .single();
 
