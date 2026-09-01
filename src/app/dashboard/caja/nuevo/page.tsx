@@ -27,7 +27,6 @@ interface Transaccion {
 }
 
 // Clave de borrador en localStorage
-const DRAFT_KEY = 'niteo_draft_cierre';
 
 const METODOS_DEFAULT: MetodoConfig[] = [
   { id: 'Pago Móvil', icon: Smartphone, color: 'text-indigo-400', defaultMoneda: 'VES' },
@@ -131,30 +130,7 @@ export default function NuevoCierreCaja() {
   // -------------------
 
 
-  // ─── FIX 1: RESTAURAR BORRADOR DESDE localStorage AL MONTAR ──────────────
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(DRAFT_KEY);
-      if (raw) {
-        const draft = JSON.parse(raw);
-        if (draft.transacciones?.length > 0) {
-          setTransacciones(draft.transacciones);
-          setHasDraft(true);
-        }
-        if (draft.metodos_custom?.length > 0) {
-          // Rehidratar icon component desde el mapa de iconos
-          const customRestored: MetodoConfig[] = draft.metodos_custom.map((m: any) => ({
-            ...m,
-            icon: ICON_MAP[m.iconKey] || GripHorizontal,
-          }));
-          setMetodos([...METODOS_DEFAULT, ...customRestored]);
-        }
-      }
-    } catch (_) {
-      // Si el JSON está corrupto lo ignoramos
-      if (selectedSedeId) localStorage.removeItem(`niteo_draft_cierre_${selectedSedeId}`);
-    }
-  }, []);
+  
 
   // ─── FIX 1: GUARDAR BORRADOR EN localStorage EN CADA CAMBIO ─────────────
   useEffect(() => {
@@ -169,12 +145,15 @@ export default function NuevoCierreCaja() {
           isCustom: true,
           iconKey: 'GripHorizontal', // único tipo custom por ahora
         }));
-      localStorage.setItem(DRAFT_KEY, JSON.stringify({ transacciones, metodos_custom }));
+      if (selectedSedeId) {
+        localStorage.setItem(`niteo_draft_cierre_${selectedSedeId}`, JSON.stringify({ transacciones, metodos_custom }));
+      }
       setHasDraft(transacciones.length > 0);
     } catch (_) { /* no lanzar en SSR o modo privado */ }
   }, [transacciones, metodos, loading]);
 
   const limpiarBorrador = () => {
+    try { localStorage.removeItem('niteo_draft_cierre'); } catch (_) {}
     if (selectedSedeId) localStorage.removeItem(`niteo_draft_cierre_${selectedSedeId}`);
     setTransacciones([]);
     setMetodos(METODOS_DEFAULT);
@@ -189,7 +168,11 @@ export default function NuevoCierreCaja() {
         setSedes(sedesData);
         
         const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
-        const initialSedeId = sedesData.length > 0 ? sedesData[0].id : undefined;
+        const lastSedeId = typeof window !== 'undefined' ? localStorage.getItem('niteo_last_sede') : null;
+        let initialSedeId = sedesData.length > 0 ? sedesData[0].id : undefined;
+        if (lastSedeId && sedesData.some(s => s.id === lastSedeId)) {
+          initialSedeId = lastSedeId;
+        }
         
         const [cierreRes, bancosRes, customMetodos] = await Promise.all([
           getCierrePrevio(today, initialSedeId),
@@ -233,6 +216,7 @@ export default function NuevoCierreCaja() {
 
 
   const handleSedeChange = async (newSedeId: string) => {
+      localStorage.setItem('niteo_last_sede', newSedeId);
     setSelectedSedeId(newSedeId);
     loadDraft(newSedeId);
     setLoading(true);
@@ -594,7 +578,7 @@ export default function NuevoCierreCaja() {
                                 placeholder={metodo.id === 'Efectivo' ? 'N/A' : 'Ej: VZLA'}
                                 value={tx.banco}
                                 onChange={(e) => updateTransaccion(tx.id, 'banco', e.target.value)}
-                                list={`bancos-list-${metodo.id.replace(/\s+/g, '-')}`}
+                                list={`bancos-list-${metodo.id.replace(/[^a-zA-Z0-9]/g, '')}`}
                                 className="w-full bg-neutral-900 border border-neutral-800 focus:border-indigo-500 rounded-lg h-9 px-3 text-white text-sm outline-none transition-colors"
                               />
                               </td>
@@ -655,7 +639,7 @@ export default function NuevoCierreCaja() {
                               placeholder={metodo.id === 'Efectivo' ? 'N/A' : 'Banco'}
                               value={tx.banco}
                               onChange={(e) => updateTransaccion(tx.id, 'banco', e.target.value)}
-                              list={`bancos-list-${metodo.id.replace(/\s+/g, '-')}`}
+                              list={`bancos-list-${metodo.id.replace(/[^a-zA-Z0-9]/g, '')}`}
                               className="w-full bg-black/40 border border-neutral-800 focus:border-indigo-500 rounded-lg h-10 px-3 text-white text-sm outline-none transition-colors"
                             />
                             
@@ -681,7 +665,7 @@ export default function NuevoCierreCaja() {
         })}
 
         {metodos.map(m => (
-          <datalist key={m.id} id={`bancos-list-${m.id.replace(/\s+/g, '-')}`}>
+          <datalist key={m.id} id={`bancos-list-${m.id.replace(/[^a-zA-Z0-9]/g, '')}`}>
             {(bancosPorMetodo[m.id] || []).map(b => <option key={b} value={b} />)}
           </datalist>
         ))}
