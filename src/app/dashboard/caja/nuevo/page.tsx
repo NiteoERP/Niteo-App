@@ -666,7 +666,10 @@ export default function NuevoCierreCaja() {
 
         {metodos.map(m => (
           <datalist key={m.id} id={`bancos-list-${m.id.replace(/[^a-zA-Z0-9]/g, '')}`}>
-            {(bancosPorMetodo[m.id] || []).map(b => <option key={b} value={b} />)}
+            {Array.from(new Set([
+              ...(bancosPorMetodo[m.id] || []),
+              ...transacciones.filter(t => t.metodo === m.id && t.banco && t.banco.trim() !== '' && t.banco.trim() !== 'N/A').map(t => t.banco.trim())
+            ])).sort().map(b => <option key={b} value={b} />)}
           </datalist>
         ))}
 
