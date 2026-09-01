@@ -217,6 +217,13 @@ export default function InformesPage() {
     }
   }, [selectedReport, sheetStartDate, sheetEndDate, categoriaFilter, cajeroFilter, clienteFilter]);
 
+
+  useEffect(() => {
+    if (selectedReport && sheetStartDate && sheetEndDate) {
+      handleGenerate(selectedReport.id, sheetStartDate, sheetEndDate);
+    }
+  }, [selectedReport, sheetStartDate, sheetEndDate, categoriaFilter, cajeroFilter, clienteFilter]);
+
   const handleGenerate = async (reportId: string, s: Date, e: Date) => {
     setIsLoading(true);
     setReportError('');
@@ -973,7 +980,7 @@ function DesktopReportPanel({
           <button onClick={onGenerate} disabled={isLoading}
             className="w-full h-12 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold rounded-xl
                        flex items-center justify-center gap-2 transition-colors shadow-[0_0_15px_rgba(99,102,241,0.25)]">
-            {isLoading ? <><Loader2 size={16} className="animate-spin" /> Generando...</> : <><BarChart2 size={16} /> Generar Reporte</>}
+            {isLoading ? <><Loader2 size={16} className="animate-spin" /> Generando...</> : <><FileText size={16} /> Generar Documento</>}
           </button>
 
           {reportError && (
