@@ -227,11 +227,11 @@ export default function InsumosManager({ initialInsumos, empresaId, sedeId }: { 
           </div>
           <div className="w-full lg:w-32">
             <label className="block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wider">Existencia Base</label>
-            <input required type="number" step="0.01" min="0" value={stock} onChange={e => setStock(e.target.value)} placeholder="0.00" className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+            <input required type="number" step="any" min="0" value={stock} onChange={e => setStock(e.target.value)} placeholder="0.00" className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-emerald-500" />
           </div>
           <div className="w-full lg:w-32">
             <label className="block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wider">Costo ($)</label>
-            <input required type="number" step="0.01" min="0" value={costo} onChange={e => setCosto(e.target.value)} placeholder="0.00" className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+            <input required type="number" step="any" min="0" value={costo} onChange={e => setCosto(e.target.value)} placeholder="0.00" className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-emerald-500" />
           </div>
           <button type="submit" disabled={isPending} className="w-full lg:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2.5 px-6 rounded-xl transition-colors shadow-lg shadow-emerald-900/20 flex justify-center items-center gap-2">
             {isPending ? <Loader2 className="animate-spin" size={20} /> : <Plus size={20} />} Registrar
@@ -308,7 +308,7 @@ export default function InsumosManager({ initialInsumos, empresaId, sedeId }: { 
                     <div className="relative">
                       <input 
                         type="number" 
-                        step="0.01" 
+                        step="any" 
                         value={adjustData[insumo.id] || ''} 
                         onChange={e => setAdjustData(prev => ({...prev, [insumo.id]: e.target.value}))}
                         className="w-full bg-indigo-900/20 border border-indigo-500/30 text-white rounded-lg px-3 py-2 text-right focus:outline-none focus:ring-1 focus:ring-indigo-500" 

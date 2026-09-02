@@ -238,7 +238,7 @@ export default function DespachosManager({ empresaId }: { empresaId: string }) {
             <div className="sm:col-span-4 flex gap-2">
               <input 
                 type="number" 
-                min="0.01" step="0.01"
+                min="0.01" step="any"
                 value={cantidadInput}
                 onChange={e => setCantidadInput(e.target.value)}
                 placeholder="Cantidad"

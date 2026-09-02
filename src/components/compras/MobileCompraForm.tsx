@@ -348,7 +348,7 @@ export default function MobileCompraForm() {
                   <label className="block text-sm font-medium text-neutral-400 mb-1">Cantidad</label>
                   <input 
                     type="number" 
-                    min="0.01" step="0.01"
+                    min="0.01" step="any"
                     value={cantidad}
                     onChange={e => handleCantidadChange(e.target.value)}
                     placeholder="0.00"
@@ -359,7 +359,7 @@ export default function MobileCompraForm() {
                   <label className="block text-sm font-medium text-neutral-400 mb-1">Costo Unit.</label>
                   <input 
                     type="number" 
-                    min="0.01" step="0.01"
+                    min="0.01" step="any"
                     value={costoUnitario}
                     onChange={e => handleCostoUnitarioChange(e.target.value)}
                     placeholder="0.00"
@@ -372,7 +372,7 @@ export default function MobileCompraForm() {
                   <label className="block text-sm font-medium text-neutral-400 mb-1">Costo Total</label>
                   <input 
                     type="number" 
-                    min="0.01" step="0.01"
+                    min="0.01" step="any"
                     value={costoTotal}
                     onChange={e => handleCostoTotalChange(e.target.value)}
                     placeholder="0.00"
