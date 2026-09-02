@@ -40,7 +40,7 @@ export async function getFacturasProveedor(proveedorId: string, sedeId: string) 
     .eq('proveedor_id', proveedorId)
     .gt('saldo_pendiente', 0)
     .order('fecha_emision', { ascending: true })
-    .limit(10);
+    ; // removed limit to show all
     
   if (sedeId !== 'ALL') {
     query = query.eq('sede_id', sedeId);

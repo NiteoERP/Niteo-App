@@ -17,8 +17,8 @@ export default function CreditosPage() {
   const [metodosDisponibles, setMetodosDisponibles] = useState<string[]>(["Efectivo"]);
   const [sedeId, setSedeId] = useState("ALL");
   
-  const [startDate, setStartDate] = useState<Date>(new Date('2020-01-01'));
-  const [endDate, setEndDate] = useState<Date>(new Date());
+  const [startDate, setStartDate] = useState<Date>(new Date('2000-01-01'));
+  const [endDate, setEndDate] = useState<Date>(new Date('2100-01-01'));
   
   const [clientes, setClientes] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
