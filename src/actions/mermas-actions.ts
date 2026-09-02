@@ -1,48 +1,67 @@
-'use server'
+'use server';
 
 import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 
-export async function registrarMerma(formData: FormData) {
-  // 1. Instanciar Supabase Server Client
-  const supabase = await createClient();
+export async function fetchShrinkageReasonsAction() {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+        .from('shrinkage_reasons')
+        .select('*')
+        .eq('is_active', true);
+        
+    if (error) {
+        console.error("Error fetching reasons:", error);
+        return [];
+    }
+    return data;
+}
 
-  // 2. Extraer datos del formulario
-  const insumo_id = formData.get('insumo_id') as string;
-  const cantidadStr = formData.get('cantidad') as string;
-  const motivo = formData.get('motivo') as string;
+export async function fetchShrinkagesAction() {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+        .from('shrinkages')
+        .select(`
+            *,
+            shrinkage_reasons (name)
+        `)
+        .order('created_at', { ascending: false });
 
-  if (!insumo_id || !cantidadStr || !motivo) {
-    return { error: 'Por favor, completa todos los campos requeridos.' };
-  }
+    if (error) {
+        console.error("Error fetching shrinkages:", error);
+        return [];
+    }
+    return data;
+}
 
-  const cantidad = parseFloat(cantidadStr);
+export async function registerShrinkageAction(formData: FormData) {
+    const supabase = await createClient();
+    
+    // Obtener sesión actual
+    const { data: { user } } = await supabase.auth.getUser();
+    const userId = user?.id || null; // Manejo seguro si no hay RLS estricto de usuario por ahora
 
-  if (isNaN(cantidad) || cantidad <= 0) {
-    return { error: 'La cantidad a mermar debe ser mayor a 0.' };
-  }
+    const productId = formData.get('product_id') as string;
+    const reasonId = formData.get('reason_id') as string;
+    const quantity = parseFloat(formData.get('quantity') as string);
+    const unitCost = parseFloat(formData.get('unit_cost') as string);
+    const notes = formData.get('notes') as string;
 
-  // 3. Obtener el usuario actual
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  if (userError || !user) {
-    return { error: 'Debes iniciar sesión para registrar una merma.' };
-  }
+    // Ejecutar RPC para transacción segura
+    const { error } = await supabase.rpc('register_shrinkage', {
+        p_product_id: parseInt(productId),
+        p_reason_id: reasonId,
+        p_quantity: quantity,
+        p_unit_cost: unitCost,
+        p_notes: notes,
+        p_user_id: userId
+    });
 
-  // 4. Ejecutar RPC para la transacción atómica
-  const { error: rpcError } = await supabase.rpc('registrar_merma_insumo', {
-    p_insumo_id: insumo_id,
-    p_usuario_id: user.id,
-    p_cantidad: cantidad,
-    p_motivo: motivo
-  });
+    if (error) {
+        console.error("Error registering shrinkage:", error);
+        throw new Error(error.message);
+    }
 
-  if (rpcError) {
-    console.error('Error al registrar merma:', rpcError);
-    return { error: 'Ocurrió un error al procesar la merma en la base de datos.' };
-  }
-
-  // 5. Revalidar la vista para refrescar inventario y métricas
-  revalidatePath('/dashboard/inventario');
-  
-  return { success: true };
+    revalidatePath('/mermas');
+    return { success: true };
 }

@@ -82,41 +82,15 @@ export async function registrarAbono(facturaId: string, montoAbonado: number, me
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "No autenticado" };
 
-  const { data: profile } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
-  if (!profile) return { success: false, error: "Perfil no encontrado" };
-
-  // Insertar el pago
-  const { error: insertError } = await supabase.from('ventas_pagos').insert({
-    empresa_id: profile.empresa_id,
-    factura_id: facturaId,
-    id_pos: 'WEB_' + Date.now().toString(),
-    tipo_pago: metodoPago,
-    monto: montoAbonado,
-    fecha_pago: fechaPago || new Date().toISOString()
+  const { data, error } = await supabase.rpc('registrar_abono_factura', {
+    p_factura_id: facturaId,
+    p_monto: montoAbonado,
+    p_metodo_pago: metodoPago,
+    p_fecha_pago: fechaPago || null,
+    p_usuario_id: user.id
   });
 
-  if (insertError) return { success: false, error: insertError.message };
-
-  // Descontar del saldo_pendiente
-  // Ya que es supabase podemos obtener la factura y actualizarla
-  const { data: factura, error: getError } = await supabase
-    .from('ventas_facturas')
-    .select('saldo_pendiente')
-    .eq('id', facturaId)
-    .single();
-
-  if (getError || !factura) return { success: false, error: getError?.message || 'Factura no encontrada' };
-
-  const nuevoSaldo = Math.max(0, factura.saldo_pendiente - montoAbonado);
-  const nuevoEstado = nuevoSaldo > 0 ? 2 : 1;
-
-  const { error: updateError } = await supabase
-    .from('ventas_facturas')
-    .update({ saldo_pendiente: nuevoSaldo, estado_pago: nuevoEstado })
-    .eq('id', facturaId);
-
-  if (updateError) return { success: false, error: updateError.message };
-
+  if (error) return { success: false, error: error.message };
   return { success: true };
 }
 
@@ -126,61 +100,21 @@ export async function registrarAbonoGlobal(clienteId: string, sedeId: string, mo
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'No autenticado' };
 
-  let query = supabase.from('ventas_facturas')
-    .select('id, saldo_pendiente, empresa_id')
-    .eq('cliente_id', clienteId)
-    .gt('saldo_pendiente', 0)
-    .order('fecha_venta', { ascending: true });
+  const p_sede_id = sedeId === 'ALL' ? null : sedeId;
 
-  if (sedeId !== 'ALL') {
-    query = query.eq('sede_id', sedeId);
-  }
+  const { data, error } = await supabase.rpc('registrar_abono_global', {
+    p_cliente_id: clienteId,
+    p_sede_id: p_sede_id,
+    p_monto: monto,
+    p_metodo_pago: metodoPago,
+    p_fecha_pago: fechaPago || null,
+    p_usuario_id: user.id
+  });
 
-  const { data: facturas, error: getError } = await query;
-  if (getError) return { success: false, error: getError.message };
-  if (!facturas || facturas.length === 0) return { success: false, error: 'No hay facturas con deuda para este cliente' };
-
-  let montoRestante = monto;
-  let abonosRegistrados = 0;
-
-  for (const fac of facturas) {
-    if (montoRestante <= 0) break;
-    
-    const montoAbonar = Math.min(Number(fac.saldo_pendiente), montoRestante);
-    
-    const { data: profile } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
-
-    const { error: insertError } = await supabase.from('ventas_pagos').insert({
-      empresa_id: profile?.empresa_id,
-      factura_id: fac.id,
-      id_pos: 'WEB_' + Date.now().toString(),
-      tipo_pago: metodoPago,
-      monto: montoAbonar,
-      fecha_pago: fechaPago || new Date().toISOString()
-    });
-
-    if (insertError) {
-      console.error(insertError);
-      return { success: false, error: insertError.message };
-    }
-
-    const nuevoSaldo = Math.max(0, fac.saldo_pendiente - montoAbonar);
-    const nuevoEstado = nuevoSaldo > 0 ? 2 : 1;
-
-    const { error: updateError } = await supabase
-      .from('ventas_facturas')
-      .update({ saldo_pendiente: nuevoSaldo, estado_pago: nuevoEstado })
-      .eq('id', fac.id);
-
-    if (updateError) {
-      console.error(updateError);
-      return { success: false, error: updateError.message };
-    }
-
-    
-    montoRestante -= montoAbonar;
-    abonosRegistrados++;
-  }
-
-  return { success: true, restante: montoRestante, facturasPagadas: abonosRegistrados };
+  if (error) return { success: false, error: error.message };
+  return { 
+    success: true, 
+    restante: data?.restante, 
+    facturasPagadas: data?.facturasPagadas 
+  };
 }
