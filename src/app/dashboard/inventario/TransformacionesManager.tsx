@@ -43,8 +43,20 @@ export default function TransformacionesManager({ insumos, activeSedeId }: { ins
     }
     const p = plantillas.find(x => x.id === id);
     if (p) {
-      setOrigenes(p.insumos_origen || []);
-      setDestinos(p.insumos_destino || []);
+      // Intentar mapear insumos por ID o por Nombre (para soporte multi-sede)
+      const mapItem = (item: any) => {
+        let matched = insumos.find(i => i.id === item.insumo_id);
+        if (!matched && item.nombre_insumo) {
+          matched = insumos.find(i => i.nombre?.toLowerCase().trim() === item.nombre_insumo.toLowerCase().trim());
+        }
+        return {
+          ...item,
+          insumo_id: matched ? matched.id : ''
+        };
+      };
+      
+      setOrigenes((p.insumos_origen || []).map(mapItem));
+      setDestinos((p.insumos_destino || []).map(mapItem));
     }
   };
 
@@ -117,8 +129,15 @@ export default function TransformacionesManager({ insumos, activeSedeId }: { ins
   };
 
   const handleGuardarPlantilla = async () => {
-    const validOrigenes = origenes.filter(o => o.insumo_id && o.cantidad > 0);
-    const validDestinos = destinos.filter(d => d.insumo_id && d.cantidad > 0);
+    // Inyectar nombres para que la plantilla sirva en otras sedes
+    const validOrigenes = origenes.filter(o => o.insumo_id && o.cantidad > 0).map(o => ({
+      ...o,
+      nombre_insumo: insumos.find(i => i.id === o.insumo_id)?.nombre
+    }));
+    const validDestinos = destinos.filter(d => d.insumo_id && d.cantidad > 0).map(d => ({
+      ...d,
+      nombre_insumo: insumos.find(i => i.id === d.insumo_id)?.nombre
+    }));
     if (validOrigenes.length === 0 || validDestinos.length === 0) {
       setErrorMsg('Debes agregar insumos para guardar la plantilla.');
       return;

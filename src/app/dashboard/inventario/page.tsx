@@ -32,7 +32,7 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
   let productos: any[] = [];
   let recetas: any[] = [];
 
-  if (currentTab === 'insumos') {
+  if (currentTab === 'insumos' || currentTab === 'transformaciones') {
     let query = supabase.from('inventario_insumos').select('*').eq('empresa_id', empresaId);
     if (activeSedeId) {
       query = query.eq('sede_id', activeSedeId);
