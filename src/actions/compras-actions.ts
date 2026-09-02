@@ -191,7 +191,7 @@ export async function registrarFacturaInsumos(factura: {
     if (idInsumo) {       
       let usd = item.costoTotal;       
       if (factura.moneda === 'VES') usd = usd / factura.tasa;        
-      const { error: rpcErr } = await supabase.rpc('registrar_compra_insumo', { p_insumo_id: idInsumo, p_usuario_id: user.id, p_cantidad: item.cantidad, p_costo_total: usd }); if (rpcErr) { console.error(rpcErr); return { error: rpcErr.message }; }     
+      const { error: rpcErr } = await registrarCompraInsumoJS(supabase, idInsumo, user.id, item.cantidad, usd); if (rpcErr) { console.error(rpcErr); return { error: rpcErr.message }; }     
     }   
   }    
   revalidatePath('/dashboard/inventario');   
@@ -280,7 +280,7 @@ export async function editarFacturaInsumos(
 
     if (idInsumo) {
       item.insumo_id = idInsumo; // Actualizar para guardar en el JSON final
-      const { error: rpcErr } = await supabase.rpc('registrar_compra_insumo', { p_insumo_id: idInsumo, p_usuario_id: user.id, p_cantidad: item.cantidad, p_costo_total: costoUSD }); if (rpcErr) { console.error(rpcErr); return { error: rpcErr.message }; }
+      const { error: rpcErr } = await registrarCompraInsumoJS(supabase, idInsumo, user.id, item.cantidad, costoUSD); if (rpcErr) { console.error(rpcErr); return { error: rpcErr.message }; }
     }
   }
 

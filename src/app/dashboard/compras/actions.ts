@@ -47,7 +47,7 @@ export async function getProveedoresYProductos() {
     const { supabase, idEmpresa } = await getAuthContext();
 
     const [provRes, prodRes] = await Promise.all([
-      supabase.from('proveedores').select('id, nombre').eq('id_empresa', idEmpresa).order('nombre'),
+      supabase.from('proveedores').select('id, nombre:nombre_comercial').eq('empresa_id', idEmpresa).order('nombre_comercial'),
       supabase.from('productos').select('id, nombre, costo').eq('empresa_id', idEmpresa).order('nombre')
     ]);
 
@@ -83,10 +83,7 @@ export async function crearProveedor(nombre: string, rif: string = '') {
   try {
     const { supabase, idEmpresa } = await getAuthContext();
 
-    const { data, error } = await supabase
-      .from('proveedores')
-      .insert([{ nombre, rif, id_empresa: idEmpresa }])
-      .select('id, nombre')
+    const { data, error } = await supabase.from('proveedores').insert([{ nombre_comercial: nombre, rif_cedula: rif, empresa_id: idEmpresa }]).select('id, nombre:nombre_comercial')
       .single();
 
     if (error) throw error;
@@ -104,7 +101,6 @@ export async function getUltimasCompras() {
       .from('compras_puntuales')
       .select('id, fecha_registro, proveedor, detalles, monto_divisas, monto_bs')
       .eq('id_empresa', idEmpresa)
-      .not('detalles', 'ilike', '%is_insumos%')
       .order('fecha_registro', { ascending: false })
       .limit(5);
 
