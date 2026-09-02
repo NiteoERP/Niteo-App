@@ -77,7 +77,7 @@ export async function getDetalleDeudaCliente(clienteId: string | null, sedeId: s
   return { success: true, data };
 }
 
-export async function registrarAbono(facturaId: string, montoAbonado: number, metodoPago: string) {
+export async function registrarAbono(facturaId: string, montoAbonado: number, metodoPago: string, fechaPago?: string, referencia?: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "No autenticado" };
@@ -92,7 +92,7 @@ export async function registrarAbono(facturaId: string, montoAbonado: number, me
     id_pos: 'WEB_' + Date.now().toString(),
     tipo_pago: metodoPago,
     monto: montoAbonado,
-    fecha_pago: new Date().toISOString()
+    fecha_pago: fechaPago || new Date().toISOString()
   });
 
   if (insertError) return { success: false, error: insertError.message };
@@ -121,25 +121,24 @@ export async function registrarAbono(facturaId: string, montoAbonado: number, me
 }
 
 
-export async function registrarAbonoGlobal(clienteId: string, sedeId: string, monto: number, metodoPago: string) {
+export async function registrarAbonoGlobal(clienteId: string, sedeId: string, monto: number, metodoPago: string, fechaPago?: string, referencia?: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'No autenticado' };
 
   let query = supabase.from('ventas_facturas')
-    .select('id, saldo_pendiente, total, cliente_id, sede_id')
+    .select('id, saldo_pendiente, empresa_id')
     .eq('cliente_id', clienteId)
     .gt('saldo_pendiente', 0)
     .order('fecha_venta', { ascending: true });
-    
-  if (sedeId && sedeId !== 'ALL') {
+
+  if (sedeId !== 'ALL') {
     query = query.eq('sede_id', sedeId);
   }
 
-  const { data: facturas, error } = await query;
-  
-  if (error) return { success: false, error: error.message };
-  if (!facturas || facturas.length === 0) return { success: false, error: 'No hay facturas pendientes' };
+  const { data: facturas, error: getError } = await query;
+  if (getError) return { success: false, error: getError.message };
+  if (!facturas || facturas.length === 0) return { success: false, error: 'No hay facturas con deuda para este cliente' };
 
   let montoRestante = monto;
   let abonosRegistrados = 0;
@@ -157,7 +156,7 @@ export async function registrarAbonoGlobal(clienteId: string, sedeId: string, mo
       id_pos: 'WEB_' + Date.now().toString(),
       tipo_pago: metodoPago,
       monto: montoAbonar,
-      fecha_pago: new Date().toISOString()
+      fecha_pago: fechaPago || new Date().toISOString()
     });
 
     if (insertError) {

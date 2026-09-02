@@ -38,6 +38,8 @@ export default function CreditosPage() {
   const [facturaPagar, setFacturaPagar] = useState<any>(null);
   const [montoAbonar, setMontoAbonar] = useState("");
   const [metodoPago, setMetodoPago] = useState("Efectivo");
+  const [fechaPago, setFechaPago] = useState("");
+  const [referencia, setReferencia] = useState("");
   const [isPagarLoading, setIsPagarLoading] = useState(false);
   const [showPagoGlobalModal, setShowPagoGlobalModal] = useState(false);
   const [montoAbonarGlobal, setMontoAbonarGlobal] = useState("");
@@ -108,7 +110,7 @@ export default function CreditosPage() {
   const handlePagarGlobal = async () => {
     if (!clienteSeleccionado || !montoAbonarGlobal) return;
     setIsPagarLoading(true);
-    const res = await registrarAbonoGlobal(clienteSeleccionado.id_cliente, sedeId, Number(montoAbonarGlobal), metodoPago);
+    const res = await registrarAbonoGlobal(clienteSeleccionado.id_cliente, sedeId, Number(montoAbonarGlobal), metodoPago, fechaPago ? new Date(fechaPago).toISOString() : undefined, referencia);
     if (res.success) {
       setShowPagoGlobalModal(false);
       await fetchDetalle(selectedClienteId);
@@ -128,7 +130,7 @@ export default function CreditosPage() {
   const handlePagar = async () => {
     if (!facturaPagar || !montoAbonar) return;
     setIsPagarLoading(true);
-    const res = await registrarAbono(facturaPagar.id_factura, Number(montoAbonar), metodoPago);
+    const res = await registrarAbono(facturaPagar.id_factura, Number(montoAbonar), metodoPago, fechaPago ? new Date(fechaPago).toISOString() : undefined, referencia);
     if (res.success) {
       setShowPagoModal(false);
       // Recargar detalle y lista actual sin resetear
@@ -268,7 +270,7 @@ export default function CreditosPage() {
                 <p className="text-rose-400 font-bold mt-1">Deuda Total: {formatCurrency(clienteSeleccionado?.monto_adeudado || 0)}</p>
               </div>
               <button
-                  onClick={() => { setMontoAbonarGlobal(clienteSeleccionado?.monto_adeudado?.toString() || "0"); setShowPagoGlobalModal(true); }}
+                  onClick={() => { setMontoAbonarGlobal(clienteSeleccionado?.monto_adeudado?.toString() || "0"); setFechaPago(format(new Date(), "yyyy-MM-dd'T'HH:mm")); setReferencia(""); setShowPagoGlobalModal(true); }}
                   className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold transition-colors text-sm"
                 >
                   <Wallet size={16} /> Saldar Total
@@ -310,7 +312,7 @@ export default function CreditosPage() {
                           <p className="font-black text-rose-400 text-lg">{formatCurrency(fac.saldo_pendiente || 0)}</p>
                         </div>
                         <button 
-                          onClick={() => { setFacturaPagar(fac); setMontoAbonar(fac.saldo_pendiente); setShowPagoModal(true); }}
+                          onClick={() => { setFacturaPagar(fac); setMontoAbonar(fac.saldo_pendiente); setFechaPago(format(new Date(), "yyyy-MM-dd'T'HH:mm")); setReferencia(""); setShowPagoModal(true); }}
                           className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-lg flex items-center gap-2 transition-colors"
                         >
                           <PlusCircle size={16} /> Abonar
@@ -342,7 +344,10 @@ export default function CreditosPage() {
                                 <div key={j} className="flex justify-between items-center p-2 rounded bg-neutral-900/50 border border-emerald-900/30">
                                   <div>
                                     <span className="text-sm font-medium text-emerald-400 block">{formatCurrency(a.monto)}</span>
-                                    <span className="text-xs text-neutral-500">{a.metodo}</span>
+                                      <span className="text-xs text-neutral-500">
+                                        {a.metodo} 
+                                        {a.fecha ? ' - ' + new Date(a.fecha).toLocaleDateString() : ''}
+                                      </span>
                                   </div>
                                   <span className="text-xs font-medium text-neutral-400">{format(new Date(a.fecha), "dd/MM/yy HH:mm")}</span>
                                 </div>
