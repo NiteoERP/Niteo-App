@@ -212,8 +212,8 @@ export default function MobileCompraForm() {
             </div>
           )}
 
-          {/* Factura Header */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-neutral-950/50 p-4 rounded-xl border border-neutral-800/50">
+                    {/* Factura Header */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-neutral-950/50 p-4 rounded-xl border border-neutral-800/50">
             <div>
               <label className="block text-sm font-medium text-neutral-400 mb-1">Proveedor / Tienda</label>
               <div className="relative">
@@ -228,7 +228,7 @@ export default function MobileCompraForm() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-neutral-400 mb-1">Medio / Moneda de Pago</label>
+              <label className="block text-sm font-medium text-neutral-400 mb-1">Moneda</label>
               <select 
                 value={monedaGlobal}
                 onChange={(e) => setMonedaGlobal(e.target.value as 'USD'|'VES')}
@@ -238,9 +238,19 @@ export default function MobileCompraForm() {
                 <option value="VES">Bolívares (VES)</option>
               </select>
             </div>
-          </div>
-
-          <hr className="border-neutral-800" />
+            <div>
+              <label className="block text-sm font-medium text-neutral-400 mb-1">Método de Pago</label>
+              <select 
+                value={metodoPago}
+                onChange={(e) => setMetodoPago(e.target.value)}
+                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-indigo-500"
+              >
+                {metodosDisponibles.map(m => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
+          </div>\n\n          <hr className="border-neutral-800" />
 
           {/* Add Item Form */}
           <div className="space-y-4">

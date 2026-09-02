@@ -326,7 +326,7 @@ async function registrarCompraInsumoJS(supabase: any, p_insumo_id: string, p_usu
     tipo_movimiento: 'ENTRADA',
     cantidad: p_cantidad,
     costo_perdido: 0,
-    motivo: 'COMPRA'
+    motivo: 'AJUSTE_INVENTARIO'
   });
 
   if (movErr) return { error: movErr.message };
