@@ -1,5 +1,6 @@
-import { getResumenPagos } from './cierres-actions';
 'use server';
+import { getResumenPagos } from './cierres-actions';
+
 
 import { createClient } from '@/utils/supabase/server';
 import { startOfDay, endOfDay } from 'date-fns';
