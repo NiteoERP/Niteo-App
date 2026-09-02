@@ -35,6 +35,7 @@ export default function ProveedoresPage() {
   const [metodoPago, setMetodoPago] = useState("Transferencia");
   const [referencia, setReferencia] = useState("");
   const [bancoOrigen, setBancoOrigen] = useState("");
+    const [fechaPago, setFechaPago] = useState("");
   const [isPagarLoading, setIsPagarLoading] = useState(false);
 
   const [isCreatingFac, setIsCreatingFac] = useState(false);
@@ -136,7 +137,7 @@ export default function ProveedoresPage() {
   const handlePagar = async () => {
     if (!facturaPagar || !montoAbonar || !metodoPago) return;
     setIsPagarLoading(true);
-    const res = await registrarPagoProveedor(facturaPagar.id, Number(montoAbonar), metodoPago, referencia, bancoOrigen);
+    const res = await registrarPagoProveedor(facturaPagar.id, Number(montoAbonar), metodoPago, referencia, bancoOrigen, fechaPago ? new Date(fechaPago).toISOString() : undefined);
     if (res.success) {
       setShowPagoModal(false);
       // Reload current list without reset
@@ -347,7 +348,8 @@ export default function ProveedoresPage() {
                     ) : (
                       <div className="space-y-3">
                         {facturasProveedor.map(fac => (
-                          <div key={fac.id} className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4 hover:border-neutral-700 transition-colors">
+                          <React.Fragment key={fac.id}>
+                          <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4 hover:border-neutral-700 transition-colors z-10 relative">
                             <div>
                               <div className="flex items-center gap-2">
                                 <h5 className="font-bold text-white">{fac.concepto || "Factura / Deuda"}</h5>
@@ -369,6 +371,24 @@ export default function ProveedoresPage() {
                               </button>
                             </div>
                           </div>
+                          
+                          {/* Historial de Pagos si tiene */}
+                          {fac.pagos && fac.pagos.length > 0 && (
+                            <div className="bg-neutral-950 p-3 rounded-b-xl border border-neutral-800 border-t-0 -mt-2 mb-4 ml-4 mr-4">
+                              <p className="text-xs font-bold text-neutral-500 uppercase mb-2">Historial de Pagos de esta Factura</p>
+                              <div className="space-y-1">
+                                {fac.pagos.map((pago: any) => (
+                                  <div key={pago.id} className="flex justify-between items-center text-xs py-1 border-b border-neutral-800/50 last:border-0">
+                                    <span className="text-neutral-400">{format(new Date(pago.created_at), "dd/MM/yyyy HH:mm")}</span>
+                                    <span className="text-emerald-400 font-medium">{pago.metodo_pago} {pago.referencia ? '('+pago.referencia+')' : ''}</span>
+                                    <span className="font-bold text-white">{formatCurrency(pago.monto)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          </React.Fragment>
                         ))}
                       </div>
                     )}
@@ -442,16 +462,20 @@ export default function ProveedoresPage() {
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Banco Origen</label>
-                  <input type="text" value={bancoOrigen} onChange={(e) => setBancoOrigen(e.target.value)} placeholder="Ej. Banesco" className="w-full bg-neutral-950 border border-neutral-800 text-white py-2 px-3 rounded-lg outline-none" />
+                  <div>
+                    <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Banco Origen</label>
+                    <input type="text" value={bancoOrigen} onChange={(e) => setBancoOrigen(e.target.value)} placeholder="Ej. Banesco" className="w-full bg-neutral-950 border border-neutral-800 text-white py-2 px-3 rounded-lg outline-none" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Referencia</label>
+                    <input type="text" value={referencia} onChange={(e) => setReferencia(e.target.value)} placeholder="Nro de recibo" className="w-full bg-neutral-950 border border-neutral-800 text-white py-2 px-3 rounded-lg outline-none" />
+                  </div>
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Referencia</label>
-                  <input type="text" value={referencia} onChange={(e) => setReferencia(e.target.value)} placeholder="Ej. 123456" className="w-full bg-neutral-950 border border-neutral-800 text-white py-2 px-3 rounded-lg outline-none" />
+                  <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Fecha del Pago</label>
+                  <input type="datetime-local" value={fechaPago} onChange={(e) => setFechaPago(e.target.value)} className="w-full bg-neutral-950 border border-neutral-800 text-white py-2 px-3 rounded-lg outline-none" />
                 </div>
-              </div>
-              <button onClick={handlePagar} disabled={isPagarLoading} className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold py-3.5 rounded-xl shadow-lg mt-4 transition-colors">
+                <button onClick={handlePagar} disabled={isPagarLoading} className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold py-3.5 rounded-xl shadow-lg mt-4 transition-colors">
                 {isPagarLoading ? "Procesando..." : "Confirmar Pago"}
               </button>
             </div>

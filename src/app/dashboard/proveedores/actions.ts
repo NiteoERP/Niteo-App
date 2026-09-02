@@ -36,7 +36,7 @@ export async function getFacturasProveedor(proveedorId: string, sedeId: string) 
   if (!user) return { success: false, error: 'No autenticado' };
 
   let query = supabase.from('compras_facturas')
-    .select('id, numero_factura, concepto, total, saldo_pendiente, fecha_emision')
+    .select('id, numero_factura, concepto, total, saldo_pendiente, fecha_emision, pagos:compras_pagos(id, monto, metodo_pago, referencia, created_at)')
     .eq('proveedor_id', proveedorId)
     .gt('saldo_pendiente', 0)
     .order('fecha_emision', { ascending: true })
@@ -51,19 +51,24 @@ export async function getFacturasProveedor(proveedorId: string, sedeId: string) 
   return { success: true, data };
 }
 
-export async function registrarPagoProveedor(facturaId: string, monto: number, metodoPago: string, referencia: string, bancoOrigen: string) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: 'No autenticado' };
+export async function registrarPagoProveedor(facturaId: string, monto: number, metodoPago: string, referencia: string, bancoOrigen: string, fechaPago?: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'No autenticado' };
+  
+    const payload: any = {
+      factura_id: facturaId,
+      monto,
+      metodo_pago: metodoPago,
+      referencia,
+      banco_origen: bancoOrigen,
+      usuario_id: user.id
+    };
+    if (fechaPago) {
+      payload.created_at = fechaPago;
+    }
 
-  const { error } = await supabase.from('compras_pagos').insert({
-    factura_id: facturaId,
-    monto,
-    metodo_pago: metodoPago,
-    referencia,
-    banco_origen: bancoOrigen,
-    usuario_id: user.id
-  });
+    const { error } = await supabase.from('compras_pagos').insert(payload);
 
   if (error) return { success: false, error: error.message };
   return { success: true };

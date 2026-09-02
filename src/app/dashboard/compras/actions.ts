@@ -48,7 +48,7 @@ export async function getProveedoresYProductos() {
 
     const [provRes, prodRes] = await Promise.all([
       supabase.from('proveedores').select('id, nombre:nombre_comercial').eq('empresa_id', idEmpresa).order('nombre_comercial'),
-      supabase.from('productos').select('id, nombre, costo').eq('empresa_id', idEmpresa).order('nombre')
+      supabase.from('inventario_insumos').select('id, nombre, costo:costo_promedio').eq('empresa_id', idEmpresa).order('nombre')
     ]);
 
     return { 
@@ -63,14 +63,15 @@ export async function getProveedoresYProductos() {
 
 export async function crearProductoBase(nombre: string) {
   try {
-    const { supabase, idEmpresa } = await getAuthContext();
-    const { data, error } = await supabase.from('productos').insert({
+    const { supabase, idEmpresa, idSede } = await getAuthContext();
+    const { data, error } = await supabase.from('inventario_insumos').insert({
       empresa_id: idEmpresa,
+      sede_id: idSede || null,
       nombre: nombre,
-      precio_venta: 0,
-      costo: 0,
-      stock_actual: 0
-    }).select('id, nombre, costo').single();
+      unidad_medida: 'Unidades',
+      costo_promedio: 0,
+      cantidad_actual: 0
+    }).select('id, nombre, costo:costo_promedio').single();
     
     if (error) throw error;
     return { success: true, producto: data };
