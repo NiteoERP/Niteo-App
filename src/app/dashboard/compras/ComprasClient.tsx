@@ -17,15 +17,13 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
 
   const [activeTab, setActiveTab] = useState<'insumos' | 'puntual' | 'factura' | 'historial'>('insumos');
 
-    useLiveTable('compras_puntuales', () => {
+      useLiveTable('compras_puntuales', () => {
     if (activeTab === 'historial') {
       cargarHistorialCompleto();
     } else if (activeTab === 'puntual' || activeTab === 'insumos') {
       getUltimasCompras().then(res => {
         if (res.success) setUltimasCompras(res.compras || []);
       });
-    }
-  });
     }
   });
   
