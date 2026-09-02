@@ -70,12 +70,7 @@ export async function registrarCompra(formData: FormData) {
     return { error: 'Debes seleccionar un insumo válido o crear uno nuevo.' };   
   }    
   // 4. Ejecutar RPC para la transacción atómica   
-  const { error: rpcError } = await supabase.rpc('registrar_compra_insumo', {     
-    p_insumo_id: insumo_id,     
-    p_usuario_id: user.id,     
-    p_cantidad: cantidad,     
-    p_costo_total: costo_total   
-  });    
+  const { error: rpcError } = await registrarCompraInsumoJS(supabase, insumo_id, user.id, cantidad, costo_total);    
   if (rpcError) {     
     console.error('Error al registrar compra:', rpcError);     
     return { error: 'Ocurrió un error al registrar la compra. Intenta de nuevo.' };   
@@ -304,6 +299,45 @@ export async function editarFacturaInsumos(
 
   revalidatePath('/dashboard/inventario');
   revalidatePath('/dashboard/compras');
+  return { success: true };
+}
+
+
+// REEMPLAZO DE RPC PARA EVITAR ERROR DE MOTIVO NULL
+async function registrarCompraInsumoJS(supabase: any, p_insumo_id: string, p_usuario_id: string, p_cantidad: number, p_costo_total: number) {
+  const { data: insumo, error: insErr } = await supabase
+    .from('inventario_insumos')
+    .select('empresa_id, cantidad_actual, costo_promedio')
+    .eq('id', p_insumo_id)
+    .single();
+
+  if (insErr || !insumo) return { error: insErr?.message || 'Insumo no encontrado' };
+
+  const v_cant_actual = Number(insumo.cantidad_actual || 0);
+  const v_costo_prom = Number(insumo.costo_promedio || 0);
+  const v_costo_unitario = p_costo_total / p_cantidad;
+  const v_nueva_cantidad = v_cant_actual + p_cantidad;
+  const v_nuevo_costo = ((v_cant_actual * v_costo_prom) + (p_cantidad * v_costo_unitario)) / v_nueva_cantidad;
+
+  const { error: movErr } = await supabase.from('movimientos_inventario').insert({
+    empresa_id: insumo.empresa_id,
+    insumo_id: p_insumo_id,
+    usuario_id: p_usuario_id,
+    tipo_movimiento: 'ENTRADA',
+    cantidad: p_cantidad,
+    costo_perdido: 0,
+    motivo: 'COMPRA'
+  });
+
+  if (movErr) return { error: movErr.message };
+
+  const { error: updErr } = await supabase.from('inventario_insumos').update({
+    cantidad_actual: v_nueva_cantidad,
+    costo_promedio: Number(v_nuevo_costo.toFixed(4))
+  }).eq('id', p_insumo_id);
+
+  if (updErr) return { error: updErr.message };
+
   return { success: true };
 }
 
