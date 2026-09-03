@@ -13,10 +13,14 @@ serve(async (req) => {
     
     // 2. Fetch EUR
     const eurResponse = await fetch("https://ve.dolarapi.com/v1/euros");
-    let eurRate = usdRate; // fallback if euro fails
+    let eurRate = usdRate; // fallback
     if (eurResponse.ok) {
         const eurData = await eurResponse.json();
-        eurRate = parseFloat(eurData.promedio);
+        // eurData is an array, we want the "oficial" one
+        const oficialEur = Array.isArray(eurData) ? eurData.find((e: any) => e.fuente === 'oficial') : eurData;
+        if (oficialEur && oficialEur.promedio) {
+           eurRate = parseFloat(oficialEur.promedio);
+        }
     }
     
     if (isNaN(usdRate) || usdRate <= 0) {
