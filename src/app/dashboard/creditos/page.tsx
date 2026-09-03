@@ -33,6 +33,8 @@ export default function CreditosPage() {
   const [selectedClienteId, setSelectedClienteId] = useState<string | null>(null);
   const [detalle, setDetalle] = useState<any[]>([]);
   const [isLoadingDetalle, setIsLoadingDetalle] = useState(false);
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+  const [searchProducto, setSearchProducto] = useState('');
 
   const [showPagoModal, setShowPagoModal] = useState(false);
   const [facturaPagar, setFacturaPagar] = useState<any>(null);
@@ -162,6 +164,20 @@ export default function CreditosPage() {
 
   const clienteSeleccionado = clientes.find(c => c.id_cliente === selectedClienteId);
 
+  
+  const filteredDetalle = detalle
+    .filter(fac => {
+      if (!searchProducto.trim()) return true;
+      return fac.productos_detalle?.some((p: any) => 
+        p.producto?.toLowerCase().includes(searchProducto.toLowerCase().trim())
+      );
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.fecha_venta).getTime();
+      const dateB = new Date(b.fecha_venta).getTime();
+      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+    });
+
   const generatePDF = () => {
     if (!clienteSeleccionado) return;
     const doc = new jsPDF();
@@ -171,7 +187,7 @@ export default function CreditosPage() {
     doc.text(`Deuda Total: ${formatCurrency(clienteSeleccionado.monto_adeudado)}`, 14, 30);
     doc.text(`Fecha del Reporte: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 14, 38);
 
-    const tableData = detalle.map(fac => [
+    const tableData = filteredDetalle.map(fac => [
       fac.numero_documento,
       format(new Date(fac.fecha_venta), "dd/MM/yyyy"),
       formatCurrency(fac.total_factura || 0),
