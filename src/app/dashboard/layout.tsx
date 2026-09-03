@@ -64,7 +64,7 @@ export default async function DashboardLayout({
       <aside className="w-64 bg-neutral-900 border-r border-neutral-800 hidden md:flex flex-col shrink-0">
         <div className="h-16 flex items-center px-5 border-b border-neutral-800 shrink-0">
           <img src="/logo.png" alt="Niteo Logo"
-               className="w-10 h-10 object-contain mr-3 drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+               className="w-12 h-12 object-contain scale-125 mr-3 ml-1 drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
           <span className="font-black text-3xl tracking-tight text-white drop-shadow-md">Niteo</span>
         </div>
         <SidebarNav    permisos={permisos} userRole={userRole} />
