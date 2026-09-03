@@ -82,7 +82,7 @@ export async function registrarAbono(facturaId: string, montoAbonado: number, me
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "No autenticado" };
 
-  const { data, error } = await supabase.rpc('registrar_abono_factura', {
+  const { data, error } = await supabase.rpc('registrar_abono_factura_v2', {
     p_factura_id: facturaId,
     p_monto: montoAbonado,
     p_metodo_pago: metodoPago,
