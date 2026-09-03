@@ -102,7 +102,7 @@ export async function registrarAbonoGlobal(clienteId: string, sedeId: string, mo
 
   const p_sede_id = sedeId === 'ALL' ? null : sedeId;
 
-  const { data, error } = await supabase.rpc('registrar_abono_global', {
+  const { data, error } = await supabase.rpc('registrar_abono_masivo', {
     p_cliente_id: clienteId,
     p_sede_id: p_sede_id,
     p_monto: monto,
