@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server';
 import { startOfDay, endOfDay } from 'date-fns';
+import { registrarAsiento } from './contabilidad-actions';
 import { unstable_noStore as noStore } from 'next/cache';
 
 export async function getClientesConDeuda(sedeId: string, startDate: string | Date, endDate: string | Date, page: number = 1, limit: number = 20, searchQuery: string = '') {
@@ -107,6 +108,26 @@ export async function registrarAbono(facturaId: string, montoAbonado: number, me
 
   if (errIns) return { success: false, error: errIns.message };
 
+  try {
+    const isTransferencia = metodoPago.toLowerCase().includes('transferencia') || metodoPago.toLowerCase().includes('zelle');
+    const cuentaPago = isTransferencia ? '1.1.02' : '1.1.01'; // Bancos o Caja
+
+    await registrarAsiento(
+      profile.empresa_id,
+      fechaPago || new Date().toISOString(),
+      `Abono de factura ${facturaId} - Método: ${metodoPago}`,
+      'abono_credito',
+      facturaId,
+      user.id,
+      [
+        { codigo_cuenta: cuentaPago, debe: montoAbonado, haber: 0 }, // Entra dinero
+        { codigo_cuenta: '1.1.03', debe: 0, haber: montoAbonado } // Disminuye CXC
+      ]
+    );
+  } catch (err) {
+    console.error("Error contable en abono:", err);
+  }
+
   return { success: true };
 }
 
@@ -148,6 +169,29 @@ export async function registrarAbonoGlobal(clienteId: string, sedeId: string, mo
     facturasPagadas++;
   }
 
+  const montoRealAbonado = monto - restante;
+  if (montoRealAbonado > 0) {
+    try {
+      const isTransferencia = metodoPago.toLowerCase().includes('transferencia') || metodoPago.toLowerCase().includes('zelle');
+      const cuentaPago = isTransferencia ? '1.1.02' : '1.1.01'; // Bancos o Caja
+
+      await registrarAsiento(
+        profile.empresa_id,
+        fechaPago || new Date().toISOString(),
+        `Abono global de cliente - Método: ${metodoPago}`,
+        'abono_global',
+        clienteId,
+        user.id,
+        [
+          { codigo_cuenta: cuentaPago, debe: montoRealAbonado, haber: 0 },
+          { codigo_cuenta: '1.1.03', debe: 0, haber: montoRealAbonado }
+        ]
+      );
+    } catch (err) {
+      console.error("Error contable en abono global:", err);
+    }
+  }
+
   return { 
     success: true, 
     restante, 
@@ -176,7 +220,7 @@ export async function getHistorialAbonosCliente(clienteId: string) {
       ventas_facturas!inner (
         id,
         cliente_id,
-        correlativo,
+        numero_documento,
         id_pos
       )
     `)
