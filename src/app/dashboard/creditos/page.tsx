@@ -410,7 +410,7 @@ export default function CreditosPage() {
                         <span className="text-xs bg-neutral-800 text-neutral-300 px-2 py-0.5 rounded-full">{pago.tipo_pago}</span>
                       </div>
                       <div className="text-xs text-neutral-500">
-                        Factura: {pago.ventas_facturas?.correlativo || pago.ventas_facturas?.id_pos || 'Desconocida'}
+                        Factura: {pago.ventas_facturas?.numero_documento || pago.ventas_facturas?.id_pos || 'Desconocida'}
                       </div>
                     </div>
                     <div className="text-right">
