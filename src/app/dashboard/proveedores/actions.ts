@@ -120,7 +120,7 @@ export async function crearProveedorRapido(nombre: string) {
     .insert({
       empresa_id: profile.empresa_id,
       nombre_comercial: nombre,
-      estatus: 1
+      estado_activo: true
     })
     .select('id, nombre_comercial, rif_cedula')
     .single();
