@@ -273,7 +273,7 @@ export default function CreditosPage() {
                   onClick={() => { setMontoAbonarGlobal(clienteSeleccionado?.monto_adeudado?.toString() || "0"); setFechaPago(format(new Date(), "yyyy-MM-dd'T'HH:mm")); setReferencia(""); setShowPagoGlobalModal(true); }}
                   className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold transition-colors text-sm"
                 >
-                  <Wallet size={16} /> Saldar Total
+                  <Wallet size={16} /> Saldar Deuda
                 </button>
                 <button
                   onClick={generatePDF}
@@ -371,7 +371,7 @@ export default function CreditosPage() {
             <button onClick={() => setShowPagoGlobalModal(false)} className="absolute top-4 right-4 text-neutral-500 hover:text-white">
               <X size={20} />
             </button>
-            <h2 className="text-xl font-black text-white mb-6 flex items-center gap-2"><Wallet className="text-emerald-400" /> Abonar a Deuda Total</h2>
+            <h2 className="text-xl font-black text-white mb-6 flex items-center gap-2"><Wallet className="text-emerald-400" /> Abonar a Deuda</h2>
             
             <div className="space-y-4">
               <div>
