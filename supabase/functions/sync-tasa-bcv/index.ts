@@ -3,24 +3,29 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 
 serve(async (req) => {
   try {
-    // 1. Fetch from dolarapi.com
-    console.log("Fetching BCV rate...");
-    const response = await fetch("https://ve.dolarapi.com/v1/dolares/oficial");
+    console.log("Fetching BCV rates (USD and EUR)...");
     
-    if (!response.ok) {
-      throw new Error(`API response error: ${response.status}`);
+    // 1. Fetch USD
+    const usdResponse = await fetch("https://ve.dolarapi.com/v1/dolares/oficial");
+    if (!usdResponse.ok) throw new Error(`USD API error: ${usdResponse.status}`);
+    const usdData = await usdResponse.json();
+    const usdRate = parseFloat(usdData.promedio);
+    
+    // 2. Fetch EUR
+    const eurResponse = await fetch("https://ve.dolarapi.com/v1/euros");
+    let eurRate = usdRate; // fallback if euro fails
+    if (eurResponse.ok) {
+        const eurData = await eurResponse.json();
+        eurRate = parseFloat(eurData.promedio);
     }
     
-    const data = await response.json();
-    const rate = parseFloat(data.promedio);
-    
-    if (isNaN(rate) || rate <= 0) {
+    if (isNaN(usdRate) || usdRate <= 0) {
       throw new Error("Invalid rate received from API");
     }
 
-    console.log(`Current BCV Rate fetched: ${rate}`);
+    console.log(`Rates fetched - USD: ${usdRate}, EUR: ${eurRate}`);
 
-    // 2. Initialize Supabase Admin Client
+    // 3. Initialize Supabase Admin Client
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
     
@@ -30,21 +35,19 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // 3. Upsert the rate for today
+    // 4. Upsert the rates for today
     const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
     
     const { error } = await supabase
       .from('tasa_cambiaria')
-      .upsert({ fecha: today, tasa_bcv: rate }, { onConflict: 'fecha' });
+      .upsert({ fecha: today, tasa_bcv: usdRate, tasa_eur: eurRate }, { onConflict: 'fecha' });
       
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
-    console.log(`Successfully saved BCV rate: ${rate} for date: ${today}`);
+    console.log(`Successfully saved rates for date: ${today}`);
 
     return new Response(
-      JSON.stringify({ success: true, rate, date: today }),
+      JSON.stringify({ success: true, usdRate, eurRate, date: today }),
       { headers: { "Content-Type": "application/json" } },
     )
   } catch (error) {

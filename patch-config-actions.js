@@ -1,8 +1,8 @@
-'use server';
+const fs = require('fs');
 
-import { createClient } from '@/utils/supabase/server';
-import { revalidatePath, unstable_noStore as noStore } from 'next/cache';
+let code = fs.readFileSync('src/actions/config-actions.ts', 'utf-8');
 
+const newGetTasa = `
 export async function getTasaBcvAction() {
   noStore();
   const supabase = await createClient();
@@ -33,7 +33,11 @@ export async function getTasaBcvAction() {
     return { tasa: 36.50, fecha: null };
   }
 }
+`;
 
+code = code.replace(/export async function getTasaBcvAction\(\) \{[\s\S]*?\} catch \(err\) \{\s*return \{ tasa: 36\.50, fecha: null \};\s*\}\s*\}/, newGetTasa.trim());
+
+const newUpdateTasa = `
 export async function updateTasaBcvAction(nuevaTasa: number, isEur: boolean = false) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -88,3 +92,9 @@ export async function updateEmpresaMonedaAction(moneda: 'USD' | 'EUR') {
   revalidatePath('/dashboard');
   return { success: true };
 }
+`;
+
+code = code.replace(/export async function updateTasaBcvAction[\s\S]*?return \{ success: false, error: err\.message \};\s*\}\s*\}/, newUpdateTasa.trim());
+
+fs.writeFileSync('src/actions/config-actions.ts', code);
+console.log("config-actions.ts patched for multi-currency");
