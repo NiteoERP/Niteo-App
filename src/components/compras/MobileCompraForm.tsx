@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useTransition } from 'react';
 import { getInsumos, getTasaDelDia } from '@/actions/compras-actions';
-import { registrarFacturaInsumos } from '@/actions/compras-actions';
+import { registrarFacturaInsumos, getComprasMetodosPago, addCompraMetodoPago } from '@/actions/compras-actions';
 import { Loader2, CheckCircle2, ShoppingCart, Search, Plus, Trash2, Building2 } from 'lucide-react';
 import CreatableSelect from 'react-select/creatable';
 
@@ -31,7 +31,18 @@ export default function MobileCompraForm() {
   const [proveedor, setProveedor] = useState('');
   const [monedaGlobal, setMonedaGlobal] = useState<'USD'|'VES'>('USD');
   const [metodoPago, setMetodoPago] = useState('Efectivo USD');
-  const metodosDisponibles = ['Efectivo USD', 'Efectivo Bs', 'Pago Móvil', 'Zelle', 'Punto de Venta'];
+  const [dbMetodos, setDbMetodos] = useState<any[]>([]);
+  
+  useEffect(() => {
+    const fetchM = async () => {
+      const res = await getComprasMetodosPago();
+      if (res.success && res.data) setDbMetodos(res.data);
+    };
+    fetchM();
+  }, []);
+
+  const metodosDisponibles = dbMetodos.length > 0 ? dbMetodos.map(m => m.nombre) : ['Efectivo USD', 'Efectivo Bs', 'Pago Móvil', 'Zelle', 'Punto de Venta'];
+
   
   // Add Item Form
   const [searchTerm, setSearchTerm] = useState('');
@@ -234,14 +245,40 @@ export default function MobileCompraForm() {
             </div>
             <div>
               <label className="block text-sm font-medium text-neutral-400 mb-1">Moneda</label>
-              <select 
-                value={monedaGlobal}
-                onChange={(e) => setMonedaGlobal(e.target.value as 'USD'|'VES')}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-indigo-500"
-              >
-                <option value="USD">Dólares (USD)</option>
-                <option value="VES">Bolívares (VES)</option>
-              </select>
+              <CreatableSelect
+                options={metodosDisponibles.map(m => ({value: m, label: m}))}
+                value={{value: metodoPago, label: metodoPago}}
+                onChange={(s) => setMetodoPago(s ? s.value : '')}
+                onCreateOption={async (val) => {
+                  const res = await addCompraMetodoPago(val);
+                  if (res.success && res.data) {
+                    setDbMetodos([...dbMetodos, res.data]);
+                    setMetodoPago(res.data.nombre);
+                  }
+                }}
+                placeholder="Selecciona o crea..."
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                    backgroundColor: '#171717',
+                    borderColor: '#262626',
+                    borderRadius: '0.75rem',
+                    padding: '2px',
+                    color: 'white',
+                    boxShadow: 'none',
+                    '&:hover': { borderColor: '#4F46E5' }
+                  }),
+                  singleValue: (base) => ({ ...base, color: 'white' }),
+                  input: (base) => ({ ...base, color: 'white' }),
+                  menu: (base) => ({ ...base, backgroundColor: '#171717', border: '1px solid #262626' }),
+                  option: (base, state) => ({
+                    ...base,
+                    backgroundColor: state.isFocused ? '#262626' : '#171717',
+                    color: 'white',
+                    '&:active': { backgroundColor: '#4F46E5' }
+                  })
+                }}
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-neutral-400 mb-1">Método de Pago</label>

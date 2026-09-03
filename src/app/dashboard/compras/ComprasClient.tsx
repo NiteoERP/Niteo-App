@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Receipt, FileText, Plus, Trash2, Save, ShoppingCart, UserPlus, Loader2, CheckCircle2, History, Search, Calendar, Edit2, X, Lock, Package } from 'lucide-react';
 import { getProveedoresYProductos, crearProveedor, crearProductoBase, registrarCompraPuntual, registrarFactura, getUltimasCompras, getHistorialCompras, actualizarCompraPuntual, eliminarCompraPuntual, getTasaDelDia, } from './actions';
 import MobileCompraForm from '@/components/compras/MobileCompraForm';
-import { editarFacturaInsumos } from '@/actions/compras-actions';
+import { editarFacturaInsumos, getComprasMetodosPago, addCompraMetodoPago } from '@/actions/compras-actions';
 import { useEmpresa } from '@/components/providers/EmpresaProvider';
 import CreatableSelect from 'react-select/creatable';
 import { useLiveTable } from '@/hooks/useLiveTable';
@@ -13,7 +13,20 @@ import SedeSelector from "@/components/inventario/SedeSelector";
 export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes: any[], activeSedeId: string, profile: any }) {
   const { empresa } = useEmpresa();
   const defaultPaymentMethods = ['Efectivo USD', 'Zelle', 'Pago Móvil', 'Transferencia Bs', 'Punto de Venta'];
-  const metodosPago = empresa?.metodos_pago && empresa.metodos_pago.length > 0 ? empresa.metodos_pago : defaultPaymentMethods;
+    const [dbMetodos, setDbMetodos] = useState<any[]>([]);
+  
+  useEffect(() => {
+    const fetchMetodos = async () => {
+      const res = await getComprasMetodosPago();
+      if (res.success && res.data) {
+        setDbMetodos(res.data);
+      }
+    };
+    fetchMetodos();
+  }, []);
+
+  const metodosPago = dbMetodos.length > 0 ? dbMetodos.map(m => m.nombre) : defaultPaymentMethods;
+
 
   const [activeTab, setActiveTab] = useState<'insumos' | 'puntual' | 'factura' | 'historial'>('insumos');
 
@@ -486,6 +499,13 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
     options={metodosPago.map((m) => ({ value: m, label: m }))}
     value={{ value: gasto.metodoPago, label: gasto.metodoPago }}
     onChange={(selected) => setGasto({...gasto, metodoPago: selected ? selected.value : ''})}
+    onCreateOption={async (inputValue) => {
+      const res = await addCompraMetodoPago(inputValue);
+      if (res.success && res.data) {
+        setDbMetodos([...dbMetodos, res.data]);
+        setGasto({...gasto, metodoPago: res.data.nombre});
+      }
+    }}
     styles={rsStyles}
     placeholder="Selecciona o escribe..."
     formatCreateLabel={(val) => `Usar "${val}"`}
@@ -828,6 +848,13 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
     options={metodosPago.map((m) => ({ value: m, label: m }))}
     value={{ value: editingRow.metodo_pago, label: editingRow.metodo_pago }}
     onChange={(selected) => setEditingRow({...editingRow, metodo_pago: selected ? selected.value : ''})}
+    onCreateOption={async (inputValue) => {
+      const res = await addCompraMetodoPago(inputValue);
+      if (res.success && res.data) {
+        setDbMetodos([...dbMetodos, res.data]);
+        setEditingRow({...editingRow, metodo_pago: res.data.nombre});
+      }
+    }}
     styles={rsStyles}
     placeholder="Selecciona o escribe..."
     formatCreateLabel={(val) => `Usar "${val}"`}

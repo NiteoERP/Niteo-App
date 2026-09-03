@@ -3,7 +3,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { startOfDay, endOfDay } from 'date-fns';
 import { registrarAsiento } from './contabilidad-actions';
-import { registrarAsiento } from './contabilidad-actions';
 import { unstable_noStore as noStore } from 'next/cache';
 
 export async function getClientesConDeuda(sedeId: string, startDate: string | Date, endDate: string | Date, page: number = 1, limit: number = 20, searchQuery: string = '') {

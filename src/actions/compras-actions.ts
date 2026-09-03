@@ -191,7 +191,7 @@ export async function registrarFacturaInsumos(factura: {
       const { error: rpcErr } = await registrarCompraInsumoJS(supabase, idInsumo, user.id, item.cantidad, usd); if (rpcErr) { console.error(rpcErr); return { error: rpcErr.message }; }     
     }   
   }    
-  // REGISTRO CONTABLE AUTOMÁTICO
+  // REGISTRO CONTABLE AUTOMï¿½TICO
   try {
     const isTransferencia = factura.metodo_pago?.toLowerCase().includes('transferencia') || factura.metodo_pago?.toLowerCase().includes('zelle');
     const cuentaPago = isTransferencia ? '1.1.02' : '1.1.01'; // Bancos o Caja General
@@ -199,7 +199,7 @@ export async function registrarFacturaInsumos(factura: {
     await registrarAsiento(
       profile.empresa_id,
       new Date().toISOString(),
-      \Compra de Insumos - Proveedor: \\,
+      `Compra de Insumos - Proveedor: ${factura.proveedor}`,
       'compra_insumo',
       header.id,
       user.id,
@@ -364,3 +364,40 @@ async function registrarCompraInsumoJS(supabase: any, p_insumo_id: string, p_usu
 }
 
 
+
+export async function getComprasMetodosPago() {
+  const { createClient } = require('@/utils/supabase/server');
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, data: [] };
+  const { data: profile } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
+  if (!profile) return { success: false, data: [] };
+
+  const { data, error } = await supabase
+    .from('compras_metodos_pago')
+    .select('id, nombre')
+    .eq('empresa_id', profile.empresa_id)
+    .eq('estado_activo', true)
+    .order('nombre');
+    
+  if (error) return { success: false, data: [] };
+  return { success: true, data };
+}
+
+export async function addCompraMetodoPago(nombre: string) {
+  const { createClient } = require('@/utils/supabase/server');
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autenticado' };
+  const { data: profile } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
+  if (!profile) return { success: false, error: 'Sin perfil' };
+
+  const { data, error } = await supabase
+    .from('compras_metodos_pago')
+    .insert({ empresa_id: profile.empresa_id, nombre })
+    .select('id, nombre')
+    .single();
+
+  if (error) return { success: false, error: error.message };
+  return { success: true, data };
+}

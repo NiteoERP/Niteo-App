@@ -235,7 +235,7 @@ export async function generarAsientoVentaPOS(facturaId: string) {
     const { success, error, asientoId } = await registrarAsiento(
       profile.empresa_id,
       factura.fecha_venta || new Date().toISOString(),
-      \Venta POS - Doc: \\,
+      `Venta POS - Doc: ${factura.numero_documento}`,
       'venta_pos',
       factura.id,
       user.id,
