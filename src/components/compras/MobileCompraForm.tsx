@@ -94,6 +94,11 @@ export default function MobileCompraForm() {
   const exactMatchExists = insumos.some(i => i.nombre.toLowerCase() === searchTerm.toLowerCase().trim());
 
   const handleAddToCart = () => {
+    if (!cantidad || !costoTotal || (!selectedInsumo && !isNewInsumo)) {
+      setErrorMsg('Por favor completa la cantidad, el costo total y selecciona un insumo.');
+      setTimeout(() => setErrorMsg(''), 3000);
+      return;
+    }
     if (!cantidad || !costoTotal) return;
     if (isNewInsumo && !newInsumoName) return;
     if (!isNewInsumo && !selectedInsumo) return;
@@ -250,7 +255,8 @@ export default function MobileCompraForm() {
                 ))}
               </select>
             </div>
-          </div>\n\n          <hr className="border-neutral-800" />
+          </div>
+          <hr className="border-neutral-800" />
 
           {/* Add Item Form */}
           <div className="space-y-4">
@@ -390,7 +396,7 @@ export default function MobileCompraForm() {
 
             <button 
               onClick={handleAddToCart}
-              disabled={!cantidad || !costoTotal || (!selectedInsumo && !isNewInsumo)}
+              
               className="w-full bg-neutral-800 hover:bg-neutral-700 text-white font-medium py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
             >
               <Plus size={18} /> Añadir a la Lista
