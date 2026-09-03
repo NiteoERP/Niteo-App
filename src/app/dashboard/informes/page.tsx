@@ -74,7 +74,7 @@ const REPORT_CATALOG: ReportGroup[] = [
         icon: LayoutGrid,
         extraFilters: ['categoria', 'cajero', 'cliente'],
       },
-      { id: 'ventas_productos',  name: 'Top Productos',             desc: 'Qué platos o bebidas se venden más',                  icon: Star },
+      { id: 'productos_vendidos',  name: 'Top Productos', extraFilters: ['categoria', 'cajero', 'cliente'],             desc: 'Qué platos o bebidas se venden más',                  icon: Star },
       { id: 'ventas_hora',       name: 'Horas Pico',                desc: 'Distribución de ventas por franjas horarias',          icon: Clock },
       { id: 'ventas_diarias',    name: 'Tendencia Diaria',          desc: 'Evolución día a día del volumen de negocio',           icon: CalendarIcon },
       {
@@ -246,8 +246,9 @@ export default function InformesPage() {
         setReportData(data);
         
       } else {
-        setReportError(res.error || 'Error desconocido.');
-      }
+          setReportError(res.error || 'Error desconocido.');
+          setReportData(null);
+        }
     } catch (err: any) {
       setReportError(err.message || 'Error de conexión.');
     } finally {
