@@ -62,10 +62,10 @@ export default async function DashboardLayout({
       
       {/* ── SIDEBAR (desktop only) ────────────────────────────────── */}
       <aside className="w-64 bg-neutral-900 border-r border-neutral-800 hidden md:flex flex-col shrink-0">
-        <div className="h-16 flex items-center px-6 border-b border-neutral-800 shrink-0">
+        <div className="h-16 flex items-center px-5 border-b border-neutral-800 shrink-0">
           <img src="/logo.png" alt="Niteo Logo"
-               className="w-8 h-8 object-contain mr-3 drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
-          <span className="font-bold text-xl tracking-tight text-neutral-100">Niteo</span>
+               className="w-10 h-10 object-contain mr-3 drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+          <span className="font-black text-3xl tracking-tight text-white drop-shadow-md">Niteo</span>
         </div>
         <SidebarNav    permisos={permisos} userRole={userRole} />
         <SidebarBottom permisos={permisos} userRole={userRole} />
@@ -82,7 +82,7 @@ export default async function DashboardLayout({
           <div className="flex items-center gap-3">
             {/* Logo visible solo en mobile (reemplaza el sidebar) */}
             <img src="/logo.png" alt="Niteo"
-                 className="md:hidden w-7 h-7 object-contain drop-shadow-[0_0_6px_rgba(99,102,241,0.6)]" />
+                 className="md:hidden w-9 h-9 object-contain drop-shadow-[0_0_6px_rgba(99,102,241,0.6)]" />
             <h2 className="text-base md:text-lg font-semibold text-neutral-200 tracking-tight">
               Panel de Control
             </h2>
