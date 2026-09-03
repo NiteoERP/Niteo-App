@@ -3,11 +3,11 @@
 
 import React, { useState, useEffect } from "react";
 import { getSedes } from "@/actions/dashboard-actions";
-import { getClientesConDeuda, getDetalleDeudaCliente, registrarAbono, getMetodosPago, registrarAbonoGlobal } from "@/actions/creditos-actions";
+import { getClientesConDeuda, getDetalleDeudaCliente, registrarAbono, getMetodosPago, registrarAbonoGlobal, getHistorialAbonosCliente } from "@/actions/creditos-actions";
 import { format, startOfYear, startOfDay, endOfDay } from "date-fns";
 import { useEmpresa } from "@/components/providers/EmpresaProvider";
 import CreatableSelect from "react-select/creatable";
-import { Calendar as CalendarIcon, Store, Wallet, Search, Check, FileText, ShoppingCart, User, Users, PlusCircle, X, Download, Hash } from "lucide-react";
+import { Calendar as CalendarIcon, Store, Wallet, Search, Check, FileText, ShoppingCart, User, Users, PlusCircle, X, Download, Hash, History } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -42,6 +42,9 @@ export default function CreditosPage() {
   const [referencia, setReferencia] = useState("");
   const [isPagarLoading, setIsPagarLoading] = useState(false);
   const [showPagoGlobalModal, setShowPagoGlobalModal] = useState(false);
+  const [showHistorialModal, setShowHistorialModal] = useState(false);
+  const [historialCliente, setHistorialCliente] = useState<any[]>([]);
+  const [isLoadingHistorial, setIsLoadingHistorial] = useState(false);
   const [montoAbonarGlobal, setMontoAbonarGlobal] = useState("");
 
   useEffect(() => {
@@ -95,6 +98,17 @@ export default function CreditosPage() {
       setPage(nextPage);
     }
     setIsLoadingMore(false);
+  };
+
+  const handleOpenHistorial = async () => {
+    if (!clienteSeleccionado) return;
+    setShowHistorialModal(true);
+    setIsLoadingHistorial(true);
+    const res = await getHistorialAbonosCliente(clienteSeleccionado.id_cliente);
+    if (res.success) {
+      setHistorialCliente(res.data || []);
+    }
+    setIsLoadingHistorial(false);
   };
 
   const fetchDetalle = async (id: string | null) => {
@@ -364,6 +378,44 @@ export default function CreditosPage() {
           </>
         )}
       </div>
+
+      
+      {showHistorialModal && clienteSeleccionado && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex justify-center items-center p-4">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 w-full max-w-2xl shadow-2xl relative max-h-[80vh] flex flex-col">
+            <button onClick={() => setShowHistorialModal(false)} className="absolute top-4 right-4 text-neutral-500 hover:text-white">
+              <X size={20} />
+            </button>
+            <h2 className="text-xl font-black text-white mb-6 flex items-center gap-2"><History className="text-emerald-400" /> Historial de Abonos Global</h2>
+            
+            <div className="flex-1 overflow-y-auto pr-2 space-y-3">
+              {isLoadingHistorial ? (
+                <div className="text-center p-8 text-neutral-400">Cargando historial...</div>
+              ) : historialCliente.length === 0 ? (
+                <div className="text-center p-8 text-neutral-500">No se encontraron abonos para este cliente.</div>
+              ) : (
+                historialCliente.map((pago: any) => (
+                  <div key={pago.id} className="bg-neutral-950 border border-neutral-800 p-4 rounded-xl flex justify-between items-center">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-lg font-bold text-emerald-400">{formatCurrency(pago.monto)}</span>
+                        <span className="text-xs bg-neutral-800 text-neutral-300 px-2 py-0.5 rounded-full">{pago.tipo_pago}</span>
+                      </div>
+                      <div className="text-xs text-neutral-500">
+                        Factura: {pago.ventas_facturas?.correlativo || pago.ventas_facturas?.id_pos || 'Desconocida'}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-medium text-white">{format(new Date(pago.fecha_pago), "dd MMM yyyy")}</div>
+                      <div className="text-xs text-neutral-500">{format(new Date(pago.fecha_pago), "HH:mm")}</div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {showPagoGlobalModal && clienteSeleccionado && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex justify-center items-center p-4">

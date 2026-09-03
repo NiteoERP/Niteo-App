@@ -154,3 +154,34 @@ export async function registrarAbonoGlobal(clienteId: string, sedeId: string, mo
   };
 }
 
+
+
+export async function getHistorialAbonosCliente(clienteId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autenticado' };
+
+  const { data: profile } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
+  if (!profile) return { success: false, error: 'Perfil no encontrado' };
+
+  const { data, error } = await supabase
+    .from('ventas_pagos')
+    .select(`
+      id,
+      monto,
+      tipo_pago,
+      fecha_pago,
+      ventas_facturas!inner (
+        id,
+        cliente_id,
+        correlativo,
+        id_pos
+      )
+    `)
+    .eq('ventas_facturas.cliente_id', clienteId)
+    .eq('empresa_id', profile.empresa_id)
+    .order('fecha_pago', { ascending: false });
+
+  if (error) return { success: false, error: error.message };
+  return { success: true, data };
+}
