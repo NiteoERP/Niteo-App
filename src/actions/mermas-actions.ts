@@ -37,9 +37,12 @@ export async function fetchShrinkagesAction() {
 export async function registerShrinkageAction(formData: FormData) {
     const supabase = await createClient();
     
-    // Obtener sesión actual
+    // CORRECCIÓN: Bloqueo estricto si el usuario no está autenticado
     const { data: { user } } = await supabase.auth.getUser();
-    const userId = user?.id || null; // Manejo seguro si no hay RLS estricto de usuario por ahora
+    if (!user) {
+        throw new Error("No autenticado. Acceso denegado.");
+    }
+    const userId = user.id;
 
     const productId = formData.get('product_id') as string;
     const reasonId = formData.get('reason_id') as string;
@@ -47,7 +50,7 @@ export async function registerShrinkageAction(formData: FormData) {
     const unitCost = parseFloat(formData.get('unit_cost') as string);
     const notes = formData.get('notes') as string;
 
-    // Ejecutar RPC para transacción segura
+    // Ejecutar RPC para transacción atómica
     const { error } = await supabase.rpc('register_shrinkage', {
         p_product_id: parseInt(productId),
         p_reason_id: reasonId,

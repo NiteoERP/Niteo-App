@@ -262,7 +262,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
 
                   {venta.pagos && venta.pagos.length > 0 && (
                     <div className="mt-4 pt-3 border-t border-neutral-800/50">
-                      <h4 className="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">Mtodos de Pago</h4>
+                      <h4 className="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">Métodos de Pago</h4>
                       <div className="flex gap-2 flex-wrap">
                         {venta.pagos.map((p, idx) => (
                           <span key={idx} className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs px-2.5 py-1 rounded-md font-medium flex items-center gap-1">
