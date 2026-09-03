@@ -132,7 +132,7 @@ export default function SettingsForm({ empresa }: { empresa: any }) {
               className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
             />
           </div>
-          <p className="text-xs text-neutral-500 mt-1.5">Estos métodos aparecerán como opciones al registrar compras o gastos.</p>
+          <p className="text-xs text-neutral-500 mt-1.5">Estos métodos aparecerán como opciones al registrar ventas en el POS.</p>
         </div>
       </div>
       

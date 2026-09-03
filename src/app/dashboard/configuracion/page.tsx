@@ -2,6 +2,7 @@ import React from 'react';
 import { createClient } from '@/utils/supabase/server';
 import SettingsForm from './SettingsForm';
 import GlobalTasaManager from '@/components/configuracion/GlobalTasaManager';
+import MetodosComprasForm from '@/components/configuracion/MetodosComprasForm';
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -40,6 +41,8 @@ export default async function SettingsPage() {
       </section>
 
       <GlobalTasaManager />
+
+      <MetodosComprasForm />
 
       {/* Otras secciones (Estilos, Idioma, etc.) que se integrarán luego */}
       <section className="bg-neutral-900 border border-neutral-800 p-6 rounded-2xl opacity-50 grayscale pointer-events-none">
