@@ -2,7 +2,7 @@
 import { getTasaBcvAction } from './config-actions';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers'; 
-import { revalidatePath } from 'next/cache';  
+import { revalidatePath, unstable_noStore as noStore } from 'next/cache';  
 
 export async function registrarCompra(formData: FormData) {   
   // 1. Instanciar Supabase Server Client   
@@ -111,7 +111,8 @@ export async function getInsumos() {
   return data; 
 }    
 
-export async function getTasaDelDia(): Promise<number> {   
+export async function getTasaDelDia(): Promise<number> {
+  noStore();   
   const data = await getTasaBcvAction();   
   return data.tasa || 36.50; 
 } 

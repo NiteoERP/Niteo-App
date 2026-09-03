@@ -1,9 +1,10 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, unstable_noStore as noStore } from 'next/cache';
 
 export async function getTasaBcvAction() {
+  noStore();
   const supabase = await createClient();
 
   try {
