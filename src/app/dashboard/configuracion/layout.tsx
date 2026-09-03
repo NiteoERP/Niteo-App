@@ -11,9 +11,9 @@ export default function ConfiguracionLayout({ children }: { children: React.Reac
   const navItems = [
     { name: 'General', href: '/dashboard/configuracion', icon: Layout },
     { name: 'Sedes y Master Key', href: '/dashboard/configuracion/sedes', icon: MapPin },
-    { name: 'Mensajes y Alertas', href: '#', icon: Bell },
-    { name: 'Día laborable', href: '#', icon: Calendar },
-    { name: 'Avanzado', href: '#', icon: Settings },
+    // { name: 'Mensajes y Alertas', href: '#', icon: Bell },
+    // { name: 'Día laborable', href: '#', icon: Calendar },
+    // { name: 'Avanzado', href: '#', icon: Settings },
   ];
 
   return (

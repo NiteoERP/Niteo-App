@@ -7,11 +7,11 @@ import { Key, Plus, MapPin, MonitorSmartphone, CheckCircle2, Clock, AlertCircle 
 export default function SedesClient({ initialSedes }: { initialSedes: Sede[] }) {
   const [isPending, startTransition] = useTransition();
   const [newKeyVisible, setNewKeyVisible] = useState<{ id: string, key: string } | null>(null);
+  const [successMsg, setSuccessMsg] = useState('');
+  const formRef = React.useRef<HTMLFormElement>(null);
 
   const handleGenerateKey = async (sedeId: string) => {
-    if (!confirm('¿Estás seguro? Generar una nueva llave invalidará la conexión actual de Niteo Sync en esta sede.')) {
-      return;
-    }
+    
 
     startTransition(async () => {
       const result = await generarMasterKey(sedeId);
@@ -112,10 +112,21 @@ export default function SedesClient({ initialSedes }: { initialSedes: Sede[] }) 
           </p>
         </div>
 
-        <form action={async (formData) => {
+        <form ref={formRef} action={async (formData) => {
           const res = await crearSede(formData);
-          if (res?.error) alert(res.error);
+          if (res?.error) {
+            alert(res.error);
+          } else {
+            setSuccessMsg('Sucursal creada exitosamente.');
+            formRef.current?.reset();
+            setTimeout(() => setSuccessMsg(''), 3000);
+          }
         }} className="max-w-xl space-y-4">
+          {successMsg && (
+            <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl text-emerald-400 text-sm mb-4">
+              {successMsg}
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-neutral-300">Nombre de la Sede</label>
