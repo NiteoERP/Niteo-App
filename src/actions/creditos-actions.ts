@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server';
 import { startOfDay, endOfDay } from 'date-fns';
+import { unstable_noStore as noStore } from 'next/cache';
 
 export async function getClientesConDeuda(sedeId: string, startDate: string | Date, endDate: string | Date, page: number = 1, limit: number = 20, searchQuery: string = '') {
   const supabase = await createClient();
@@ -157,6 +158,7 @@ export async function registrarAbonoGlobal(clienteId: string, sedeId: string, mo
 
 
 export async function getHistorialAbonosCliente(clienteId: string) {
+  noStore();
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'No autenticado' };
