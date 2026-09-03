@@ -283,18 +283,26 @@ export default function CreditosPage() {
                 <h2 className="text-2xl font-black text-white">{clienteSeleccionado?.nombre_cliente}</h2>
                 <p className="text-rose-400 font-bold mt-1">Deuda Total: {formatCurrency(clienteSeleccionado?.monto_adeudado || 0)}</p>
               </div>
-              <button
-                  onClick={() => { setMontoAbonarGlobal(clienteSeleccionado?.monto_adeudado?.toString() || "0"); setFechaPago(format(new Date(), "yyyy-MM-dd'T'HH:mm")); setReferencia(""); setShowPagoGlobalModal(true); }}
-                  className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold transition-colors text-sm"
+              <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => { setMontoAbonarGlobal(clienteSeleccionado?.monto_adeudado?.toString() || "0"); setFechaPago(format(new Date(), "yyyy-MM-dd'T'HH:mm")); setReferencia(""); setShowPagoGlobalModal(true); }}
+                    className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold transition-colors text-sm"
+                  >
+                    <Wallet size={16} /> Saldar Deuda
+                  </button>
+                  <button
+                    onClick={handleOpenHistorial}
+                    className="flex items-center gap-2 bg-neutral-800 hover:bg-neutral-700 text-white px-4 py-2 rounded-lg font-bold transition-colors text-sm border border-neutral-700"
+                  >
+                    <History size={16} /> Historial Abonos
+                  </button>
+                  <button
+                    onClick={generatePDF}
+                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
                 >
-                  <Wallet size={16} /> Saldar Deuda
+                  <Download size={16} /> Exportar PDF
                 </button>
-                <button
-                  onClick={generatePDF}
-                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
-              >
-                <Download size={16} /> Exportar PDF
-              </button>
+              </div>
             </div>
             
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
