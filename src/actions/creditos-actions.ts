@@ -77,44 +77,80 @@ export async function getDetalleDeudaCliente(clienteId: string | null, sedeId: s
   return { success: true, data };
 }
 
+
 export async function registrarAbono(facturaId: string, montoAbonado: number, metodoPago: string, fechaPago?: string, referencia?: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "No autenticado" };
 
-  const { data, error } = await supabase.rpc('registrar_abono_factura_v2', {
-    p_factura_id: facturaId,
-    p_monto: montoAbonado,
-    p_metodo_pago: metodoPago,
-    p_fecha_pago: fechaPago || null,
-    p_usuario_id: user.id
+  const { data: profile } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
+  if (!profile) return { success: false, error: "Perfil no encontrado" };
+
+  const { data: factura, error: errFac } = await supabase.from('ventas_facturas').select('saldo_pendiente').eq('id', facturaId).eq('empresa_id', profile.empresa_id).single();
+  if (errFac || !factura) return { success: false, error: "Factura no encontrada" };
+
+  const nuevo_saldo = Math.max(0, factura.saldo_pendiente - montoAbonado);
+  const estado_pago = nuevo_saldo > 0 ? 2 : 1;
+
+  const { error: errUpd } = await supabase.from('ventas_facturas').update({ saldo_pendiente: nuevo_saldo, estado_pago }).eq('id', facturaId);
+  if (errUpd) return { success: false, error: errUpd.message };
+
+  const { error: errIns } = await supabase.from('ventas_pagos').insert({
+    empresa_id: profile.empresa_id,
+    factura_id: facturaId,
+    id_pos: 'WEB_' + crypto.randomUUID(),
+    tipo_pago: metodoPago,
+    monto: montoAbonado,
+    fecha_pago: fechaPago || new Date().toISOString()
   });
 
-  if (error) return { success: false, error: error.message };
+  if (errIns) return { success: false, error: errIns.message };
+
   return { success: true };
 }
-
 
 export async function registrarAbonoGlobal(clienteId: string, sedeId: string, monto: number, metodoPago: string, fechaPago?: string, referencia?: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'No autenticado' };
 
-  const p_sede_id = sedeId === 'ALL' ? null : sedeId;
+  const { data: profile } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
+  if (!profile) return { success: false, error: "Perfil no encontrado" };
 
-  const { data, error } = await supabase.rpc('registrar_abono_masivo', {
-    p_cliente_id: clienteId,
-    p_sede_id: p_sede_id,
-    p_monto: monto,
-    p_metodo_pago: metodoPago,
-    p_fecha_pago: fechaPago || null,
-    p_usuario_id: user.id
-  });
+  let query = supabase.from('ventas_facturas').select('id, saldo_pendiente').eq('cliente_id', clienteId).eq('empresa_id', profile.empresa_id).gt('saldo_pendiente', 0).order('fecha_venta', { ascending: true });
+  if (sedeId !== 'ALL') query = query.eq('sede_id', sedeId);
 
-  if (error) return { success: false, error: error.message };
+  const { data: facturas, error: errFacs } = await query;
+  if (errFacs) return { success: false, error: errFacs.message };
+
+  let restante = monto;
+  let facturasPagadas = 0;
+
+  for (const fac of facturas || []) {
+    if (restante <= 0) break;
+
+    const monto_abonar = Math.min(fac.saldo_pendiente, restante);
+    const nuevo_saldo = fac.saldo_pendiente - monto_abonar;
+    const estado_pago = nuevo_saldo > 0 ? 2 : 1;
+
+    await supabase.from('ventas_facturas').update({ saldo_pendiente: nuevo_saldo, estado_pago }).eq('id', fac.id);
+    await supabase.from('ventas_pagos').insert({
+      empresa_id: profile.empresa_id,
+      factura_id: fac.id,
+      id_pos: 'WEB_GLB_' + crypto.randomUUID(),
+      tipo_pago: metodoPago,
+      monto: monto_abonar,
+      fecha_pago: fechaPago || new Date().toISOString()
+    });
+
+    restante -= monto_abonar;
+    facturasPagadas++;
+  }
+
   return { 
     success: true, 
-    restante: data?.restante, 
-    facturasPagadas: data?.facturasPagadas 
+    restante, 
+    facturasPagadas 
   };
 }
+
