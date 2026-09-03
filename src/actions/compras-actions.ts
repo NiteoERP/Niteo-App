@@ -2,7 +2,8 @@
 import { getTasaBcvAction } from './config-actions';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers'; 
-import { revalidatePath, unstable_noStore as noStore } from 'next/cache';  
+import { revalidatePath, unstable_noStore as noStore } from 'next/cache';
+import { registrarAsiento } from './contabilidad-actions';  
 
 export async function registrarCompra(formData: FormData) {   
   // 1. Instanciar Supabase Server Client   
@@ -190,6 +191,26 @@ export async function registrarFacturaInsumos(factura: {
       const { error: rpcErr } = await registrarCompraInsumoJS(supabase, idInsumo, user.id, item.cantidad, usd); if (rpcErr) { console.error(rpcErr); return { error: rpcErr.message }; }     
     }   
   }    
+  // REGISTRO CONTABLE AUTOMÁTICO
+  try {
+    const isTransferencia = factura.metodo_pago?.toLowerCase().includes('transferencia') || factura.metodo_pago?.toLowerCase().includes('zelle');
+    const cuentaPago = isTransferencia ? '1.1.02' : '1.1.01'; // Bancos o Caja General
+
+    await registrarAsiento(
+      profile.empresa_id,
+      new Date().toISOString(),
+      \Compra de Insumos - Proveedor: \\,
+      'compra_insumo',
+      header.id,
+      user.id,
+      [
+        { codigo_cuenta: '1.1.04', debe: montoTotalDivisas, haber: 0 },
+        { codigo_cuenta: cuentaPago, debe: 0, haber: montoTotalDivisas }
+      ]
+    );
+  } catch (err) {
+    console.error("Error al registrar asiento contable de la compra:", err);
+  }
   revalidatePath('/dashboard/inventario');   
   revalidatePath('/dashboard/compras');   
   return { success: true }; 
@@ -341,4 +362,5 @@ async function registrarCompraInsumoJS(supabase: any, p_insumo_id: string, p_usu
 
   return { success: true };
 }
+
 

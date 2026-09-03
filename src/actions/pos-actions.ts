@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
+import { registrarAsiento } from './contabilidad-actions';
 
 export interface VentaPOS {
   verificado?: boolean;
@@ -199,4 +200,55 @@ export async function toggleVentaVerificada(facturaId: string, verificado: boole
     return { success: false, error };
   }
   return { success: true };
+}
+
+
+export async function generarAsientoVentaPOS(facturaId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autorizado' };
+
+  const { data: profile } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
+  if (!profile) return { success: false, error: 'Perfil no encontrado' };
+
+  const { data: factura, error: errFac } = await supabase
+    .from('ventas_facturas')
+    .select('*, ventas_pagos(monto, tipo_pago), ventas_detalles(cantidad, precio_unitario, productos(costo))')
+    .eq('id', facturaId)
+    .single();
+
+  if (errFac || !factura) return { success: false, error: 'Factura no encontrada' };
+
+  const totalVenta = factura.total || 0;
+  
+  let costoVentas = 0;
+  factura.ventas_detalles?.forEach((d: any) => {
+    const costoUnit = d.productos?.costo || 0;
+    costoVentas += (costoUnit * d.cantidad);
+  });
+
+  const metodoPago = factura.ventas_pagos?.[0]?.tipo_pago || 'Efectivo';
+  const isTransferencia = metodoPago.toLowerCase().includes('transferencia') || metodoPago.toLowerCase().includes('zelle') || metodoPago.toLowerCase().includes('pago movil') || metodoPago.toLowerCase().includes('punto');
+  const cuentaPago = isTransferencia ? '1.1.02' : '1.1.01';
+
+  try {
+    const { success, error, asientoId } = await registrarAsiento(
+      profile.empresa_id,
+      factura.fecha_venta || new Date().toISOString(),
+      \Venta POS - Doc: \\,
+      'venta_pos',
+      factura.id,
+      user.id,
+      [
+        { codigo_cuenta: cuentaPago, debe: totalVenta, haber: 0 }, 
+        { codigo_cuenta: '4.1.01', debe: 0, haber: totalVenta },   
+        { codigo_cuenta: '5.1.01', debe: costoVentas, haber: 0 },  
+        { codigo_cuenta: '1.1.04', debe: 0, haber: costoVentas }   
+      ]
+    );
+    if (!success) return { success: false, error };
+    return { success: true, asientoId };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
 }
