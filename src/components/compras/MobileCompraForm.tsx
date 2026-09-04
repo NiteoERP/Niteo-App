@@ -244,7 +244,18 @@ export default function MobileCompraForm() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-neutral-400 mb-1">Moneda</label>
+              <label className="block text-sm font-medium text-neutral-400 mb-1">Moneda Global</label>
+              <select 
+                value={monedaGlobal}
+                onChange={(e) => setMonedaGlobal(e.target.value as 'USD' | 'VES')}
+                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-indigo-500"
+              >
+                <option value="USD">Dólar ($ USD)</option>
+                <option value="VES">Bolívar (Bs VES)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-400 mb-1">Método de Pago</label>
               <CreatableSelect
                 options={metodosDisponibles.map(m => ({value: m, label: m}))}
                 value={{value: metodoPago, label: metodoPago}}
@@ -279,18 +290,6 @@ export default function MobileCompraForm() {
                   })
                 }}
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-400 mb-1">Método de Pago</label>
-              <select 
-                value={metodoPago}
-                onChange={(e) => setMetodoPago(e.target.value)}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-indigo-500"
-              >
-                {metodosDisponibles.map(m => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
             </div>
           </div>
           <hr className="border-neutral-800" />
@@ -425,8 +424,8 @@ export default function MobileCompraForm() {
                 <div>
                   <label className="block text-sm font-medium text-neutral-400 mb-1">Moneda</label>
                   <div className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2.5 text-neutral-500 cursor-not-allowed">
-                    {monedaGlobal === 'USD' ? '$ USD' : 'Bs VES'}
-                  </div>
+                      {monedaGlobal === 'USD' ? '$ USD' : 'Bs VES'}
+                    </div>
                 </div>
               </div>
             </div>
