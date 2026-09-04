@@ -779,14 +779,14 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
       {/* MODAL DE EDICIÓN */}
       {isEditModalOpen && editingRow && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-4xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 max-h-[90vh] flex flex-col">
             
             <div className="flex items-center justify-between p-6 border-b border-neutral-800">
               <h3 className="text-xl font-semibold text-white">Editar Compra Operativa</h3>
               <button onClick={() => setIsEditModalOpen(false)} className="text-neutral-400 hover:text-white transition-colors"><X size={24} /></button>
             </div>
             
-            <div className="p-6 space-y-5">
+            <div className="p-6 space-y-5 overflow-y-auto flex-1">
               <div className="grid grid-cols-2 gap-5">
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-neutral-400 mb-1.5">Proveedor / Comercio</label>

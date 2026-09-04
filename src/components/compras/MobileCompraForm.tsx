@@ -198,7 +198,7 @@ export default function MobileCompraForm() {
   };
 
   return (
-    <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 md:p-8 max-w-2xl mx-auto shadow-2xl relative">
+    <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 md:p-8 max-w-4xl mx-auto shadow-2xl relative">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
           <div className="bg-indigo-500/20 p-2.5 rounded-xl border border-indigo-500/30">
