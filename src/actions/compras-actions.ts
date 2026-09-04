@@ -366,7 +366,6 @@ async function registrarCompraInsumoJS(supabase: any, p_insumo_id: string, p_usu
 
 
 export async function getComprasMetodosPago() {
-  const { createClient } = require('@/utils/supabase/server');
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, data: [] };
@@ -385,7 +384,6 @@ export async function getComprasMetodosPago() {
 }
 
 export async function addCompraMetodoPago(nombre: string) {
-  const { createClient } = require('@/utils/supabase/server');
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'No autenticado' };
