@@ -13,6 +13,7 @@ import {
   CreditCard, Building2, AlertCircle, History, DollarSign
 } from "lucide-react";
 import { format } from "date-fns";
+import MobileCompraForm from "@/components/compras/MobileCompraForm";
 
 // ── Helpers ────────────────────────────────────────────────
 function Badge({ label, color = 'neutral' }: { label: string; color?: string }) {
@@ -72,6 +73,7 @@ export default function ProveedoresPage() {
   const [facMetodoPago, setFacMetodoPago] = useState('Por pagar');
   const [enviandoFactura, setEnviandoFactura] = useState(false);
   const [errorFactura, setErrorFactura] = useState('');
+  const [facturaTab, setFacturaTab] = useState<'gastos'|'insumos'>('gastos');
 
   // ── Modal: Pago ───────────────────────────────────────────
   const [showPagoModal, setShowPagoModal] = useState(false);
@@ -234,8 +236,8 @@ export default function ProveedoresPage() {
             <Store size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
             <select value={sedeId} onChange={e => setSedeId(e.target.value)}
               className="w-full bg-neutral-950 border border-neutral-800 text-neutral-300 text-sm py-2 pl-9 pr-3 rounded-xl appearance-none outline-none focus:border-emerald-500">
-              <option value="ALL">Todas las sedes</option>
-              {sedes.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+              <option className="bg-neutral-900 text-white" value="ALL">Todas las sedes</option>
+              {sedes.map(s => <option key={s.id} value={s.id} className="bg-neutral-900 text-white">{s.nombre}</option>)}
             </select>
           </div>
           <div className="flex rounded-xl overflow-hidden border border-neutral-800 text-sm">
@@ -462,7 +464,7 @@ export default function ProveedoresPage() {
       ════════════════════════════════════ */}
       {showFacturaModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div className="flex items-center justify-between p-6 border-b border-neutral-800">
               <h3 className="text-lg font-bold text-white flex items-center gap-2"><FileText size={18} className="text-indigo-400" /> Nueva Factura / Deuda</h3>
               <button onClick={() => setShowFacturaModal(false)} className="text-neutral-400 hover:text-white"><X size={22} /></button>
@@ -472,8 +474,8 @@ export default function ProveedoresPage() {
                 <label className="block text-sm text-neutral-400 mb-1.5">Proveedor *</label>
                 <select value={facProveedorId} onChange={e => setFacProveedorId(e.target.value)}
                   className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 appearance-none">
-                  <option value="">Selecciona un proveedor...</option>
-                  {todosProveedores.map(p => <option key={p.id} value={p.id}>{p.nombre_comercial}{p.rif_cedula ? ` (${p.rif_cedula})` : ''}</option>)}
+                  <option className="bg-neutral-900 text-white" value="">Selecciona un proveedor...</option>
+                  {todosProveedores.map(p => <option key={p.id} value={p.id} className="bg-neutral-900 text-white">{p.nombre_comercial}{p.rif_cedula ? ` (${p.rif_cedula})` : ''}</option>)}
                 </select>
                 <button onClick={() => { setShowFacturaModal(false); setShowCrearModal(true); }}
                   className="text-xs text-indigo-400 hover:text-indigo-300 mt-1 flex items-center gap-1">
@@ -510,8 +512,8 @@ export default function ProveedoresPage() {
                   <label className="block text-sm text-neutral-400 mb-1.5">Moneda</label>
                   <select value={facMoneda} onChange={e => setFacMoneda(e.target.value as 'USD'|'VES')}
                     className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 text-sm">
-                    <option value="USD">USD</option>
-                    <option value="VES">VES</option>
+                    <option className="bg-neutral-900 text-white" value="USD">USD</option>
+                    <option className="bg-neutral-900 text-white" value="VES">VES</option>
                   </select>
                 </div>
               </div>
@@ -519,11 +521,11 @@ export default function ProveedoresPage() {
                 <label className="block text-sm text-neutral-400 mb-1.5">Estado de Pago</label>
                 <select value={facMetodoPago} onChange={e => setFacMetodoPago(e.target.value)}
                   className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 text-sm">
-                  <option value="Por pagar">Por pagar (deuda)</option>
-                  <option value="Efectivo USD">Pagado - Efectivo USD</option>
-                  <option value="Transferencia">Pagado - Transferencia</option>
-                  <option value="Zelle">Pagado - Zelle</option>
-                  <option value="Pago Movil">Pagado - Pago Móvil</option>
+                  <option className="bg-neutral-900 text-white" value="Por pagar">Por pagar (deuda)</option>
+                  <option className="bg-neutral-900 text-white" value="Efectivo USD">Pagado - Efectivo USD</option>
+                  <option className="bg-neutral-900 text-white" value="Transferencia">Pagado - Transferencia</option>
+                  <option className="bg-neutral-900 text-white" value="Zelle">Pagado - Zelle</option>
+                  <option className="bg-neutral-900 text-white" value="Pago Movil">Pagado - Pago Móvil</option>
                 </select>
               </div>
               {errorFactura && <p className="text-rose-400 text-sm flex items-center gap-2"><AlertCircle size={14} /> {errorFactura}</p>}
@@ -568,13 +570,13 @@ export default function ProveedoresPage() {
                   <label className="block text-sm text-neutral-400 mb-1.5">Método de Pago</label>
                   <select value={metodoPago} onChange={e => setMetodoPago(e.target.value)}
                     className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm">
-                    <option>Transferencia</option>
-                    <option>Efectivo USD</option>
-                    <option>Efectivo Bs</option>
-                    <option>Zelle</option>
-                    <option>Pago Movil</option>
-                    <option>Punto de Venta</option>
-                    <option>Cheque</option>
+                    <option className="bg-neutral-900 text-white">Transferencia</option>
+                    <option className="bg-neutral-900 text-white">Efectivo USD</option>
+                    <option className="bg-neutral-900 text-white">Efectivo Bs</option>
+                    <option className="bg-neutral-900 text-white">Zelle</option>
+                    <option className="bg-neutral-900 text-white">Pago Movil</option>
+                    <option className="bg-neutral-900 text-white">Punto de Venta</option>
+                    <option className="bg-neutral-900 text-white">Cheque</option>
                   </select>
                 </div>
                 <div>
