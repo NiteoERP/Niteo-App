@@ -468,7 +468,7 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
                 <input type="number" inputMode="decimal" value={monedaGasto === 'USD' ? gasto.montoDivisas : gasto.montoBs} onChange={e => handleMontoChange(e.target.value)} placeholder="0.00" className="flex-1 h-14 bg-black/50 border border-neutral-800 text-white text-base rounded-xl px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
                 <select value={monedaGasto} onChange={e => handleMonedaChange(e.target.value as 'USD'|'VES')} className="w-24 h-14 bg-black/50 border border-neutral-800 text-white text-base rounded-xl px-2 focus:outline-none focus:ring-1 focus:ring-indigo-500 appearance-none text-center">
                   <option value="USD">USD</option>
-                  <option value="VES">Bs</option>
+                  <option value="VES">VES</option>
                 </select>
               </div>
               <p className="text-xs text-neutral-500 mt-1 pl-1">
