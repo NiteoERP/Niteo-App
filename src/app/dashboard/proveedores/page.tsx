@@ -469,9 +469,23 @@ export default function ProveedoresPage() {
               <h3 className="text-lg font-bold text-white flex items-center gap-2"><FileText size={18} className="text-indigo-400" /> Nueva Factura / Deuda</h3>
               <button onClick={() => setShowFacturaModal(false)} className="text-neutral-400 hover:text-white"><X size={22} /></button>
             </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm text-neutral-400 mb-1.5">Proveedor *</label>
+            <div className="px-6 pt-4">
+                <div className="flex gap-4 border-b border-neutral-800">
+                  <button onClick={() => setFacturaTab('gastos')} className={`pb-2 text-sm font-medium transition-colors ${facturaTab === 'gastos' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-neutral-500 hover:text-white'}`}>Gasto / Servicio</button>
+                  <button onClick={() => setFacturaTab('insumos')} className={`pb-2 text-sm font-medium transition-colors ${facturaTab === 'insumos' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-neutral-500 hover:text-white'}`}>Inventario (Insumos)</button>
+                </div>
+              </div>
+              
+              {facturaTab === 'insumos' ? (
+                <div className="p-0">
+                  <div className="scale-[0.95] origin-top">
+                    <MobileCompraForm />
+                  </div>
+                </div>
+              ) : (
+              <div className="p-6 space-y-4 pt-4">
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Proveedor *</label>
                 <select value={facProveedorId} onChange={e => setFacProveedorId(e.target.value)}
                   className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 appearance-none">
                   <option className="bg-neutral-900 text-white" value="">Selecciona un proveedor...</option>
@@ -530,6 +544,8 @@ export default function ProveedoresPage() {
               </div>
               {errorFactura && <p className="text-rose-400 text-sm flex items-center gap-2"><AlertCircle size={14} /> {errorFactura}</p>}
             </div>
+              )}
+              {facturaTab === 'gastos' && (
             <div className="p-6 border-t border-neutral-800 flex gap-3 justify-end">
               <button onClick={() => setShowFacturaModal(false)} className="px-5 py-2.5 rounded-xl text-neutral-300 hover:bg-neutral-800 text-sm">Cancelar</button>
               <button onClick={handleCrearFactura} disabled={enviandoFactura}
@@ -537,6 +553,7 @@ export default function ProveedoresPage() {
                 {enviandoFactura ? 'Registrando...' : <><FileText size={16} /> Registrar Factura</>}
               </button>
             </div>
+              )}
           </div>
         </div>
       )}
