@@ -122,7 +122,8 @@ export async function registrarFacturaInsumos(factura: {
   proveedor: string;   
   moneda: 'USD' | 'VES';
     tasa: number;
-    metodo_pago: string;   
+    metodo_pago: string;
+  descripcion?: string;
   items: Array<{     
     insumo_id: string | null;     
     is_new: boolean;     
@@ -166,7 +167,7 @@ export async function registrarFacturaInsumos(factura: {
     monto_divisas: montoTotalDivisas,     
     monto_bs: montoTotalBs,     
     tasa_cambio: factura.tasa,     
-    detalles: JSON.stringify({ texto: `Compra Insumos - ${factura.items.length} items`, is_insumos: true, items: factura.items }),     
+    detalles: JSON.stringify({ texto: factura.descripcion?.trim() ? factura.descripcion : `Compra Insumos - ${factura.items.length} items`, is_insumos: true, items: factura.items }),     
     metodo_pago: factura.metodo_pago || (factura.moneda === 'USD' ? 'Efectivo USD' : 'Transferencia BS'),     
     estado: 'PROCESADA',
       usuario_id: user.id
@@ -228,6 +229,7 @@ export async function editarFacturaInsumos(
     moneda: 'USD' | 'VES';
     tasa: number;
     metodo_pago: string;
+    descripcion?: string;
     items_viejos: Array<{ insumo_id: string; cantidad: number; costoTotal: number }>;
     items_nuevos: Array<{
       insumo_id: string | null;
@@ -309,11 +311,7 @@ export async function editarFacturaInsumos(
     monto_divisas: montoTotalDivisas,
     monto_bs: montoTotalBs,
     tasa_cambio: factura.tasa,
-    detalles: JSON.stringify({ 
-      texto: `Compra Insumos - ${factura.items_nuevos.length} items`, 
-      is_insumos: true, 
-      items: factura.items_nuevos 
-    }),
+    detalles: JSON.stringify({ texto: factura.descripcion?.trim() ? factura.descripcion : `Compra Insumos - ${factura.items_nuevos.length} items`, is_insumos: true, items: factura.items_nuevos }),
     metodo_pago: factura.metodo_pago
   }).eq('id', id_compra);
 

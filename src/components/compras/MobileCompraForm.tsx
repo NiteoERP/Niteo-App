@@ -31,6 +31,7 @@ export default function MobileCompraForm() {
   const [proveedor, setProveedor] = useState('');
   const [monedaGlobal, setMonedaGlobal] = useState<'USD'|'VES'>('USD');
   const [metodoPago, setMetodoPago] = useState('Efectivo USD');
+  const [descripcion, setDescripcion] = useState('');
   const [dbMetodos, setDbMetodos] = useState<any[]>([]);
   
   useEffect(() => {
@@ -170,6 +171,7 @@ export default function MobileCompraForm() {
         moneda: monedaGlobal,
           tasa: tasaDelDia,
           metodo_pago: metodoPago,
+          descripcion: descripcion,
         items: normalizedItems
       });
 
@@ -179,6 +181,7 @@ export default function MobileCompraForm() {
         setSuccess(true);
         setCart([]);
         setProveedor('');
+        setDescripcion('');
         setTimeout(() => setSuccess(false), 3000);
       }
     });
@@ -229,8 +232,8 @@ export default function MobileCompraForm() {
           )}
 
                     {/* Factura Header */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-neutral-950/50 p-4 rounded-xl border border-neutral-800/50">
-            <div>
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 bg-neutral-950/50 p-4 rounded-xl border border-neutral-800/50">
+            <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-neutral-400 mb-1">Proveedor / Tienda</label>
               <div className="relative">
                 <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" size={18} />
@@ -243,7 +246,19 @@ export default function MobileCompraForm() {
                 />
               </div>
             </div>
-            <div>
+            
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-neutral-400 mb-1">Concepto / Descripción (Opcional)</label>
+              <input 
+                type="text" 
+                value={descripcion}
+                onChange={(e) => setDescripcion(e.target.value)}
+                placeholder="Ej. Compra semanal..."
+                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-neutral-400 mb-1">Moneda Global</label>
               <select 
                 value={monedaGlobal}
@@ -254,7 +269,7 @@ export default function MobileCompraForm() {
                 <option value="VES">VES</option>
               </select>
             </div>
-            <div>
+            <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-neutral-400 mb-1">Método de Pago</label>
               <CreatableSelect
                 options={metodosDisponibles.map(m => ({value: m, label: m}))}

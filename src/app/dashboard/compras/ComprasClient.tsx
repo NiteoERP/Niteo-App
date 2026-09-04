@@ -287,6 +287,7 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
 
     if (editingRow.parsed_detalles?.is_insumos) {
       res = await editarFacturaInsumos(editingRow.id, {
+          descripcion: editingRow.detalles,
         proveedor: editingRow.proveedor,
         moneda: 'USD',
         tasa: editingRow.tasa_cambio,
@@ -802,12 +803,12 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
                       <label className="block text-sm font-medium text-neutral-400 mb-1.5">Tasa de Cambio</label>
                       <input type="number" value={editingRow.tasa_cambio} onChange={e => setEditingRow({...editingRow, tasa_cambio: e.target.value})} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500" />
                     </div>
-                    <div className="col-span-2">
-                      <label className="block text-sm font-medium text-neutral-400 mb-1.5">Concepto / Detalles</label>
-                      <textarea rows={2} value={editingRow.detalles} onChange={e => setEditingRow({...editingRow, detalles: e.target.value})} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500" />
-                    </div>
                   </>
                 )}
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-neutral-400 mb-1.5">Concepto / Detalles</label>
+                  <textarea rows={2} value={editingRow.detalles} onChange={e => setEditingRow({...editingRow, detalles: e.target.value})} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500" />
+                </div>
 
                 {editingRow.parsed_detalles?.is_insumos && (
                   <div className="col-span-2">
