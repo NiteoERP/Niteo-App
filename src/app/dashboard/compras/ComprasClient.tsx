@@ -708,7 +708,7 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
                       <td className="py-4 px-6 text-center space-x-2">
                         <button onClick={() => { 
                           let parsed = null;
-                          let txt = compra.detalles || '';
+                          let txt = compra.raw_detalles || compra.detalles || '';
                           if (txt.startsWith('{')) {
                             try { parsed = JSON.parse(txt); if(parsed.is_insumos) txt = parsed.texto; }catch(e){}
                           }
@@ -757,7 +757,7 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
                       <div className="flex gap-4">
                         <button onClick={() => { 
                           let parsed = null;
-                          let txt = compra.detalles || '';
+                          let txt = compra.raw_detalles || compra.detalles || '';
                           if (txt.startsWith('{')) {
                             try { parsed = JSON.parse(txt); if(parsed.is_insumos) txt = parsed.texto; }catch(e){}
                           }

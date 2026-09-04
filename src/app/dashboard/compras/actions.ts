@@ -183,6 +183,7 @@ export async function getHistorialCompras(busqueda?: string, fechaInicio?: strin
       }
       return {
         ...c,
+        raw_detalles: c.detalles, // Preserve original for parsing in client
         detalles: concepto,
         operador: (c as any).perfiles?.nombre_completo || userMap[c.usuario_id] || 'Desconocido',
       };
