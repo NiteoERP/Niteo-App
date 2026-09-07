@@ -357,7 +357,55 @@ export async function editarFacturaInsumos(
 }
 
 
-// REEMPLAZO DE RPC PARA EVITAR ERROR DE MOTIVO NULL
+// Motor de costeo configurable — lee la config de la empresa y aplica el método correcto
+async function calcularNuevoCosto(
+  supabase: any,
+  p_insumo_id: string,
+  empresa_id: string,
+  v_cant_actual: number,
+  v_costo_prom: number,
+  p_cantidad: number,
+  v_costo_unitario: number
+): Promise<number> {
+  const { data: empresa } = await supabase
+    .from('empresas')
+    .select('metodo_costeo_inventario, costeo_promedio_n')
+    .eq('id', empresa_id)
+    .single();
+
+  const metodo = empresa?.metodo_costeo_inventario || 'MOVIL';
+  const n = Number(empresa?.costeo_promedio_n || 3);
+  const v_nueva_cantidad = v_cant_actual + p_cantidad;
+
+  switch (metodo) {
+    case 'ULTIMO':
+      return v_costo_unitario;
+
+    case 'PROMEDIO_N': {
+      const { data: lastMovs } = await supabase
+        .from('movimientos_inventario')
+        .select('cantidad, costo_perdido')
+        .eq('insumo_id', p_insumo_id)
+        .eq('tipo_movimiento', 'ENTRADA')
+        .in('motivo', ['COMPRA', 'AJUSTE_INVENTARIO', 'STOCK_INICIAL'])
+        .order('fecha_movimiento', { ascending: false })
+        .limit(n - 1);
+
+      const precios: number[] = (lastMovs || [])
+        .filter((m: any) => m.cantidad > 0 && m.costo_perdido > 0)
+        .map((m: any) => m.costo_perdido / m.cantidad);
+
+      precios.push(v_costo_unitario);
+      return precios.reduce((s, p) => s + p, 0) / precios.length;
+    }
+
+    case 'MOVIL':
+    default:
+      if (v_nueva_cantidad <= 0) return v_costo_unitario;
+      return ((v_cant_actual * v_costo_prom) + (p_cantidad * v_costo_unitario)) / v_nueva_cantidad;
+  }
+}
+
 async function registrarCompraInsumoJS(supabase: any, p_insumo_id: string, p_usuario_id: string, p_cantidad: number, p_costo_total: number) {
   const { data: insumo, error: insErr } = await supabase
     .from('inventario_insumos')
@@ -371,16 +419,22 @@ async function registrarCompraInsumoJS(supabase: any, p_insumo_id: string, p_usu
   const v_costo_prom = Number(insumo.costo_promedio || 0);
   const v_costo_unitario = p_costo_total / p_cantidad;
   const v_nueva_cantidad = v_cant_actual + p_cantidad;
-  const v_nuevo_costo = ((v_cant_actual * v_costo_prom) + (p_cantidad * v_costo_unitario)) / v_nueva_cantidad;
 
+  const v_nuevo_costo = await calcularNuevoCosto(
+    supabase, p_insumo_id, insumo.empresa_id,
+    v_cant_actual, v_costo_prom, p_cantidad, v_costo_unitario
+  );
+
+  // costo_perdido guarda el total pagado en la compra (para calcular PROMEDIO_N luego)
   const { error: movErr } = await supabase.from('movimientos_inventario').insert({
     empresa_id: insumo.empresa_id,
     insumo_id: p_insumo_id,
     usuario_id: p_usuario_id,
     tipo_movimiento: 'ENTRADA',
     cantidad: p_cantidad,
-    costo_perdido: 0,
-    motivo: 'AJUSTE_INVENTARIO'
+    costo_perdido: p_costo_total,
+    motivo: 'COMPRA',
+    fecha_movimiento: new Date().toISOString(),
   });
 
   if (movErr) return { error: movErr.message };

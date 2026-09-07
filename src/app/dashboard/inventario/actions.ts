@@ -146,3 +146,50 @@ export async function getMovimientosInventario(empresaId: string, sedeId?: strin
       operador_nombre: userMap[m.usuario_id] || 'Sistema',
     }));
 }
+
+export async function getHistorialInsumo(insumoId: string) {
+  const supabase = await createClient();
+  
+  // Extraemos todos los movimientos de este insumo en orden cronológico (ascendente)
+  // para poder reconstruir el running stock.
+  const { data, error } = await supabase
+    .from('movimientos_inventario')
+    .select('*')
+    .eq('insumo_id', insumoId)
+    .order('fecha_movimiento', { ascending: true });
+
+  if (error || !data) return [];
+
+  // Mapear nombres de usuario
+  const userIds = [...new Set(data.map((m: any) => m.usuario_id).filter(Boolean))];
+  let userMap: Record<string, string> = {};
+  if (userIds.length > 0) {
+    const { data: perfiles } = await supabase.from('perfiles').select('id, nombre_completo').in('id', userIds);
+    if (perfiles) {
+      perfiles.forEach((p: any) => { userMap[p.id] = p.nombre_completo; });
+    }
+  }
+
+  let runningStock = 0;
+  
+  const result = data.map((m: any) => {
+    // Calculamos el impacto en stock
+    const cant = m.tipo_movimiento === 'ENTRADA' ? m.cantidad : -m.cantidad;
+    runningStock += cant;
+
+    // Calculamos precio de costo registrado en ese movimiento (si aplica)
+    const costo_unitario = (m.costo_perdido && m.costo_perdido > 0 && m.cantidad > 0)
+      ? m.costo_perdido / m.cantidad
+      : 0;
+
+    return {
+      ...m,
+      stock_resultante: runningStock,
+      costo_unitario,
+      operador_nombre: userMap[m.usuario_id] || 'Sistema',
+    };
+  });
+
+  // Retornamos descendente para que la tabla en el drawer muestre lo más reciente primero
+  return result.reverse();
+}

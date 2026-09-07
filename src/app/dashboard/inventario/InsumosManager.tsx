@@ -334,6 +334,11 @@ export default function InsumosManager({
   const [exportBreakdown, setExportBreakdown] = useState<ExportPeriodType>('mes');
   const [isExporting, setIsExporting] = useState(false);
 
+  // Insumo Details Drawer
+  const [selectedInsumo, setSelectedInsumo] = useState<Insumo | null>(null);
+  const [insumoHistorial, setInsumoHistorial] = useState<any[]>([]);
+  const [isLoadingHistorial, setIsLoadingHistorial] = useState(false);
+
   // Optimistic UI
   const [optimisticInsumos, addOptimisticInsumo] = useOptimistic(
     initialInsumos,
@@ -438,6 +443,18 @@ export default function InsumosManager({
     } finally {
       setIsExporting(false);
     }
+  };
+
+  const handleInsumoClick = async (insumo: Insumo) => {
+    setSelectedInsumo(insumo);
+    setIsLoadingHistorial(true);
+    setInsumoHistorial([]);
+    
+    // Import dynamically so we don't break existing imports if they're grouped
+    const { getHistorialInsumo } = await import('./actions');
+    const history = await getHistorialInsumo(insumo.id);
+    setInsumoHistorial(history);
+    setIsLoadingHistorial(false);
   };
 
   // ── Custom Tooltip ──────────────────────────────────────────────────────────
@@ -642,8 +659,8 @@ export default function InsumosManager({
                   ) : optimisticInsumos.map(insumo => {
                     const valorTotal = insumo.costo_promedio * insumo.cantidad_actual;
                     return (
-                      <tr key={insumo.id} className="hover:bg-white/5 transition-colors text-neutral-300">
-                        <td className="py-4 px-6 font-medium text-neutral-200">
+                      <tr key={insumo.id} onClick={() => handleInsumoClick(insumo)} className="hover:bg-white/5 transition-colors text-neutral-300 cursor-pointer group">
+                        <td className="py-4 px-6 font-medium text-neutral-200 group-hover:text-indigo-400 transition-colors">
                           {insumo.nombre}
                           {insumo.isOptimistic && <span className="ml-2 text-xs text-emerald-400 opacity-70">(Guardando...)</span>}
                         </td>
@@ -659,7 +676,7 @@ export default function InsumosManager({
                             <span className={`font-semibold ${valorTotal > 0 ? 'text-emerald-400' : 'text-neutral-500'}`}>${valorTotal.toFixed(2)}</span>
                           </td>
                         )}
-                        <td className="py-4 px-6 text-center">
+                        <td className="py-4 px-6 text-center" onClick={(e) => e.stopPropagation()}>
                           <button onClick={() => handleDelete(insumo.id)} disabled={insumo.isOptimistic}
                             className="text-neutral-500 hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-500/10 transition-colors disabled:opacity-50">
                             <Trash2 size={18} />
@@ -868,6 +885,117 @@ export default function InsumosManager({
                 {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                 {exportFormat === 'xlsx' ? 'Descargar Excel' : 'Generar PDF'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── INSUMO DRAWER (HISTORIAL INDIVIDUAL) ───────────────────────────── */}
+      {selectedInsumo && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex justify-end transition-opacity animate-in fade-in">
+          <div className="w-full max-w-4xl bg-neutral-900 h-full shadow-2xl flex flex-col border-l border-neutral-800 animate-in slide-in-from-right duration-300">
+            {/* Header del Drawer */}
+            <div className="px-6 py-5 border-b border-neutral-800 flex justify-between items-start bg-neutral-950/50">
+              <div>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex justify-center items-center">
+                    <PackageOpen size={20} className="text-indigo-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">{selectedInsumo.nombre}</h2>
+                    <p className="text-neutral-500 text-sm font-medium">Unidad de medida: <span className="text-neutral-300">{selectedInsumo.unidad_medida}</span></p>
+                  </div>
+                </div>
+                
+                <div className="flex gap-6 mt-5 bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-3">
+                  <div>
+                    <p className="text-xs text-neutral-500 font-medium">Existencia Actual</p>
+                    <p className="text-lg font-bold text-white">{selectedInsumo.cantidad_actual} <span className="text-sm font-normal text-neutral-400">{selectedInsumo.unidad_medida}</span></p>
+                  </div>
+                  {canSeeCosts && (
+                    <>
+                      <div className="w-px bg-neutral-800"></div>
+                      <div>
+                        <p className="text-xs text-neutral-500 font-medium">Costo Promedio</p>
+                        <p className="text-lg font-bold text-indigo-400">${selectedInsumo.costo_promedio.toFixed(4)}</p>
+                      </div>
+                      <div className="w-px bg-neutral-800"></div>
+                      <div>
+                        <p className="text-xs text-neutral-500 font-medium">Valor Total del Stock</p>
+                        <p className="text-lg font-bold text-emerald-400">${(selectedInsumo.costo_promedio * selectedInsumo.cantidad_actual).toFixed(2)}</p>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+              <button onClick={() => setSelectedInsumo(null)} className="text-neutral-500 hover:text-white bg-neutral-800/50 hover:bg-neutral-800 p-2 rounded-full transition-all">
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Contenido (Tabla de historial) */}
+            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+              <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider flex items-center gap-2">
+                <History size={16} className="text-neutral-400" /> Historial de Movimientos
+              </h3>
+
+              {isLoadingHistorial ? (
+                <div className="flex flex-col items-center justify-center py-20 text-neutral-500">
+                  <Loader2 size={32} className="animate-spin mb-3 text-indigo-500" />
+                  <p>Cargando historial...</p>
+                </div>
+              ) : insumoHistorial.length === 0 ? (
+                <div className="text-center py-16 bg-neutral-950 rounded-xl border border-neutral-800 border-dashed">
+                  <FileText size={32} className="mx-auto text-neutral-600 mb-3" />
+                  <p className="text-neutral-400 font-medium">No hay movimientos registrados</p>
+                </div>
+              ) : (
+                <div className="border border-neutral-800 rounded-xl overflow-hidden bg-neutral-950">
+                  <table className="w-full text-left text-sm whitespace-nowrap">
+                    <thead className="bg-neutral-900 text-neutral-400 text-xs uppercase">
+                      <tr>
+                        <th className="px-4 py-3 font-semibold">Tipo de documento</th>
+                        <th className="px-4 py-3 font-semibold">Fecha</th>
+                        <th className="px-4 py-3 font-semibold text-right">Cantidad</th>
+                        <th className="px-4 py-3 font-semibold text-right">En stock</th>
+                        {canSeeCosts && <th className="px-4 py-3 font-semibold text-right">Precio de costo</th>}
+                        <th className="px-4 py-3 font-semibold">Operador</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-800/60">
+                      {insumoHistorial.map((mov, index) => {
+                        const isEntrada = mov.tipo_movimiento === 'ENTRADA';
+                        return (
+                          <tr key={mov.id || index} className="hover:bg-neutral-900/50 transition-colors">
+                            <td className="px-4 py-3">
+                              <span className="font-medium text-neutral-200">{getMotivoLabel(mov.motivo)}</span>
+                              {mov.motivo === 'COMPRA' && <span className="ml-2 text-[10px] bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded border border-indigo-500/20">COMPRA</span>}
+                              {mov.motivo === 'VENTA POS' && <span className="ml-2 text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20">VENTA</span>}
+                            </td>
+                            <td className="px-4 py-3 text-neutral-400 font-mono text-xs">
+                              {format(parseISO(mov.fecha_movimiento), 'dd/MM/yyyy HH:mm', { locale: es })}
+                            </td>
+                            <td className={`px-4 py-3 text-right font-bold ${isEntrada ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              {isEntrada ? '+' : '-'}{mov.cantidad}
+                            </td>
+                            <td className="px-4 py-3 text-right font-medium text-white">
+                              {Number(mov.stock_resultante).toFixed(2).replace(/\.00$/, '')}
+                            </td>
+                            {canSeeCosts && (
+                              <td className="px-4 py-3 text-right text-neutral-300 font-mono">
+                                {mov.costo_unitario > 0 ? `$${mov.costo_unitario.toFixed(4)}` : '—'}
+                              </td>
+                            )}
+                            <td className="px-4 py-3 text-neutral-500 text-xs">
+                              {mov.operador_nombre}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         </div>
