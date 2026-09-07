@@ -3,7 +3,9 @@ import { getTasaBcvAction } from './config-actions';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers'; 
 import { revalidatePath, unstable_noStore as noStore } from 'next/cache';
-import { registrarAsiento } from './contabilidad-actions';  
+import { registrarAsiento } from './contabilidad-actions';
+import { createClient as createAdminClient } from '@supabase/supabase-js';
+const supabaseAdmin = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL as string, process.env.SUPABASE_SERVICE_ROLE_KEY as string);  
 
 export async function registrarCompra(formData: FormData) {   
   // 1. Instanciar Supabase Server Client   
@@ -210,7 +212,7 @@ export async function registrarFacturaInsumos(factura: {
   for (const item of factura.items) {     
     let idInsumo = item.insumo_id;     
     if (item.is_new && item.nombre_nuevo) {       
-      const { data: newIns } = await supabase.from('inventario_insumos').insert({         
+      const { data: newIns, error: insErr } = await supabaseAdmin.from('inventario_insumos').insert({         
         empresa_id: profile.empresa_id,         
         sede_id: activeSedeId,         
         nombre: item.nombre_nuevo,         
@@ -218,12 +220,13 @@ export async function registrarFacturaInsumos(factura: {
         cantidad_actual: 0,         
         costo_promedio: 0       
       }).select('id').single();       
+      if (insErr) console.error('Error insertando nuevo insumo:', insErr);
       if (newIns) idInsumo = newIns.id;     
     }      
     if (idInsumo) {       
       let usd = item.costoTotal;       
       if (factura.moneda === 'VES') usd = usd / factura.tasa;        
-      const { error: rpcErr } = await registrarCompraInsumoJS(supabase, idInsumo, user.id, item.cantidad, usd); if (rpcErr) { console.error(rpcErr); return { error: rpcErr.message }; }     
+      const { error: rpcErr } = await registrarCompraInsumoJS(supabaseAdmin, idInsumo, user.id, item.cantidad, usd); if (rpcErr) { console.error(rpcErr); return { error: rpcErr.message }; }     
     }   
   }    
   // REGISTRO CONTABLE AUTOM�TICO
@@ -302,7 +305,7 @@ export async function editarFacturaInsumos(
       if (insumo) {
          let newCant = Number(insumo.cantidad_actual) - Number(oldItem.cantidad);
          if (newCant < 0) newCant = 0;
-         await supabase.from('inventario_insumos').update({ cantidad_actual: newCant }).eq('id', oldItem.insumo_id);
+         await supabaseAdmin.from('inventario_insumos').update({ cantidad_actual: newCant }).eq('id', oldItem.insumo_id);
       }
     }
   }
@@ -320,7 +323,7 @@ export async function editarFacturaInsumos(
 
     let idInsumo = item.insumo_id;
     if (item.is_new && item.nombre_nuevo) {
-      const { data: newIns } = await supabase.from('inventario_insumos').insert({
+      const { data: newIns, error: insErr } = await supabaseAdmin.from('inventario_insumos').insert({
         empresa_id: profile.empresa_id,
         sede_id: activeSedeId,
         nombre: item.nombre_nuevo,
@@ -328,12 +331,13 @@ export async function editarFacturaInsumos(
         cantidad_actual: 0,
         costo_promedio: 0
       }).select('id').single();
+      if (insErr) console.error('Error insertando nuevo insumo:', insErr);
       if (newIns) idInsumo = newIns.id;
     }
 
     if (idInsumo) {
       item.insumo_id = idInsumo; // Actualizar para guardar en el JSON final
-      const { error: rpcErr } = await registrarCompraInsumoJS(supabase, idInsumo, user.id, item.cantidad, costoUSD); if (rpcErr) { console.error(rpcErr); return { error: rpcErr.message }; }
+      const { error: rpcErr } = await registrarCompraInsumoJS(supabaseAdmin, idInsumo, user.id, item.cantidad, costoUSD); if (rpcErr) { console.error(rpcErr); return { error: rpcErr.message }; }
     }
   }
 
