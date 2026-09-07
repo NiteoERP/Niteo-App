@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { createClient } from '@/utils/supabase/server';
 import InsumosManager from './InsumosManager';
 import TransformacionesManager from './TransformacionesManager';
@@ -6,6 +6,7 @@ import { ArrowRightLeft } from 'lucide-react';
 import ProductosEnriquecidos from './ProductosEnriquecidos';
 import { Package, Beaker, FileBox } from 'lucide-react';
 import SedeSelector from '@/components/inventario/SedeSelector';
+import { getMovimientosInventario } from './actions';
 
 export default async function InventarioPage({ searchParams }: { searchParams: Promise<{ tab?: string, sede?: string }> }) {
   const params = await searchParams;
@@ -31,6 +32,7 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
   let insumos: any[] = [];
   let productos: any[] = [];
   let recetas: any[] = [];
+  let movimientos: any[] = [];
 
   if (currentTab === 'insumos' || currentTab === 'transformaciones') {
     let query = supabase.from('inventario_insumos').select('*').eq('empresa_id', empresaId);
@@ -39,18 +41,22 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
     }
     const { data } = await query;
     insumos = data || [];
+
+    // Fetch movement history for the insumos tab
+    if (currentTab === 'insumos') {
+      movimientos = await getMovimientosInventario(empresaId, activeSedeId || undefined);
+    }
   } else if (currentTab === 'productos') {
     let insumosQuery = supabase.from('inventario_insumos').select('*').eq('empresa_id', empresaId);
     if (activeSedeId) insumosQuery = insumosQuery.eq('sede_id', activeSedeId);
 
-    // Para el editor de recetas necesitamos: productos sincronizados, insumos, y las recetas existentes
-      const [resProd, resIns, resRecetas] = await Promise.all([
-        supabase.from('productos').select('id, nombre, codigo_barras, precio_venta, descripcion, es_compuesto, costo, estado_activo')
-          .eq('empresa_id', empresaId)
-          .order('nombre'),
-        insumosQuery,
-        supabase.from('recetas').select('*').eq('empresa_id', empresaId)
-      ]);
+    const [resProd, resIns, resRecetas] = await Promise.all([
+      supabase.from('productos').select('id, nombre, codigo_barras, precio_venta, descripcion, es_compuesto, costo, estado_activo')
+        .eq('empresa_id', empresaId)
+        .order('nombre'),
+      insumosQuery,
+      supabase.from('recetas').select('*').eq('empresa_id', empresaId)
+    ]);
     productos = resProd.data || [];
     insumos = resIns.data || [];
     recetas = resRecetas.data || [];
@@ -74,32 +80,37 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
         </div>
       </div>
 
-              {/* Tabs / Navegación */}
-        <div className="flex items-center gap-2 border-b border-neutral-800 pb-px">
-          <a 
-            href={`?tab=insumos${activeSedeId ? `&sede=${activeSedeId}` : ''}`} 
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${currentTab === 'insumos' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:border-neutral-700'}`}
-          >
-            <FileBox size={16} /> Almacén (Insumos)
-          </a>
-          <a 
-            href={`?tab=productos${activeSedeId ? `&sede=${activeSedeId}` : ''}`} 
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${currentTab === 'productos' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:border-neutral-700'}`}
-          >
-            <Package size={16} /> Productos de Venta
-          </a>
-          <a 
-            href={`?tab=transformaciones${activeSedeId ? `&sede=${activeSedeId}` : ''}`} 
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${currentTab === 'transformaciones' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:border-neutral-700'}`}
-          >
-            <ArrowRightLeft size={16} /> Transformaciones
-          </a>
-        </div>
+      {/* Tabs / Navegación */}
+      <div className="flex items-center gap-2 border-b border-neutral-800 pb-px">
+        <a 
+          href={`?tab=insumos${activeSedeId ? `&sede=${activeSedeId}` : ''}`} 
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${currentTab === 'insumos' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:border-neutral-700'}`}
+        >
+          <FileBox size={16} /> Almacén (Insumos)
+        </a>
+        <a 
+          href={`?tab=productos${activeSedeId ? `&sede=${activeSedeId}` : ''}`} 
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${currentTab === 'productos' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:border-neutral-700'}`}
+        >
+          <Package size={16} /> Productos de Venta
+        </a>
+        <a 
+          href={`?tab=transformaciones${activeSedeId ? `&sede=${activeSedeId}` : ''}`} 
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${currentTab === 'transformaciones' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:border-neutral-700'}`}
+        >
+          <ArrowRightLeft size={16} /> Transformaciones
+        </a>
+      </div>
 
-                  {/* Contenido Dinámico */}
+      {/* Contenido Dinámico */}
       <div className="pt-2">
         {currentTab === 'insumos' && (
-          <InsumosManager initialInsumos={insumos} empresaId={empresaId} sedeId={activeSedeId || ''} />
+          <InsumosManager 
+            initialInsumos={insumos} 
+            empresaId={empresaId} 
+            sedeId={activeSedeId || ''} 
+            initialMovimientos={movimientos}
+          />
         )}
         
         {currentTab === 'productos' && (
