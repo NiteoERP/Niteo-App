@@ -92,6 +92,136 @@ export async function generateReport(
   let rpcName  = '';
   let rpcParams: Record<string, any> = {};
 
+    // JS-based reports (no RPC needed)
+    if (['compras_insumos', 'compras_operador', 'gastos_operativos'].includes(reportId)) {
+      const query = supabase
+        .from('compras_puntuales')
+        .select(`
+          id, proveedor, fecha_registro, monto_divisas, monto_bs, tasa_cambio, detalles, metodo_pago, usuario_id
+        `)
+        .eq('id_empresa', p_empresa_id)
+        .gte('fecha_registro', p_fecha_inicio)
+        .lte('fecha_registro', p_fecha_fin)
+        .order('fecha_registro', { ascending: false });
+
+      if (p_sede_id) query.eq('id_sede', p_sede_id);
+      
+      const { data, error } = await query;
+      if (error) return { success: false, error: error.message };
+
+      const userIds = [...new Set(data.map((d: any) => d.usuario_id).filter(Boolean))];
+      let profilesMap: Record<string, string> = {};
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase.from('perfiles').select('id, nombre_completo').in('id', userIds);
+        if (profiles) {
+          profiles.forEach((p: any) => { profilesMap[p.id] = p.nombre_completo; });
+        }
+      }
+
+      const joinedData = data.map((d: any) => ({ ...d, nombre_operador: profilesMap[d.usuario_id] || 'Desconocido' }));
+
+      if (reportId === 'compras_insumos') {
+        let sumDivisas = 0;
+        let sumBs = 0;
+        const result = joinedData
+          .filter((d: any) => {
+            const det = d.detalles;
+            if (typeof det === 'string' && det.includes('"is_insumos":true')) return true;
+            if (typeof det === 'object' && det?.is_insumos) return true;
+            return false;
+          })
+          .map((d: any) => {
+            let obs = d.detalles;
+            if (typeof obs === 'string' && obs.includes('{')) {
+              try { obs = JSON.parse(obs).texto; } catch(e){}
+            } else if (typeof obs === 'object') {
+              obs = obs.texto || '';
+            }
+            sumDivisas += Number(d.monto_divisas || 0);
+            sumBs += Number(d.monto_bs || 0);
+            return {
+              'FECHA': new Date(d.fecha_registro).toLocaleDateString(),
+              'PROVEEDOR / GASTO': d.proveedor || 'Sin Nombre',
+              'DOLARES': `$ ${d.monto_divisas?.toFixed(2)}`,
+              'TASA': d.tasa_cambio,
+              'Bs.': `Bs.S ${d.monto_bs?.toFixed(2)}`,
+              'OBSERVACION': obs,
+              'OPERADOR': d.nombre_operador
+            };
+          });
+
+        if (result.length > 0) {
+          result.push({
+            'FECHA': 'TOTAL',
+            'PROVEEDOR / GASTO': '',
+            'DOLARES': `$ ${sumDivisas.toFixed(2)}`,
+            'TASA': '',
+            'Bs.': `Bs.S ${sumBs.toFixed(2)}`,
+            'OBSERVACION': '',
+            'OPERADOR': ''
+          });
+        }
+        return { success: true, data: result };
+      }
+
+      if (reportId === 'gastos_operativos') {
+        let sumDivisas = 0;
+        let sumBs = 0;
+        const result = joinedData
+          .filter((d: any) => {
+            const det = d.detalles;
+            if (typeof det === 'string' && det.includes('"is_insumos":true')) return false;
+            if (typeof det === 'object' && det?.is_insumos) return false;
+            return true;
+          })
+          .map((d: any) => {
+            sumDivisas += Number(d.monto_divisas || 0);
+            sumBs += Number(d.monto_bs || 0);
+            return {
+              'FECHA': new Date(d.fecha_registro).toLocaleDateString(),
+              'PROVEEDOR / GASTO': d.proveedor || 'Sin Nombre',
+              'DOLARES': `$ ${d.monto_divisas?.toFixed(2)}`,
+              'TASA': d.tasa_cambio,
+              'Bs.': `Bs.S ${d.monto_bs?.toFixed(2)}`,
+              'OBSERVACION': typeof d.detalles === 'string' ? d.detalles : d.detalles?.texto || '',
+              'OPERADOR': d.nombre_operador
+            };
+          });
+
+        if (result.length > 0) {
+          result.push({
+            'FECHA': 'TOTAL',
+            'PROVEEDOR / GASTO': '',
+            'DOLARES': `$ ${sumDivisas.toFixed(2)}`,
+            'TASA': '',
+            'Bs.': `Bs.S ${sumBs.toFixed(2)}`,
+            'OBSERVACION': '',
+            'OPERADOR': ''
+          });
+        }
+        return { success: true, data: result };
+      }
+
+      if (reportId === 'compras_operador') {
+        const summary: Record<string, { operador: string; cantidad: number; total_divisas: number; total_bs: number }> = {};
+        for (const row of joinedData) {
+          const op = row.nombre_operador || 'Desconocido';
+          if (!summary[op]) summary[op] = { operador: op, cantidad: 0, total_divisas: 0, total_bs: 0 };
+          summary[op].cantidad += 1;
+          summary[op].total_divisas += Number(row.monto_divisas || 0);
+          summary[op].total_bs += Number(row.monto_bs || 0);
+        }
+        
+        const result = Object.values(summary).sort((a,b) => b.total_divisas - a.total_divisas).map(s => ({
+          'OPERADOR': s.operador,
+          'COMPRAS REALIZADAS': s.cantidad,
+          'TOTAL DOLARES': `$ ${s.total_divisas.toFixed(2)}`,
+          'TOTAL Bs.': `Bs.S ${s.total_bs.toFixed(2)}`
+        }));
+        return { success: true, data: result };
+      }
+    }
+
   switch (reportId) {
 
     // ── Informes existentes ────────────────────────────────────────────────

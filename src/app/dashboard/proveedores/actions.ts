@@ -37,7 +37,7 @@ export async function getFacturasProveedor(proveedorId: string, sedeId: string) 
   if (!user) return { success: false, error: 'No autenticado' };
 
   let query = supabase.from('compras_facturas')
-    .select('id, numero_factura, concepto, total, saldo_pendiente, fecha_emision, pagos:compras_pagos(id, monto, metodo_pago, referencia, banco_origen, created_at)')
+    .select('id, numero_factura, concepto, total, saldo_pendiente, fecha_emision, fecha_vencimiento, pagos:compras_pagos(id, monto, metodo_pago, referencia, banco_origen, created_at)')
     .eq('proveedor_id', proveedorId)
     .order('fecha_emision', { ascending: false });
     
@@ -151,7 +151,8 @@ export async function crearFacturaProveedor(
   fechaEmision: string,
   metodoPago?: string,
   moneda?: string,
-  tasa?: number
+  tasa?: number,
+  fechaVencimiento?: string
 ) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -177,6 +178,7 @@ export async function crearFacturaProveedor(
       total: total,
       saldo_pendiente: total,
       fecha_emision: fechaEmision,
+      fecha_vencimiento: fechaVencimiento || null,
       usuario_id: user.id
     })
     .select('id')
@@ -204,4 +206,37 @@ export async function crearFacturaProveedor(
   });
 
   return { success: true };
+}
+
+import { registrarFacturaInsumos } from '@/actions/compras-actions';
+
+export async function crearFacturaProveedorConInsumos(
+  proveedorId: string,
+  sedeId: string,
+  numeroFactura: string,
+  concepto: string,
+  fechaEmision: string,
+  metodoPago: string,
+  moneda: 'USD' | 'VES',
+  tasa: number,
+  fechaVencimiento: string,
+  items: any[]
+) {
+  const supabase = await createClient();
+  const { data: prov } = await supabase.from('proveedores').select('nombre_comercial').eq('id', proveedorId).single();
+  
+  const res = await registrarFacturaInsumos({
+    proveedor: prov?.nombre_comercial || 'Proveedor',
+    proveedor_id: proveedorId,
+    moneda,
+    tasa,
+    metodo_pago: metodoPago,
+    descripcion: concepto,
+    numero_factura: numeroFactura,
+    fecha_emision: fechaEmision,
+    fecha_vencimiento: fechaVencimiento || undefined,
+    items
+  });
+
+  return res;
 }

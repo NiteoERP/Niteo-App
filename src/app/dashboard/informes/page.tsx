@@ -129,6 +129,18 @@ const REPORT_CATALOG: ReportGroup[] = [
       { id: 'mermas',             name: 'Mermas y Regalías',       desc: 'Pérdidas, daños y cortesías registradas',              icon: Trash2, badge: 'Próx.' },
     ],
   },
+  {
+    id: 'compras_gastos',
+    category: 'Compras y Gastos',
+    icon: Tag,
+    color: 'text-rose-400',
+    bgColor: 'bg-rose-500/10 border-rose-500/20',
+    reports: [
+      { id: 'compras_insumos',    name: 'Informe Compras Insumos', desc: 'Detalle de compras para producción (Fecha, Proveedor, Montos, Operador)', icon: Tag, extraFilters: ['cajero'] },
+      { id: 'compras_operador',   name: 'Compras por Operador',    desc: 'Quién compró más, veces compradas y monto total', icon: Users, extraFilters: ['cajero'] },
+      { id: 'gastos_operativos',  name: 'Gastos Operativos',       desc: 'Desglose de gastos operativos por fecha y motivo', icon: Receipt, extraFilters: ['cajero'] },
+    ],
+  }
 ];
 
 // ─── Selectores de fecha rápidos ─────────────────────────────────────────────

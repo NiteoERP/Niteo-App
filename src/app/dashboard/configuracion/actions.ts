@@ -14,7 +14,9 @@ export async function updateEmpresaSaaS(empresaId: string, data: any) {
       simbolo_moneda: data.simbolo_moneda,
       zona_horaria: data.zona_horaria,
       metodo_costeo_despachos: data.metodo_costeo_despachos,
-      metodos_pago: data.metodos_pago
+      metodos_pago: data.metodos_pago,
+      metodo_costeo_inventario: data.metodo_costeo_inventario,
+      costeo_promedio_n: data.costeo_promedio_n
     })
     .eq('id', empresaId);
 

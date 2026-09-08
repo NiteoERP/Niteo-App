@@ -120,10 +120,14 @@ export async function getTasaDelDia(): Promise<number> {
 
 export async function registrarFacturaInsumos(factura: {   
   proveedor: string;   
+  proveedor_id?: string;
   moneda: 'USD' | 'VES';
-    tasa: number;
-    metodo_pago: string;
+  tasa: number;
+  metodo_pago: string;
   descripcion?: string;
+  numero_factura?: string;
+  fecha_emision?: string;
+  fecha_vencimiento?: string;
   items: Array<{     
     insumo_id: string | null;     
     is_new: boolean;     
@@ -175,35 +179,50 @@ export async function registrarFacturaInsumos(factura: {
   if (headErr) return { error: 'Error guardando factura: ' + headErr.message };    
 
     // == LÓGICA DE PROVEEDORES Y DEUDAS ==
-    const isDeuda = factura.metodo_pago?.toLowerCase().includes('por pagar');
-    if (isDeuda && factura.proveedor) {
-      let provId = null;
-      const { data: existProv } = await supabase.from('proveedores')
-        .select('id').eq('empresa_id', profile.empresa_id).ilike('nombre_comercial', factura.proveedor.trim()).single();
-      
-      if (existProv) {
-        provId = existProv.id;
-      } else {
-        const { data: newProv } = await supabase.from('proveedores').insert({
-          empresa_id: profile.empresa_id,
-          nombre_comercial: factura.proveedor.trim(),
-          estado_activo: true
-        }).select('id').single();
-        if (newProv) provId = newProv.id;
+    if (factura.proveedor_id || factura.proveedor) {
+      let provId = factura.proveedor_id || null;
+      if (!provId && factura.proveedor) {
+        const { data: existProv } = await supabase.from('proveedores')
+          .select('id').eq('empresa_id', profile.empresa_id).ilike('nombre_comercial', factura.proveedor.trim()).single();
+        
+        if (existProv) {
+          provId = existProv.id;
+        } else {
+          const { data: newProv } = await supabase.from('proveedores').insert({
+            empresa_id: profile.empresa_id,
+            nombre_comercial: factura.proveedor.trim(),
+            estado_activo: true
+          }).select('id').single();
+          if (newProv) provId = newProv.id;
+        }
       }
 
       if (provId) {
-        await supabase.from('compras_facturas').insert({
+        const isDeuda = factura.metodo_pago?.toLowerCase().includes('por pagar');
+        const saldoPendiente = isDeuda ? montoTotalDivisas : 0;
+
+        const { data: nuevaFactura } = await supabase.from('compras_facturas').insert({
           empresa_id: profile.empresa_id,
           sede_id: activeSedeId,
           proveedor_id: provId,
-          numero_factura: 'S/N',
+          numero_factura: factura.numero_factura || 'S/N',
           concepto: factura.descripcion?.trim() ? factura.descripcion : `Compra Insumos (${factura.items.length} items)`,
           total: montoTotalDivisas,
-          saldo_pendiente: montoTotalDivisas,
-          fecha_emision: new Date().toISOString(),
+          saldo_pendiente: saldoPendiente,
+          fecha_emision: factura.fecha_emision || new Date().toISOString(),
+          fecha_vencimiento: factura.fecha_vencimiento || null,
           usuario_id: user.id
-        });
+        }).select('id').single();
+
+        // Si fue pagado de inmediato, registrar el pago en compras_pagos
+        if (!isDeuda && nuevaFactura?.id) {
+          await supabase.from('compras_pagos').insert({
+            factura_id: nuevaFactura.id,
+            monto: montoTotalDivisas,
+            metodo_pago: factura.metodo_pago,
+            usuario_id: user.id
+          });
+        }
       }
     }
     // == FIN LÓGICA DE PROVEEDORES ==    
