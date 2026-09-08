@@ -23,14 +23,39 @@ export async function getTasaBcvAction() {
       .select('tasa_bcv, tasa_eur, fecha')
       .order('fecha', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    if (error || !data) return { tasa: 36.50, fecha: null };
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Caracas' }).format(new Date());
+
+    // Si no hay datos o la última tasa registrada no corresponde al día de hoy, sincronizar vía Edge Function
+    if (!data || data.fecha < today) {
+      try {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        if (supabaseUrl) {
+          const syncRes = await fetch(`${supabaseUrl}/functions/v1/sync-tasa-bcv`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            cache: 'no-store'
+          });
+          if (syncRes.ok) {
+            const syncData = await syncRes.json();
+            if (syncData.success && syncData.usdRate) {
+              const freshRate = isEur ? (Number(syncData.eurRate) || Number(syncData.usdRate)) : Number(syncData.usdRate);
+              return { tasa: freshRate, fecha: syncData.date };
+            }
+          }
+        }
+      } catch (syncErr) {
+        console.warn('Auto-sync fallback error in getTasaBcvAction:', syncErr);
+      }
+    }
+
+    if (!data) return { tasa: 804.81, fecha: null };
 
     const selectedRate = isEur ? (Number(data.tasa_eur) || Number(data.tasa_bcv)) : Number(data.tasa_bcv);
     return { tasa: selectedRate, fecha: data.fecha };
   } catch (err) {
-    return { tasa: 36.50, fecha: null };
+    return { tasa: 804.81, fecha: null };
   }
 }
 

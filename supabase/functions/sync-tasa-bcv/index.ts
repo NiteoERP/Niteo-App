@@ -39,8 +39,8 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // 4. Upsert the rates for today
-    const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
+    // 4. Upsert the rates for today (Venezuela timezone)
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Caracas' }).format(new Date());
     
     const { error } = await supabase
       .from('tasa_cambiaria')
