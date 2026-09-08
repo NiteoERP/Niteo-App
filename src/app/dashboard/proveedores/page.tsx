@@ -34,9 +34,14 @@ function Badge({ label, color = 'neutral' }: { label: string; color?: string }) 
 
 // ── Main Component ─────────────────────────────────────────
 export default function ProveedoresPage() {
-  const { formatCurrency } = useEmpresa();
+  const { formatCurrency, empresa } = useEmpresa();
   const [sedes, setSedes] = useState<any[]>([]);
   const [sedeId, setSedeId] = useState("ALL");
+
+  const metodosDisponibles = Array.from(new Set([
+    ...(Array.isArray(empresa?.metodos_pago) ? empresa.metodos_pago : []),
+    'Transferencia', 'Efectivo USD', 'Efectivo Bs', 'Zelle', 'Pago Movil', 'Punto de Venta', 'Binance', 'Cheque'
+  ]));
 
   const [proveedores, setProveedores] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -97,7 +102,7 @@ export default function ProveedoresPage() {
   const [metodoPago, setMetodoPago] = useState('Transferencia');
   const [referencia, setReferencia] = useState('');
   const [bancoOrigen, setBancoOrigen] = useState('');
-  const [fechaPago, setFechaPago] = useState('');
+  const [fechaPago, setFechaPago] = useState(new Date().toISOString().split('T')[0]);
   const [isPagarLoading, setIsPagarLoading] = useState(false);
   const [errorPago, setErrorPago] = useState('');
 
@@ -224,7 +229,7 @@ export default function ProveedoresPage() {
     );
     if (res.success) {
       setShowPagoModal(false);
-      setMontoAbonar(''); setReferencia(''); setBancoOrigen(''); setFechaPago('');
+      setMontoAbonar(''); setReferencia(''); setBancoOrigen(''); setFechaPago(new Date().toISOString().split('T')[0]);
       fetchInit();
       if (expandedId) {
         const r2 = await getFacturasProveedor(expandedId, sedeId);
@@ -876,15 +881,39 @@ export default function ProveedoresPage() {
               )}
 
               <div>
-                <label className="block text-sm text-neutral-400 mb-1.5 mt-2">Estado de Pago</label>
-                <select value={facMetodoPago} onChange={e => setFacMetodoPago(e.target.value)}
-                  className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 text-sm">
-                  <option className="bg-neutral-900 text-white" value="Por pagar">Por pagar (deuda con proveedor)</option>
-                  <option className="bg-neutral-900 text-white" value="Efectivo USD">Pagado - Efectivo USD</option>
-                  <option className="bg-neutral-900 text-white" value="Transferencia">Pagado - Transferencia</option>
-                  <option className="bg-neutral-900 text-white" value="Zelle">Pagado - Zelle</option>
-                  <option className="bg-neutral-900 text-white" value="Pago Movil">Pagado - Pago Móvil</option>
-                </select>
+                <label className="block text-sm text-neutral-400 mb-1.5 mt-2">Estado / Método de Pago</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    list="lista-metodos-factura"
+                    value={facMetodoPago}
+                    onChange={e => setFacMetodoPago(e.target.value)}
+                    placeholder="Ej. Por pagar, Transferencia, Zelle..."
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 text-sm"
+                  />
+                  <datalist id="lista-metodos-factura">
+                    <option value="Por pagar" />
+                    {metodosDisponibles.map(m => (
+                      <option key={m} value={m} />
+                    ))}
+                  </datalist>
+                </div>
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {['Por pagar', ...metodosDisponibles.slice(0, 5)].map(m => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setFacMetodoPago(m)}
+                      className={`text-[10px] px-2 py-0.5 rounded-lg border transition-colors ${
+                        facMetodoPago === m
+                          ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-400 font-semibold'
+                          : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
               </div>
               {errorFactura && <p className="text-rose-400 text-sm flex items-center gap-2"><AlertCircle size={14} /> {errorFactura}</p>}
             </div>
@@ -926,16 +955,37 @@ export default function ProveedoresPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm text-neutral-400 mb-1.5">Método de Pago</label>
-                  <select value={metodoPago} onChange={e => setMetodoPago(e.target.value)}
-                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm">
-                    <option className="bg-neutral-900 text-white">Transferencia</option>
-                    <option className="bg-neutral-900 text-white">Efectivo USD</option>
-                    <option className="bg-neutral-900 text-white">Efectivo Bs</option>
-                    <option className="bg-neutral-900 text-white">Zelle</option>
-                    <option className="bg-neutral-900 text-white">Pago Movil</option>
-                    <option className="bg-neutral-900 text-white">Punto de Venta</option>
-                    <option className="bg-neutral-900 text-white">Cheque</option>
-                  </select>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      list="lista-metodos-abono"
+                      value={metodoPago}
+                      onChange={e => setMetodoPago(e.target.value)}
+                      placeholder="Ej. Transferencia, Zelle..."
+                      className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
+                    />
+                    <datalist id="lista-metodos-abono">
+                      {metodosDisponibles.map(m => (
+                        <option key={m} value={m} />
+                      ))}
+                    </datalist>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {metodosDisponibles.slice(0, 5).map(m => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setMetodoPago(m)}
+                        className={`text-[10px] px-2 py-0.5 rounded-lg border transition-colors ${
+                          metodoPago === m
+                            ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 font-semibold'
+                            : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:text-white'
+                        }`}
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm text-neutral-400 mb-1.5">Fecha del Pago</label>
