@@ -232,6 +232,20 @@ export async function crearFacturaProveedor(
     .eq('id', proveedorId)
     .single();
 
+  const bcv = await getTasaBcvAction();
+  const tasaActual = (tasa && tasa > 1) ? tasa : (bcv.tasa || 804.81);
+  const monedaFinal = moneda || 'USD';
+  const totalUSD = monedaFinal === 'USD' ? total : (total / (tasaActual > 0 ? tasaActual : 1));
+  const montoBs = monedaFinal === 'USD' ? (total * tasaActual) : total;
+
+  const isDeuda = !metodoPago || metodoPago.toLowerCase().includes('por pagar');
+  const saldoPendiente = isDeuda ? Number(totalUSD.toFixed(2)) : 0;
+
+  let conceptoFinal = concepto || 'Compra registrada manualmente';
+  if (monedaFinal === 'VES') {
+    conceptoFinal += ` (Bs. ${Number(total).toLocaleString('es-VE', { minimumFractionDigits: 2 })} @ ${tasaActual})`;
+  }
+
   // 1. Insert into compras_facturas (supplier debt tracking)
   const { data: factura, error: facError } = await supabase.from('compras_facturas')
     .insert({
@@ -239,9 +253,9 @@ export async function crearFacturaProveedor(
       sede_id: sedeId || null,
       proveedor_id: proveedorId,
       numero_factura: numeroFactura || 'S/N',
-      concepto: concepto || 'Compra registrada manualmente',
-      total: total,
-      saldo_pendiente: total,
+      concepto: conceptoFinal,
+      total: Number(totalUSD.toFixed(2)),
+      saldo_pendiente: saldoPendiente,
       fecha_emision: fechaEmision,
       fecha_vencimiento: fechaVencimiento || null,
       usuario_id: user.id
@@ -251,20 +265,26 @@ export async function crearFacturaProveedor(
 
   if (facError) return { success: false, error: facError.message };
 
-  // 2. Also register in compras_puntuales so it shows in Compras history
-  const tasaActual = tasa || (await getTasaBcvAction()).tasa || 36.5;
-  const monedaFinal = moneda || 'USD';
-  const montoDivisas = monedaFinal === 'USD' ? total : total / tasaActual;
-  const montoBs = montoDivisas * tasaActual;
+  if (!isDeuda && factura?.id) {
+    await supabase.from('compras_pagos').insert({
+      factura_id: factura.id,
+      monto: Number(totalUSD.toFixed(2)),
+      metodo_pago: metodoPago,
+      referencia: 'Pago al contado / registro inicial',
+      fecha_pago: fechaEmision || new Date().toISOString(),
+      usuario_id: user.id
+    });
+  }
 
+  // 2. Also register in compras_puntuales so it shows in Compras history
   await supabase.from('compras_puntuales').insert({
     id_empresa: profile.empresa_id,
     id_sede: sedeId || null,
     proveedor: prov?.nombre_comercial || 'Proveedor',
-    monto_divisas: montoDivisas,
-    monto_bs: montoBs,
+    monto_divisas: Number(totalUSD.toFixed(2)),
+    monto_bs: Number(montoBs.toFixed(2)),
     tasa_cambio: tasaActual,
-    detalles: concepto || 'Compra registrada manualmente',
+    detalles: conceptoFinal,
     metodo_pago: metodoPago || 'Por pagar',
     estado: 'PROCESADA',
     usuario_id: user.id
@@ -290,11 +310,17 @@ export async function crearFacturaProveedorConInsumos(
   const supabase = await createClient();
   const { data: prov } = await supabase.from('proveedores').select('nombre_comercial').eq('id', proveedorId).single();
   
+  let tasaFinal = tasa;
+  if (!tasaFinal || tasaFinal <= 1) {
+    const bcv = await getTasaBcvAction();
+    tasaFinal = bcv.tasa || 804.81;
+  }
+
   const res = await registrarFacturaInsumos({
     proveedor: prov?.nombre_comercial || 'Proveedor',
     proveedor_id: proveedorId,
     moneda,
-    tasa,
+    tasa: tasaFinal,
     metodo_pago: metodoPago,
     descripcion: concepto,
     numero_factura: numeroFactura,

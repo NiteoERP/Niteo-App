@@ -154,28 +154,43 @@ export async function registrarFacturaInsumos(factura: {
     if (sedes) activeSedeId = sedes.id;
     else return { error: 'Crea una sede primero.' };
   }    
+  let tasaEfectiva = factura.tasa;
+  if (!tasaEfectiva || tasaEfectiva <= 1) {
+    const bcv = await getTasaBcvAction();
+    tasaEfectiva = bcv.tasa || 804.81;
+  }
+
   let montoTotalDivisas = 0;   
   let montoTotalBs = 0;    
   for (const item of factura.items) {     
     let costoUSD = item.costoTotal;     
     if (factura.moneda === 'VES') {       
-      costoUSD = item.costoTotal / factura.tasa;     
+      costoUSD = item.costoTotal / tasaEfectiva;     
     }     
     montoTotalDivisas += costoUSD;   
   }   
-  montoTotalBs = montoTotalDivisas * factura.tasa;    
+  montoTotalBs = factura.moneda === 'VES'
+    ? factura.items.reduce((acc, it) => acc + (Number(it.costoTotal) || 0), 0)
+    : (montoTotalDivisas * tasaEfectiva);
+
   const { data: header, error: headErr } = await supabase.from('compras_puntuales').insert({     
     id_empresa: profile.empresa_id,     
     id_sede: activeSedeId,     
     proveedor: factura.proveedor,     
-    monto_divisas: montoTotalDivisas,     
-    monto_bs: montoTotalBs,     
-    tasa_cambio: factura.tasa,     
-    detalles: JSON.stringify({ texto: factura.descripcion?.trim() ? factura.descripcion : `Compra Insumos - ${factura.items.length} items`, is_insumos: true, items: factura.items }),     
+    monto_divisas: Number(montoTotalDivisas.toFixed(2)),     
+    monto_bs: Number(montoTotalBs.toFixed(2)),     
+    tasa_cambio: tasaEfectiva,     
+    detalles: JSON.stringify({
+      texto: factura.descripcion?.trim() ? factura.descripcion : `Compra Insumos - ${factura.items.length} items`,
+      is_insumos: true,
+      items: factura.items,
+      monedaOriginal: factura.moneda,
+      tasaCambio: tasaEfectiva
+    }),     
     metodo_pago: factura.metodo_pago || (factura.moneda === 'USD' ? 'Efectivo USD' : 'Transferencia BS'),     
     estado: 'PROCESADA',
-      usuario_id: user.id
-    }).select('id').single();    
+    usuario_id: user.id
+  }).select('id').single();    
   if (headErr) return { error: 'Error guardando factura: ' + headErr.message };    
 
     // == LÓGICA DE PROVEEDORES Y DEUDAS ==
@@ -199,15 +214,19 @@ export async function registrarFacturaInsumos(factura: {
 
       if (provId) {
         const isDeuda = factura.metodo_pago?.toLowerCase().includes('por pagar');
-        const saldoPendiente = isDeuda ? montoTotalDivisas : 0;
+        const saldoPendiente = isDeuda ? Number(montoTotalDivisas.toFixed(2)) : 0;
+        let conceptoFinal = factura.descripcion?.trim() ? factura.descripcion : `Compra Insumos (${factura.items.length} items)`;
+        if (factura.moneda === 'VES') {
+          conceptoFinal += ` (Bs. ${Number(montoTotalBs).toLocaleString('es-VE', {minimumFractionDigits: 2})} @ ${tasaEfectiva})`;
+        }
 
         const { data: nuevaFactura } = await supabase.from('compras_facturas').insert({
           empresa_id: profile.empresa_id,
           sede_id: activeSedeId,
           proveedor_id: provId,
           numero_factura: factura.numero_factura || 'S/N',
-          concepto: factura.descripcion?.trim() ? factura.descripcion : `Compra Insumos (${factura.items.length} items)`,
-          total: montoTotalDivisas,
+          concepto: conceptoFinal,
+          total: Number(montoTotalDivisas.toFixed(2)),
           saldo_pendiente: saldoPendiente,
           fecha_emision: factura.fecha_emision || new Date().toISOString(),
           fecha_vencimiento: factura.fecha_vencimiento || null,
@@ -218,10 +237,10 @@ export async function registrarFacturaInsumos(factura: {
         if (!isDeuda && nuevaFactura?.id) {
           await supabase.from('compras_pagos').insert({
             factura_id: nuevaFactura.id,
-            monto: montoTotalDivisas,
+            monto: Number(montoTotalDivisas.toFixed(2)),
             metodo_pago: factura.metodo_pago,
             usuario_id: user.id,
-            fecha_pago: new Date().toISOString()
+            fecha_pago: factura.fecha_emision || new Date().toISOString()
           });
         }
       }
@@ -242,7 +261,7 @@ export async function registrarFacturaInsumos(factura: {
     }      
     if (idInsumo) {       
       let usd = item.costoTotal;       
-      if (factura.moneda === 'VES') usd = usd / factura.tasa;        
+      if (factura.moneda === 'VES') usd = usd / tasaEfectiva;        
       const { error: rpcErr } = await registrarCompraInsumoJS(supabase, idInsumo, user.id, item.cantidad, usd); if (rpcErr) { console.error(rpcErr); return { error: rpcErr.message }; }     
     }   
   }    

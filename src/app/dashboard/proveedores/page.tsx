@@ -8,6 +8,7 @@ import {
   getHistoricoProveedores, getTodosProveedores, crearFacturaProveedor, crearProveedor,
   crearFacturaProveedorConInsumos, registrarPagoGeneralProveedor
 } from "./actions";
+import { getTasaBcvAction } from "@/actions/config-actions";
 import { useEmpresa } from "@/components/providers/EmpresaProvider";
 import {
   Store, Wallet, Search, Check, FileText, ChevronDown, ChevronUp,
@@ -78,6 +79,8 @@ export default function ProveedoresPage() {
   const [facFecha, setFacFecha] = useState(new Date().toISOString().split('T')[0]);
   const [facFechaVencimiento, setFacFechaVencimiento] = useState('');
   const [facMoneda, setFacMoneda] = useState<'USD'|'VES'>('USD');
+  const [tasaBcv, setTasaBcv] = useState<number>(804.81);
+  const [facTasa, setFacTasa] = useState<number>(804.81);
   const [facMetodoPago, setFacMetodoPago] = useState('Por pagar');
   const [enviandoFactura, setEnviandoFactura] = useState(false);
   const [errorFactura, setErrorFactura] = useState('');
@@ -133,14 +136,19 @@ export default function ProveedoresPage() {
   const fetchInit = useCallback(async () => {
     setLoading(true);
     setPage(1);
-    const [sedesRes, provRes, todosRes] = await Promise.all([
+    const [sedesRes, provRes, todosRes, tasaRes] = await Promise.all([
       getSedes(),
       getProveedoresConDeuda(sedeId, 1, 20, debouncedSearch),
       getTodosProveedores(),
+      getTasaBcvAction(),
     ]);
     if (Array.isArray(sedesRes)) setSedes(sedesRes);
     if (provRes.success) { setProveedores(provRes.data || []); setTotalCount(provRes.totalCount || 0); }
     if (todosRes.success) setTodosProveedores(todosRes.data || []);
+    if (tasaRes?.tasa && tasaRes.tasa > 1) {
+      setTasaBcv(tasaRes.tasa);
+      setFacTasa(tasaRes.tasa);
+    }
     setLoading(false);
   }, [sedeId, debouncedSearch]);
 
@@ -205,16 +213,18 @@ export default function ProveedoresPage() {
     setEnviandoFactura(true);
     setErrorFactura('');
     
+    const tasaFinal = (facTasa && facTasa > 1) ? facTasa : tasaBcv;
+
     let res;
     if (facturaTab === 'gastos') {
       res = await crearFacturaProveedor(
         facProveedorId, facSede || sedeId, facNumero, facConcepto,
-        totalToSubmit, facFecha, facMetodoPago, facMoneda, 36.5, facFechaVencimiento
+        totalToSubmit, facFecha, facMetodoPago, facMoneda, tasaFinal, facFechaVencimiento
       );
     } else {
       res = await crearFacturaProveedorConInsumos(
         facProveedorId, facSede || sedeId, facNumero, facConcepto,
-        facFecha, facMetodoPago, facMoneda, 36.5, facFechaVencimiento, facItems
+        facFecha, facMetodoPago, facMoneda, tasaFinal, facFechaVencimiento, facItems
       );
     }
 
@@ -396,6 +406,11 @@ export default function ProveedoresPage() {
                       <div className="text-right">
                         <p className="text-xs font-semibold uppercase text-neutral-500 mb-0.5">Adeudado</p>
                         <p className="font-black text-rose-400 text-lg">{formatCurrency(prov.monto_adeudado)}</p>
+                        {tasaBcv > 0 && prov.monto_adeudado > 0 && (
+                          <p className="text-xs text-neutral-400 font-medium">
+                            ≈ Bs. {(prov.monto_adeudado * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </p>
+                        )}
                       </div>
                     )}
                     {prov.monto_adeudado > 0 && (
@@ -477,8 +492,20 @@ export default function ProveedoresPage() {
                                   </div>
                                   <div className="flex items-center gap-4">
                                     <div className="text-right">
-                                      <p className="text-xs text-neutral-500">Total: {formatCurrency(fac.total)}</p>
+                                      <p className="text-xs text-neutral-500">
+                                        Total: {formatCurrency(fac.total)}
+                                        {tasaBcv > 0 && (
+                                          <span className="block text-[11px] text-neutral-500">
+                                            ≈ Bs. {(fac.total * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                          </span>
+                                        )}
+                                      </p>
                                       <p className={`font-black text-lg ${saldado ? 'text-emerald-400' : 'text-rose-400'}`}>{formatCurrency(fac.saldo_pendiente)}</p>
+                                      {!saldado && tasaBcv > 0 && (
+                                        <p className="text-[11px] text-rose-400/80 font-medium">
+                                          ≈ Bs. {(fac.saldo_pendiente * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </p>
+                                      )}
                                       <p className="text-xs text-neutral-600">pendiente</p>
                                     </div>
                                     {!saldado && (
@@ -675,32 +702,61 @@ export default function ProveedoresPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <div className="col-span-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className={facMoneda === 'VES' ? "sm:col-span-1" : "sm:col-span-2"}>
                   <label className="block text-sm text-neutral-400 mb-1.5">Concepto / Descripción</label>
                   <input type="text" value={facConcepto} onChange={e => setFacConcepto(e.target.value)}
                     placeholder="Ej. Compra de materia prima"
                     className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 text-sm" />
                 </div>
                 <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">Moneda</label>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Moneda Factura</label>
                   <select value={facMoneda} onChange={e => setFacMoneda(e.target.value as 'USD'|'VES')}
-                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500 text-sm">
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500 text-sm font-semibold">
                     <option className="bg-neutral-900 text-white" value="USD">USD ($)</option>
-                    <option className="bg-neutral-900 text-white" value="VES">VES (Bs.)</option>
+                    <option className="bg-neutral-900 text-white" value="VES">VES (Bolívares Bs.)</option>
                   </select>
                 </div>
+                {facMoneda === 'VES' && (
+                  <div>
+                    <label className="block text-sm text-amber-400 mb-1.5 font-medium flex items-center justify-between">
+                      <span>Tasa de Cambio</span>
+                      <span className="text-[10px] text-amber-400/80 font-mono bg-amber-500/20 px-1.5 py-0.5 rounded">BCV</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="any"
+                        value={facTasa}
+                        onChange={e => setFacTasa(parseFloat(e.target.value) || 0)}
+                        placeholder="804.81"
+                        className="w-full bg-amber-500/10 border border-amber-500/40 text-amber-300 font-bold rounded-xl px-3 py-2.5 focus:outline-none focus:border-amber-400 text-sm"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-amber-400/70 font-semibold">Bs/$</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Campos específicos por tab */}
               {facturaTab === 'gastos' ? (
-                <div className="pt-2 border-t border-neutral-800">
+                <div className="pt-2 border-t border-neutral-800 space-y-2">
                   <div>
-                    <label className="block text-sm text-neutral-400 mb-1.5">Monto Total *</label>
+                    <label className="block text-sm text-neutral-400 mb-1.5">
+                      Monto Total ({facMoneda === 'VES' ? 'Bolívares Bs.' : 'Dólares USD'}) *
+                    </label>
                     <input type="number" min="0" step="any" value={facTotal} onChange={e => setFacTotal(e.target.value)}
                       placeholder="0.00"
-                      className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 text-sm" />
+                      className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 text-sm font-semibold" />
                   </div>
+                  {facMoneda === 'VES' && Number(facTotal) > 0 && facTasa > 0 && (
+                    <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs flex justify-between items-center text-indigo-300">
+                      <span>Equivalente en Dólares (registrado como deuda):</span>
+                      <span className="font-bold text-sm text-white">
+                        $ {(Number(facTotal) / facTasa).toFixed(2)} USD
+                      </span>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-3 pt-2 border-t border-neutral-800">
@@ -799,7 +855,7 @@ export default function ProveedoresPage() {
 
                           <div>
                             <label className="block text-[11px] font-medium text-neutral-400 mb-1">
-                              Precio Unitario ({facMoneda})
+                              Precio Unitario ({facMoneda === 'VES' ? 'Bs.' : '$'})
                             </label>
                             <input
                               type="number"
@@ -822,7 +878,7 @@ export default function ProveedoresPage() {
 
                           <div>
                             <label className="block text-[11px] font-medium text-neutral-400 mb-1">
-                              Costo Total ({facMoneda})
+                              Costo Total ({facMoneda === 'VES' ? 'Bs.' : '$'})
                             </label>
                             <input
                               type="number"
@@ -845,6 +901,12 @@ export default function ProveedoresPage() {
                         </div>
                       );
                     })()}
+
+                    {facMoneda === 'VES' && facTasa > 0 && parseFloat(insumoCostoTotal) > 0 && (
+                      <div className="text-[11px] text-amber-300/90 font-medium px-1">
+                        ≈ $ {(parseFloat(insumoCostoTotal) / facTasa).toFixed(2)} USD (Tasa: {facTasa} Bs/$)
+                      </div>
+                    )}
 
                     <div className="pt-1">
                       <button 
@@ -914,7 +976,7 @@ export default function ProveedoresPage() {
                               {item.is_new && <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded ml-1">Nuevo</span>}
                             </p>
                             <p className="text-xs text-neutral-400 mt-0.5">
-                              {item.cantidad} {item.unidad_nueva} × {facMoneda} {(item.precioUnitario || item.costoTotal / item.cantidad).toFixed(2)} = <span className="text-white font-semibold">{facMoneda} {item.costoTotal.toFixed(2)}</span>
+                              {item.cantidad} {item.unidad_nueva} × {facMoneda === 'VES' ? 'Bs. ' : '$ '} {(item.precioUnitario || item.costoTotal / item.cantidad).toFixed(2)} = <span className="text-white font-semibold">{facMoneda === 'VES' ? 'Bs. ' : '$ '} {item.costoTotal.toFixed(2)}</span>
                             </p>
                           </div>
                           <button
@@ -926,11 +988,19 @@ export default function ProveedoresPage() {
                           </button>
                         </div>
                       ))}
-                      <div className="p-3 bg-neutral-900/50 flex justify-between items-center text-sm font-bold">
+                      <div className="p-3 bg-neutral-900/50 flex flex-col sm:flex-row justify-between sm:items-center gap-2 text-sm font-bold">
                         <span className="text-neutral-300">Total Factura:</span>
-                        <span className="text-emerald-400 text-base">
-                          {facMoneda} {facItems.reduce((acc, i) => acc + i.costoTotal, 0).toFixed(2)}
-                        </span>
+                        <div className="text-right">
+                          <span className="text-emerald-400 text-base">
+                            {facMoneda === 'VES' ? 'Bs. ' : '$ '}
+                            {facItems.reduce((acc, i) => acc + i.costoTotal, 0).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                          {facMoneda === 'VES' && facTasa > 0 && (
+                            <span className="block text-xs text-neutral-400 font-normal">
+                              ≈ $ {(facItems.reduce((acc, i) => acc + i.costoTotal, 0) / facTasa).toFixed(2)} USD (Tasa: {facTasa} Bs/$)
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ) : (
@@ -1003,15 +1073,32 @@ export default function ProveedoresPage() {
               {/* Factura info */}
               <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-4">
                 <p className="text-sm text-neutral-400 mb-1">{facturaPagar.concepto || 'Factura'}</p>
-                <div className="flex justify-between">
-                  <span className="text-xs text-neutral-500">Total: {formatCurrency(facturaPagar.total)}</span>
-                  <span className="text-rose-400 font-bold">Pendiente: {formatCurrency(facturaPagar.saldo_pendiente)}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-neutral-500">
+                    Total: {formatCurrency(facturaPagar.total)}
+                    {tasaBcv > 0 && ` (~ Bs. ${(facturaPagar.total * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`}
+                  </span>
+                  <div className="text-right">
+                    <span className="text-rose-400 font-bold block">
+                      Pendiente: {formatCurrency(facturaPagar.saldo_pendiente)}
+                    </span>
+                    {tasaBcv > 0 && facturaPagar.saldo_pendiente > 0 && (
+                      <span className="text-[11px] text-rose-400/80">
+                        ≈ Bs. {(facturaPagar.saldo_pendiente * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
               <div>
-                <label className="block text-sm text-neutral-400 mb-1.5">Monto a Abonar *</label>
+                <label className="block text-sm text-neutral-400 mb-1.5">Monto a Abonar (USD) *</label>
                 <input type="number" min="0.01" step="any" value={montoAbonar} onChange={e => setMontoAbonar(e.target.value)}
                   className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-lg font-semibold" />
+                {tasaBcv > 0 && Number(montoAbonar) > 0 && (
+                  <p className="text-xs text-emerald-400/90 mt-1">
+                    ≈ Bs. {(Number(montoAbonar) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {tasaBcv} Bs/$
+                  </p>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -1106,9 +1193,16 @@ export default function ProveedoresPage() {
               <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-4">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-xs font-semibold uppercase text-neutral-400">Deuda Total Acumulada</span>
-                  <span className="text-xl font-black text-rose-400">
-                    {formatCurrency(proveedorPagarGeneral.monto_adeudado)}
-                  </span>
+                  <div className="text-right">
+                    <span className="text-xl font-black text-rose-400">
+                      {formatCurrency(proveedorPagarGeneral.monto_adeudado)}
+                    </span>
+                    {tasaBcv > 0 && proveedorPagarGeneral.monto_adeudado > 0 && (
+                      <span className="block text-xs text-neutral-400 font-medium">
+                        ≈ Bs. {(proveedorPagarGeneral.monto_adeudado * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-300">
                   ⚡ <strong>Pago Automático en Cascada:</strong> El monto que ingreses se distribuirá cubriendo primero las facturas más antiguas (de mayor antigüedad a la más reciente).
@@ -1116,7 +1210,7 @@ export default function ProveedoresPage() {
               </div>
 
               <div>
-                <label className="block text-sm text-neutral-400 mb-1.5">Monto a Abonar *</label>
+                <label className="block text-sm text-neutral-400 mb-1.5">Monto a Abonar (USD) *</label>
                 <input
                   type="number"
                   min="0.01"
@@ -1126,6 +1220,11 @@ export default function ProveedoresPage() {
                   placeholder="0.00"
                   className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-lg font-bold"
                 />
+                {tasaBcv > 0 && Number(montoAbonoGeneral) > 0 && (
+                  <p className="text-xs text-emerald-400/90 mt-1">
+                    ≈ Bs. {(Number(montoAbonoGeneral) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {tasaBcv} Bs/$
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
