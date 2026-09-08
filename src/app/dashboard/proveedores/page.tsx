@@ -13,7 +13,7 @@ import { useEmpresa } from "@/components/providers/EmpresaProvider";
 import {
   Store, Wallet, Search, Check, FileText, ChevronDown, ChevronUp,
   Clock, PlusCircle, X, Plus, User, Phone, MapPin, Hash,
-  CreditCard, Building2, AlertCircle, History, DollarSign, Package
+  CreditCard, Building2, AlertCircle, History, DollarSign, Package, CheckCircle2
 } from "lucide-react";
 import { format } from "date-fns";
 import MobileCompraForm from "@/components/compras/MobileCompraForm";
@@ -113,6 +113,12 @@ export default function ProveedoresPage() {
   const [expandedPagos, setExpandedPagos] = useState<Record<string, boolean>>({});
   const togglePagos = (facId: string) => {
     setExpandedPagos(prev => ({ ...prev, [facId]: !prev[facId] }));
+  };
+
+  // ── Ver historial de facturas saldadas por proveedor ───────
+  const [mostrarHistorialPagadas, setMostrarHistorialPagadas] = useState<Record<string, boolean>>({});
+  const toggleHistorialPagadas = (provId: string) => {
+    setMostrarHistorialPagadas(prev => ({ ...prev, [provId]: !prev[provId] }));
   };
 
   // ── Modal: Pago General / Cascada FIFO ──────────────────────
@@ -436,124 +442,201 @@ export default function ProveedoresPage() {
                 </div>
 
                 {/* ── Facturas expandidas ── */}
-                {expandedId === (prov.id_proveedor || prov.id) && (
-                  <div className="bg-neutral-950/50 border-t border-neutral-800 p-5 px-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-sm font-semibold text-neutral-400 uppercase tracking-wider flex items-center gap-2">
-                        <FileText size={16} /> Facturas
-                      </h4>
-                      <button
-                        onClick={() => { setFacProveedorId(prov.id_proveedor || prov.id); setShowFacturaModal(true); setFacturaTab('insumos'); setErrorFactura(''); }}
-                        className="text-xs flex items-center gap-1 text-indigo-400 hover:text-indigo-300 border border-indigo-500/30 px-2 py-1 rounded-lg transition-colors">
-                        <Plus size={12} /> Agregar factura
-                      </button>
-                    </div>
+                {expandedId === (prov.id_proveedor || prov.id) && (() => {
+                  const provId = prov.id_proveedor || prov.id;
+                  const facturasPendientes = facturasProveedor.filter(f => Number(f.saldo_pendiente) > 0);
+                  const facturasPagadas = facturasProveedor.filter(f => Number(f.saldo_pendiente) <= 0);
+                  const verPagadas = mostrarHistorialPagadas[provId] || false;
 
-                    {loadingFacturas ? (
-                      <div className="space-y-3">{[1,2].map(i => <div key={i} className="h-16 bg-neutral-900 animate-pulse rounded-xl border border-neutral-800" />)}</div>
-                    ) : facturasProveedor.length === 0 ? (
-                      <div className="text-neutral-500 text-sm py-4 text-center">No hay facturas registradas para este proveedor.</div>
-                    ) : (
-                      <div className="space-y-3">
-                        {facturasProveedor.map((fac: any) => {
-                          const saldado = fac.saldo_pendiente <= 0;
-                          return (
-                            <React.Fragment key={fac.id}>
-                              <div className={`bg-neutral-900 border rounded-xl p-4 transition-colors ${saldado ? 'border-emerald-500/20 opacity-60' : 'border-neutral-800 hover:border-neutral-700'}`}>
-                                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-                                  <div>
-                                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                      <h5 className="font-bold text-white">{fac.concepto || 'Factura / Deuda'}</h5>
-                                      {fac.numero_factura && <span className="text-xs bg-neutral-800 text-neutral-300 px-2 py-0.5 rounded">Nº {fac.numero_factura}</span>}
-                                      {saldado && <Badge label="Saldada" color="emerald" />}
-                                      {!saldado && fac.fecha_vencimiento && (() => {
-                                        const now = new Date();
-                                        const vDate = new Date(fac.fecha_vencimiento);
-                                        const diffDays = Math.ceil((vDate.getTime() - now.getTime()) / (1000 * 3600 * 24));
-                                        
-                                        if (diffDays < 0) return <Badge label="Vencida" color="rose" />;
-                                        if (diffDays <= 7) return <Badge label={`Vence en ${diffDays}d`} color="amber" />;
-                                        return <span className="text-xs text-neutral-500 border border-neutral-700 px-2 py-0.5 rounded">Vence: {safeDate(fac.fecha_vencimiento)}</span>;
-                                      })()}
-                                    </div>
-                                    <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                                      <p className="text-xs text-neutral-500 flex items-center gap-1"><Clock size={12} /> Emisión: {safeDate(fac.fecha_emision)}</p>
-                                      {fac.pagos && fac.pagos.length > 0 && (
-                                        <button
-                                          type="button"
-                                          onClick={() => togglePagos(fac.id)}
-                                          className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-medium bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 px-2 py-0.5 rounded-lg transition-colors"
-                                        >
-                                          <History size={11} />
-                                          {expandedPagos[fac.id] ? 'Ocultar abonos' : `Ver abonos (${fac.pagos.length})`}
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-4">
-                                    <div className="text-right">
-                                      <p className="text-xs text-neutral-500">
-                                        Total: {formatCurrency(fac.total)}
-                                        {tasaBcv > 0 && (
-                                          <span className="block text-[11px] text-neutral-500">
-                                            ≈ Bs. {(fac.total * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                          </span>
-                                        )}
-                                      </p>
-                                      <p className={`font-black text-lg ${saldado ? 'text-emerald-400' : 'text-rose-400'}`}>{formatCurrency(fac.saldo_pendiente)}</p>
-                                      {!saldado && tasaBcv > 0 && (
-                                        <p className="text-[11px] text-rose-400/80 font-medium">
-                                          ≈ Bs. {(fac.saldo_pendiente * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        </p>
-                                      )}
-                                      <p className="text-xs text-neutral-600">pendiente</p>
-                                    </div>
-                                    {!saldado && (
-                                      <button
-                                        onClick={() => { setFacturaPagar(fac); setMontoAbonar(String(fac.saldo_pendiente)); setShowPagoModal(true); }}
-                                        className="bg-emerald-600/10 hover:bg-emerald-600 text-emerald-500 hover:text-white border border-emerald-600/30 px-3 py-1.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap">
-                                        + Abonar
-                                      </button>
-                                    )}
-                                  </div>
-                                </div>
+                  const renderFacturaItem = (fac: any) => {
+                    const saldado = Number(fac.saldo_pendiente) <= 0;
+                    return (
+                      <React.Fragment key={fac.id}>
+                        <div className={`bg-neutral-900 border rounded-xl p-4 transition-colors ${saldado ? 'border-emerald-500/20 bg-neutral-900/60' : 'border-neutral-800 hover:border-neutral-700'}`}>
+                          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                            <div>
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <h5 className="font-bold text-white">{fac.concepto || 'Factura / Deuda'}</h5>
+                                {fac.numero_factura && <span className="text-xs bg-neutral-800 text-neutral-300 px-2 py-0.5 rounded">Nº {fac.numero_factura}</span>}
+                                {saldado && <Badge label="Saldada" color="emerald" />}
+                                {!saldado && fac.fecha_vencimiento && (() => {
+                                  const now = new Date();
+                                  const vDate = new Date(fac.fecha_vencimiento);
+                                  const diffDays = Math.ceil((vDate.getTime() - now.getTime()) / (1000 * 3600 * 24));
+                                  
+                                  if (diffDays < 0) return <Badge label="Vencida" color="rose" />;
+                                  if (diffDays <= 7) return <Badge label={`Vence en ${diffDays}d`} color="amber" />;
+                                  return <span className="text-xs text-neutral-500 border border-neutral-700 px-2 py-0.5 rounded">Vence: {safeDate(fac.fecha_vencimiento)}</span>;
+                                })()}
                               </div>
-
-                              {/* ── Historial de pagos por factura (Minimizado) ── */}
-                              {fac.pagos && fac.pagos.length > 0 && expandedPagos[fac.id] && (
-                                <div className="bg-neutral-950/80 p-3.5 rounded-b-xl border border-neutral-800 border-t-0 -mt-2 ml-4 mr-2 shadow-inner">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <p className="text-xs font-bold text-neutral-400 uppercase flex items-center gap-1"><History size={12} className="text-indigo-400" /> Detalle de Abonos a esta Factura</p>
-                                    <button
-                                      type="button"
-                                      onClick={() => togglePagos(fac.id)}
-                                      className="text-[11px] text-neutral-500 hover:text-white"
-                                    >
-                                      Ocultar
-                                    </button>
-                                  </div>
-                                  <div className="space-y-1.5">
-                                    {fac.pagos.map((pago: any) => (
-                                      <div key={pago.id} className="flex flex-wrap justify-between items-center text-xs py-1.5 px-3 border border-neutral-800/60 bg-neutral-900/60 rounded-lg gap-x-4">
-                                        <span className="text-neutral-400 font-mono">{safeDateTime(pago.fecha_pago || pago.created_at)}</span>
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-white font-medium">{pago.metodo_pago}</span>
-                                          {pago.banco_origen && <span className="text-neutral-500">({pago.banco_origen})</span>}
-                                          {pago.referencia && <span className="text-indigo-400 font-mono">#{pago.referencia}</span>}
-                                        </div>
-                                        <span className="font-bold text-emerald-400">+{formatCurrency(pago.monto)}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
+                              <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                                <p className="text-xs text-neutral-500 flex items-center gap-1"><Clock size={12} /> Emisión: {safeDate(fac.fecha_emision)}</p>
+                                {fac.pagos && fac.pagos.length > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => togglePagos(fac.id)}
+                                    className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-medium bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 px-2 py-0.5 rounded-lg transition-colors"
+                                  >
+                                    <History size={11} />
+                                    {expandedPagos[fac.id] ? 'Ocultar abonos' : `Ver abonos (${fac.pagos.length})`}
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <div className="text-right">
+                                <p className="text-xs text-neutral-500">
+                                  Total: {formatCurrency(fac.total)}
+                                  {tasaBcv > 0 && (
+                                    <span className="block text-[11px] text-neutral-500">
+                                      ≈ Bs. {(fac.total * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </span>
+                                  )}
+                                </p>
+                                <p className={`font-black text-lg ${saldado ? 'text-emerald-400' : 'text-rose-400'}`}>{formatCurrency(fac.saldo_pendiente)}</p>
+                                {!saldado && tasaBcv > 0 && (
+                                  <p className="text-[11px] text-rose-400/80 font-medium">
+                                    ≈ Bs. {(fac.saldo_pendiente * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  </p>
+                                )}
+                                <p className="text-xs text-neutral-600">{saldado ? 'saldada' : 'pendiente'}</p>
+                              </div>
+                              {!saldado && (
+                                <button
+                                  onClick={() => { setFacturaPagar(fac); setMontoAbonar(String(fac.saldo_pendiente)); setShowPagoModal(true); }}
+                                  className="bg-emerald-600/10 hover:bg-emerald-600 text-emerald-500 hover:text-white border border-emerald-600/30 px-3 py-1.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap">
+                                  + Abonar
+                                </button>
                               )}
-                            </React.Fragment>
-                          );
-                        })}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* ── Historial de pagos por factura (Minimizado) ── */}
+                        {fac.pagos && fac.pagos.length > 0 && expandedPagos[fac.id] && (
+                          <div className="bg-neutral-950/80 p-3.5 rounded-b-xl border border-neutral-800 border-t-0 -mt-2 ml-4 mr-2 shadow-inner">
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-xs font-bold text-neutral-400 uppercase flex items-center gap-1"><History size={12} className="text-indigo-400" /> Detalle de Abonos a esta Factura</p>
+                              <button
+                                type="button"
+                                onClick={() => togglePagos(fac.id)}
+                                className="text-[11px] text-neutral-500 hover:text-white"
+                              >
+                                Ocultar
+                              </button>
+                            </div>
+                            <div className="space-y-1.5">
+                              {fac.pagos.map((pago: any) => (
+                                <div key={pago.id} className="flex flex-wrap justify-between items-center text-xs py-1.5 px-3 border border-neutral-800/60 bg-neutral-900/60 rounded-lg gap-x-4">
+                                  <span className="text-neutral-400 font-mono">{safeDateTime(pago.fecha_pago || pago.created_at)}</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-white font-medium">{pago.metodo_pago}</span>
+                                    {pago.banco_origen && <span className="text-neutral-500">({pago.banco_origen})</span>}
+                                    {pago.referencia && <span className="text-indigo-400 font-mono">#{pago.referencia}</span>}
+                                  </div>
+                                  <span className="font-bold text-emerald-400">+{formatCurrency(pago.monto)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </React.Fragment>
+                    );
+                  };
+
+                  return (
+                    <div className="bg-neutral-950/50 border-t border-neutral-800 p-5 px-6">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="text-sm font-semibold text-neutral-300 uppercase tracking-wider flex items-center gap-2">
+                            <FileText size={16} className="text-rose-400" /> Facturas por Pagar
+                          </h4>
+                          <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold border ${
+                            facturasPendientes.length > 0 
+                              ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                              : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                          }`}>
+                            {facturasPendientes.length} pendiente{facturasPendientes.length === 1 ? '' : 's'}
+                          </span>
+                        </div>
+
+                        {/* Esquina superior derecha: Historial de facturas y Agregar factura */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {facturasPagadas.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => toggleHistorialPagadas(provId)}
+                              className={`text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all font-semibold ${
+                                verPagadas
+                                  ? 'bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-600/20'
+                                  : 'bg-neutral-900 text-neutral-300 hover:text-white border-neutral-700 hover:border-neutral-600'
+                              }`}
+                            >
+                              <History size={13} className={verPagadas ? "text-white" : "text-indigo-400"} />
+                              {verPagadas ? 'Ocultar historial' : `Historial de facturas (${facturasPagadas.length})`}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => { setFacProveedorId(provId); setShowFacturaModal(true); setFacturaTab('insumos'); setErrorFactura(''); }}
+                            className="text-xs flex items-center gap-1.5 text-indigo-400 hover:text-indigo-300 border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-xl transition-colors font-semibold">
+                            <Plus size={13} /> Agregar factura
+                          </button>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                )}
+
+                      {loadingFacturas ? (
+                        <div className="space-y-3">{[1,2].map(i => <div key={i} className="h-16 bg-neutral-900 animate-pulse rounded-xl border border-neutral-800" />)}</div>
+                      ) : facturasProveedor.length === 0 ? (
+                        <div className="text-neutral-500 text-sm py-4 text-center">No hay facturas registradas para este proveedor.</div>
+                      ) : (
+                        <div className="space-y-4">
+                          {/* 1. Facturas que faltan por pagar */}
+                          {facturasPendientes.length === 0 ? (
+                            <div className="text-center py-6 border border-dashed border-neutral-800/90 rounded-2xl bg-neutral-900/30">
+                              <CheckCircle2 className="mx-auto text-emerald-400 mb-1.5" size={26} />
+                              <p className="text-sm font-semibold text-white">¡No hay facturas pendientes por pagar!</p>
+                              <p className="text-xs text-neutral-500 mt-0.5">Todas las facturas de este proveedor se encuentran saldadas.</p>
+                              {facturasPagadas.length > 0 && !verPagadas && (
+                                <button
+                                  type="button"
+                                  onClick={() => toggleHistorialPagadas(provId)}
+                                  className="mt-3 text-xs text-indigo-400 hover:text-indigo-300 font-semibold inline-flex items-center gap-1.5 bg-indigo-500/10 px-3 py-1.5 rounded-xl border border-indigo-500/20 hover:border-indigo-500/40 transition-colors"
+                                >
+                                  <History size={13} /> Ver {facturasPagadas.length} factura(s) en el historial
+                                </button>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              {facturasPendientes.map((fac: any) => renderFacturaItem(fac))}
+                            </div>
+                          )}
+
+                          {/* 2. Sección desplegable: Historial de facturas pagadas */}
+                          {verPagadas && facturasPagadas.length > 0 && (
+                            <div className="mt-5 pt-4 border-t border-neutral-800 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <h5 className="text-xs font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
+                                  <History size={13} className="text-emerald-400" /> Historial de Facturas Pagadas / Saldadas ({facturasPagadas.length})
+                                </h5>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleHistorialPagadas(provId)}
+                                  className="text-[11px] text-neutral-500 hover:text-neutral-300"
+                                >
+                                  Ocultar
+                                </button>
+                              </div>
+                              <div className="space-y-3 opacity-90">
+                                {facturasPagadas.map((fac: any) => renderFacturaItem(fac))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             ))}
 
