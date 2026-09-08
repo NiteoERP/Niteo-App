@@ -220,7 +220,8 @@ export async function registrarFacturaInsumos(factura: {
             factura_id: nuevaFactura.id,
             monto: montoTotalDivisas,
             metodo_pago: factura.metodo_pago,
-            usuario_id: user.id
+            usuario_id: user.id,
+            fecha_pago: new Date().toISOString()
           });
         }
       }

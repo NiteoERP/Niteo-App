@@ -37,7 +37,7 @@ export async function getFacturasProveedor(proveedorId: string, sedeId: string) 
   if (!user) return { success: false, error: 'No autenticado' };
 
   let query = supabase.from('compras_facturas')
-    .select('id, numero_factura, concepto, total, saldo_pendiente, fecha_emision, fecha_vencimiento, pagos:compras_pagos(id, monto, metodo_pago, referencia, banco_origen, created_at)')
+    .select('id, numero_factura, concepto, total, saldo_pendiente, fecha_emision, fecha_vencimiento, pagos:compras_pagos(id, monto, metodo_pago, referencia, banco_origen, fecha_pago)')
     .eq('proveedor_id', proveedorId)
     .order('fecha_emision', { ascending: false });
     
@@ -61,11 +61,9 @@ export async function registrarPagoProveedor(facturaId: string, monto: number, m
     metodo_pago: metodoPago,
     referencia,
     banco_origen: bancoOrigen,
-    usuario_id: user.id
+    usuario_id: user.id,
+    fecha_pago: fechaPago || new Date().toISOString()
   };
-  if (fechaPago) {
-    payload.created_at = fechaPago;
-  }
 
   const { error } = await supabase.from('compras_pagos').insert(payload);
 

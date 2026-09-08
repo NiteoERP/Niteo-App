@@ -414,7 +414,7 @@ export default function ProveedoresPage() {
                                   <div className="space-y-1">
                                     {fac.pagos.map((pago: any) => (
                                       <div key={pago.id} className="flex flex-wrap justify-between items-center text-xs py-1.5 border-b border-neutral-800/50 last:border-0 gap-x-4">
-                                        <span className="text-neutral-500">{safeDateTime(pago.created_at)}</span>
+                                        <span className="text-neutral-500">{safeDateTime(pago.fecha_pago || pago.created_at)}</span>
                                         <div className="flex items-center gap-2">
                                           <span className="text-neutral-400">{pago.metodo_pago}</span>
                                           {pago.banco_origen && <span className="text-neutral-600">({pago.banco_origen})</span>}
