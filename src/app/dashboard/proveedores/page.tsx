@@ -6,7 +6,7 @@ import { getInsumos } from "@/actions/compras-actions";
 import {
   getProveedoresConDeuda, getFacturasProveedor, registrarPagoProveedor,
   getHistoricoProveedores, getTodosProveedores, crearFacturaProveedor, crearProveedor,
-  crearFacturaProveedorConInsumos
+  crearFacturaProveedorConInsumos, registrarPagoGeneralProveedor
 } from "./actions";
 import { useEmpresa } from "@/components/providers/EmpresaProvider";
 import {
@@ -105,6 +105,23 @@ export default function ProveedoresPage() {
   const [fechaPago, setFechaPago] = useState(new Date().toISOString().split('T')[0]);
   const [isPagarLoading, setIsPagarLoading] = useState(false);
   const [errorPago, setErrorPago] = useState('');
+
+  // ── Historial de pagos minimizado por factura ──────────────
+  const [expandedPagos, setExpandedPagos] = useState<Record<string, boolean>>({});
+  const togglePagos = (facId: string) => {
+    setExpandedPagos(prev => ({ ...prev, [facId]: !prev[facId] }));
+  };
+
+  // ── Modal: Pago General / Cascada FIFO ──────────────────────
+  const [showPagoGeneralModal, setShowPagoGeneralModal] = useState(false);
+  const [proveedorPagarGeneral, setProveedorPagarGeneral] = useState<any>(null);
+  const [montoAbonoGeneral, setMontoAbonoGeneral] = useState('');
+  const [metodoPagoGeneral, setMetodoPagoGeneral] = useState('Transferencia');
+  const [referenciaGeneral, setReferenciaGeneral] = useState('');
+  const [bancoOrigenGeneral, setBancoOrigenGeneral] = useState('');
+  const [fechaPagoGeneral, setFechaPagoGeneral] = useState(new Date().toISOString().split('T')[0]);
+  const [isPagarGeneralLoading, setIsPagarGeneralLoading] = useState(false);
+  const [errorPagoGeneral, setErrorPagoGeneral] = useState('');
 
   // ── Debounce search ───────────────────────────────────────
   useEffect(() => {
@@ -241,6 +258,41 @@ export default function ProveedoresPage() {
     setIsPagarLoading(false);
   };
 
+  // ── Registrar Pago General (Cascada FIFO) ──────────────────
+  const handlePagarGeneral = async () => {
+    if (!montoAbonoGeneral || isNaN(Number(montoAbonoGeneral)) || Number(montoAbonoGeneral) <= 0) {
+      setErrorPagoGeneral('Ingresa un monto válido');
+      return;
+    }
+    setIsPagarGeneralLoading(true);
+    setErrorPagoGeneral('');
+    const targetProvId = proveedorPagarGeneral.id_proveedor || proveedorPagarGeneral.id;
+    const res = await registrarPagoGeneralProveedor(
+      targetProvId,
+      sedeId,
+      Number(montoAbonoGeneral),
+      metodoPagoGeneral,
+      referenciaGeneral || undefined,
+      bancoOrigenGeneral || undefined,
+      fechaPagoGeneral || undefined
+    );
+    if (res.success) {
+      setShowPagoGeneralModal(false);
+      setMontoAbonoGeneral('');
+      setReferenciaGeneral('');
+      setBancoOrigenGeneral('');
+      setFechaPagoGeneral(new Date().toISOString().split('T')[0]);
+      fetchInit();
+      if (expandedId) {
+        const r2 = await getFacturasProveedor(expandedId, sedeId);
+        if (r2.success) setFacturasProveedor(r2.data || []);
+      }
+    } else {
+      setErrorPagoGeneral(res.error || 'Error al procesar pago general');
+    }
+    setIsPagarGeneralLoading(false);
+  };
+
   // ── Helpers ───────────────────────────────────────────────
   const safeDate = (d: string) => { try { return format(new Date(d), 'dd/MM/yyyy'); } catch { return d; } };
   const safeDateTime = (d: string) => { try { return format(new Date(d), 'dd/MM/yyyy HH:mm'); } catch { return d; } };
@@ -349,29 +401,17 @@ export default function ProveedoresPage() {
                     {prov.monto_adeudado > 0 && (
                       <button
                         type="button"
-                        onClick={async (e) => {
+                        onClick={(e) => {
                           e.stopPropagation();
-                          const targetId = prov.id_proveedor || prov.id;
-                          setExpandedId(targetId);
-                          setLoadingFacturas(true);
-                          const res = await getFacturasProveedor(targetId, sedeId);
-                          let list: any[] = [];
-                          if (res.success) {
-                            list = res.data || [];
-                            setFacturasProveedor(list);
-                          }
-                          setLoadingFacturas(false);
-
-                          const unpaid = list.find((f: any) => f.saldo_pendiente > 0);
-                          if (unpaid) {
-                            setFacturaPagar(unpaid);
-                            setMontoAbonar(String(unpaid.saldo_pendiente));
-                            setShowPagoModal(true);
-                          }
+                          setProveedorPagarGeneral(prov);
+                          setMontoAbonoGeneral(String(prov.monto_adeudado));
+                          setFechaPagoGeneral(new Date().toISOString().split('T')[0]);
+                          setErrorPagoGeneral('');
+                          setShowPagoGeneralModal(true);
                         }}
                         className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-all shadow-lg shadow-emerald-600/20 whitespace-nowrap"
                       >
-                        <Wallet size={14} /> Pagar / Abonar
+                        <Wallet size={14} /> Pagar / Abonar Deuda
                       </button>
                     )}
                     <button className="text-neutral-500 hover:text-white transition-colors p-2 rounded-full hover:bg-neutral-700">
@@ -421,7 +461,19 @@ export default function ProveedoresPage() {
                                         return <span className="text-xs text-neutral-500 border border-neutral-700 px-2 py-0.5 rounded">Vence: {safeDate(fac.fecha_vencimiento)}</span>;
                                       })()}
                                     </div>
-                                    <p className="text-xs text-neutral-500 flex items-center gap-1"><Clock size={12} /> Emisión: {safeDate(fac.fecha_emision)}</p>
+                                    <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                                      <p className="text-xs text-neutral-500 flex items-center gap-1"><Clock size={12} /> Emisión: {safeDate(fac.fecha_emision)}</p>
+                                      {fac.pagos && fac.pagos.length > 0 && (
+                                        <button
+                                          type="button"
+                                          onClick={() => togglePagos(fac.id)}
+                                          className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-medium bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 px-2 py-0.5 rounded-lg transition-colors"
+                                        >
+                                          <History size={11} />
+                                          {expandedPagos[fac.id] ? 'Ocultar abonos' : `Ver abonos (${fac.pagos.length})`}
+                                        </button>
+                                      )}
+                                    </div>
                                   </div>
                                   <div className="flex items-center gap-4">
                                     <div className="text-right">
@@ -440,18 +492,27 @@ export default function ProveedoresPage() {
                                 </div>
                               </div>
 
-                              {/* ── Historial de pagos por factura ── */}
-                              {fac.pagos && fac.pagos.length > 0 && (
-                                <div className="bg-neutral-950 p-3 rounded-b-xl border border-neutral-800 border-t-0 -mt-2 ml-4 mr-2">
-                                  <p className="text-xs font-bold text-neutral-500 uppercase mb-2 flex items-center gap-1"><History size={11} /> Historial de Pagos</p>
-                                  <div className="space-y-1">
+                              {/* ── Historial de pagos por factura (Minimizado) ── */}
+                              {fac.pagos && fac.pagos.length > 0 && expandedPagos[fac.id] && (
+                                <div className="bg-neutral-950/80 p-3.5 rounded-b-xl border border-neutral-800 border-t-0 -mt-2 ml-4 mr-2 shadow-inner">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <p className="text-xs font-bold text-neutral-400 uppercase flex items-center gap-1"><History size={12} className="text-indigo-400" /> Detalle de Abonos a esta Factura</p>
+                                    <button
+                                      type="button"
+                                      onClick={() => togglePagos(fac.id)}
+                                      className="text-[11px] text-neutral-500 hover:text-white"
+                                    >
+                                      Ocultar
+                                    </button>
+                                  </div>
+                                  <div className="space-y-1.5">
                                     {fac.pagos.map((pago: any) => (
-                                      <div key={pago.id} className="flex flex-wrap justify-between items-center text-xs py-1.5 border-b border-neutral-800/50 last:border-0 gap-x-4">
-                                        <span className="text-neutral-500">{safeDateTime(pago.fecha_pago || pago.created_at)}</span>
+                                      <div key={pago.id} className="flex flex-wrap justify-between items-center text-xs py-1.5 px-3 border border-neutral-800/60 bg-neutral-900/60 rounded-lg gap-x-4">
+                                        <span className="text-neutral-400 font-mono">{safeDateTime(pago.fecha_pago || pago.created_at)}</span>
                                         <div className="flex items-center gap-2">
-                                          <span className="text-neutral-400">{pago.metodo_pago}</span>
-                                          {pago.banco_origen && <span className="text-neutral-600">({pago.banco_origen})</span>}
-                                          {pago.referencia && <span className="text-indigo-400">#{pago.referencia}</span>}
+                                          <span className="text-white font-medium">{pago.metodo_pago}</span>
+                                          {pago.banco_origen && <span className="text-neutral-500">({pago.banco_origen})</span>}
+                                          {pago.referencia && <span className="text-indigo-400 font-mono">#{pago.referencia}</span>}
                                         </div>
                                         <span className="font-bold text-emerald-400">+{formatCurrency(pago.monto)}</span>
                                       </div>
@@ -1014,6 +1075,150 @@ export default function ProveedoresPage() {
               <button onClick={handlePagar} disabled={isPagarLoading}
                 className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50">
                 {isPagarLoading ? 'Registrando...' : <><Wallet size={16} /> Registrar Pago</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════
+          MODAL: Pago General / Cascada FIFO
+      ════════════════════════════════════ */}
+      {showPagoGeneralModal && proveedorPagarGeneral && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-lg shadow-2xl">
+            <div className="flex items-center justify-between p-6 border-b border-neutral-800">
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Wallet size={18} className="text-emerald-400" /> Abono General a Proveedor
+                </h3>
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  {proveedorPagarGeneral.nombre_proveedor || proveedorPagarGeneral.nombre_comercial}
+                </p>
+              </div>
+              <button onClick={() => setShowPagoGeneralModal(false)} className="text-neutral-400 hover:text-white">
+                <X size={22} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              {/* Resumen Deuda y Regla FIFO */}
+              <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-semibold uppercase text-neutral-400">Deuda Total Acumulada</span>
+                  <span className="text-xl font-black text-rose-400">
+                    {formatCurrency(proveedorPagarGeneral.monto_adeudado)}
+                  </span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-300">
+                  ⚡ <strong>Pago Automático en Cascada:</strong> El monto que ingreses se distribuirá cubriendo primero las facturas más antiguas (de mayor antigüedad a la más reciente).
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm text-neutral-400 mb-1.5">Monto a Abonar *</label>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="any"
+                  value={montoAbonoGeneral}
+                  onChange={e => setMontoAbonoGeneral(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-lg font-bold"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Método de Pago</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      list="lista-metodos-abono-general"
+                      value={metodoPagoGeneral}
+                      onChange={e => setMetodoPagoGeneral(e.target.value)}
+                      placeholder="Ej. Transferencia, Zelle..."
+                      className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
+                    />
+                    <datalist id="lista-metodos-abono-general">
+                      {metodosDisponibles.map(m => (
+                        <option key={m} value={m} />
+                      ))}
+                    </datalist>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {metodosDisponibles.slice(0, 5).map(m => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setMetodoPagoGeneral(m)}
+                        className={`text-[10px] px-2 py-0.5 rounded-lg border transition-colors ${
+                          metodoPagoGeneral === m
+                            ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 font-semibold'
+                            : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:text-white'
+                        }`}
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Fecha del Pago</label>
+                  <input
+                    type="date"
+                    value={fechaPagoGeneral}
+                    onChange={e => setFechaPagoGeneral(e.target.value)}
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 [color-scheme:dark] text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Banco Origen</label>
+                  <input
+                    type="text"
+                    value={bancoOrigenGeneral}
+                    onChange={e => setBancoOrigenGeneral(e.target.value)}
+                    placeholder="Ej. Banesco, Chase"
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">N° Referencia</label>
+                  <input
+                    type="text"
+                    value={referenciaGeneral}
+                    onChange={e => setReferenciaGeneral(e.target.value)}
+                    placeholder="Opcional"
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
+                  />
+                </div>
+              </div>
+
+              {errorPagoGeneral && (
+                <p className="text-rose-400 text-sm flex items-center gap-2">
+                  <AlertCircle size={14} /> {errorPagoGeneral}
+                </p>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-neutral-800 flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => setShowPagoGeneralModal(false)}
+                className="px-5 py-2.5 rounded-xl text-neutral-300 hover:bg-neutral-800 text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handlePagarGeneral}
+                disabled={isPagarGeneralLoading}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-emerald-600/20"
+              >
+                {isPagarGeneralLoading ? 'Aplicando pago...' : <><Wallet size={16} /> Aplicar Abono en Cascada</>}
               </button>
             </div>
           </div>

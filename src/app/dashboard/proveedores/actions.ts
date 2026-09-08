@@ -71,6 +71,73 @@ export async function registrarPagoProveedor(facturaId: string, monto: number, m
   return { success: true };
 }
 
+export async function registrarPagoGeneralProveedor(
+  proveedorId: string,
+  sedeId: string,
+  montoTotal: number,
+  metodoPago: string,
+  referencia?: string,
+  bancoOrigen?: string,
+  fechaPago?: string
+) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autenticado' };
+
+  if (!montoTotal || montoTotal <= 0) {
+    return { success: false, error: 'El monto a abonar debe ser mayor a 0' };
+  }
+
+  // Traer todas las facturas pendientes ordenadas por emisión (más vieja primero - FIFO)
+  let query = supabase.from('compras_facturas')
+    .select('id, saldo_pendiente, fecha_emision')
+    .eq('proveedor_id', proveedorId)
+    .gt('saldo_pendiente', 0)
+    .order('fecha_emision', { ascending: true });
+
+  if (sedeId && sedeId !== 'ALL') {
+    query = query.eq('sede_id', sedeId);
+  }
+
+  const { data: facturas, error: facErr } = await query;
+  if (facErr) return { success: false, error: facErr.message };
+  if (!facturas || facturas.length === 0) {
+    return { success: false, error: 'No hay facturas pendientes para este proveedor.' };
+  }
+
+  let remanente = montoTotal;
+  let facturasAbonadas = 0;
+
+  for (const fac of facturas) {
+    if (remanente <= 0) break;
+    const saldo = Number(fac.saldo_pendiente);
+    if (saldo <= 0) continue;
+
+    const abono = Math.min(saldo, remanente);
+    if (abono <= 0) continue;
+
+    const { error: pErr } = await supabase.from('compras_pagos').insert({
+      factura_id: fac.id,
+      monto: abono,
+      metodo_pago: metodoPago,
+      referencia: referencia || null,
+      banco_origen: bancoOrigen || null,
+      usuario_id: user.id,
+      fecha_pago: fechaPago || new Date().toISOString()
+    });
+
+    if (pErr) {
+      console.error('Error al registrar abono en cascada:', pErr);
+      return { success: false, error: 'Error al aplicar pago: ' + pErr.message };
+    }
+
+    remanente -= abono;
+    facturasAbonadas++;
+  }
+
+  return { success: true, facturasAbonadas, remanenteSobrante: remanente };
+}
+
 export async function getHistoricoProveedores(meses: number = 6) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
