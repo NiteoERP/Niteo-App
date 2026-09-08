@@ -26,17 +26,27 @@ export async function getCierrePrevio(fechaStr: string, requestedSedeId?: string
   const targetSedeId = requestedSedeId || profile.sede_id;
   if (!targetSedeId) throw new Error("Debe seleccionar una sede para consultar el cierre");
 
-  // 1. Consultar la Tasa de Cambio Automática (la más reciente)
-  let tasaCambio = 36.50; // Valor de fallback
-  const { data: tasaData } = await supabase
-    .from('tasa_cambiaria')
-    .select('tasa_bcv')
-    .order('fecha', { ascending: false })
-    .limit(1)
-    .single();
-    
-  if (tasaData && tasaData.tasa_bcv) {
-    tasaCambio = Number(tasaData.tasa_bcv);
+  // 1. Consultar la Tasa de Cambio (Manual si la empresa la definió, o la más reciente de tasa_cambiaria)
+  let tasaCambio = 814.69; // Valor de fallback
+  const { data: empTasa } = await supabase
+    .from('empresas')
+    .select('tipo_tasa, tasa_manual')
+    .eq('id', profile.empresa_id)
+    .maybeSingle();
+
+  if (empTasa && empTasa.tipo_tasa === 'MANUAL' && Number(empTasa.tasa_manual) > 0) {
+    tasaCambio = Number(empTasa.tasa_manual);
+  } else {
+    const { data: tasaData } = await supabase
+      .from('tasa_cambiaria')
+      .select('tasa_bcv')
+      .order('fecha', { ascending: false })
+      .limit(1)
+      .single();
+      
+    if (tasaData && tasaData.tasa_bcv) {
+      tasaCambio = Number(tasaData.tasa_bcv);
+    }
   }
 
   // 2. Sumar Ventas del Día (de Niteo Sync)

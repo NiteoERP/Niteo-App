@@ -114,7 +114,19 @@ export async function getUltimasCompras() {
 
   export async function getTasaDelDia() {
     try {
-      const { supabase } = await getAuthContext();
+      const { supabase, idEmpresa } = await getAuthContext();
+
+      if (idEmpresa) {
+        const { data: emp } = await supabase
+          .from('empresas')
+          .select('tipo_tasa, tasa_manual')
+          .eq('id', idEmpresa)
+          .maybeSingle();
+
+        if (emp && emp.tipo_tasa === 'MANUAL' && Number(emp.tasa_manual) > 0) {
+          return { success: true, tasa: Number(emp.tasa_manual) };
+        }
+      }
   
       const { data, error } = await supabase
         .from('tasa_cambiaria')
@@ -123,7 +135,7 @@ export async function getUltimasCompras() {
         .limit(1)
         .single();
 
-    // Si no hay datos, retornamos ÃƒÂ©xito con tasa 0 para que el front no explote
+    // Si no hay datos, retornamos éxito con tasa 0 para que el front no explote
     if (error && error.code !== 'PGRST116') throw error;
     
     return { success: true, tasa: data?.tasa_bcv || 0 };
