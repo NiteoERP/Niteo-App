@@ -334,12 +334,40 @@ export default function ProveedoresPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between sm:justify-end gap-6 sm:w-auto">
+                  <div className="flex items-center justify-between sm:justify-end gap-4 sm:w-auto">
                     {prov.monto_adeudado !== undefined && (
                       <div className="text-right">
-                        <p className="text-xs font-semibold uppercase text-neutral-500 mb-1">Adeudado</p>
+                        <p className="text-xs font-semibold uppercase text-neutral-500 mb-0.5">Adeudado</p>
                         <p className="font-black text-rose-400 text-lg">{formatCurrency(prov.monto_adeudado)}</p>
                       </div>
+                    )}
+                    {prov.monto_adeudado > 0 && (
+                      <button
+                        type="button"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          const targetId = prov.id_proveedor || prov.id;
+                          setExpandedId(targetId);
+                          setLoadingFacturas(true);
+                          const res = await getFacturasProveedor(targetId, sedeId);
+                          let list: any[] = [];
+                          if (res.success) {
+                            list = res.data || [];
+                            setFacturasProveedor(list);
+                          }
+                          setLoadingFacturas(false);
+
+                          const unpaid = list.find((f: any) => f.saldo_pendiente > 0);
+                          if (unpaid) {
+                            setFacturaPagar(unpaid);
+                            setMontoAbonar(String(unpaid.saldo_pendiente));
+                            setShowPagoModal(true);
+                          }
+                        }}
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-all shadow-lg shadow-emerald-600/20 whitespace-nowrap"
+                      >
+                        <Wallet size={14} /> Pagar / Abonar
+                      </button>
                     )}
                     <button className="text-neutral-500 hover:text-white transition-colors p-2 rounded-full hover:bg-neutral-700">
                       {expandedId === (prov.id_proveedor || prov.id) ? <ChevronUp /> : <ChevronDown />}
