@@ -83,6 +83,7 @@ export default function ProveedoresPage() {
   const [insumosList, setInsumosList] = useState<any[]>([]);
   const [insumoSearch, setInsumoSearch] = useState('');
   const [insumoQty, setInsumoQty] = useState('');
+  const [insumoPrecioUnitario, setInsumoPrecioUnitario] = useState('');
   const [insumoCostoTotal, setInsumoCostoTotal] = useState('');
   const [insumoMoneda, setInsumoMoneda] = useState<'USD'|'VES'>('USD');
   const [crearInsumoNuevo, setCrearInsumoNuevo] = useState(false);
@@ -650,7 +651,18 @@ export default function ProveedoresPage() {
                       <div>
                         <select 
                           value={insumoSearch} 
-                          onChange={(e) => setInsumoSearch(e.target.value)}
+                          onChange={(e) => {
+                            const selId = e.target.value;
+                            setInsumoSearch(selId);
+                            const ins = insumosList.find(i => i.id === selId);
+                            if (ins?.costo_promedio && ins.costo_promedio > 0) {
+                              setInsumoPrecioUnitario(ins.costo_promedio.toString());
+                              const q = parseFloat(insumoQty);
+                              if (!isNaN(q) && q > 0) {
+                                setInsumoCostoTotal((q * ins.costo_promedio).toFixed(2));
+                              }
+                            }
+                          }}
                           className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
                         >
                           <option value="">Selecciona un insumo...</option>
@@ -663,35 +675,98 @@ export default function ProveedoresPage() {
                       </div>
                     )}
 
-                    <div className="flex gap-2">
-                      <div className="flex-1">
-                        <input
-                          type="number"
-                          placeholder="Cantidad"
-                          min="0.001"
-                          step="any"
-                          value={insumoQty}
-                          onChange={e => setInsumoQty(e.target.value)}
-                          className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <input
-                          type="number"
-                          placeholder={`Costo Total (${facMoneda})`}
-                          min="0"
-                          step="any"
-                          value={insumoCostoTotal}
-                          onChange={e => setInsumoCostoTotal(e.target.value)}
-                          className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"
-                        />
-                      </div>
+                    {(() => {
+                      const sel = insumosList.find(i => i.id === insumoSearch);
+                      const unit = crearInsumoNuevo ? unidadInsumoNueva : (sel?.unidad_medida || '');
+                      return (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                          <div>
+                            <label className="block text-[11px] font-medium text-neutral-400 mb-1">
+                              Cantidad {unit ? `(${unit})` : ''}
+                            </label>
+                            <input
+                              type="number"
+                              placeholder="0.00"
+                              min="0.001"
+                              step="any"
+                              value={insumoQty}
+                              onChange={e => {
+                                const val = e.target.value;
+                                setInsumoQty(val);
+                                const q = parseFloat(val);
+                                const p = parseFloat(insumoPrecioUnitario);
+                                if (!isNaN(q) && q > 0 && !isNaN(p) && p >= 0) {
+                                  setInsumoCostoTotal((q * p).toFixed(2));
+                                }
+                              }}
+                              className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-medium text-neutral-400 mb-1">
+                              Precio Unitario ({facMoneda})
+                            </label>
+                            <input
+                              type="number"
+                              placeholder="0.00"
+                              min="0.0001"
+                              step="any"
+                              value={insumoPrecioUnitario}
+                              onChange={e => {
+                                const val = e.target.value;
+                                setInsumoPrecioUnitario(val);
+                                const p = parseFloat(val);
+                                const q = parseFloat(insumoQty);
+                                if (!isNaN(p) && p >= 0 && !isNaN(q) && q > 0) {
+                                  setInsumoCostoTotal((q * p).toFixed(2));
+                                }
+                              }}
+                              className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-medium text-neutral-400 mb-1">
+                              Costo Total ({facMoneda})
+                            </label>
+                            <input
+                              type="number"
+                              placeholder="0.00"
+                              min="0.01"
+                              step="any"
+                              value={insumoCostoTotal}
+                              onChange={e => {
+                                const val = e.target.value;
+                                setInsumoCostoTotal(val);
+                                const t = parseFloat(val);
+                                const q = parseFloat(insumoQty);
+                                if (!isNaN(t) && t >= 0 && !isNaN(q) && q > 0) {
+                                  setInsumoPrecioUnitario((t / q).toFixed(4));
+                                }
+                              }}
+                              className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"
+                            />
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    <div className="pt-1">
                       <button 
                         type="button"
                         onClick={() => {
                           const qty = parseFloat(insumoQty);
-                          const cost = parseFloat(insumoCostoTotal);
-                          if (!qty || isNaN(qty) || qty <= 0 || !cost || isNaN(cost) || cost <= 0) return;
+                          let cost = parseFloat(insumoCostoTotal);
+                          const unitPrice = parseFloat(insumoPrecioUnitario);
+
+                          if (!qty || isNaN(qty) || qty <= 0) return;
+                          if ((!cost || isNaN(cost) || cost <= 0) && (!isNaN(unitPrice) && unitPrice > 0)) {
+                            cost = qty * unitPrice;
+                          }
+                          if (!cost || isNaN(cost) || cost <= 0) return;
+
+                          const finalUnitPrice = !isNaN(unitPrice) && unitPrice > 0 ? unitPrice : (cost / qty);
 
                           if (crearInsumoNuevo) {
                             if (!nombreInsumoNuevo.trim()) return;
@@ -702,6 +777,7 @@ export default function ProveedoresPage() {
                               nombre_nuevo: nombreInsumoNuevo.trim(),
                               unidad_nueva: unidadInsumoNueva,
                               cantidad: qty,
+                              precioUnitario: finalUnitPrice,
                               costoTotal: cost,
                               monedaItem: facMoneda
                             }]);
@@ -716,17 +792,19 @@ export default function ProveedoresPage() {
                               nombre_nuevo: ins?.nombre || 'Insumo',
                               unidad_nueva: ins?.unidad_medida || 'unid',
                               cantidad: qty,
+                              precioUnitario: finalUnitPrice,
                               costoTotal: cost,
                               monedaItem: facMoneda
                             }]);
                           }
                           setInsumoQty('');
+                          setInsumoPrecioUnitario('');
                           setInsumoCostoTotal('');
                           setInsumoSearch('');
                         }}
-                        className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-1.5 transition-colors shrink-0"
+                        className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-indigo-600/20"
                       >
-                        <Plus size={16} /> Agregar
+                        <Plus size={16} /> Agregar a la Factura
                       </button>
                     </div>
                   </div>
@@ -737,9 +815,12 @@ export default function ProveedoresPage() {
                       {facItems.map(item => (
                         <div key={item.id} className="flex items-center justify-between p-3 text-sm">
                           <div>
-                            <p className="font-semibold text-white">{item.nombre_nuevo} {item.is_new && <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded ml-1">Nuevo</span>}</p>
+                            <p className="font-semibold text-white">
+                              {item.nombre_nuevo} 
+                              {item.is_new && <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded ml-1">Nuevo</span>}
+                            </p>
                             <p className="text-xs text-neutral-400 mt-0.5">
-                              {item.cantidad} {item.unidad_nueva} • {facMoneda} {item.costoTotal.toFixed(2)}
+                              {item.cantidad} {item.unidad_nueva} × {facMoneda} {(item.precioUnitario || item.costoTotal / item.cantidad).toFixed(2)} = <span className="text-white font-semibold">{facMoneda} {item.costoTotal.toFixed(2)}</span>
                             </p>
                           </div>
                           <button
