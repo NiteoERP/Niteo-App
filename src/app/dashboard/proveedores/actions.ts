@@ -331,3 +331,54 @@ export async function crearFacturaProveedorConInsumos(
 
   return res;
 }
+
+export async function getFacturaDetallesItems(facturaId: string) {
+  const supabase = await createClient();
+  const { data: fac } = await supabase.from('compras_facturas')
+    .select('proveedor_id, total, fecha_registro, fecha_emision')
+    .eq('id', facturaId)
+    .single();
+
+  if (!fac) return { success: false, error: 'Factura no encontrada' };
+
+  const { data: prov } = await supabase.from('proveedores')
+    .select('nombre_comercial')
+    .eq('id', fac.proveedor_id)
+    .single();
+
+  const dateStr = fac.fecha_registro || fac.fecha_emision;
+  if (!dateStr) return { success: false, error: 'No se puede buscar detalles sin fecha' };
+
+  const baseDate = new Date(dateStr);
+  const minDate = new Date(baseDate.getTime() - 60000); // 1 minute before
+  const maxDate = new Date(baseDate.getTime() + 60000); // 1 minute after
+
+  const { data: punts } = await supabase.from('compras_puntuales')
+    .select('detalles, proveedor')
+    .eq('monto_divisas', fac.total)
+    .gte('fecha_registro', minDate.toISOString())
+    .lte('fecha_registro', maxDate.toISOString());
+
+  if (!punts || punts.length === 0) {
+    return { success: false, error: 'No hay detalles de items para esta factura.' };
+  }
+
+  let match = punts[0];
+  if (prov && punts.length > 1) {
+    const p = punts.find(x => x.proveedor === prov.nombre_comercial);
+    if (p) match = p;
+  }
+
+  let parsed = match.detalles;
+  if (typeof parsed === 'string' && parsed.startsWith('{')) {
+    try {
+      parsed = JSON.parse(parsed);
+    } catch(e) {}
+  }
+
+  if (parsed && parsed.is_insumos && parsed.items) {
+    return { success: true, data: parsed };
+  }
+
+  return { success: false, error: 'El detalle no contiene items de insumo.' };
+}

@@ -132,6 +132,19 @@ export default function ProveedoresPage() {
   const [isPagarGeneralLoading, setIsPagarGeneralLoading] = useState(false);
   const [errorPagoGeneral, setErrorPagoGeneral] = useState('');
 
+  // ── Detalles de Factura Modal ──────────────────────────────
+  const [detallesModalData, setDetallesModalData] = useState<any>(null);
+  const handleVerDetallesFactura = async (fac: any) => {
+    setDetallesModalData({ isLoading: true, factura: fac });
+    const { getFacturaDetallesItems } = await import('./actions');
+    const res = await getFacturaDetallesItems(fac.id);
+    if (res.success) {
+      setDetallesModalData({ isLoading: false, factura: fac, detalles: res.data });
+    } else {
+      setDetallesModalData({ isLoading: false, factura: fac, error: res.error });
+    }
+  };
+
   // ── Debounce search ───────────────────────────────────────
   useEffect(() => {
     const h = setTimeout(() => setDebouncedSearch(searchTerm), 400);
@@ -476,6 +489,14 @@ export default function ProveedoresPage() {
                                     {expandedPagos[fac.id] ? 'Ocultar abonos' : `Ver abonos (${fac.pagos.length})`}
                                   </button>
                                 )}
+                                <button
+                                  type="button"
+                                  onClick={() => handleVerDetallesFactura(fac)}
+                                  className="text-xs text-neutral-400 hover:text-white flex items-center gap-1 font-medium bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 px-2 py-0.5 rounded-lg transition-colors"
+                                >
+                                  <FileText size={11} />
+                                  Ver detalles
+                                </button>
                               </div>
                             </div>
                             <div className="flex items-center gap-4">
@@ -1386,6 +1407,91 @@ export default function ProveedoresPage() {
                 className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-emerald-600/20"
               >
                 {isPagarGeneralLoading ? 'Aplicando pago...' : <><Wallet size={16} /> Aplicar Abono en Cascada</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════
+          MODAL: Detalles de Factura (Insumos)
+      ════════════════════════════════════ */}
+      {detallesModalData && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between p-6 border-b border-neutral-800 shrink-0">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Package size={18} className="text-indigo-400" /> 
+                Detalles de Factura 
+                {detallesModalData.factura?.numero_factura ? `Nº ${detallesModalData.factura.numero_factura}` : ''}
+              </h3>
+              <button onClick={() => setDetallesModalData(null)} className="text-neutral-400 hover:text-white">
+                <X size={22} />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+              {detallesModalData.isLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
+                </div>
+              ) : detallesModalData.error ? (
+                <div className="text-center py-8">
+                  <AlertCircle size={40} className="text-rose-400 mx-auto mb-3" />
+                  <p className="text-neutral-400">{detallesModalData.error}</p>
+                </div>
+              ) : detallesModalData.detalles?.items ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-sm text-neutral-400 font-medium">Concepto: <span className="text-white">{detallesModalData.detalles.texto || detallesModalData.factura?.concepto}</span></p>
+                    <Badge label={`${detallesModalData.detalles.items.length} items`} color="indigo" />
+                  </div>
+                  
+                  <div className="rounded-xl border border-neutral-800 overflow-hidden bg-black/30">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-neutral-900/50">
+                        <tr>
+                          <th className="px-4 py-3 text-neutral-400 font-medium border-b border-neutral-800">Insumo</th>
+                          <th className="px-4 py-3 text-neutral-400 font-medium border-b border-neutral-800 text-right">Cant.</th>
+                          <th className="px-4 py-3 text-neutral-400 font-medium border-b border-neutral-800 text-right">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-neutral-800/50">
+                        {detallesModalData.detalles.items.map((it: any, idx: number) => (
+                          <tr key={idx} className="hover:bg-neutral-800/30">
+                            <td className="px-4 py-3 text-neutral-200">
+                              {it.nombre_nuevo || 'Item'}
+                              {it.is_new && <span className="ml-2 text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded">NUEVO</span>}
+                            </td>
+                            <td className="px-4 py-3 text-right text-neutral-300">
+                              {it.cantidad} <span className="text-xs text-neutral-500">{it.unidad_nueva}</span>
+                            </td>
+                            <td className="px-4 py-3 text-right text-white font-medium">
+                              {formatCurrency(
+                                it.monedaItem === 'VES' 
+                                  ? (it.costoTotal / (detallesModalData.detalles.tasaCambio || 1)) 
+                                  : it.costoTotal
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-neutral-500">No hay detalles estructurados para mostrar.</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="p-6 border-t border-neutral-800 flex justify-end bg-neutral-900 shrink-0">
+              <button 
+                onClick={() => setDetallesModalData(null)}
+                className="bg-neutral-800 hover:bg-neutral-700 text-white px-6 py-2 rounded-xl transition-colors text-sm font-medium"
+              >
+                Cerrar
               </button>
             </div>
           </div>
