@@ -382,3 +382,42 @@ export async function getFacturaDetallesItems(facturaId: string) {
 
   return { success: false, error: 'El detalle no contiene items de insumo.' };
 }
+
+export async function editarFacturaProveedor(
+  facturaId: string,
+  payload: {
+    numero_factura: string;
+    concepto: string;
+    total: number;
+    fecha_emision: string;
+    fecha_vencimiento?: string;
+  }
+) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autenticado' };
+
+  const { data: fac } = await supabase.from('compras_facturas')
+    .select('*, pagos:compras_pagos(monto)')
+    .eq('id', facturaId)
+    .single();
+
+  if (!fac) return { success: false, error: 'Factura no encontrada' };
+
+  const sumPagos = fac.pagos ? fac.pagos.reduce((acc: number, p: any) => acc + Number(p.monto), 0) : 0;
+  let nuevoSaldo = payload.total - sumPagos;
+  if (nuevoSaldo < 0) nuevoSaldo = 0;
+
+  const { error } = await supabase.from('compras_facturas').update({
+    numero_factura: payload.numero_factura,
+    concepto: payload.concepto,
+    total: payload.total,
+    saldo_pendiente: nuevoSaldo,
+    fecha_emision: payload.fecha_emision,
+    fecha_vencimiento: payload.fecha_vencimiento || null
+  }).eq('id', facturaId);
+
+  if (error) return { success: false, error: error.message };
+
+  return { success: true };
+}

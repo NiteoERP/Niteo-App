@@ -13,7 +13,7 @@ import { useEmpresa } from "@/components/providers/EmpresaProvider";
 import {
   Store, Wallet, Search, Check, FileText, ChevronDown, ChevronUp,
   Clock, PlusCircle, X, Plus, User, Phone, MapPin, Hash,
-  CreditCard, Building2, AlertCircle, History, DollarSign, Package, CheckCircle2
+  CreditCard, Building2, AlertCircle, History, DollarSign, Package, CheckCircle2, Pencil
 } from "lucide-react";
 import { format } from "date-fns";
 import MobileCompraForm from "@/components/compras/MobileCompraForm";
@@ -143,6 +143,56 @@ export default function ProveedoresPage() {
     } else {
       setDetallesModalData({ isLoading: false, factura: fac, error: res.error });
     }
+  };
+
+  // ── Modal: Editar Factura ──────────────────────────────────
+  const [showEditFacturaModal, setShowEditFacturaModal] = useState(false);
+  const [facturaEditando, setFacturaEditando] = useState<any>(null);
+  const [editFacConcepto, setEditFacConcepto] = useState('');
+  const [editFacTotal, setEditFacTotal] = useState('');
+  const [editFacNumero, setEditFacNumero] = useState('');
+  const [editFacFecha, setEditFacFecha] = useState('');
+  const [editFacFechaVencimiento, setEditFacFechaVencimiento] = useState('');
+  const [isEditLoading, setIsEditLoading] = useState(false);
+  const [errorEdit, setErrorEdit] = useState('');
+
+  const openEditModal = (fac: any) => {
+    setFacturaEditando(fac);
+    setEditFacConcepto(fac.concepto || '');
+    setEditFacTotal(String(fac.total || ''));
+    setEditFacNumero(fac.numero_factura || '');
+    setEditFacFecha(fac.fecha_emision?.split('T')[0] || '');
+    setEditFacFechaVencimiento(fac.fecha_vencimiento?.split('T')[0] || '');
+    setErrorEdit('');
+    setShowEditFacturaModal(true);
+  };
+
+  const handleGuardarEdicionFactura = async () => {
+    if (!editFacTotal || isNaN(Number(editFacTotal)) || Number(editFacTotal) <= 0) {
+      setErrorEdit('Monto inválido'); return;
+    }
+    setIsEditLoading(true);
+    setErrorEdit('');
+    const { editarFacturaProveedor, getFacturasProveedor } = await import('./actions');
+    const res = await editarFacturaProveedor(facturaEditando.id, {
+      concepto: editFacConcepto,
+      total: Number(editFacTotal),
+      numero_factura: editFacNumero,
+      fecha_emision: editFacFecha,
+      fecha_vencimiento: editFacFechaVencimiento || undefined
+    });
+    
+    if (res.success) {
+      setShowEditFacturaModal(false);
+      fetchInit();
+      if (expandedId) {
+        const r2 = await getFacturasProveedor(expandedId, sedeId);
+        if (r2.success) setFacturasProveedor(r2.data || []);
+      }
+    } else {
+      setErrorEdit(res.error || 'Error al editar factura');
+    }
+    setIsEditLoading(false);
   };
 
   // ── Debounce search ───────────────────────────────────────
@@ -489,6 +539,14 @@ export default function ProveedoresPage() {
                                     {expandedPagos[fac.id] ? 'Ocultar abonos' : `Ver abonos (${fac.pagos.length})`}
                                   </button>
                                 )}
+                                <button
+                                  type="button"
+                                  onClick={() => openEditModal(fac)}
+                                  className="text-xs text-neutral-400 hover:text-white flex items-center gap-1 font-medium bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 px-2 py-0.5 rounded-lg transition-colors"
+                                >
+                                  <Pencil size={11} />
+                                  Editar
+                                </button>
                                 <button
                                   type="button"
                                   onClick={() => handleVerDetallesFactura(fac)}
@@ -1492,6 +1550,86 @@ export default function ProveedoresPage() {
                 className="bg-neutral-800 hover:bg-neutral-700 text-white px-6 py-2 rounded-xl transition-colors text-sm font-medium"
               >
                 Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════
+          MODAL: Editar Factura
+      ════════════════════════════════════ */}
+      {showEditFacturaModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-neutral-800 shrink-0">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Pencil size={18} className="text-indigo-400" /> Editar Factura
+              </h3>
+              <button onClick={() => setShowEditFacturaModal(false)} className="text-neutral-400 hover:text-white">
+                <X size={22} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              {errorEdit && (
+                <div className="bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl text-rose-400 text-sm flex items-center gap-2">
+                  <AlertCircle size={16} /> {errorEdit}
+                </div>
+              )}
+              
+              <div>
+                <label className="block text-sm font-medium text-neutral-400 mb-1.5">Número de Factura</label>
+                <div className="relative">
+                  <Hash size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                  <input type="text" value={editFacNumero} onChange={e => setEditFacNumero(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-9 pr-4 py-2 text-white text-sm" placeholder="S/N" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-400 mb-1.5">Concepto</label>
+                <input type="text" value={editFacConcepto} onChange={e => setEditFacConcepto(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-white text-sm" placeholder="Ej. Compra de insumos" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-400 mb-1.5">Monto Total de la Factura (Divisas)</label>
+                <div className="relative">
+                  <DollarSign size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                  <input type="number" step="any" min="0" value={editFacTotal} onChange={e => setEditFacTotal(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-9 pr-4 py-2 text-white text-sm" />
+                </div>
+                <p className="text-xs text-neutral-500 mt-1">El saldo pendiente se recalculará automáticamente según los abonos ya realizados.</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-400 mb-1.5">Fecha de Emisión</label>
+                  <input type="date" value={editFacFecha} onChange={e => setEditFacFecha(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-white text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-400 mb-1.5">Vencimiento (Opcional)</label>
+                  <input type="date" value={editFacFechaVencimiento} onChange={e => setEditFacFechaVencimiento(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-white text-sm" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-6 border-t border-neutral-800 flex justify-end gap-3 shrink-0">
+              <button 
+                onClick={() => setShowEditFacturaModal(false)}
+                className="bg-neutral-800 hover:bg-neutral-700 text-white px-5 py-2.5 rounded-xl transition-colors text-sm font-medium"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleGuardarEdicionFactura}
+                disabled={isEditLoading}
+                className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl transition-colors text-sm font-medium disabled:opacity-50 flex items-center gap-2"
+              >
+                {isEditLoading ? 'Guardando...' : <><Check size={16} /> Guardar Cambios</>}
               </button>
             </div>
           </div>
