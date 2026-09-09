@@ -1244,7 +1244,7 @@ export default function ProveedoresPage() {
                   className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-lg font-semibold" />
                 {tasaBcv > 0 && Number(montoAbonar) > 0 && (
                   <p className="text-xs text-emerald-400/90 mt-1">
-                    ≈ Bs. {(Number(montoAbonar) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {tasaBcv} Bs/$
+                    ≈ Bs. {(Number(montoAbonar) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
                   </p>
                 )}
               </div>
@@ -1367,7 +1367,7 @@ export default function ProveedoresPage() {
                 />
                 {tasaBcv > 0 && Number(montoAbonoGeneral) > 0 && (
                   <p className="text-xs text-emerald-400/90 mt-1">
-                    ≈ Bs. {(Number(montoAbonoGeneral) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {tasaBcv} Bs/$
+                    ≈ Bs. {(Number(montoAbonoGeneral) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
                   </p>
                 )}
               </div>

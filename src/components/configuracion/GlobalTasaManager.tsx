@@ -357,7 +357,7 @@ export default function GlobalTasaManager() {
               </span>
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-black text-white font-mono">
-                  {tasaBcvMostrar.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+                  {tasaBcvMostrar.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
                 <span className="text-sm font-bold text-neutral-400">Bs. / {monedaActual}</span>
               </div>
@@ -469,7 +469,7 @@ export default function GlobalTasaManager() {
 
           {/* Comparativa con BCV */}
           <div className="pt-2 text-xs text-neutral-500 flex items-center justify-between border-t border-neutral-800/80">
-            <span>Referencia Oficial BCV actual: <strong className="text-neutral-400">{tasaBcvMostrar} Bs.</strong></span>
+            <span>Referencia Oficial BCV actual: <strong className="text-neutral-400">{tasaBcvMostrar.toFixed(2)} Bs.</strong></span>
             <button
               type="button"
               onClick={() => setTasaManualInput(String(tasaBcvMostrar))}
