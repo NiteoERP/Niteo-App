@@ -1352,10 +1352,7 @@ export default function ProveedoresPage() {
                     )}
                   </div>
                 </div>
-                <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-300">
-                  ⚡ <strong>Pago Automático en Cascada:</strong> El monto que ingreses se distribuirá cubriendo primero las facturas más antiguas (de mayor antigüedad a la más reciente).
                 </div>
-              </div>
 
               <div>
                 <label className="block text-sm text-neutral-400 mb-1.5">Monto a Abonar (USD) *</label>
@@ -1465,7 +1462,7 @@ export default function ProveedoresPage() {
                 disabled={isPagarGeneralLoading}
                 className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-emerald-600/20"
               >
-                {isPagarGeneralLoading ? 'Aplicando pago...' : <><Wallet size={16} /> Aplicar Abono en Cascada</>}
+                {isPagarGeneralLoading ? 'Aplicando pago...' : <><Wallet size={16} /> Aplicar Abono</>}
               </button>
             </div>
           </div>
