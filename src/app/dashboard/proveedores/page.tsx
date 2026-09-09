@@ -13,10 +13,11 @@ import { useEmpresa } from "@/components/providers/EmpresaProvider";
 import {
   Store, Wallet, Search, Check, FileText, ChevronDown, ChevronUp,
   Clock, PlusCircle, X, Plus, User, Phone, MapPin, Hash,
-  CreditCard, Building2, AlertCircle, History, DollarSign, Package, CheckCircle2, Pencil
+  CreditCard, Building2, AlertCircle, History, DollarSign, Package, CheckCircle2, Pencil, Info
 } from "lucide-react";
 import { format } from "date-fns";
 import MobileCompraForm from "@/components/compras/MobileCompraForm";
+import Link from "next/link";
 
 // ── Helpers ────────────────────────────────────────────────
 function Badge({ label, color = 'neutral' }: { label: string; color?: string }) {
@@ -1572,6 +1573,14 @@ export default function ProveedoresPage() {
             </div>
             
             <div className="p-6 space-y-4">
+              <div className="bg-indigo-500/10 border border-indigo-500/20 p-3 rounded-xl flex items-start gap-2 mb-4 text-indigo-300 text-sm">
+                <Info size={16} className="mt-0.5 shrink-0" />
+                <p>
+                  Si necesitas modificar los <strong>artículos del inventario</strong> asociados a esta factura, 
+                  por favor hazlo desde <Link href="/dashboard/compras" className="font-bold underline text-indigo-200">Compras / Historial</Link>.
+                </p>
+              </div>
+
               {errorEdit && (
                 <div className="bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl text-rose-400 text-sm flex items-center gap-2">
                   <AlertCircle size={16} /> {errorEdit}

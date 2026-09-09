@@ -419,5 +419,25 @@ export async function editarFacturaProveedor(
 
   if (error) return { success: false, error: error.message };
 
+  // Intentar actualizar la compra_puntual vinculada
+  const baseDate = new Date(fac.fecha_registro || fac.fecha_emision);
+  const minDate = new Date(baseDate.getTime() - 60000).toISOString();
+  const maxDate = new Date(baseDate.getTime() + 60000).toISOString();
+
+  const { data: punts } = await supabase.from('compras_puntuales')
+    .select('id, tasa_cambio')
+    .eq('monto_divisas', fac.total)
+    .gte('fecha_registro', minDate)
+    .lte('fecha_registro', maxDate);
+
+  if (punts && punts.length > 0) {
+    const matchPunt = punts[0];
+    const newBs = payload.total * Number(matchPunt.tasa_cambio);
+    await supabase.from('compras_puntuales').update({
+      monto_divisas: payload.total,
+      monto_bs: newBs
+    }).eq('id', matchPunt.id);
+  }
+
   return { success: true };
 }

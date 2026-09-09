@@ -379,6 +379,9 @@ export async function editarFacturaInsumos(
   montoTotalBs = montoTotalDivisas * factura.tasa;
 
   // 3. Actualizar la metadata de la compra puntual
+  // First, let's find if there is a matching compras_facturas to update its total too
+  const { data: oldPuntual } = await supabase.from('compras_puntuales').select('monto_divisas, fecha_registro, proveedor').eq('id', id_compra).single();
+
   const { error: headErr } = await supabase.from('compras_puntuales').update({
     proveedor: factura.proveedor,
     monto_divisas: montoTotalDivisas,
@@ -389,6 +392,30 @@ export async function editarFacturaInsumos(
   }).eq('id', id_compra);
 
   if (headErr) return { error: 'Error actualizando compra: ' + headErr.message };
+
+  if (oldPuntual && oldPuntual.fecha_registro) {
+    const baseDate = new Date(oldPuntual.fecha_registro);
+    const minDate = new Date(baseDate.getTime() - 60000).toISOString();
+    const maxDate = new Date(baseDate.getTime() + 60000).toISOString();
+
+    const { data: facs } = await supabase.from('compras_facturas')
+      .select('id, total, pagos:compras_pagos(monto)')
+      .eq('total', oldPuntual.monto_divisas)
+      .gte('fecha_registro', minDate)
+      .lte('fecha_registro', maxDate);
+
+    if (facs && facs.length > 0) {
+      const matchFac = facs[0];
+      const sumPagos = matchFac.pagos ? matchFac.pagos.reduce((a: number, b: any) => a + Number(b.monto), 0) : 0;
+      let nuevoSaldo = montoTotalDivisas - sumPagos;
+      if (nuevoSaldo < 0) nuevoSaldo = 0;
+
+      await supabase.from('compras_facturas').update({
+        total: Number(montoTotalDivisas.toFixed(2)),
+        saldo_pendiente: Number(nuevoSaldo.toFixed(2))
+      }).eq('id', matchFac.id);
+    }
+  }
 
   revalidatePath('/dashboard/inventario');
   revalidatePath('/dashboard/compras');
