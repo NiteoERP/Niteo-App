@@ -412,11 +412,6 @@ export default function ProveedoresPage() {
                       <div className="text-right">
                         <p className="text-xs font-semibold uppercase text-neutral-500 mb-0.5">Adeudado</p>
                         <p className="font-black text-rose-400 text-lg">{formatCurrency(prov.monto_adeudado)}</p>
-                        {tasaBcv > 0 && prov.monto_adeudado > 0 && (
-                          <p className="text-xs text-neutral-400 font-medium">
-                            ≈ Bs. {(prov.monto_adeudado * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </p>
-                        )}
                       </div>
                     )}
                     {prov.monto_adeudado > 0 && (
@@ -487,18 +482,8 @@ export default function ProveedoresPage() {
                               <div className="text-right">
                                 <p className="text-xs text-neutral-500">
                                   Total: {formatCurrency(fac.total)}
-                                  {tasaBcv > 0 && (
-                                    <span className="block text-[11px] text-neutral-500">
-                                      ≈ Bs. {(fac.total * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                    </span>
-                                  )}
                                 </p>
                                 <p className={`font-black text-lg ${saldado ? 'text-emerald-400' : 'text-rose-400'}`}>{formatCurrency(fac.saldo_pendiente)}</p>
-                                {!saldado && tasaBcv > 0 && (
-                                  <p className="text-[11px] text-rose-400/80 font-medium">
-                                    ≈ Bs. {(fac.saldo_pendiente * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                  </p>
-                                )}
                                 <p className="text-xs text-neutral-600">{saldado ? 'saldada' : 'pendiente'}</p>
                               </div>
                               {!saldado && (
