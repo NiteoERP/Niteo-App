@@ -14,6 +14,7 @@ export interface Sede {
   sistema_pos?: string;
   ultima_sincronizacion?: string;
   estado_sincronizacion: string;
+  tipo_sede: 'FISICA' | 'VIRTUAL';
 }
 
 // Generador de Pairing Code seguro y fácil de tipear (ej: NITEO-A1B2-C3D4)
@@ -93,7 +94,7 @@ export async function generarMasterKey(sedeId: string): Promise<{ success: boole
 }
 
 /**
- * Crea una nueva sede
+ * Crea una nueva sede (FISICA o VIRTUAL)
  */
 export async function crearSede(formData: FormData) {
   const supabase = await createClient();
@@ -111,6 +112,7 @@ export async function crearSede(formData: FormData) {
 
   const nombreSede = formData.get('nombre_sede') as string;
   const direccion = formData.get('direccion') as string;
+  const tipoSede = (formData.get('tipo_sede') as string) || 'FISICA';
 
   if (!nombreSede) return { error: 'Nombre es requerido' };
 
@@ -120,6 +122,7 @@ export async function crearSede(formData: FormData) {
       empresa_id: perfil.empresa_id,
       nombre_sede: nombreSede,
       direccion: direccion || null,
+      tipo_sede: tipoSede,
     });
 
   if (error) {
@@ -129,4 +132,34 @@ export async function crearSede(formData: FormData) {
 
   revalidatePath('/dashboard/configuracion/sedes');
   return { success: true };
+}
+
+/**
+ * Obtiene el ID de la sede virtual de la empresa.
+ * Retorna null si no existe ninguna sede virtual creada.
+ */
+export async function getSedeVirtualId(): Promise<string | null> {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: perfil } = await supabase
+    .from('perfiles')
+    .select('empresa_id')
+    .eq('id', user.id)
+    .single();
+
+  if (!perfil) return null;
+
+  const { data: sede } = await supabase
+    .from('sedes')
+    .select('id')
+    .eq('empresa_id', perfil.empresa_id)
+    .eq('tipo_sede', 'VIRTUAL')
+    .eq('estado_activo', true)
+    .limit(1)
+    .single();
+
+  return sede?.id ?? null;
 }

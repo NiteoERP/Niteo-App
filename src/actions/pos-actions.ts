@@ -85,7 +85,6 @@ export async function getVentasRecientes(sedeId: string): Promise<VentaPOS[]> {
     pagos: (v.ventas_pagos || []).map((p: any) => ({ tipo_pago: p.tipo_pago, monto: p.monto })),
     metodo_pago: (v.ventas_pagos || [])[0]?.tipo_pago,
     detalles: (v.ventas_detalles || []).map((d: any) => ({
-
       id_detalle: d.id,
       producto_id: d.producto_id,
       cantidad: d.cantidad,
@@ -109,6 +108,35 @@ export async function getProductosCatalogo(empresaId: string): Promise<ProductoP
 
   if (error) {
     console.error('Error fetching productos:', error);
+    return [];
+  }
+
+  return (productos || []).map((p: any) => ({
+    producto_id: p.id,
+    codigo_barras: p.codigo_barras,
+    nombre: p.nombre,
+    precio_venta: p.precio_venta,
+    costo: p.costo,
+  }));
+}
+
+/**
+ * Catálogo filtrado para el Terminal Virtual de Niteo.
+ * Solo incluye productos con canal_venta = 'SOLO_NITEO' o 'AMBOS'.
+ */
+export async function getProductosCatalogoVirtual(empresaId: string): Promise<ProductoPOS[]> {
+  const supabase = await createClient();
+
+  const { data: productos, error } = await supabase
+    .from('productos')
+    .select('id, codigo_barras, nombre, precio_venta, costo')
+    .eq('empresa_id', empresaId)
+    .eq('estado_activo', true)
+    .in('canal_venta', ['SOLO_NITEO', 'AMBOS'])
+    .order('nombre', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching productos para terminal virtual:', error);
     return [];
   }
 
@@ -145,7 +173,7 @@ export async function getHistorialVentasCompleto(sedeId: string, fechaFiltro?: s
     .order('fecha_venta', { ascending: false });
 
   if (fechaFiltro) {
-    // Filtra exactamente por ese da, usando UTC ya que los datos de Aronium vienen con +00:00
+    // Filtra exactamente por ese día, usando UTC ya que los datos de Aronium vienen con +00:00
     query = query
       .gte('fecha_venta', `${fechaFiltro}T00:00:00+00:00`)
       .lte('fecha_venta', `${fechaFiltro}T23:59:59.999+00:00`);
@@ -164,7 +192,7 @@ export async function getHistorialVentasCompleto(sedeId: string, fechaFiltro?: s
     id_factura: v.id,
     id_pos: v.id_pos,
     numero_documento: v.numero_documento,
-      numero_orden: v.numero_orden,
+    numero_orden: v.numero_orden,
     fecha_venta: v.fecha_venta,
     total: v.total,
     descuento: v.descuento,

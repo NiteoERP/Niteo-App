@@ -38,8 +38,11 @@ export async function middleware(request: NextRequest) {
   // 3. Verificar Sesión Activa
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Si el usuario ya está autenticado y visita /login o /register, enviarlo al dashboard
-  if (user && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/register')) {
+  // Si el usuario ya está autenticado y visita /login o /register, u otras rutas base
+  if (user && (request.nextUrl.pathname === '/' || request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/register')) {
+    // Determine the best default page based on role/permissions if possible,
+    // otherwise let them go to /dashboard and let the dashboard handle it.
+    // We will let them go to /dashboard for now, and handle the redirect inside /dashboard
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';
     return NextResponse.redirect(url);
@@ -105,6 +108,25 @@ export async function middleware(request: NextRequest) {
           const url = request.nextUrl.clone();
           url.pathname = '/dashboard'; // Devolverlos al home permitido
           return NextResponse.redirect(url);
+        }
+
+        // 5. Redireccionar desde /dashboard a la página por defecto del usuario
+        if (request.nextUrl.pathname === '/dashboard' && profile.rol !== 'MASTER') {
+          const { data: profileDb } = await supabase.from('perfiles').select('permisos').eq('id', user.id).single();
+          const permisos = profileDb?.permisos || [];
+          
+          if (!permisos.includes('dashboard')) {
+            const url = request.nextUrl.clone();
+            if (permisos.includes('pos')) url.pathname = '/dashboard/ventas';
+            else if (permisos.includes('caja')) url.pathname = '/dashboard/caja';
+            else if (permisos.includes('inventario')) url.pathname = '/dashboard/inventario';
+            else if (permisos.includes('compras')) url.pathname = '/dashboard/compras';
+            else if (permisos.includes('reportes')) url.pathname = '/dashboard/informes';
+            else if (permisos.includes('clientes')) url.pathname = '/dashboard/clientes';
+            else url.pathname = '/dashboard/caja'; // Fallback
+
+            return NextResponse.redirect(url);
+          }
         }
       }
     } catch (err) {
