@@ -171,3 +171,52 @@ export async function changeUserPassword(memberId: string, newPassword: string) 
 
   return { success: true };
 }
+
+export async function updateMemberDetails(
+  memberId: string, 
+  data: {
+    nombre_completo?: string;
+    rol?: string;
+    permisos: string[];
+    sede_id: string | null;
+  }
+) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (user?.app_metadata?.user_role !== 'MASTER') {
+    return { success: false, error: 'No autorizado. Solo el usuario Master puede modificar permisos.' };
+  }
+
+  const { error } = await supabase
+    .from('perfiles')
+    .update({ 
+      ...(data.nombre_completo ? { nombre_completo: data.nombre_completo } : {}),
+      ...(data.rol ? { rol: data.rol } : {}),
+      permisos: data.permisos,
+      sede_id: data.sede_id === 'ALL' ? null : data.sede_id
+    })
+    .eq('id', memberId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  if (data.rol) {
+    try {
+      const supabaseAdmin = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+      await supabaseAdmin.auth.admin.updateUserById(memberId, {
+        app_metadata: { user_role: data.rol }
+      });
+    } catch (e) {
+      console.error('Error actualizando app_metadata al modificar rol:', e);
+    }
+  }
+
+  revalidatePath('/dashboard/equipo');
+  return { success: true };
+}
+

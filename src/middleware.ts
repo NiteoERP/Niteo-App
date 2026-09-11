@@ -122,23 +122,31 @@ export async function middleware(request: NextRequest) {
         }
 
         // 5. Redireccionar desde /dashboard a la página por defecto del usuario
-        if (request.nextUrl.pathname === '/dashboard' && profile.rol !== 'MASTER') {
+        if (request.nextUrl.pathname === '/dashboard' && profile.rol !== 'MASTER' && profile.rol !== 'SUPERADMIN') {
           const { data: profileDb } = await supabase.from('perfiles').select('permisos, rol').eq('id', user.id).maybeSingle();
           const effectiveRole = profileDb?.rol || profile.rol;
-          if (effectiveRole !== 'MASTER') {
+          if (effectiveRole !== 'MASTER' && effectiveRole !== 'SUPERADMIN') {
             const permisos = profileDb?.permisos || [];
             
             if (!permisos.includes('dashboard')) {
               const url = request.nextUrl.clone();
               if (permisos.includes('pos')) url.pathname = '/dashboard/ventas';
-              else if (permisos.includes('caja')) url.pathname = '/dashboard/caja';
+              else if (permisos.includes('caja') || permisos.includes('finanzas')) url.pathname = '/dashboard/caja';
               else if (permisos.includes('inventario')) url.pathname = '/dashboard/inventario';
               else if (permisos.includes('compras')) url.pathname = '/dashboard/compras';
               else if (permisos.includes('reportes')) url.pathname = '/dashboard/informes';
               else if (permisos.includes('clientes')) url.pathname = '/dashboard/clientes';
-              else url.pathname = '/dashboard/caja'; // Fallback
+              else if (permisos.includes('creditos')) url.pathname = '/dashboard/creditos';
+              else if (permisos.includes('equipo') || permisos.includes('usuarios')) url.pathname = '/dashboard/equipo';
+              else {
+                // Si no tiene ningún módulo directo para redirigir, se queda en /dashboard
+                // donde el Panel de Operaciones maneja la vista amigablemente sin arrojar 404
+                url.pathname = '/dashboard';
+              }
 
-              return NextResponse.redirect(url);
+              if (url.pathname !== '/dashboard') {
+                return NextResponse.redirect(url);
+              }
             }
           }
         }

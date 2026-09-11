@@ -68,6 +68,8 @@ export default function DashboardPage() {
       { id: 'compras', name: 'Compras & Gastos', desc: 'Registro de compras y facturas de insumos.', icon: ShoppingCart, href: '/dashboard/compras' },
       { id: 'reportes', name: 'Informes & Reportes', desc: 'Historiales y reportes del negocio.', icon: FileOutput, href: '/dashboard/informes' },
       { id: 'clientes', name: 'Directorio de Clientes', desc: 'Gestión de clientes y contactos.', icon: Store, href: '/dashboard/clientes' },
+      { id: 'creditos', name: 'Créditos & Cobranzas', desc: 'Cuentas por cobrar y abonos.', icon: Receipt, href: '/dashboard/creditos' },
+      { id: 'equipo', altId: 'usuarios', name: 'Equipo de Trabajo', desc: 'Gestión de colaboradores y accesos.', icon: Store, href: '/dashboard/equipo' },
     ].filter(m => permisos.includes(m.id) || (m.altId && permisos.includes(m.altId)));
 
     return (
@@ -232,7 +234,7 @@ export default function DashboardPage() {
           {/* CHARTS & WIDGETS SECTION */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-            <div className="lg:col-span-2 bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
+            <div className={`${hasPos ? 'lg:col-span-2' : 'lg:col-span-3'} bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800`}>
               <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Análisis de Rentabilidad Diaria</h2>
               <div className="h-[400px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -256,9 +258,11 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="lg:col-span-1 h-[480px]">
-              <RecentSalesWidget />
-            </div>
+            {hasPos && (
+              <div className="lg:col-span-1 h-[480px]">
+                <RecentSalesWidget />
+              </div>
+            )}
 
           </div>
 

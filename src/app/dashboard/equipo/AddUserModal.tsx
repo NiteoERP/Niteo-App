@@ -2,24 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { createUser } from './actions';
-import { getSedes } from '@/actions/dashboard-actions';
-import { X, Plus, Loader2, Check } from 'lucide-react';
+import { getSedes } from '@/actions/sedes-actions';
+import { AVAILABLE_MODULES, CATEGORY_LABELS, ROLE_PRESETS } from './modules';
+import { X, Plus, Loader2, Check, ShieldCheck, Building2 } from 'lucide-react';
 
-const MODULES = [
-  { id: 'dashboard', label: 'Dashboard Principal' },
-  { id: 'pos', label: 'Punto de Venta (POS)' },
-  { id: 'inventario', label: 'Inventario y Recetas' },
-  { id: 'compras', label: 'Compras y Gastos' },
-  { id: 'finanzas', label: 'Finanzas y Caja' },
-  { id: 'reportes', label: 'Reportes y Cierres' },
-  { id: 'clientes', label: 'Base de Clientes' },
-  { id: 'usuarios', label: 'Gestión de Personal' },
-  { id: 'auditoria', label: 'Registro de Auditoría' },
-  { id: 'ajustes', label: 'Ajustes de Empresa' },
-  { id: 'ver_todas_compras', label: 'Ver Historial Global de Compras' },
-];
-
-export default function AddUserModal({ onUserCreated }: { onUserCreated?: (member: { id: string; nombre_completo: string; rol: string }) => void }) {
+export default function AddUserModal({ onUserCreated }: { onUserCreated?: (member: { id: string; nombre_completo: string; rol: string; permisos: string[]; sede_id: string | null }) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,11 +15,12 @@ export default function AddUserModal({ onUserCreated }: { onUserCreated?: (membe
   const [selectedSede, setSelectedSede] = useState<string>('ALL');
   const [selectedRol, setSelectedRol] = useState<string>('CAJERO');
   
-  const [selectedModules, setSelectedModules] = useState<string[]>(['pos']);
+  // Por defecto para cajero: Ventas (pos) y Cierres (caja)
+  const [selectedModules, setSelectedModules] = useState<string[]>(ROLE_PRESETS.CAJERO);
 
   useEffect(() => {
     if (isOpen) {
-      getSedes().then(s => setSedes(s));
+      getSedes().then(s => setSedes(s || []));
     }
   }, [isOpen]);
 
@@ -44,8 +32,16 @@ export default function AddUserModal({ onUserCreated }: { onUserCreated?: (membe
     );
   };
 
+  const handleRoleChange = (newRol: string) => {
+    setSelectedRol(newRol);
+    const preset = ROLE_PRESETS[newRol];
+    if (preset) {
+      setSelectedModules(preset);
+    }
+  };
+
   const selectAll = () => {
-    setSelectedModules(MODULES.map(m => m.id));
+    setSelectedModules(AVAILABLE_MODULES.map(m => m.id));
   };
 
   const selectNone = () => {
@@ -58,161 +54,205 @@ export default function AddUserModal({ onUserCreated }: { onUserCreated?: (membe
     setError(null);
 
     if (selectedModules.length === 0) {
-      setError("Debes seleccionar al menos 1 módulo de acceso.");
+      setError("Debes seleccionar al menos 1 módulo de acceso para el usuario.");
       setLoading(false);
       return;
     }
 
     const formData = new FormData(e.currentTarget);
-    const nombre = formData.get('nombre') as string;
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
+    const nombre = (formData.get('nombre') as string).trim();
+    const email = (formData.get('email') as string).trim();
+    const password = (formData.get('password') as string).trim();
 
-    // FIX: pasar el rol seleccionado para que quede en app_metadata y en perfiles
     const res = await createUser(email, password, nombre, selectedModules, selectedSede, selectedRol);
     if (!res.success) {
       setError(res.error || 'Error al crear usuario');
       setLoading(false);
     } else {
-      // FIX 3: notificar al padre para actualizar la lista sin recargar la página
       onUserCreated?.({
         id: (res as any).userId ?? `temp-${Date.now()}`,
         nombre_completo: nombre,
         rol: selectedRol,
+        permisos: selectedModules,
+        sede_id: selectedSede === 'ALL' ? null : selectedSede,
       });
       setIsOpen(false);
       setLoading(false);
       // Reset form state
-      setSelectedModules(['pos']);
+      setSelectedModules(ROLE_PRESETS.CAJERO);
       setSelectedSede('ALL');
       setSelectedRol('CAJERO');
     }
   };
 
+  const categories = ['operaciones', 'inventario', 'clientes', 'admin'] as const;
 
   return (
     <>
       <button 
         onClick={() => setIsOpen(true)}
-        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 h-12 w-full sm:w-auto sm:h-auto sm:py-2
-                   flex items-center justify-center gap-2 rounded-xl text-sm font-bold transition-colors"
+        className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 h-11 w-full sm:w-auto
+                   flex items-center justify-center gap-2 rounded-xl text-sm font-bold transition-colors shadow-lg shadow-indigo-600/20"
       >
         <Plus size={18} /> Agregar Usuario
       </button>
 
       {isOpen && (
-        /* REGLA 4: Bottom Sheet en mobile, Dialog centrado en sm+ */
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center sm:justify-center">
-
-
-          <div className="bg-neutral-900 border-t border-neutral-800 sm:border rounded-t-3xl sm:rounded-xl
-                          w-full sm:max-w-2xl
-                          max-h-[92dvh] sm:max-h-[90vh]
-                          overflow-y-auto custom-scrollbar
-                          flex flex-col
-                          animate-in slide-in-from-bottom sm:slide-in-from-bottom-0 sm:fade-in duration-300
-                          shadow-2xl relative">
-            {/* Handle (solo mobile) */}
-            <div className="flex justify-center pt-3 pb-1 shrink-0 sm:hidden">
-              <div className="w-10 h-1 rounded-full bg-neutral-700" />
-            </div>
-            <button onClick={() => setIsOpen(false)} className="absolute top-4 right-4 text-neutral-400 hover:text-white">
-              <X size={20} />
-            </button>
-            <h2 className="text-xl font-bold text-white mb-6">Nuevo Usuario</h2>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-2xl max-h-[92vh] overflow-hidden flex flex-col shadow-2xl">
             
-            {error && (
-              <div className="bg-rose-500/20 text-rose-400 p-3 rounded-lg text-sm mb-4">
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-              
-              {/* Información Básica */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm text-neutral-400 mb-1">Nombre Completo</label>
-                  <input required name="nombre" type="text" className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white outline-none focus:border-indigo-500" placeholder="Ej. Juan Pérez" />
-                </div>
-                <div>
-                  <label className="block text-sm text-neutral-400 mb-1">Correo Electrónico</label>
-                  <input required name="email" type="email" className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white outline-none focus:border-indigo-500" placeholder="juan@gmail.com" />
-                </div>
-                <div>
-                  <label className="block text-sm text-neutral-400 mb-1">Contraseña Temporal</label>
-                  <input required name="password" type="password" minLength={6} className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white outline-none focus:border-indigo-500" placeholder="Mínimo 6 caracteres" />
-                </div>
-                <div>
-                  <label className="block text-sm text-neutral-400 mb-1">Sucursal Asignada</label>
-                  <select 
-                    value={selectedSede}
-                    onChange={(e) => setSelectedSede(e.target.value)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white outline-none focus:border-indigo-500"
-                  >
-                    <option value="ALL">Todas las Sedes (Acceso Global)</option>
-                    {sedes.map(s => (
-                      <option key={s.id} value={s.id}>{s.nombre}</option>
-                    ))}
-                  </select>
-                </div>
-                {/* FIX: selector de rol para que quede en app_metadata y en perfiles */}
-                <div>
-                  <label className="block text-sm text-neutral-400 mb-1">Rol del Usuario</label>
-                  <select
-                    value={selectedRol}
-                    onChange={(e) => setSelectedRol(e.target.value)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white outline-none focus:border-indigo-500"
-                  >
-                    <option value="CAJERO">Cajero — Acceso básico de operación</option>
-                    <option value="GERENTE">Gerente — Acceso a finanzas y reportes</option>
-                    <option value="COMPRADOR">Comprador — Acceso a compras e inventario</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Permisos por Módulo */}
+            {/* Header */}
+            <div className="p-5 border-b border-neutral-800 flex justify-between items-center bg-neutral-950/60 shrink-0">
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <label className="block text-sm font-semibold text-white">Permisos de Módulos</label>
-                  <div className="flex gap-2">
-                    <button type="button" onClick={selectAll} className="text-xs text-indigo-400 hover:text-indigo-300">Marcar todos</button>
-                    <span className="text-neutral-700">|</span>
-                    <button type="button" onClick={selectNone} className="text-xs text-neutral-500 hover:text-neutral-400">Desmarcar todos</button>
+                <h2 className="text-lg font-bold text-white">Nuevo Miembro de Equipo</h2>
+                <p className="text-xs text-neutral-400">Crea credenciales y define los módulos a los que tendrá acceso.</p>
+              </div>
+              <button 
+                onClick={() => setIsOpen(false)} 
+                className="text-neutral-400 hover:text-white p-2 rounded-xl hover:bg-neutral-800 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-5 overflow-y-auto space-y-5 custom-scrollbar flex-1">
+                {error && (
+                  <div className="p-3.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs rounded-xl font-medium">
+                    {error}
+                  </div>
+                )}
+
+                {/* Información Básica */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-300 mb-1.5">Nombre Completo</label>
+                    <input required name="nombre" type="text" className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors" placeholder="Ej. Carlos Ramos" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-300 mb-1.5">Correo Electrónico</label>
+                    <input required name="email" type="email" className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors" placeholder="carlos@ejemplo.com" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-300 mb-1.5">Contraseña Temporal</label>
+                    <input required name="password" type="password" minLength={6} className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors" placeholder="Mínimo 6 caracteres" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-300 mb-1.5">Rol Predeterminado</label>
+                    <select
+                      value={selectedRol}
+                      onChange={(e) => handleRoleChange(e.target.value)}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                    >
+                      <option value="CAJERO">Cajero — POS y Cierre de Caja</option>
+                      <option value="GERENTE">Gerente — Operación completa</option>
+                      <option value="COMPRADOR">Comprador — Compras e inventario</option>
+                      <option value="MASTER">Master — Acceso total</option>
+                    </select>
                   </div>
                 </div>
-                
-                <div className="flex flex-wrap gap-4">
-                  {MODULES.map(mod => {
-                    const isSelected = selectedModules.includes(mod.id);
-                    return (
-                      <div 
-                        key={mod.id}
-                        onClick={() => toggleModule(mod.id)}
-                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                          isSelected ? 'bg-indigo-500/10 border-indigo-500/50' : 'bg-neutral-950 border-neutral-800 hover:border-neutral-700'
-                        }`}
-                      >
-                        <div className={`w-5 h-5 rounded flex items-center justify-center ${isSelected ? 'bg-indigo-500 text-white' : 'bg-neutral-800 text-transparent'}`}>
-                          <Check size={14} />
+
+                {/* Sede Asignada */}
+                {sedes.length > 0 && (
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-300 mb-1.5 flex items-center gap-1.5">
+                      <Building2 size={14} className="text-indigo-400" /> Sucursal / Sede Asignada
+                    </label>
+                    <select 
+                      value={selectedSede}
+                      onChange={(e) => setSelectedSede(e.target.value)}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                    >
+                      <option value="ALL">Todas las Sedes (Acceso Global)</option>
+                      {sedes.map(s => (
+                        <option key={s.id} value={s.id}>{s.nombre_sede || s.nombre || `Sede ${s.id.substring(0, 6)}`}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Permisos desglosados */}
+                <div className="space-y-4 pt-2 border-t border-neutral-800">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                        <ShieldCheck size={16} className="text-indigo-400" />
+                        Módulos de Acceso ({selectedModules.length} seleccionados)
+                      </h3>
+                      <p className="text-xs text-neutral-500">
+                        Los permisos se ajustan automáticamente según el rol, o puedes personalizarlos.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button type="button" onClick={selectAll} className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 px-2.5 py-1 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 transition-colors">Marcar todos</button>
+                      <button type="button" onClick={selectNone} className="text-xs font-semibold text-neutral-400 hover:text-neutral-300 px-2.5 py-1 rounded-lg bg-neutral-800 hover:bg-neutral-700 transition-colors">Limpiar</button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    {categories.map(catKey => {
+                      const catModules = AVAILABLE_MODULES.filter(m => m.category === catKey);
+                      if (catModules.length === 0) return null;
+
+                      return (
+                        <div key={catKey} className="bg-neutral-950/40 border border-neutral-800/80 rounded-2xl p-3.5 space-y-2.5">
+                          <p className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                            {CATEGORY_LABELS[catKey]}
+                          </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {catModules.map(mod => {
+                              const isChecked = selectedModules.includes(mod.id);
+                              return (
+                                <button
+                                  key={mod.id}
+                                  type="button"
+                                  onClick={() => toggleModule(mod.id)}
+                                  className={`text-left p-3 rounded-xl border transition-all flex items-start gap-3 ${
+                                    isChecked
+                                      ? 'bg-indigo-500/10 border-indigo-500/40 text-white'
+                                      : 'bg-neutral-900/60 border-neutral-800/60 text-neutral-400 hover:border-neutral-700'
+                                  }`}
+                                >
+                                  <div className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                                    isChecked
+                                      ? 'bg-indigo-600 border-indigo-500 text-white'
+                                      : 'border-neutral-700 bg-neutral-950'
+                                  }`}>
+                                    {isChecked && <Check size={13} strokeWidth={3} />}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className={`text-xs font-semibold leading-tight ${isChecked ? 'text-indigo-200' : 'text-neutral-300'}`}>
+                                      {mod.label}
+                                    </p>
+                                    <p className="text-[10px] text-neutral-500 mt-0.5 leading-tight line-clamp-2">
+                                      {mod.description}
+                                    </p>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
-                        <span className={`text-sm ${isSelected ? 'text-indigo-100 font-medium' : 'text-neutral-400'}`}>
-                          {mod.label}
-                        </span>
-                      </div>
-                    )
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
+
               </div>
 
-              <div className="pt-4 flex justify-end gap-3 border-t border-neutral-800">
-                <button type="button" onClick={() => setIsOpen(false)} className="px-4 py-2 text-neutral-400 hover:text-white text-sm font-medium">Cancelar</button>
-                <button disabled={loading} type="submit" className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
-                  {loading && <Loader2 size={16} className="animate-spin" />}
+              {/* Footer */}
+              <div className="p-4 border-t border-neutral-800 bg-neutral-950/80 flex items-center justify-end gap-3 shrink-0">
+                <button type="button" onClick={() => setIsOpen(false)} className="px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white rounded-xl hover:bg-neutral-800 transition-colors">
+                  Cancelar
+                </button>
+                <button disabled={loading} type="submit" className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-indigo-600/20 transition-colors">
+                  {loading ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
                   Crear Usuario
                 </button>
               </div>
             </form>
+
           </div>
         </div>
       )}

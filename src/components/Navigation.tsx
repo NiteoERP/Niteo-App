@@ -28,7 +28,15 @@ interface NavProps {
 
 export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscripcion = 'STARTER' }: NavProps) {
   const pathname = usePathname();
-  const hasPerm = (p: string) => permisos.includes(p) || userRole === 'MASTER';
+  const hasPerm = (p: string) => {
+    if (userRole === 'MASTER' || userRole === 'SUPERADMIN') return true;
+    if (permisos.includes(p)) return true;
+    if (p === 'caja' && (permisos.includes('finanzas') || userRole === 'CAJERO')) return true;
+    if (p === 'finanzas' && permisos.includes('caja')) return true;
+    if (p === 'equipo' && (permisos.includes('usuarios') || permisos.includes('equipo'))) return true;
+    if (p === 'usuarios' && (permisos.includes('usuarios') || permisos.includes('equipo'))) return true;
+    return false;
+  };
 
   const getLinkClass = (path: string, exact = false) => {
     const isActive = exact ? pathname === path : pathname.startsWith(path);
@@ -39,12 +47,10 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
 
   return (
     <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto custom-scrollbar">
-      {hasPerm('dashboard') && (
-        <Link href="/dashboard" className={getLinkClass('/dashboard', true)}>
-          <LayoutDashboard size={20} />
-          <span className="text-sm font-medium">Inicio</span>
-        </Link>
-      )}
+      <Link href="/dashboard" className={getLinkClass('/dashboard', true)}>
+        <LayoutDashboard size={20} />
+        <span className="text-sm font-medium">Inicio</span>
+      </Link>
       
             {hasPerm('caja') && (
         <Link href="/dashboard/caja" className={getLinkClass('/dashboard/caja')}>
@@ -112,20 +118,22 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
       )}
 
       {hasPerm('clientes') && (
-        <>
-          <Link href="/dashboard/clientes" className={getLinkClass('/dashboard/clientes')}>
-            <Users size={20} className="shrink-0" />
-            <span className="font-medium">Directorio</span>
-          </Link>
-          <Link href="/dashboard/creditos" className={getLinkClass('/dashboard/creditos')}>
-            <Wallet size={20} className="shrink-0 text-emerald-400" />
-            <span className="font-medium">Créditos</span>
-          </Link>
-          <Link href="/dashboard/equipo" className={getLinkClass('/dashboard/equipo')}>
-            <UserCircle size={20} />
-            <span className="text-sm font-medium">Equipo</span>
-          </Link>
-        </>
+        <Link href="/dashboard/clientes" className={getLinkClass('/dashboard/clientes')}>
+          <Users size={20} className="shrink-0" />
+          <span className="font-medium">Directorio</span>
+        </Link>
+      )}
+      {hasPerm('creditos') && (
+        <Link href="/dashboard/creditos" className={getLinkClass('/dashboard/creditos')}>
+          <Wallet size={20} className="shrink-0 text-emerald-400" />
+          <span className="font-medium">Créditos</span>
+        </Link>
+      )}
+      {(hasPerm('equipo') || hasPerm('usuarios') || userRole === 'MASTER') && (
+        <Link href="/dashboard/equipo" className={getLinkClass('/dashboard/equipo')}>
+          <UserCircle size={20} />
+          <span className="text-sm font-medium">Equipo</span>
+        </Link>
       )}
     </nav>
   );
@@ -133,7 +141,7 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
 
 export function SidebarBottom({ permisos, userRole }: NavProps) {
   const pathname = usePathname();
-  const hasPerm = (p: string) => permisos.includes(p) || userRole === 'MASTER';
+  const hasPerm = (p: string) => permisos.includes(p) || userRole === 'MASTER' || userRole === 'SUPERADMIN';
 
   const getLinkClass = (path: string, exact = false) => {
     const isActive = exact ? pathname === path : pathname.startsWith(path);
@@ -163,7 +171,15 @@ export function SidebarBottom({ permisos, userRole }: NavProps) {
 export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscripcion = 'STARTER' }: NavProps) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  const hasPerm = (p: string) => permisos.includes(p) || userRole === 'MASTER';
+  const hasPerm = (p: string) => {
+    if (userRole === 'MASTER' || userRole === 'SUPERADMIN') return true;
+    if (permisos.includes(p)) return true;
+    if (p === 'caja' && (permisos.includes('finanzas') || userRole === 'CAJERO')) return true;
+    if (p === 'finanzas' && permisos.includes('caja')) return true;
+    if (p === 'equipo' && (permisos.includes('usuarios') || permisos.includes('equipo'))) return true;
+    if (p === 'usuarios' && (permisos.includes('usuarios') || permisos.includes('equipo'))) return true;
+    return false;
+  };
 
   // Clases del ítem de la barra inferior
   const navItem = (path: string, exact = false) => {
@@ -209,6 +225,11 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
             </p>
 
             <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-1 custom-scrollbar">
+              {hasPerm('caja') && (
+                <Link href="/dashboard/caja" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/caja')}>
+                  <Wallet size={22} /> Cierres de Caja
+                </Link>
+              )}
               {hasPerm('inventario') && (
                 <Link href="/dashboard/inventario" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/inventario')}>
                   <Package size={22} /> Inventario
@@ -282,7 +303,8 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
                       h-[calc(4rem+env(safe-area-inset-bottom))]
                       pb-[env(safe-area-inset-bottom)]">
 
-        {hasPerm('dashboard') && (() => {
+        {/* 1. Inicio — SIEMPRE VISIBLE: En /dashboard muestra métricas o el Panel de Operaciones */}
+        {(() => {
           const { link, isActive } = navItem('/dashboard', true);
           return (
             <Link href="/dashboard" onClick={() => setMenuOpen(false)} className={link}>
@@ -293,37 +315,27 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
           );
         })()}
 
-        {hasPerm('pos') && (() => {
-          const { link, isActive } = navItem('/dashboard/ventas');
-          return (
-            <Link href="/dashboard/ventas" onClick={() => setMenuOpen(false)} className={link}>
-              {isActive && <span className="absolute top-2 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-indigo-500" />}
-              <ShoppingCart size={22} />
-              <span className="text-[10px] font-medium">Ventas</span>
-            </Link>
-          );
-        })()}
+        {/* Módulos dinámicos para los siguientes 3 espacios según permisos del usuario */}
+        {(() => {
+          const candidateTabs = [
+            ...(hasPerm('pos') ? [{ path: '/dashboard/ventas', label: 'Ventas', icon: ShoppingCart }] : []),
+            ...(hasPerm('inventario') ? [{ path: '/dashboard/inventario', label: 'Inventario', icon: Package }] : []),
+            ...(hasPerm('caja') ? [{ path: '/dashboard/caja', label: 'Caja', icon: Wallet }] : []),
+            ...(hasPerm('compras') ? [{ path: '/dashboard/compras', label: 'Compras', icon: ShoppingCart }] : []),
+            ...(hasPerm('reportes') ? [{ path: '/dashboard/informes', label: 'Informes', icon: FileText }] : []),
+          ].slice(0, 3);
 
-        {hasPerm('compras') && (() => {
-          const { link, isActive } = navItem('/dashboard/compras');
-          return (
-            <Link href="/dashboard/compras" onClick={() => setMenuOpen(false)} className={link}>
-              {isActive && <span className="absolute top-2 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-indigo-500" />}
-              <Package size={22} />
-              <span className="text-[10px] font-medium">Compras</span>
-            </Link>
-          );
-        })()}
-
-        {hasPerm('caja') && (() => {
-          const { link, isActive } = navItem('/dashboard/caja');
-          return (
-            <Link href="/dashboard/caja" onClick={() => setMenuOpen(false)} className={link}>
-              {isActive && <span className="absolute top-2 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-indigo-500" />}
-              <Wallet size={22} />
-              <span className="text-[10px] font-medium">Caja</span>
-            </Link>
-          );
+          return candidateTabs.map((tab) => {
+            const { link, isActive } = navItem(tab.path);
+            const Icon = tab.icon;
+            return (
+              <Link key={tab.path} href={tab.path} onClick={() => setMenuOpen(false)} className={link}>
+                {isActive && <span className="absolute top-2 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-indigo-500" />}
+                <Icon size={22} />
+                <span className="text-[10px] font-medium">{tab.label}</span>
+              </Link>
+            );
+          });
         })()}
 
         {/* Botón "Más" — abre el bottom sheet */}
