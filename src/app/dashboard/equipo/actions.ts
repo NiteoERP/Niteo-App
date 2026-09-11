@@ -40,13 +40,13 @@ export async function createUser(email: string, password: string, nombreCompleto
   // Validar límite de usuarios según el plan contratado
   const { data: empresaData } = await supabase
     .from('empresas')
-    .select('plan_suscripcion')
+    .select('plan')
     .eq('id', empresaId)
     .single();
 
-  const plan = empresaData?.plan_suscripcion?.toLowerCase() || 'starter';
+  const plan = empresaData?.plan?.toLowerCase() || 'starter';
 
-  if (plan === 'starter') {
+  if (plan === 'starter' || plan === 'basico') {
     const { count: userCount } = await supabase
       .from('perfiles')
       .select('*', { count: 'exact', head: true })

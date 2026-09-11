@@ -40,9 +40,9 @@ export async function middleware(request: NextRequest) {
 
   // Si el usuario ya está autenticado y visita /login o /register, u otras rutas base
   if (user && (request.nextUrl.pathname === '/' || request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/register')) {
-    // Determine the best default page based on role/permissions if possible,
-    // otherwise let them go to /dashboard and let the dashboard handle it.
-    // We will let them go to /dashboard for now, and handle the redirect inside /dashboard
+    if (request.nextUrl.searchParams.has('add_account')) {
+      return supabaseResponse;
+    }
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';
     return NextResponse.redirect(url);

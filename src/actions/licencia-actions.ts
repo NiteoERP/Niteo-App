@@ -34,15 +34,17 @@ export async function getEstadoLicencia(): Promise<EstadoLicencia | null> {
       .eq('empresa_id', perfil.empresa_id)
       .maybeSingle();
 
-    // 2. Fallback a tabla empresas
+    // Consultar el estado en la tabla de empresas (fallback si no hay suscripción)
     const { data: empresa } = await supabase
       .from('empresas')
-      .select('fecha_registro, plan_suscripcion, fecha_vencimiento_plan')
+      .select('fecha_registro, plan, estado')
       .eq('id', perfil.empresa_id)
-      .maybeSingle();
+      .single();
+
+    // Determinar el plan activo
+    const plan = (sub?.plan || empresa?.plan || 'PRO').toUpperCase();
 
     const hoy = new Date();
-    const plan = (sub?.plan || empresa?.plan_suscripcion || 'PRO').toUpperCase();
 
     // Plan LIFETIME
     if (plan === 'LIFETIME') {

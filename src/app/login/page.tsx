@@ -21,10 +21,16 @@ export default function LoginPage() {
 
   const handleQuickLogin = async (acc: SavedAccount) => {
     setSwitchingId(acc.id);
-    const res = await switchAccount(acc.refresh_token);
+    const res = await switchAccount(acc.id);
     if (res?.error) {
       alert(res.error);
       setSwitchingId(null);
+      // Actualizar la lista en caso de que se haya limpiado una cuenta expirada
+      getSavedAccounts().then((accounts) => {
+        setSavedAccounts(accounts || []);
+      });
+    } else {
+      window.location.href = '/dashboard';
     }
   };
 
@@ -134,7 +140,7 @@ export default function LoginPage() {
               </Link>
             </div>
             <h2 className="text-3xl font-bold tracking-tight text-white">
-              Bienvenido de vuelta
+              Iniciar sesión
             </h2>
             <p className="text-neutral-400 text-sm">
               Ingresa tus credenciales para acceder a tu panel.

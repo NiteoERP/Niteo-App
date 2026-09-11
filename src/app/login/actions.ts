@@ -32,6 +32,13 @@ export async function login(prevState: any, formData: FormData) {
     .eq('id', (await supabase.auth.getUser()).data.user?.id)
     .single()
 
+  try {
+    const { saveCurrentSessionToVault } = await import('@/actions/vault-actions');
+    await saveCurrentSessionToVault();
+  } catch (err) {
+    console.warn('Error guardando en vault tras login:', err);
+  }
+
   if (perfil?.rol === 'SUPERADMIN') {
     revalidatePath('/admin')
     redirect('/admin')
