@@ -144,7 +144,6 @@ export default function TermsPage() {
             <p>Para consultas legales, disputas o preguntas sobre estos Términos, puede contactarnos a través de:</p>
             <ul className="mt-4 space-y-2 text-sm">
               <li>✉️ <a href="mailto:niteosupport@gmail.com" className="text-indigo-400 hover:underline">niteosupport@gmail.com</a></li>
-              <li>📞 <a href="tel:+5804121696345" className="text-indigo-400 hover:underline">+58 0412-1696345</a></li>
             </ul>
           </section>
 

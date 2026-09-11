@@ -3,7 +3,7 @@ import { createClient } from '@/utils/supabase/server';
 import Link from 'next/link';
 import {
   Zap, WifiOff, BookOpen, BarChart3, Shield, Users,
-  CheckCircle, MessageSquarePlus, Mail, Phone, MapPin, ArrowRight, Star
+  CheckCircle, MessageSquarePlus, Mail, MapPin, ArrowRight, Star
 } from 'lucide-react';
 
 export default async function LandingPage() {
@@ -358,10 +358,6 @@ export default async function LandingPage() {
                 <li className="flex items-center gap-2">
                   <Mail size={14} className="text-indigo-400 shrink-0" />
                   <a href="mailto:niteosupport@gmail.com" className="hover:text-white transition-colors">niteosupport@gmail.com</a>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Phone size={14} className="text-indigo-400 shrink-0" />
-                  <a href="tel:+5804121696345" className="hover:text-white transition-colors">+58 0412-1696345</a>
                 </li>
               </ul>
             </div>
