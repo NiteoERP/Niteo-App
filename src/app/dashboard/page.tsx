@@ -1,72 +1,67 @@
 'use client';
+// ─── DashboardPage — Refactor: "Load Once, Filter Locally" ───────────────────
+// ANTES: cada cambio de filtro → Server Action → Vercel Function invocada
+// AHORA: 1 query al montar/cambiar [range|sedeId] → Supabase directo (browser)
+//        Filtros, KPIs, ordenamiento → JavaScript puro → 0 invocaciones Vercel
 import { useEmpresa } from '@/components/providers/EmpresaProvider';
-
-import React, { useState, useEffect } from 'react';
-import { getDashboardData, getSedes } from '@/actions/dashboard-actions';
-import { 
+import React, { useState, useMemo, useCallback } from 'react';
+import { useDashboardData, useSedes } from '@/hooks/useDashboardData';
+import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   ComposedChart, Line
 } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Receipt, Loader2, Calendar, Store, FileOutput } from 'lucide-react';
+import {
+  TrendingUp, TrendingDown, DollarSign, ShoppingCart,
+  Receipt, Loader2, Calendar, Store, FileOutput, AlertCircle,
+} from 'lucide-react';
 import RecentSalesWidget from '@/components/pos/RecentSalesWidget';
 import ReportPreviewModal from '@/components/reports/ReportPreviewModal';
 
 export default function DashboardPage() {
-  const { formatCurrency } = useEmpresa();
+  const { formatCurrency, empresaId, userRole, userSedeId } = useEmpresa();
+
+  // ── Filtros locales (sin query) ──────────────────────────────────────────
   const [range, setRange] = useState('thisMonth');
-  const [sedeId, setSedeId] = useState('ALL');
-  const [sedes, setSedes] = useState<any[]>([]);
-  const [data, setData] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [sedeId, setSedeId] = useState<string | null>(null); // null = todas
   const [showExport, setShowExport] = useState(false);
 
-  useEffect(() => {
-    const fetchInit = async () => {
-      try {
-        const s = await getSedes();
-        setSedes(s);
-      } catch (err) { console.error(err); }
-    };
-    fetchInit();
+  // ── Sedes: 1 query en montaje, nunca más ────────────────────────────────
+  // Va directo a Supabase browser client → 0 invocaciones Vercel
+  const sedes = useSedes(empresaId ?? '', userRole, userSedeId);
+
+  // ── KPI data: 1 query por cambio de [range, sedeId] ─────────────────────
+  // Va directo a Supabase browser client → 0 invocaciones Vercel
+  const { data, isLoading, error, refetch } = useDashboardData(
+    range,
+    sedeId,
+    empresaId ?? '',
+  );
+
+  // ── KPIs: calculados en JS, sin query extra ──────────────────────────────
+  // useMemo garantiza que solo se recalcula cuando `data` cambia, no en cada render
+  const kpis = useMemo(
+    () =>
+      data.reduce(
+        (acc, curr) => ({
+          ventas:   acc.ventas   + Number(curr.ventas_brutas),
+          cogs:     acc.cogs     + Number(curr.cogs),
+          gastos:   acc.gastos   + Number(curr.gastos_operativos),
+          mermas:   acc.mermas   + Number(curr.mermas),
+          utilidad: acc.utilidad + Number(curr.utilidad_neta),
+        }),
+        { ventas: 0, cogs: 0, gastos: 0, mermas: 0, utilidad: 0 },
+      ),
+    [data],
+  );
+
+  // ── Handler sede: cambia estado local → hook reactivo → 1 query ─────────
+  const handleSedeChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSedeId(e.target.value === 'ALL' ? null : e.target.value);
   }, []);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const targetSede = sedeId === 'ALL' ? null : sedeId;
-        const res = await getDashboardData(range, targetSede);
-        
-        // Normalize data to ensure 'dia' exists (some RPCs might return 'fecha' or 'date')
-        const normalizedRes = (res || []).map((r: any) => ({
-          ...r,
-          dia: r.dia || r.fecha || r.date || 'N/A'
-        }));
-        
-        setData(normalizedRes);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchData();
-  }, [range, sedeId]);
-
-  // Consolidar Totales para las Cards
-  const kpis = data.reduce((acc, curr) => ({
-    ventas: acc.ventas + Number(curr.ventas_brutas),
-    cogs: acc.cogs + Number(curr.cogs),
-    gastos: acc.gastos + Number(curr.gastos_operativos),
-    mermas: acc.mermas + Number(curr.mermas),
-    utilidad: acc.utilidad + Number(curr.utilidad_neta)
-  }), { ventas: 0, cogs: 0, gastos: 0, mermas: 0, utilidad: 0 });
-
-  const formatMoney = formatCurrency;
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      
+
       {/* HEADER & FILTROS */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
         <div>
@@ -77,30 +72,32 @@ export default function DashboardPage() {
           {sedes.length > 0 && (
             <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 p-1.5 rounded-xl border border-gray-200 dark:border-gray-700">
               <Store size={18} className="text-indigo-400 ml-2" />
-              <select 
-                value={sedeId} 
-                onChange={(e) => setSedeId(e.target.value)}
+              <select
+                value={sedeId ?? 'ALL'}
+                onChange={handleSedeChange}
                 className="bg-transparent border-none text-sm font-semibold focus:ring-0 text-gray-700 dark:text-gray-300 pr-8 cursor-pointer outline-none"
               >
                 <option value="ALL" className="bg-neutral-900 text-white">Todas las Sedes</option>
-                {sedes.map(s => <option key={s.id} value={s.id} className="bg-neutral-900 text-white">{s.nombre}</option>)}
+                {sedes.map(s => (
+                  <option key={s.id} value={s.id} className="bg-neutral-900 text-white">{s.nombre}</option>
+                ))}
               </select>
             </div>
           )}
           <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 p-1.5 rounded-xl border border-gray-200 dark:border-gray-700">
             <Calendar size={18} className="text-gray-400 ml-2" />
-            <select 
-              value={range} 
+            <select
+              value={range}
               onChange={(e) => setRange(e.target.value)}
               className="bg-transparent border-none text-sm font-semibold focus:ring-0 text-gray-700 dark:text-gray-300 pr-8 cursor-pointer outline-none"
             >
-              <option value="today" className="bg-neutral-900 text-white">Hoy</option>
-              <option value="7days" className="bg-neutral-900 text-white">Últimos 7 Días</option>
+              <option value="today"     className="bg-neutral-900 text-white">Hoy</option>
+              <option value="7days"     className="bg-neutral-900 text-white">Últimos 7 Días</option>
               <option value="thisMonth" className="bg-neutral-900 text-white">Este Mes (MTD)</option>
               <option value="lastMonth" className="bg-neutral-900 text-white">Mes Anterior</option>
             </select>
           </div>
-          <button 
+          <button
             onClick={() => setShowExport(true)}
             className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors shadow-sm"
           >
@@ -110,12 +107,21 @@ export default function DashboardPage() {
       </div>
 
       {showExport && (
-        <ReportPreviewModal 
+        <ReportPreviewModal
           data={data}
           kpis={kpis}
           range={range}
           onClose={() => setShowExport(false)}
         />
+      )}
+
+      {/* ERROR STATE */}
+      {error && !isLoading && (
+        <div className="flex items-center gap-3 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-600 dark:text-red-400">
+          <AlertCircle size={20} />
+          <span className="text-sm font-medium">Error cargando datos: {error}</span>
+          <button onClick={refetch} className="ml-auto text-sm underline font-semibold">Reintentar</button>
+        </div>
       )}
 
       {isLoading ? (
@@ -126,13 +132,13 @@ export default function DashboardPage() {
         <>
           {/* KPI CARDS */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            
+
             {/* Ventas */}
             <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center gap-4">
               <div className="bg-green-100 text-green-600 p-3 rounded-xl"><DollarSign size={24} /></div>
               <div>
                 <p className="text-sm font-bold text-gray-500 uppercase">Ventas Brutas</p>
-                <h3 className="text-2xl font-black text-gray-900 dark:text-white">{formatMoney(kpis.ventas)}</h3>
+                <h3 className="text-2xl font-black text-gray-900 dark:text-white">{formatCurrency(kpis.ventas)}</h3>
               </div>
             </div>
 
@@ -141,7 +147,7 @@ export default function DashboardPage() {
               <div className="bg-orange-100 text-orange-600 p-3 rounded-xl"><ShoppingCart size={24} /></div>
               <div>
                 <p className="text-sm font-bold text-gray-500 uppercase">Costo Insumos (COGS)</p>
-                <h3 className="text-2xl font-black text-gray-900 dark:text-white">{formatMoney(kpis.cogs + kpis.mermas)}</h3>
+                <h3 className="text-2xl font-black text-gray-900 dark:text-white">{formatCurrency(kpis.cogs + kpis.mermas)}</h3>
               </div>
             </div>
 
@@ -150,19 +156,19 @@ export default function DashboardPage() {
               <div className="bg-purple-100 text-purple-600 p-3 rounded-xl"><Receipt size={24} /></div>
               <div>
                 <p className="text-sm font-bold text-gray-500 uppercase">Gastos Operativos</p>
-                <h3 className="text-2xl font-black text-gray-900 dark:text-white">{formatMoney(kpis.gastos)}</h3>
+                <h3 className="text-2xl font-black text-gray-900 dark:text-white">{formatCurrency(kpis.gastos)}</h3>
               </div>
             </div>
 
             {/* Utilidad Neta */}
-            <div className={`bg-white dark:bg-gray-900 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center gap-4`}>
+            <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center gap-4">
               <div className={`${kpis.utilidad >= 0 ? 'bg-blue-100 text-blue-600' : 'bg-red-100 text-red-600'} p-3 rounded-xl`}>
                 {kpis.utilidad >= 0 ? <TrendingUp size={24} /> : <TrendingDown size={24} />}
               </div>
               <div>
                 <p className="text-sm font-bold text-gray-500 uppercase">Utilidad Neta</p>
                 <h3 className={`text-2xl font-black ${kpis.utilidad >= 0 ? 'text-blue-600' : 'text-red-500'}`}>
-                  {formatMoney(kpis.utilidad)}
+                  {formatCurrency(kpis.utilidad)}
                 </h3>
               </div>
             </div>
@@ -171,30 +177,26 @@ export default function DashboardPage() {
 
           {/* CHARTS & WIDGETS SECTION */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
+
             <div className="lg:col-span-2 bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
               <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Análisis de Rentabilidad Diaria</h2>
               <div className="h-[400px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                    <XAxis dataKey="dia" stroke="#6b7280" tick={{fontSize: 12}} tickFormatter={(val) => val && typeof val === 'string' && val.includes('-') ? val.split('-').slice(1).join('/') : val} />
-                    <YAxis stroke="#6b7280" tick={{fontSize: 12}} tickFormatter={(val) => `$${val/1000}k`} />
-                    <Tooltip 
-                      formatter={(value: any) => [formatMoney(Number(value)), '']}
+                    <XAxis dataKey="dia" stroke="#6b7280" tick={{ fontSize: 12 }} tickFormatter={(val) => val && typeof val === 'string' && val.includes('-') ? val.split('-').slice(1).join('/') : val} />
+                    <YAxis stroke="#6b7280" tick={{ fontSize: 12 }} tickFormatter={(val) => `$${val / 1000}k`} />
+                    <Tooltip
+                      formatter={(value: any) => [formatCurrency(Number(value)), '']}
                       labelFormatter={(label) => `Fecha: ${label}`}
                       contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                     />
                     <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                    
-                    {/* Barras de Egresos Apilados */}
                     <Bar dataKey="cogs" name="COGS (Insumos)" stackId="a" fill="#f97316" radius={[0, 0, 4, 4]} />
                     <Bar dataKey="mermas" name="Mermas" stackId="a" fill="#ef4444" />
                     <Bar dataKey="gastos_operativos" name="Gastos Opex" stackId="a" fill="#a855f7" radius={[4, 4, 0, 0]} />
-                    
-                    {/* Línea de Ventas Brutas y Utilidad */}
-                    <Line type="monotone" dataKey="ventas_brutas" name="Ventas Brutas" stroke="#22c55e" strokeWidth={3} dot={{r:4}} />
-                    <Line type="monotone" dataKey="utilidad_neta" name="Utilidad Neta" stroke="#3b82f6" strokeWidth={3} dot={{r:4}} />
+                    <Line type="monotone" dataKey="ventas_brutas" name="Ventas Brutas" stroke="#22c55e" strokeWidth={3} dot={{ r: 4 }} />
+                    <Line type="monotone" dataKey="utilidad_neta" name="Utilidad Neta" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4 }} />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
@@ -205,11 +207,11 @@ export default function DashboardPage() {
             </div>
 
           </div>
-          
+
           {/* DATA TABLE / LIST */}
           <div className="bg-white dark:bg-neutral-900 p-4 md:p-6 rounded-2xl shadow-sm border border-neutral-100 dark:border-neutral-800 overflow-hidden">
             <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Desglose por Día</h2>
-            
+
             {/* VISTA MÓVIL (Tarjetas) */}
             <div className="grid grid-cols-1 gap-4 md:hidden">
               {data.map((row, i) => (
@@ -217,25 +219,25 @@ export default function DashboardPage() {
                   <div className="flex justify-between items-center mb-3 pb-3 border-b border-neutral-200 dark:border-neutral-700/50">
                     <span className="font-bold text-neutral-900 dark:text-white">{row.dia}</span>
                     <span className={`font-black ${row.utilidad_neta >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-500'}`}>
-                      {formatMoney(row.utilidad_neta)} Neta
+                      {formatCurrency(row.utilidad_neta)} Neta
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
                       <p className="text-neutral-500 dark:text-neutral-400 text-xs uppercase mb-1">Ventas</p>
-                      <p className="text-green-600 font-bold">{formatMoney(row.ventas_brutas)}</p>
+                      <p className="text-green-600 font-bold">{formatCurrency(row.ventas_brutas)}</p>
                     </div>
                     <div>
                       <p className="text-neutral-500 dark:text-neutral-400 text-xs uppercase mb-1">COGS</p>
-                      <p className="text-orange-500 font-medium">{formatMoney(row.cogs)}</p>
+                      <p className="text-orange-500 font-medium">{formatCurrency(row.cogs)}</p>
                     </div>
                     <div>
                       <p className="text-neutral-500 dark:text-neutral-400 text-xs uppercase mb-1">Mermas</p>
-                      <p className="text-red-500 font-medium">{formatMoney(row.mermas)}</p>
+                      <p className="text-red-500 font-medium">{formatCurrency(row.mermas)}</p>
                     </div>
                     <div>
                       <p className="text-neutral-500 dark:text-neutral-400 text-xs uppercase mb-1">Gastos</p>
-                      <p className="text-purple-500 font-medium">{formatMoney(row.gastos_operativos)}</p>
+                      <p className="text-purple-500 font-medium">{formatCurrency(row.gastos_operativos)}</p>
                     </div>
                   </div>
                 </div>
@@ -259,12 +261,12 @@ export default function DashboardPage() {
                   {data.map((row, i) => (
                     <tr key={i} className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
                       <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{row.dia}</td>
-                      <td className="px-6 py-4 text-green-600 font-bold">{formatMoney(row.ventas_brutas)}</td>
-                      <td className="px-6 py-4 text-orange-500">{formatMoney(row.cogs)}</td>
-                      <td className="px-6 py-4 text-red-500">{formatMoney(row.mermas)}</td>
-                      <td className="px-6 py-4 text-purple-500">{formatMoney(row.gastos_operativos)}</td>
+                      <td className="px-6 py-4 text-green-600 font-bold">{formatCurrency(row.ventas_brutas)}</td>
+                      <td className="px-6 py-4 text-orange-500">{formatCurrency(row.cogs)}</td>
+                      <td className="px-6 py-4 text-red-500">{formatCurrency(row.mermas)}</td>
+                      <td className="px-6 py-4 text-purple-500">{formatCurrency(row.gastos_operativos)}</td>
                       <td className={`px-6 py-4 font-black ${row.utilidad_neta >= 0 ? 'text-blue-600' : 'text-red-500'}`}>
-                        {formatMoney(row.utilidad_neta)}
+                        {formatCurrency(row.utilidad_neta)}
                       </td>
                     </tr>
                   ))}
@@ -278,4 +280,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

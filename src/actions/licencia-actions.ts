@@ -172,12 +172,15 @@ export async function reportarPagoSuscripcion(formData: FormData) {
     }
   }
 
+  const modulos = formData.get('modulos') as string;
+  const planCompleto = modulos ? `${plan_solicitado || 'STARTER'} + [${modulos}]` : (plan_solicitado || 'STARTER');
+
   // Intentar insertar en suscripciones_pagos primero (tabla estándar)
   const { error } = await supabase.from('suscripciones_pagos').insert({
     empresa_id: perfil.empresa_id,
     monto,
     metodo_pago,
-    referencia: referencia || 'S/R',
+    referencia: referencia ? `${referencia} (${planCompleto})` : `S/R (${planCompleto})`,
     moneda: 'USD',
     estado: 'pendiente_aprobacion',
   });
@@ -191,7 +194,7 @@ export async function reportarPagoSuscripcion(formData: FormData) {
         monto,
         metodo_pago,
         referencia,
-        plan_solicitado,
+        plan_solicitado: planCompleto,
         comprobante_url,
         estado: 'PENDIENTE'
       });

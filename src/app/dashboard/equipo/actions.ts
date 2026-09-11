@@ -35,6 +35,29 @@ export async function createUser(email: string, password: string, nombreCompleto
     return { success: false, error: 'No autorizado' };
   }
 
+  // Validar límite de usuarios según el plan contratado
+  const { data: empresaData } = await supabase
+    .from('empresas')
+    .select('plan_suscripcion')
+    .eq('id', empresaId)
+    .single();
+
+  const plan = empresaData?.plan_suscripcion?.toLowerCase() || 'starter';
+
+  if (plan === 'starter') {
+    const { count: userCount } = await supabase
+      .from('perfiles')
+      .select('*', { count: 'exact', head: true })
+      .eq('empresa_id', empresaId);
+
+    if ((userCount || 0) >= 3) {
+      return {
+        success: false,
+        error: 'Has alcanzado el límite de 3 usuarios del plan Starter (Master, Gerente y Cajero). Actualiza al plan PRO para tener usuarios ilimitados.'
+      };
+    }
+  }
+
   const supabaseAdmin = createAdminClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!

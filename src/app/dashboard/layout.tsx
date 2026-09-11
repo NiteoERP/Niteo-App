@@ -20,7 +20,8 @@ export default async function DashboardLayout({
   }
 
   const { data: dbProfile } = await supabase
-    .from('perfiles').select('permisos, empresa_id, rol').eq('id', user.id).single();
+    .from('perfiles').select('permisos, empresa_id, rol, sede_id').eq('id', user.id).single();
+
   const permisos = dbProfile?.permisos || [];
 
   const empresa_id = user.app_metadata?.empresa_id || dbProfile?.empresa_id;
@@ -139,7 +140,12 @@ export default async function DashboardLayout({
                          p-4 md:p-6
                          pb-20 md:pb-6
                          bg-[#0a0a0a]">
-          <EmpresaProvider empresa={empresaData}>
+          <EmpresaProvider
+            empresa={empresaData}
+            empresaId={empresa_id ?? null}
+            userRole={userRole}
+            userSedeId={dbProfile?.sede_id ?? null}
+          >
             {licencia && userRole !== 'CAJERO' && <LicenseBanner licencia={licencia} />}
             {children}
           </EmpresaProvider>

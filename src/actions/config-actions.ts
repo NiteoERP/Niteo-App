@@ -1,7 +1,8 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
-import { revalidatePath, unstable_noStore as noStore } from 'next/cache';
+import { revalidatePath } from 'next/cache';
+
 
 /**
  * Scraping directo del portal oficial del BCV (https://www.bcv.org.ve).
@@ -92,7 +93,6 @@ export async function syncBcvDirectAction() {
  * Si está en 'AUTO', retorna la tasa oficial más reciente (incluyendo la del día siguiente si ya salió).
  */
 export async function getTasaBcvAction() {
-  noStore();
   const supabase = await createClient();
 
   try {
@@ -180,7 +180,6 @@ export async function getTasaBcvAction() {
  * Obtiene el detalle completo de configuración de tasa para la pantalla de Ajustes.
  */
 export async function getEmpresaConfigTasaAction() {
-  noStore();
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'No autenticado' };

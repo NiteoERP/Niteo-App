@@ -8,6 +8,10 @@ import { Package, FileBox } from 'lucide-react';
 import SedeSelector from '@/components/inventario/SedeSelector';
 import { getMovimientosInventario } from './actions';
 
+import { getCatalogoCachedInsumos, getCatalogoProductos, getSedesCached } from '@/lib/cache';
+
+export const revalidate = 300;
+
 export default async function InventarioPage({ searchParams }: { searchParams: Promise<{ tab?: string, sede?: string }> }) {
   const params = await searchParams;
   const supabase = await createClient();
@@ -17,8 +21,7 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
   if (!empresaId) return <div className="p-8 text-rose-400">Error: No tienes empresa configurada.</div>;
 
   const { data: profile } = await supabase.from('perfiles').select('sede_id, rol, permisos').eq('id', user?.id).single();
-  const { data: sedesDb } = await supabase.from('sedes').select('id, nombre_sede').eq('empresa_id', empresaId);
-  const sedes = sedesDb || [];
+  const sedes = await getSedesCached(empresaId);
 
   // Ver costos y movimientos: solo MASTER o quien tenga el permiso 'finanzas'
   const canSeeCosts = profile?.rol === 'MASTER' || (profile?.permisos || []).includes('finanzas');
@@ -38,29 +41,20 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
   let movimientos: any[] = [];
 
   if (currentTab === 'insumos' || currentTab === 'transformaciones') {
-    let query = supabase.from('inventario_insumos').select('*').eq('empresa_id', empresaId);
-    if (activeSedeId) query = query.eq('sede_id', activeSedeId);
-    const { data } = await query;
-    insumos = data || [];
+    insumos = await getCatalogoCachedInsumos(empresaId, activeSedeId);
 
     // Movimientos solo para usuarios con acceso financiero
     if (currentTab === 'insumos' && canSeeCosts) {
       movimientos = await getMovimientosInventario(empresaId, activeSedeId || undefined);
     }
   } else if (currentTab === 'productos') {
-    let insumosQuery = supabase.from('inventario_insumos').select('*').eq('empresa_id', empresaId);
-    if (activeSedeId) insumosQuery = insumosQuery.eq('sede_id', activeSedeId);
-
-    const [resProd, resIns, resRecetas] = await Promise.all([
-      supabase.from('productos')
-        .select('id, nombre, codigo_barras, precio_venta, descripcion, es_compuesto, costo, estado_activo')
-        .eq('empresa_id', empresaId)
-        .order('nombre'),
-      insumosQuery,
+    const [cachedProductos, cachedInsumos, resRecetas] = await Promise.all([
+      getCatalogoProductos(empresaId),
+      getCatalogoCachedInsumos(empresaId, activeSedeId),
       supabase.from('recetas').select('*').eq('empresa_id', empresaId),
     ]);
-    productos = resProd.data || [];
-    insumos = resIns.data || [];
+    productos = cachedProductos;
+    insumos = cachedInsumos;
     recetas = resRecetas.data || [];
   }
 

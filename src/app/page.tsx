@@ -226,7 +226,15 @@ export default async function LandingPage() {
                 </div>
                 <p className="text-neutral-400 text-sm mb-8">Ideal para digitalizar tu negocio por primera vez.</p>
                 <ul className="space-y-3 text-sm text-neutral-300">
-                  {['1 Sede (Física o Virtual)', 'Terminal de Facturación Local', 'Sincronización en Tiempo Real', 'Tasa BCV Automática', 'Inventario de Entradas y Salidas', 'Cierre de Caja Básico'].map(f => (
+                  {[
+                    '1 Sede (Física o Virtual)',
+                    'Terminal de Venta Rápido (POS)',
+                    'Tasa BCV y Multimoneda en Tiempo Real',
+                    'Inventario y Registro de Compras',
+                    'Cuentas por Cobrar y por Pagar',
+                    'Apertura y Cierre de Caja (Arqueo)',
+                    'Hasta 3 Usuarios (Master, Cajero, Gerente)'
+                  ].map(f => (
                     <li key={f} className="flex items-start gap-2">
                       <CheckCircle size={16} className="text-emerald-400 mt-0.5 shrink-0" />
                       {f}
@@ -252,7 +260,15 @@ export default async function LandingPage() {
                 </div>
                 <p className="text-indigo-100 text-sm mb-8">Para operaciones que exigen control estricto de costos.</p>
                 <ul className="space-y-3 text-sm text-indigo-50">
-                  {['Todo lo del Starter', 'Hasta 2 Sedes', 'Motor de Recetas (Escandallos)', 'Módulo Móvil de Compras', 'Dashboard de Rentabilidad Real', 'Cálculo de Costo Promedio', 'Conciliación Bancaria'].map(f => (
+                  {[
+                    'Todo lo del Starter',
+                    'Hasta 2 Sedes operativas',
+                    'Motor de Recetas y Escandallos (Restaurantes)',
+                    'Costo Promedio Ponderado de Insumos',
+                    'Dashboard Financiero y Conciliación Bancaria',
+                    'Módulo Móvil de Compras',
+                    'Usuarios Ilimitados'
+                  ].map(f => (
                     <li key={f} className="flex items-start gap-2">
                       <CheckCircle size={16} className="text-white mt-0.5 shrink-0" />
                       {f}

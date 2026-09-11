@@ -2,7 +2,8 @@
 import { getTasaBcvAction } from './config-actions';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers'; 
-import { revalidatePath, unstable_noStore as noStore } from 'next/cache';
+import { revalidatePath } from 'next/cache';
+
 import { registrarAsiento } from './contabilidad-actions';  
 
 export async function registrarCompra(formData: FormData) {   
@@ -78,6 +79,8 @@ export async function registrarCompra(formData: FormData) {
   }    
   // 5. Revalidar la vista para refrescar inventario y compras   
   revalidatePath('/dashboard/compras');      
+  const { revalidateTag } = require('next/cache');
+  revalidateTag(`insumos-${profile.empresa_id}${activeSedeId ? `-${activeSedeId}` : ''}`);
   return { success: true }; 
 }  
 
@@ -113,10 +116,10 @@ export async function getInsumos() {
 }    
 
 export async function getTasaDelDia(): Promise<number> {
-  noStore();   
-  const data = await getTasaBcvAction();   
-  return data.tasa || 36.50; 
-} 
+  const data = await getTasaBcvAction();
+  return data.tasa || 36.50;
+}
+
 
 export async function registrarFacturaInsumos(factura: {   
   proveedor: string;   
