@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserCircle, Check, Loader2, Plus, LogOut } from 'lucide-react';
-import { switchAccount, removeSavedAccount, SavedAccount } from '@/actions/vault-actions';
+import { switchAccount, removeSavedAccount, saveCurrentSessionToVault, SavedAccount } from '@/actions/vault-actions';
 import { useRouter } from 'next/navigation';
 
 interface AccountSwitcherProps {
@@ -15,6 +15,11 @@ interface AccountSwitcherProps {
 export default function AccountSwitcher({ currentUserId, currentUserName, currentUserRole, savedAccounts }: AccountSwitcherProps) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    // Sincroniza la sesión actual en la bóveda de cuentas de forma segura desde el cliente
+    saveCurrentSessionToVault().catch(console.error);
+  }, [currentUserId]);
 
   const handleSwitch = async (account: SavedAccount) => {
     if (account.id === currentUserId) return;

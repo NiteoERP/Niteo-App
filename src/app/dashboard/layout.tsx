@@ -19,29 +19,44 @@ export default async function DashboardLayout({
     redirect('/login');
   }
 
-  const empresa_id = user.app_metadata?.empresa_id;
-  const userRole   = user.app_metadata?.user_role || 'CAJERO';
-  const userName   = user.user_metadata?.full_name || user.email;
-
   const { data: dbProfile } = await supabase
-    .from('perfiles').select('permisos').eq('id', user.id).single();
+    .from('perfiles').select('permisos, empresa_id, rol').eq('id', user.id).single();
   const permisos = dbProfile?.permisos || [];
 
-  const { getEstadoLicencia } = await import('@/actions/licencia-actions');
-  const licencia = await getEstadoLicencia();
+  const empresa_id = user.app_metadata?.empresa_id || dbProfile?.empresa_id;
+  const userRole   = user.app_metadata?.user_role || dbProfile?.rol || 'CAJERO';
+  const userName   = user.user_metadata?.full_name || user.email;
 
-  const { saveCurrentSessionToVault, getSavedAccounts } = await import('@/actions/vault-actions');
-  await saveCurrentSessionToVault();
-  const savedAccounts = await getSavedAccounts();
+  let licencia = null;
+  try {
+    const { getEstadoLicencia } = await import('@/actions/licencia-actions');
+    licencia = await getEstadoLicencia();
+  } catch (err: any) {
+    if (err?.digest?.includes('DYNAMIC_SERVER_USAGE') || err?.digest?.includes('NEXT_REDIRECT')) throw err;
+    console.error('Error cargando licencia en layout:', err);
+  }
+
+  let savedAccounts: any[] = [];
+  try {
+    const { getSavedAccounts } = await import('@/actions/vault-actions');
+    savedAccounts = await getSavedAccounts();
+  } catch (err: any) {
+    if (err?.digest?.includes('DYNAMIC_SERVER_USAGE') || err?.digest?.includes('NEXT_REDIRECT')) throw err;
+    console.error('Error cargando savedAccounts en layout:', err);
+  }
 
   let empresaData = null;
   if (empresa_id) {
-    const { data: emp } = await supabase
-      .from('empresas')
-      .select('nombre_comercial, moneda, simbolo_moneda, zona_horaria, metodos_pago')
-      .eq('id', empresa_id)
-      .single();
-    if (emp) empresaData = emp;
+    try {
+      const { data: emp } = await supabase
+        .from('empresas')
+        .select('nombre_comercial, moneda, simbolo_moneda, zona_horaria, metodos_pago')
+        .eq('id', empresa_id)
+        .single();
+      if (emp) empresaData = emp;
+    } catch (err) {
+      console.error('Error cargando empresaData:', err);
+    }
   }
 
   const { default: LicenseBanner } = await import('@/components/licencias/LicenseBanner');

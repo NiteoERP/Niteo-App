@@ -16,11 +16,17 @@ export default async function BillingPage() {
   const { data: { user } } = await supabase.auth.getUser();
   const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user?.id).single();
   
-  const { data: historialPagos } = await supabase
-    .from('pagos_suscripcion')
-    .select('*')
-    .eq('empresa_id', perfil?.empresa_id)
-    .order('fecha_reporte', { ascending: false });
+  let historialPagos: any[] = [];
+  try {
+    const { data: pagos } = await supabase
+      .from('suscripciones_pagos')
+      .select('*')
+      .eq('empresa_id', perfil?.empresa_id)
+      .order('fecha_registro', { ascending: false });
+    historialPagos = pagos || [];
+  } catch {
+    historialPagos = [];
+  }
 
   return (
     <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">

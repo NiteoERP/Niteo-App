@@ -64,10 +64,18 @@ export async function middleware(request: NextRequest) {
 
     // 4. LEER PERFIL DIRECTAMENTE DEL JWT (Cero latencia, cero bases de datos)
     try {
-      const empresa_id = user.app_metadata?.empresa_id;
-      const rol = user.app_metadata?.user_role;
+      let empresa_id = user.app_metadata?.empresa_id;
+      let rol = user.app_metadata?.user_role;
       
-      const profile = empresa_id ? { empresa_id, rol } : null;
+      if (!empresa_id) {
+        const { data: pDb } = await supabase.from('perfiles').select('empresa_id, rol').eq('id', user.id).maybeSingle();
+        if (pDb?.empresa_id) {
+          empresa_id = pDb.empresa_id;
+          rol = rol || pDb.rol;
+        }
+      }
+
+      const profile = empresa_id ? { empresa_id, rol: rol || 'CAJERO' } : null;
 
       // Si el perfil no existe, forzarlos al Onboarding principal
       if (!profile) {
@@ -88,11 +96,14 @@ export async function middleware(request: NextRequest) {
 
       if (profile) {
         // 3. Validación de Suscripción (Ahora leemos DB para LIFETIME bypass)
-        const { data: sub } = await supabase.from('suscripciones_empresas').select('plan, estado').eq('empresa_id', profile.empresa_id).single();
-        const isLifetime = sub?.plan === 'LIFETIME';
-        const isActiva = sub?.estado === 'activa' || sub?.estado === 'ACTIVA';
+        const { data: sub } = await supabase.from('suscripciones_empresas').select('plan, estado').eq('empresa_id', profile.empresa_id).maybeSingle();
+        const plan = (sub?.plan || '').toUpperCase();
+        const estado = (sub?.estado || 'ACTIVA').toUpperCase();
 
-        // Si NO es LIFETIME y tampoco esta ACTIVA, lo bloqueamos al billing
+        const isLifetime = plan === 'LIFETIME';
+        const isActiva = !sub || estado === 'ACTIVA' || estado === 'TRIAL' || estado === 'ACTIVO';
+
+        // Si NO es LIFETIME y tampoco esta ACTIVA/TRIAL, lo bloqueamos al billing
         if (!isLifetime && !isActiva) {
           const url = request.nextUrl.clone();
           url.pathname = '/dashboard/billing';
@@ -112,20 +123,23 @@ export async function middleware(request: NextRequest) {
 
         // 5. Redireccionar desde /dashboard a la página por defecto del usuario
         if (request.nextUrl.pathname === '/dashboard' && profile.rol !== 'MASTER') {
-          const { data: profileDb } = await supabase.from('perfiles').select('permisos').eq('id', user.id).single();
-          const permisos = profileDb?.permisos || [];
-          
-          if (!permisos.includes('dashboard')) {
-            const url = request.nextUrl.clone();
-            if (permisos.includes('pos')) url.pathname = '/dashboard/ventas';
-            else if (permisos.includes('caja')) url.pathname = '/dashboard/caja';
-            else if (permisos.includes('inventario')) url.pathname = '/dashboard/inventario';
-            else if (permisos.includes('compras')) url.pathname = '/dashboard/compras';
-            else if (permisos.includes('reportes')) url.pathname = '/dashboard/informes';
-            else if (permisos.includes('clientes')) url.pathname = '/dashboard/clientes';
-            else url.pathname = '/dashboard/caja'; // Fallback
+          const { data: profileDb } = await supabase.from('perfiles').select('permisos, rol').eq('id', user.id).maybeSingle();
+          const effectiveRole = profileDb?.rol || profile.rol;
+          if (effectiveRole !== 'MASTER') {
+            const permisos = profileDb?.permisos || [];
+            
+            if (!permisos.includes('dashboard')) {
+              const url = request.nextUrl.clone();
+              if (permisos.includes('pos')) url.pathname = '/dashboard/ventas';
+              else if (permisos.includes('caja')) url.pathname = '/dashboard/caja';
+              else if (permisos.includes('inventario')) url.pathname = '/dashboard/inventario';
+              else if (permisos.includes('compras')) url.pathname = '/dashboard/compras';
+              else if (permisos.includes('reportes')) url.pathname = '/dashboard/informes';
+              else if (permisos.includes('clientes')) url.pathname = '/dashboard/clientes';
+              else url.pathname = '/dashboard/caja'; // Fallback
 
-            return NextResponse.redirect(url);
+              return NextResponse.redirect(url);
+            }
           }
         }
       }
