@@ -30,6 +30,8 @@ export interface ProcesarVentaVirtualInput {
   pagos: MetodoPagoVirtual[];
   cliente_id?: string;
   cliente_nombre?: string;
+  cliente_cedula?: string;
+  cliente_telefono?: string;
   mesero_nombre?: string;
 }
 
@@ -67,6 +69,35 @@ export async function procesarVentaVirtual(input: ProcesarVentaVirtualInput): Pr
   if (!perfil) return { success: false, error: 'Perfil no encontrado' };
 
   const empresaId: string = perfil.empresa_id;
+
+  // ── Crear cliente si no existe pero nos pasan nombre y cédula ────────────────
+  let finalClienteId = input.cliente_id;
+  if (!finalClienteId && input.cliente_nombre && input.cliente_cedula) {
+      // Buscar si ya existe por cédula en esta empresa
+      const { data: existingClient } = await supabase
+        .from('clientes')
+        .select('id')
+        .eq('empresa_id', empresaId)
+        .eq('rif_cedula', input.cliente_cedula)
+        .single();
+      
+      if (existingClient) {
+         finalClienteId = existingClient.id;
+      } else {
+         const { data: newClient } = await supabase
+          .from('clientes')
+          .insert({
+             empresa_id: empresaId,
+             nombre: input.cliente_nombre,
+             rif_cedula: input.cliente_cedula,
+             telefono: input.cliente_telefono || null,
+             estado_activo: true
+          }).select('id').single();
+        if (newClient) {
+           finalClienteId = newClient.id;
+        }
+      }
+  }
 
   // ── Validaciones básicas ───────────────────────────────────────────────────
   if (!input.sede_id) return { success: false, error: 'sede_id es requerido' };
@@ -198,4 +229,22 @@ export async function procesarVentaVirtual(input: ProcesarVentaVirtualInput): Pr
       mesero_nombre: input.mesero_nombre || null,
     }
   };
+}
+
+export async function buscarClientePorCedula(cedula: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
+  if (!perfil) return null;
+  
+  const { data: cliente, error } = await supabase
+    .from('clientes')
+    .select('id, nombre, rif_cedula, telefono')
+    .eq('empresa_id', perfil.empresa_id)
+    .eq('rif_cedula', cedula)
+    .single();
+    
+  if (error) return null;
+  return cliente;
 }

@@ -41,7 +41,27 @@ export default function TerminalVirtual({
 
   // Campos extras
   const [clienteNombre, setClienteNombre] = useState('');
+  const [clienteCedula, setClienteCedula] = useState('');
+  const [clienteTelefono, setClienteTelefono] = useState('');
+  const [clienteId, setClienteId] = useState<string | null>(null);
   const [meseroNombre, setMeseroNombre] = useState('');
+
+  const handleCedulaBlur = async () => {
+    if (!clienteCedula.trim()) return;
+    try {
+      const { buscarClientePorCedula } = await import('@/actions/ventas-virtual-actions');
+      const c = await buscarClientePorCedula(clienteCedula.trim());
+      if (c) {
+        setClienteId(c.id);
+        setClienteNombre(c.nombre);
+        setClienteTelefono(c.telefono || '');
+      } else {
+        setClienteId(null);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   // Modal de Pago
   const [modalPagoAbierto, setModalPagoAbierto] = useState(false);
@@ -178,7 +198,10 @@ export default function TerminalVirtual({
         sede_id: sedeVirtualId,
         items: itemsParaVender,
         pagos: pagosMap,
+        cliente_id: clienteId || undefined,
         cliente_nombre: clienteNombre.trim() || undefined,
+        cliente_cedula: clienteCedula.trim() || undefined,
+        cliente_telefono: clienteTelefono.trim() || undefined,
         mesero_nombre: meseroNombre.trim() || undefined,
       });
 
@@ -215,6 +238,11 @@ export default function TerminalVirtual({
     setVentaExitosa(null);
     setCarritoAbierto(false);
     setResultado(null);
+    setClienteCedula('');
+    setClienteNombre('');
+    setClienteTelefono('');
+    setClienteId(null);
+    setMeseroNombre('');
   };
 
 
@@ -418,17 +446,39 @@ export default function TerminalVirtual({
               {/* Cliente y Mesero */}
               <div className="flex flex-col gap-2 shrink-0 bg-neutral-950/50 p-3 rounded-xl border border-neutral-800/50">
                  <div className="flex items-center gap-2">
-                   <User size={14} className="text-neutral-500" />
+                   <User size={14} className="text-neutral-500 shrink-0" />
                    <input 
                      type="text" 
-                     placeholder="Nombre del Cliente (Opcional)" 
-                     value={clienteNombre}
-                     onChange={e => setClienteNombre(e.target.value)}
+                     placeholder="Cédula / DNI (Enter para buscar)" 
+                     value={clienteCedula}
+                     onBlur={handleCedulaBlur}
+                     onKeyDown={e => e.key === 'Enter' && handleCedulaBlur()}
+                     onChange={e => setClienteCedula(e.target.value)}
                      className="bg-transparent border-b border-neutral-800 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 w-full py-1"
                    />
                  </div>
                  <div className="flex items-center gap-2">
-                   <UserCircle size={14} className="text-neutral-500" />
+                   <div className="w-[14px] shrink-0" />
+                   <input 
+                     type="text" 
+                     placeholder="Nombre del Cliente (Opcional)" 
+                     value={clienteNombre}
+                     onChange={e => { setClienteNombre(e.target.value); setClienteId(null); }}
+                     className="bg-transparent border-b border-neutral-800 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 w-full py-1"
+                   />
+                 </div>
+                 <div className="flex items-center gap-2">
+                   <div className="w-[14px] shrink-0" />
+                   <input 
+                     type="text" 
+                     placeholder="Teléfono (Opcional)" 
+                     value={clienteTelefono}
+                     onChange={e => setClienteTelefono(e.target.value)}
+                     className="bg-transparent border-b border-neutral-800 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 w-full py-1"
+                   />
+                 </div>
+                 <div className="flex items-center gap-2 mt-1">
+                   <UserCircle size={14} className="text-neutral-500 shrink-0" />
                    <input 
                      type="text" 
                      placeholder="Mesero / Vendedor (Opcional)" 
