@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { reportarPagoSuscripcion } from '@/actions/licencia-actions';
-import { CheckCircle, Clock, UploadCloud, FileText, AlertCircle, RefreshCw, Check, PackagePlus, ShieldCheck } from 'lucide-react';
+import { CheckCircle, Clock, UploadCloud, FileText, AlertCircle, RefreshCw, Check, PackagePlus, ShieldCheck, CreditCard, Info } from 'lucide-react';
 
 const PLANES_CONFIG: Record<string, { nombre: string; precio: number; desc: string }> = {
   STARTER: { nombre: 'Starter', precio: 10, desc: '1 Sede · Inventario y Compras · Hasta 3 usuarios' },
@@ -16,14 +16,25 @@ const PLUGINS_DISPONIBLES = [
   { id: 'caja-extra', nombre: 'Licencia de Caja Adicional', precio: 5, desc: 'Conectar un punto de cobro físico extra' },
 ];
 
+// Iconos por tipo de método
+const METODO_ICON: Record<string, string> = {
+  zelle: '💸',
+  binance: '🔶',
+  pago_movil: '📱',
+  transferencia: '🏦',
+  efectivo: '💵',
+};
+
 export default function BillingClientForm({ 
   historialPagos, 
   planActual,
-  modulosActuales = []
+  modulosActuales = [],
+  metodosPago = [],
 }: { 
   historialPagos: any[]; 
   planActual: string;
   modulosActuales?: string[];
+  metodosPago?: { id: string; tipo: string; nombre: string; datos: any; instrucciones: string }[];
 }) {
   const [tab, setTab] = useState<'reportar' | 'historial'>('reportar');
   const [loading, setLoading] = useState(false);
@@ -35,8 +46,9 @@ export default function BillingClientForm({
   const [selectedPlan, setSelectedPlan] = useState<string>(initialPlan);
   const [selectedPlugins, setSelectedPlugins] = useState<string[]>(modulosActuales);
 
-  // Datos de pago
-  const [metodo, setMetodo] = useState('Zelle');
+  // Selección del método de pago
+  const metodosDisponibles = metodosPago.length > 0 ? metodosPago : [];
+  const [metodoSeleccionado, setMetodoSeleccionado] = useState<string>(metodosDisponibles[0]?.id || '');
   const [referencia, setReferencia] = useState('');
   const [file, setFile] = useState<File | null>(null);
 
@@ -54,6 +66,8 @@ export default function BillingClientForm({
     );
   };
 
+  const metodoActual = metodosDisponibles.find(m => m.id === metodoSeleccionado);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -61,7 +75,7 @@ export default function BillingClientForm({
     
     const formData = new FormData();
     formData.append('monto', montoCalculado.toString());
-    formData.append('metodo_pago', metodo);
+    formData.append('metodo_pago', metodoActual?.nombre || metodoSeleccionado);
     formData.append('referencia', referencia);
     formData.append('plan_solicitado', selectedPlan);
     formData.append('modulos', selectedPlugins.join(','));
@@ -214,36 +228,68 @@ export default function BillingClientForm({
                 {/* 3. Datos del Reporte de Pago */}
                 <div className="space-y-4 pt-2 border-t border-neutral-800">
                   <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider">
-                    Paso 3: Datos de tu Transferencia
+                    Paso 3: Elige cómo vas a pagar
                   </label>
                   
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs text-neutral-400 mb-1">Método de Pago</label>
-                      <select 
-                        value={metodo} 
-                        onChange={e => setMetodo(e.target.value)} 
-                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl h-11 px-3 text-white text-sm focus:border-indigo-500 focus:outline-none"
-                      >
-                        <option>Zelle</option>
-                        <option>Pago Móvil</option>
-                        <option>Binance Pay</option>
-                        <option>Efectivo USD</option>
-                        <option>Transferencia Bancaria</option>
-                      </select>
+                  {metodosDisponibles.length === 0 ? (
+                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-amber-400 text-sm">
+                      El equipo de Niteo aún no ha configurado métodos de pago. Escríbenos a soporte@niteo.app
                     </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {metodosDisponibles.map(m => {
+                        const isSelected = metodoSeleccionado === m.id;
+                        return (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() => setMetodoSeleccionado(m.id)}
+                            className={`p-3 rounded-xl border text-left transition-all flex items-center gap-3 ${
+                              isSelected
+                                ? 'bg-indigo-600/15 border-indigo-500 text-white'
+                                : 'bg-neutral-950/60 border-neutral-800 text-neutral-400 hover:border-neutral-700'
+                            }`}
+                          >
+                            <span className="text-2xl">{METODO_ICON[m.tipo] || '💳'}</span>
+                            <span className="font-semibold text-sm">{m.nombre}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
 
-                    <div>
-                      <label className="block text-xs text-neutral-400 mb-1">Número de Referencia</label>
-                      <input 
-                        required 
-                        type="text" 
-                        value={referencia} 
-                        onChange={e => setReferencia(e.target.value)} 
-                        placeholder="Ej. 9845210" 
-                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl h-11 px-3 text-white text-sm focus:border-indigo-500 focus:outline-none" 
-                      />
+                  {/* Datos del método seleccionado */}
+                  {metodoActual && (
+                    <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4 space-y-2">
+                      <p className="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <Info size={13} /> Datos para realizar el pago
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {Object.entries(metodoActual.datos as Record<string, string>).map(([k, v]) => v && (
+                          <div key={k}>
+                            <p className="text-xs text-indigo-300/70 capitalize">{k.replace(/_/g, ' ')}</p>
+                            <p className="text-sm text-white font-mono font-semibold">{v}</p>
+                          </div>
+                        ))}
+                      </div>
+                      {metodoActual.instrucciones && (
+                        <p className="text-xs text-indigo-200/80 mt-2 pt-2 border-t border-indigo-500/20">
+                          {metodoActual.instrucciones}
+                        </p>
+                      )}
                     </div>
+                  )}
+
+                  <div>
+                    <label className="block text-xs text-neutral-400 mb-1">Número de Referencia / Confirmación</label>
+                    <input 
+                      required 
+                      type="text" 
+                      value={referencia} 
+                      onChange={e => setReferencia(e.target.value)} 
+                      placeholder="Ej. 9845210" 
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl h-11 px-3 text-white text-sm focus:border-indigo-500 focus:outline-none" 
+                    />
                   </div>
 
                   <div>

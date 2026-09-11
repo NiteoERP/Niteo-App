@@ -1,8 +1,9 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import { LogoutButton } from '@/components/LogoutButton';
-import { ShieldCheck, Users, DollarSign, LayoutDashboard } from 'lucide-react';
+import { ShieldCheck, Users, DollarSign, LayoutDashboard, CreditCard } from 'lucide-react';
 import Link from 'next/link';
+import { headers } from 'next/headers';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -16,6 +17,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect('/dashboard');
   }
 
+  const headersList = await headers();
+  const pathname = headersList.get('x-pathname') || '';
+
+  const linkClass = (path: string, exact = false) => {
+    const active = exact ? pathname === path : pathname.startsWith(path);
+    return active
+      ? 'flex items-center gap-3 px-3 py-3 rounded-xl bg-indigo-500/10 text-indigo-400 font-medium border border-indigo-500/10'
+      : 'flex items-center gap-3 px-3 py-3 rounded-xl text-neutral-400 hover:bg-white/5 hover:text-white transition-colors';
+  };
+
   return (
     <div className="flex h-screen bg-neutral-950 text-white font-sans overflow-hidden">
       {/* Sidebar SuperAdmin */}
@@ -25,7 +36,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <h1 className="text-xl font-bold tracking-tighter">Niteo Admin</h1>
         </div>
         <nav className="flex-1 p-4 space-y-2">
-          <Link href="/admin" className="flex items-center gap-3 px-3 py-3 rounded-xl bg-indigo-500/10 text-indigo-400 font-medium">
+          <Link href="/admin" className="flex items-center gap-3 px-3 py-3 rounded-xl text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
             <LayoutDashboard size={20} />
             Panel Principal
           </Link>
@@ -36,6 +47,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/admin/pagos" className="flex items-center gap-3 px-3 py-3 rounded-xl text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
             <DollarSign size={20} />
             Pagos Pendientes
+          </Link>
+          <Link href="/admin/metodos-pago" className="flex items-center gap-3 px-3 py-3 rounded-xl text-neutral-400 hover:bg-white/5 hover:text-white transition-colors">
+            <CreditCard size={20} />
+            Métodos de Pago
           </Link>
         </nav>
         <div className="p-4 border-t border-neutral-800">

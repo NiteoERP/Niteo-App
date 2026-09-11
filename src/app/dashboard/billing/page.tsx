@@ -1,6 +1,7 @@
 import React from 'react';
 import { createClient } from '@/utils/supabase/server';
 import { getEstadoLicencia } from '@/actions/licencia-actions';
+import { getMetodosPagoActivos } from '../../../app/admin/metodos-pago/actions';
 import BillingClientForm from './BillingClientForm';
 import { CheckCircle, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { redirect } from 'next/navigation';
@@ -26,6 +27,14 @@ export default async function BillingPage() {
     historialPagos = pagos || [];
   } catch {
     historialPagos = [];
+  }
+
+  // Cargar métodos de pago activos desde la tabla niteo_metodos_pago
+  let metodosPago: any[] = [];
+  try {
+    metodosPago = await getMetodosPagoActivos();
+  } catch {
+    metodosPago = [];
   }
 
   return (
@@ -92,6 +101,7 @@ export default async function BillingPage() {
             historialPagos={historialPagos || []} 
             planActual={licencia.planSuscripcion}
             modulosActuales={licencia.modulosActivos || []}
+            metodosPago={metodosPago}
           />
         </div>
 
@@ -99,3 +109,5 @@ export default async function BillingPage() {
     </div>
   );
 }
+
+

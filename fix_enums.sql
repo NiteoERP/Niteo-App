@@ -3,16 +3,14 @@
 -- =============================================================================
 
 -- 1. Agregar 'STARTER' al ENUM plan_suscripcion
--- Nota: Si usas Supabase, la forma más segura de agregar un valor a un ENUM
--- es a través de ALTER TYPE.
-COMMIT; -- Por si acaso hay una transacción activa
+COMMIT;
 ALTER TYPE plan_suscripcion ADD VALUE IF NOT EXISTS 'STARTER';
 
 -- 2. Agregar 'TRIAL' al ENUM estado_suscripcion
 ALTER TYPE estado_suscripcion ADD VALUE IF NOT EXISTS 'TRIAL';
 
 -- 3. (Opcional) Migrar empresas que digan 'BASICO' a 'STARTER'
-UPDATE public.empresas SET plan = 'STARTER' WHERE plan = 'BASICO';
+UPDATE public.empresas SET plan_suscripcion = 'STARTER' WHERE plan_suscripcion = 'BASICO';
 
 -- =============================================================================
 -- ACERCA DEL USUARIO SUPERADMIN O MASTER

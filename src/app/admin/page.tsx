@@ -9,9 +9,9 @@ export default async function AdminDashboard() {
   const { count: empresasCount } = await supabase.from('empresas').select('*', { count: 'exact', head: true });
   
   const { count: pagosPendientes } = await supabase
-    .from('pagos_suscripcion')
+    .from('suscripciones_pagos')
     .select('*', { count: 'exact', head: true })
-    .eq('estado', 'PENDIENTE');
+    .eq('estado', 'pendiente_aprobacion');
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">

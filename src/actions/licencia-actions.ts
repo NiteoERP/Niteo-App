@@ -37,12 +37,12 @@ export async function getEstadoLicencia(): Promise<EstadoLicencia | null> {
     // Consultar el estado en la tabla de empresas (fallback si no hay suscripción)
     const { data: empresa } = await supabase
       .from('empresas')
-      .select('fecha_registro, plan, estado')
+      .select('fecha_registro, plan_suscripcion, estado_suscripcion')
       .eq('id', perfil.empresa_id)
       .single();
 
     // Determinar el plan activo
-    const plan = (sub?.plan || empresa?.plan || 'PRO').toUpperCase();
+    const plan = (sub?.plan || empresa?.plan_suscripcion || 'PRO').toUpperCase();
 
     const hoy = new Date();
 
@@ -62,8 +62,6 @@ export async function getEstadoLicencia(): Promise<EstadoLicencia | null> {
     let fechaVenc: Date | null = null;
     if (sub?.fecha_vencimiento) {
       fechaVenc = new Date(sub.fecha_vencimiento);
-    } else if (empresa?.fecha_vencimiento_plan) {
-      fechaVenc = new Date(empresa.fecha_vencimiento_plan);
     } else {
       const regDate = (sub?.fecha_registro || empresa?.fecha_registro) ? new Date(sub?.fecha_registro || empresa?.fecha_registro) : new Date();
       fechaVenc = new Date(regDate);
@@ -108,8 +106,8 @@ export async function getEstadoLicencia(): Promise<EstadoLicencia | null> {
         bloqueoFuerte = true;
       }
     } else {
-      // If there is a sub record, check its state. Otherwise default to TRIAL.
-      const estadoSub = sub ? (sub.estado || 'TRIAL').toUpperCase() : 'TRIAL';
+      // If there is a sub record, check its state. Otherwise fallback to empresa.estado_suscripcion, then default to TRIAL.
+      const estadoSub = sub ? (sub.estado || 'TRIAL').toUpperCase() : (empresa?.estado_suscripcion || 'TRIAL').toUpperCase();
       estado = (estadoSub === 'ACTIVA' || estadoSub === 'ACTIVO') ? 'ACTIVA' : 'TRIAL';
     }
 

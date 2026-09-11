@@ -7,7 +7,18 @@ import MetodosComprasForm from '@/components/configuracion/MetodosComprasForm';
 export default async function SettingsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const empresaId = user?.app_metadata?.empresa_id;
+  
+  // Obtener empresa_id desde auth metadata o perfiles
+  let empresaId = user?.app_metadata?.empresa_id;
+  
+  if (!empresaId && user) {
+    const { data: dbProfile } = await supabase
+      .from('perfiles')
+      .select('empresa_id')
+      .eq('id', user.id)
+      .single();
+    empresaId = dbProfile?.empresa_id;
+  }
 
   let empresaObj = null;
   if (empresaId) {
