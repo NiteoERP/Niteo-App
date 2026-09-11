@@ -10,7 +10,7 @@ import { getMovimientosInventario } from './actions';
 
 import { getCatalogoCachedInsumos, getCatalogoProductos, getSedesCached } from '@/lib/cache';
 
-export const revalidate = 300;
+export const dynamic = 'force-dynamic';
 
 export default async function InventarioPage({ searchParams }: { searchParams: Promise<{ tab?: string, sede?: string }> }) {
   const params = await searchParams;
