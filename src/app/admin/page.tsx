@@ -1,9 +1,9 @@
 import React from 'react';
-import { createClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@/utils/supabase/admin';
 import { Building2, CreditCard, Activity, AlertCircle } from 'lucide-react';
 
 export default async function AdminDashboard() {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   // Obtener métricas básicas
   const { count: empresasCount } = await supabase.from('empresas').select('*', { count: 'exact', head: true });

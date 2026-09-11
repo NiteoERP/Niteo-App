@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@/utils/supabase/admin';
 import { revalidatePath } from 'next/cache';
 
 async function requireSuperAdmin() {
@@ -9,22 +10,41 @@ async function requireSuperAdmin() {
   if (!user) throw new Error('No autenticado');
   const { data: perfil } = await supabase.from('perfiles').select('rol').eq('id', user.id).single();
   if (perfil?.rol !== 'SUPERADMIN') throw new Error('Sin permisos');
-  return { supabase, user };
+  const adminSupabase = createAdminClient();
+  return { supabase: adminSupabase, user };
 }
 
 export async function getPagosPendientes() {
-  const { supabase } = await requireSuperAdmin();
-  const { data, error } = await supabase
-    .from('suscripciones_pagos')
-    .select(`
-      *,
-      empresas:empresa_id ( nombre_comercial, plan, estado )
-    `)
-    .eq('estado', 'pendiente_aprobacion')
-    .order('fecha_registro', { ascending: true });
+  try {
+    const { supabase } = await requireSuperAdmin();
+    const { data, error } = await supabase
+      .from('suscripciones_pagos')
+      .select(`
+        *,
+        empresas:empresa_id ( nombre_comercial, plan_suscripcion, estado_activo )
+      `)
+      .eq('estado', 'pendiente_aprobacion')
+      .order('fecha_registro', { ascending: true });
 
-  if (error) return { success: false, error: error.message, pagos: [] };
-  return { success: true, pagos: data || [] };
+    if (error) {
+      console.error('Error fetching pagos pendientes:', error);
+      return { success: false, error: error.message, pagos: [] };
+    }
+
+    const formattedPagos = (data || []).map((p: any) => ({
+      ...p,
+      empresas: p.empresas ? {
+        ...p.empresas,
+        plan: p.empresas.plan_suscripcion || 'PRO',
+        estado: p.empresas.estado_activo ? 'activa' : 'inactiva'
+      } : null
+    }));
+
+    return { success: true, pagos: formattedPagos };
+  } catch (err: any) {
+    console.error('Error in getPagosPendientes:', err);
+    return { success: false, error: err.message, pagos: [] };
+  }
 }
 
 export async function getPagosHistorial() {
@@ -91,7 +111,19 @@ export async function aprobarPago(pagoId: string) {
 
     if (errSub) return { success: false, error: errSub.message };
 
+    // 6. Mantener sincronizada la tabla empresas
+    await supabase
+      .from('empresas')
+      .update({
+        plan_suscripcion: planDetectado.toLowerCase(),
+        fecha_vencimiento_plan: nuevaFecha.toISOString(),
+      })
+      .eq('id', pago.empresa_id);
+
+    revalidatePath('/admin');
     revalidatePath('/admin/pagos');
+    revalidatePath('/admin/empresas');
+    revalidatePath('/dashboard', 'layout');
     return { success: true, plan: planDetectado };
   } catch (err: any) {
     return { success: false, error: err.message };

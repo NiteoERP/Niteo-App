@@ -120,12 +120,19 @@ export default async function DashboardLayout({
             )}
 
             {/* Badge Plan — solo desktop */}
-            {licencia?.estado === 'ACTIVA' && (
-              <div className="hidden md:flex items-center bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-full">
+            {(licencia?.estado === 'ACTIVA' || licencia?.estado === 'GRACIA') && (
+              <Link 
+                href="/dashboard/billing"
+                className="hidden md:flex items-center gap-2 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 px-3 py-1.5 rounded-full transition-colors cursor-pointer group"
+                title="Haz clic para ver días restantes y módulos de tu plan"
+              >
                 <span className="text-indigo-400 text-xs font-bold tracking-widest uppercase">
                   PLAN {licencia.planSuscripcion}
                 </span>
-              </div>
+                <span className="text-indigo-300/70 group-hover:text-indigo-300 text-[10px] uppercase font-bold tracking-wider">
+                  • Ver plan
+                </span>
+              </Link>
             )}
 
             {/* Selector de Sesiones Guardadas (Estilo Instagram) */}

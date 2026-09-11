@@ -11,6 +11,7 @@ const PLANES_CONFIG: Record<string, { nombre: string; precio: number; desc: stri
 };
 
 const PLUGINS_DISPONIBLES = [
+  { id: 'recetas', nombre: 'Motor de Recetas (Add-on Starter)', precio: 5, desc: 'Fichas técnicas y mermas (Ya incluido gratis en plan PRO y superior)' },
   { id: 'multi-price', nombre: 'Múltiples Listas de Precios', precio: 5, desc: 'Tarifas por mayorista, mostrador o delivery' },
   { id: 'virtual-pos', nombre: 'Terminal de Venta Virtual', precio: 8, desc: 'Canal de facturación cloud para redes o WhatsApp' },
   { id: 'caja-extra', nombre: 'Licencia de Caja Adicional', precio: 5, desc: 'Conectar un punto de cobro físico extra' },

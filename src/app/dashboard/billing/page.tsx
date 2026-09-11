@@ -66,9 +66,15 @@ export default async function BillingPage() {
                 Licencia {licencia.estado}
               </div>
               <p className="text-sm opacity-90">
-                {licencia.estado === 'VENCIDA' 
-                  ? `Vencida hace ${licencia.diasVencido} días` 
-                  : `Quedan ${licencia.diasRestantes} días`}
+                {licencia.planSuscripcion === 'LIFETIME' 
+                  ? 'Acceso de por vida'
+                  : licencia.estado === 'VENCIDA'
+                    ? `Vencida hace ${licencia.diasVencido} días`
+                    : licencia.estado === 'ACTIVA'
+                      ? `Renovación en ${licencia.diasRestantes} días`
+                      : licencia.estado === 'GRACIA'
+                        ? `Pago en revisión (Gracia: ${licencia.diasRestantes} días)`
+                        : `Quedan ${licencia.diasRestantes} días`}
               </p>
             </div>
 

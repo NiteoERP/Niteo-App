@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@/utils/supabase/admin';
 import { revalidatePath } from 'next/cache';
 
 async function requireSuperAdmin() {
@@ -9,32 +10,48 @@ async function requireSuperAdmin() {
   if (!user) throw new Error('No autenticado');
   const { data: perfil } = await supabase.from('perfiles').select('rol').eq('id', user.id).single();
   if (perfil?.rol !== 'SUPERADMIN') throw new Error('Sin permisos');
-  return { supabase, user };
+  const adminSupabase = createAdminClient();
+  return { supabase: adminSupabase, user };
 }
 
 export async function getEmpresas() {
-  const { supabase } = await requireSuperAdmin();
+  try {
+    const { supabase } = await requireSuperAdmin();
 
-  const { data, error } = await supabase
-    .from('empresas')
-    .select(`
-      id,
-      nombre_comercial,
-      email_contacto,
-      plan,
-      estado,
-      fecha_registro,
-      fecha_vencimiento_plan,
-      suscripciones_empresas (
-        plan,
-        estado,
-        fecha_vencimiento
-      )
-    `)
-    .order('fecha_registro', { ascending: false });
+    const { data, error } = await supabase
+      .from('empresas')
+      .select(`
+        id,
+        nombre_comercial,
+        plan_suscripcion,
+        estado_activo,
+        fecha_registro,
+        fecha_vencimiento_plan,
+        suscripciones_empresas (
+          plan,
+          estado,
+          fecha_vencimiento
+        )
+      `)
+      .order('fecha_registro', { ascending: false });
 
-  if (error) return { success: false, error: error.message, empresas: [] };
-  return { success: true, empresas: data || [] };
+    if (error) {
+      console.error('Error fetching empresas:', error);
+      return { success: false, error: error.message, empresas: [] };
+    }
+
+    const formattedEmpresas = (data || []).map((e: any) => ({
+      ...e,
+      plan: e.plan_suscripcion || 'PRO',
+      estado: e.estado_activo ? 'activa' : 'inactiva',
+      email_contacto: '',
+    }));
+
+    return { success: true, empresas: formattedEmpresas };
+  } catch (err: any) {
+    console.error('Error in getEmpresas:', err);
+    return { success: false, error: err.message, empresas: [] };
+  }
 }
 
 export async function cambiarPlan(empresaId: string, plan: string, dias: number = 30) {

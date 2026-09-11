@@ -37,12 +37,12 @@ export async function getEstadoLicencia(): Promise<EstadoLicencia | null> {
     // Consultar el estado en la tabla de empresas (fallback si no hay suscripción)
     const { data: empresa } = await supabase
       .from('empresas')
-      .select('fecha_registro, plan_suscripcion, estado')
+      .select('fecha_registro')
       .eq('id', perfil.empresa_id)
       .single();
 
     // Determinar el plan activo
-    const plan = (sub?.plan || empresa?.plan_suscripcion || 'PRO').toUpperCase();
+    const plan = (sub?.plan || 'PRO').toUpperCase();
 
     const hoy = new Date();
 
@@ -94,27 +94,36 @@ export async function getEstadoLicencia(): Promise<EstadoLicencia | null> {
 
     let estado: 'ACTIVA' | 'TRIAL' | 'GRACIA' | 'VENCIDA' = 'ACTIVA';
     let bloqueoFuerte = false;
+    let diasFinales = difDias;
 
-    if (difDias < 0) {
-      if (enGraciaSilenciosa) {
-        estado = 'GRACIA';
-        bloqueoFuerte = false;
-      } else if (difDias >= -3) {
+    // Si hay un pago pendiente en los últimos 5 días, aseguramos al menos 5 días de gracia desde hoy
+    // (o desde la fecha de pago)
+    if (enGraciaSilenciosa && diasFinales < 5) {
+      diasFinales = 5;
+    }
+
+    if (diasFinales < 0) {
+      if (diasFinales >= -3) {
         estado = 'GRACIA';
       } else {
         estado = 'VENCIDA';
         bloqueoFuerte = true;
       }
     } else {
-      // If there is a sub record, check its state. Otherwise fallback to empresa.estado, then default to TRIAL.
-      const estadoSub = sub ? (sub.estado || 'TRIAL').toUpperCase() : (empresa?.estado || 'TRIAL').toUpperCase();
+      // If there is a sub record, check its state. Otherwise default to TRIAL.
+      const estadoSub = sub ? (sub.estado || 'TRIAL').toUpperCase() : 'TRIAL';
       estado = (estadoSub === 'ACTIVA' || estadoSub === 'ACTIVO') ? 'ACTIVA' : 'TRIAL';
+      
+      // Si el pago está en verificación, anulamos el modo TRIAL y mostramos GRACIA
+      if (enGraciaSilenciosa && estado !== 'ACTIVA') {
+        estado = 'GRACIA';
+      }
     }
 
     return {
       estado,
-      diasRestantes: difDias,
-      diasVencido: difDias < 0 ? Math.abs(difDias) : 0,
+      diasRestantes: diasFinales,
+      diasVencido: diasFinales < 0 ? Math.abs(diasFinales) : 0,
       planSuscripcion: plan,
       modulosActivos: [],
       fechaVencimiento: fechaVenc.toISOString(),

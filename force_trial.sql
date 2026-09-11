@@ -1,21 +1,21 @@
 -- =============================================================================
--- FIX: FORZAR MODO TRIAL PARA EMPRESAS SIN PAGAR
+-- FIX: FORZAR MODO TRIAL PARA SUSCRIPCIONES SIN PAGAR
 -- =============================================================================
 
--- 1. Actualizar todas las empresas a 'TRIAL' si NO son 'LIFETIME'
-UPDATE public.empresas
+-- 1. Asegurar que 'STARTER' y 'TRIAL' existen en los ENUMs
+COMMIT; 
+ALTER TYPE plan_suscripcion ADD VALUE IF NOT EXISTS 'STARTER';
+ALTER TYPE estado_suscripcion ADD VALUE IF NOT EXISTS 'TRIAL';
+
+-- 2. Actualizar las suscripciones a 'TRIAL' si NO son 'LIFETIME'
+UPDATE public.suscripciones_empresas
 SET estado = 'TRIAL'
-WHERE plan_suscripcion != 'LIFETIME' OR plan_suscripcion IS NULL;
+WHERE plan != 'LIFETIME' OR plan IS NULL;
 
--- 2. Asegurarse de que el valor por defecto para nuevas empresas sea 'TRIAL'
-ALTER TABLE public.empresas ALTER COLUMN estado SET DEFAULT 'TRIAL'::estado_suscripcion;
-
--- 3. Asegurarse de que el plan por defecto para nuevas empresas sea 'STARTER'
-ALTER TABLE public.empresas ALTER COLUMN plan_suscripcion SET DEFAULT 'STARTER'::plan_suscripcion;
+-- 3. (Opcional) Migrar planes 'BASICO' a 'STARTER'
+UPDATE public.suscripciones_empresas SET plan = 'STARTER' WHERE plan = 'BASICO';
 
 -- =====================================================================
 -- (OPCIONAL) REINICIAR LOS 7 DÍAS A PARTIR DE HOY
--- Quita los dos guiones (--) del inicio de la línea de abajo si quieres 
--- resetear tu empresa para volver a tener los 7 días justos desde ahora:
 -- =====================================================================
--- UPDATE public.empresas SET fecha_registro = NOW() WHERE estado = 'TRIAL';
+-- UPDATE public.suscripciones_empresas SET fecha_registro = NOW() WHERE estado = 'TRIAL';
