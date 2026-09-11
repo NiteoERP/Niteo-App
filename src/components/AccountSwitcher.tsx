@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { UserCircle, Check, Loader2, Plus, LogOut, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { UserCircle, Check, Loader2, Plus, LogOut, X, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { switchAccount, removeSavedAccount, saveCurrentSessionToVault, addAccountToVault, SavedAccount } from '@/actions/vault-actions';
 import { useRouter } from 'next/navigation';
 
@@ -13,8 +14,10 @@ interface AccountSwitcherProps {
 }
 
 export default function AccountSwitcher({ currentUserId, currentUserName, currentUserRole, savedAccounts }: AccountSwitcherProps) {
+  const [mounted, setMounted] = useState(false);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [addEmail, setAddEmail] = useState('');
   const [addPassword, setAddPassword] = useState('');
   const [addLoading, setAddLoading] = useState(false);
@@ -22,6 +25,7 @@ export default function AccountSwitcher({ currentUserId, currentUserName, curren
   const router = useRouter();
 
   useEffect(() => {
+    setMounted(true);
     // Sincroniza la sesión actual en la bóveda de cuentas de forma segura desde el cliente
     saveCurrentSessionToVault().catch(console.error);
   }, [currentUserId]);
@@ -129,7 +133,7 @@ export default function AccountSwitcher({ currentUserId, currentUserName, curren
 
           <div className="p-2 border-t border-neutral-800 bg-neutral-950/30">
             <button 
-              onClick={() => setIsAddModalOpen(true)}
+              onClick={() => { setIsAddModalOpen(true); setAddError(null); }}
               className="w-full text-left px-3 py-2.5 text-sm text-neutral-300 hover:text-white hover:bg-neutral-800/80 rounded-lg transition-colors flex items-center gap-3 font-medium cursor-pointer"
             >
               <div className="w-7 h-7 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-500/30">
@@ -141,67 +145,95 @@ export default function AccountSwitcher({ currentUserId, currentUserName, curren
         </div>
       </div>
 
-      {/* Modal Conectar otra cuenta */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-5 relative">
+      {/* Modal Conectar otra cuenta (Renderizado con Portal fuera del header para evitar bugs de CSS) */}
+      {isAddModalOpen && mounted && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-md p-6 sm:p-7 shadow-2xl shadow-black/80 relative overflow-hidden animate-in zoom-in-95 duration-200">
+            
+            {/* Luz de acento estilo Niteo */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-20 bg-indigo-500/15 blur-2xl pointer-events-none rounded-full" />
+
+            {/* Botón cerrar */}
             <button 
               onClick={() => { setIsAddModalOpen(false); setAddError(null); }}
-              className="absolute top-4 right-4 text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-neutral-800 transition-colors"
+              className="absolute top-4 right-4 text-neutral-500 hover:text-white p-1.5 rounded-lg hover:bg-neutral-800/60 transition-colors cursor-pointer"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
 
-            <div className="space-y-1">
-              <h3 className="text-lg font-bold text-white tracking-tight">Conectar otra cuenta</h3>
-              <p className="text-xs text-neutral-400">
-                Inicia sesión con otra empresa o usuario para alternar entre ellas con un solo clic.
-              </p>
+            {/* Encabezado */}
+            <div className="flex items-center gap-3.5 mb-5 relative z-10">
+              <img 
+                src="/logo.png" 
+                alt="Niteo" 
+                className="w-10 h-10 object-contain drop-shadow-[0_0_10px_rgba(99,102,241,0.5)]" 
+              />
+              <div>
+                <h3 className="text-lg font-bold text-white tracking-tight">Conectar otra cuenta</h3>
+                <p className="text-xs text-neutral-400">
+                  Alterna entre tus empresas con un solo clic.
+                </p>
+              </div>
             </div>
 
             {addError && (
-              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs font-medium">
+              <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs font-medium">
                 {addError}
               </div>
             )}
 
-            <form onSubmit={handleAddAccount} className="space-y-4">
+            <form onSubmit={handleAddAccount} className="space-y-4 relative z-10">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-neutral-300">Correo Electrónico</label>
+                <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+                  <Mail size={14} className="text-neutral-500" />
+                  Correo Electrónico
+                </label>
                 <input 
                   type="email"
                   required
-                  placeholder="usuario@ejemplo.com"
+                  placeholder="usuario@empresa.com"
                   value={addEmail}
                   onChange={(e) => setAddEmail(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
+                  className="w-full px-3.5 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-neutral-300">Contraseña</label>
-                <input 
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  value={addPassword}
-                  onChange={(e) => setAddPassword(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
-                />
+                <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+                  <Lock size={14} className="text-neutral-500" />
+                  Contraseña
+                </label>
+                <div className="relative">
+                  <input 
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    placeholder="••••••••"
+                    value={addPassword}
+                    onChange={(e) => setAddPassword(e.target.value)}
+                    className="w-full px-3.5 py-2.5 pr-10 bg-neutral-950 border border-neutral-800 rounded-xl text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300 transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </div>
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-3 pt-3">
                 <button
                   type="button"
                   onClick={() => { setIsAddModalOpen(false); setAddError(null); }}
-                  className="flex-1 py-2.5 px-4 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-sm font-semibold rounded-xl transition-colors"
+                  className="flex-1 py-2.5 px-4 bg-neutral-800/80 hover:bg-neutral-800 text-neutral-300 text-sm font-semibold rounded-xl transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={addLoading}
-                  className="flex-1 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="flex-1 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-600/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
                 >
                   {addLoading ? (
                     <>
@@ -215,7 +247,8 @@ export default function AccountSwitcher({ currentUserId, currentUserName, curren
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

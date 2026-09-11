@@ -37,7 +37,7 @@ export async function getEstadoLicencia(): Promise<EstadoLicencia | null> {
     // Consultar el estado en la tabla de empresas (fallback si no hay suscripción)
     const { data: empresa } = await supabase
       .from('empresas')
-      .select('fecha_registro, plan_suscripcion, estado_suscripcion')
+      .select('fecha_registro, plan_suscripcion, estado')
       .eq('id', perfil.empresa_id)
       .single();
 
@@ -106,8 +106,8 @@ export async function getEstadoLicencia(): Promise<EstadoLicencia | null> {
         bloqueoFuerte = true;
       }
     } else {
-      // If there is a sub record, check its state. Otherwise fallback to empresa.estado_suscripcion, then default to TRIAL.
-      const estadoSub = sub ? (sub.estado || 'TRIAL').toUpperCase() : (empresa?.estado_suscripcion || 'TRIAL').toUpperCase();
+      // If there is a sub record, check its state. Otherwise fallback to empresa.estado, then default to TRIAL.
+      const estadoSub = sub ? (sub.estado || 'TRIAL').toUpperCase() : (empresa?.estado || 'TRIAL').toUpperCase();
       estado = (estadoSub === 'ACTIVA' || estadoSub === 'ACTIVO') ? 'ACTIVA' : 'TRIAL';
     }
 
