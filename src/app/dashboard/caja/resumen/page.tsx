@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, Loader2, MapPin, Download, FileText, Table } from 'lucide-react';
 import { getResumenPagos } from '@/actions/cierres-actions';
-import { getSedes } from '@/actions/sedes-actions';
+import { getSedesCaja } from '@/actions/sedes-actions';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -22,7 +22,7 @@ export default function ResumenPagosPage() {
   const [sedeId, setSedeId] = useState('ALL');
 
   useEffect(() => {
-    getSedes().then(setSedes).catch(console.error);
+    getSedesCaja().then(setSedes).catch(console.error);
   }, []);
 
   useEffect(() => {

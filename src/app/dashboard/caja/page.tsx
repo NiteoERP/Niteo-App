@@ -3,13 +3,24 @@ import Link from 'next/link';
 import { getHistorialCierres } from '@/actions/cierres-actions';
 import { getSedes } from '@/actions/sedes-actions';
 import { Plus, Search, Calendar, MapPin, DollarSign, Wallet, BarChart2 } from 'lucide-react';
+import { CierreEnCursoBanner } from '@/components/cierres/CierreEnCursoBanner';
+import { createClient } from '@/utils/supabase/server';
 
 export const dynamic = 'force-dynamic';
-import { CierreEnCursoBanner } from '@/components/cierres/CierreEnCursoBanner';
 
 export default async function CajaPage(props: { searchParams: Promise<{ sede?: string }> }) {
   const searchParams = await props.searchParams;
-  const sedes = await getSedes();
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: profile } = await supabase.from('perfiles').select('rol, sede_id').eq('id', user?.id).single();
+  
+  let sedes = await getSedes();
+  
+  // Si no es MASTER ni ADMIN, o si queremos restringir la vista, filtramos las sedes visibles
+  if (profile && profile.rol !== 'MASTER') {
+    sedes = sedes.filter(s => s.id === profile.sede_id);
+  }
+
   // By default, if no sede is specified, getHistorialCierres will use profile.sede_id (or ALL if master and ALL passed)
   const sedeFiltro = searchParams.sede || 'ALL';
   const cierres = await getHistorialCierres(sedeFiltro);

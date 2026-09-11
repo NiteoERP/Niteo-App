@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useTransition } from 'react';
-import { Sede, generarMasterKey, crearSede, eliminarSede } from '@/actions/sedes-actions';
-import { Key, Plus, MapPin, MonitorSmartphone, CheckCircle2, Clock, AlertCircle, Trash2 } from 'lucide-react';
+import { Sede, generarMasterKey, crearSede, eliminarSede, activarSede } from '@/actions/sedes-actions';
+import { Key, Plus, MapPin, MonitorSmartphone, CheckCircle2, Clock, AlertCircle, Trash2, Power } from 'lucide-react';
 
 export default function SedesClient({ initialSedes }: { initialSedes: Sede[] }) {
   const [isPending, startTransition] = useTransition();
@@ -36,6 +36,19 @@ export default function SedesClient({ initialSedes }: { initialSedes: Sede[] }) 
     }
   };
 
+  const handleActivar = (sedeId: string, nombreSede: string) => {
+    if (confirm(`Deseas reactivar la sede "${nombreSede}"?`)) {
+      startTransition(async () => {
+        const res = await activarSede(sedeId);
+        if (res.error) {
+          alert(res.error);
+        } else {
+          alert(res.message);
+        }
+      });
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Lista de Sedes */}
@@ -55,22 +68,34 @@ export default function SedesClient({ initialSedes }: { initialSedes: Sede[] }) 
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {sede.estado_activo ? (
-                      <span className="px-2.5 py-1 text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg">
-                        Activa
-                      </span>
+                      <>
+                        <span className="px-2.5 py-1 text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg">
+                          Activa
+                        </span>
+                        <button
+                          onClick={() => handleDelete(sede.id, sede.nombre_sede)}
+                          disabled={isPending}
+                          className="p-1.5 text-neutral-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors disabled:opacity-50"
+                          title="Eliminar o desactivar sede"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </>
                     ) : (
-                      <span className="px-2.5 py-1 text-xs font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700 rounded-lg">
-                        Inactiva
-                      </span>
+                      <>
+                        <span className="px-2.5 py-1 text-xs font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700 rounded-lg">
+                          Inactiva
+                        </span>
+                        <button
+                          onClick={() => handleActivar(sede.id, sede.nombre_sede)}
+                          disabled={isPending}
+                          className="p-1.5 text-neutral-500 hover:text-emerald-400 hover:bg-emerald-400/10 rounded-lg transition-colors disabled:opacity-50"
+                          title="Activar sede"
+                        >
+                          <Power size={16} />
+                        </button>
+                      </>
                     )}
-                    <button
-                      onClick={() => handleDelete(sede.id, sede.nombre_sede)}
-                      disabled={isPending}
-                      className="p-1.5 text-neutral-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors disabled:opacity-50"
-                      title="Eliminar sede"
-                    >
-                      <Trash2 size={16} />
-                    </button>
                   </div>
                 </div>
                 

@@ -59,6 +59,44 @@ export async function getSedes(): Promise<Sede[]> {
 }
 
 /**
+ * Obtiene las sedes permitidas para los reportes de caja.
+ * Si es MASTER, retorna todas. Si no, retorna solo la del usuario.
+ */
+export async function getSedesCaja(): Promise<Sede[]> {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data: perfil } = await supabase
+    .from('perfiles')
+    .select('empresa_id, sede_id, rol')
+    .eq('id', user.id)
+    .single();
+
+  if (!perfil) return [];
+
+  let query = supabase
+    .from('sedes')
+    .select('*')
+    .eq('empresa_id', perfil.empresa_id)
+    .order('nombre_sede', { ascending: true });
+
+  if (perfil.rol !== 'MASTER') {
+    query = query.eq('id', perfil.sede_id);
+  }
+
+  const { data: sedes, error } = await query;
+
+  if (error) {
+    console.error('Error fetching sedes caja:', error);
+    return [];
+  }
+
+  return sedes as Sede[];
+}
+
+/**
  * Genera y guarda un nuevo master_key para una sede específica.
  */
 export async function generarMasterKey(sedeId: string): Promise<{ success: boolean; key?: string; error?: string }> {
@@ -220,5 +258,37 @@ export async function eliminarSede(sedeId: string) {
   }
 
   revalidatePath('/dashboard/configuracion/sedes');
-  return { success: true, softDeleted: false, message: 'Sede eliminada de forma permanente.' };
+  return { success: true, message: 'Sede eliminada exitosamente.' };
+}
+
+/**
+ * Activa una sede que estaba desactivada (soft-deleted).
+ */
+export async function activarSede(sedeId: string) {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'No autorizado' };
+
+  const { data: perfil } = await supabase
+    .from('perfiles')
+    .select('empresa_id')
+    .eq('id', user.id)
+    .single();
+
+  if (!perfil) return { error: 'Perfil no encontrado' };
+
+  const { error } = await supabase
+    .from('sedes')
+    .update({ estado_activo: true })
+    .eq('id', sedeId)
+    .eq('empresa_id', perfil.empresa_id);
+    
+  if (error) {
+    console.error('Error al activar sede:', error);
+    return { error: 'No se pudo activar la sede.' };
+  }
+  
+  revalidatePath('/dashboard/configuracion/sedes');
+  return { success: true, message: 'Sede reactivada exitosamente.' };
 }
