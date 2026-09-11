@@ -1,7 +1,8 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
-import { differenceInDays } from 'date-fns';
+import { differenceInDays, addDays } from 'date-fns';
+import { revalidatePath } from 'next/cache';
 
 export interface EstadoLicencia {
   estado: 'ACTIVA' | 'TRIAL' | 'GRACIA' | 'VENCIDA';
@@ -75,15 +76,15 @@ export async function getEstadoLicencia(): Promise<EstadoLicencia | null> {
     try {
       const { data: pagoPendiente } = await supabase
         .from('suscripciones_pagos')
-        .select('fecha_registro')
+        .select('*')
         .eq('empresa_id', perfil.empresa_id)
         .eq('estado', 'pendiente_aprobacion')
-        .order('fecha_registro', { ascending: false })
         .limit(1)
         .maybeSingle();
 
-      if (pagoPendiente?.fecha_registro) {
-        const diasDesdePago = differenceInDays(hoy, new Date(pagoPendiente.fecha_registro));
+      const dateField = pagoPendiente?.fecha_registro || pagoPendiente?.fecha_reporte || pagoPendiente?.created_at;
+      if (dateField) {
+        const diasDesdePago = differenceInDays(hoy, new Date(dateField));
         if (diasDesdePago <= 5) {
           enGraciaSilenciosa = true;
         }
@@ -208,11 +209,15 @@ export async function reportarPagoSuscripcion(formData: FormData) {
         comprobante_url,
         estado: 'PENDIENTE'
       });
+      revalidatePath('/dashboard');
+      revalidatePath('/dashboard/billing');
       return { success: true };
     } catch {
       return { success: false, error: error.message };
     }
   }
 
+  revalidatePath('/dashboard');
+  revalidatePath('/dashboard/billing');
   return { success: true };
 }

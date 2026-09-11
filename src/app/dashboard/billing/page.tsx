@@ -15,7 +15,11 @@ export default async function BillingPage() {
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user?.id).single();
+  const { data: perfil } = await supabase.from('perfiles').select('empresa_id, rol').eq('id', user?.id).single();
+  
+  if (perfil?.rol !== 'MASTER' && perfil?.rol !== 'SUPERADMIN') {
+    redirect('/dashboard');
+  }
   
   let historialPagos: any[] = [];
   try {

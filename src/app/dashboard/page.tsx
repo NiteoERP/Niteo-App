@@ -17,8 +17,12 @@ import {
 import RecentSalesWidget from '@/components/pos/RecentSalesWidget';
 import ReportPreviewModal from '@/components/reports/ReportPreviewModal';
 
+import Link from 'next/link';
+
 export default function DashboardPage() {
-  const { formatCurrency, empresaId, userRole, userSedeId } = useEmpresa();
+  const { formatCurrency, empresaId, userRole, userSedeId, permisos = [] } = useEmpresa();
+  const hasDashboard = userRole === 'MASTER' || userRole === 'SUPERADMIN' || permisos.includes('dashboard');
+  const hasPos = userRole === 'MASTER' || userRole === 'SUPERADMIN' || permisos.includes('pos');
 
   // ── Filtros locales (sin query) ──────────────────────────────────────────
   const [range, setRange] = useState('thisMonth');
@@ -26,19 +30,16 @@ export default function DashboardPage() {
   const [showExport, setShowExport] = useState(false);
 
   // ── Sedes: 1 query en montaje, nunca más ────────────────────────────────
-  // Va directo a Supabase browser client → 0 invocaciones Vercel
-  const sedes = useSedes(empresaId ?? '', userRole, userSedeId);
+  const sedes = useSedes(hasDashboard ? (empresaId ?? '') : '', userRole, userSedeId);
 
   // ── KPI data: 1 query por cambio de [range, sedeId] ─────────────────────
-  // Va directo a Supabase browser client → 0 invocaciones Vercel
   const { data, isLoading, error, refetch } = useDashboardData(
     range,
     sedeId,
-    empresaId ?? '',
+    hasDashboard ? (empresaId ?? '') : '',
   );
 
   // ── KPIs: calculados en JS, sin query extra ──────────────────────────────
-  // useMemo garantiza que solo se recalcula cuando `data` cambia, no en cada render
   const kpis = useMemo(
     () =>
       data.reduce(
@@ -54,10 +55,63 @@ export default function DashboardPage() {
     [data],
   );
 
-  // ── Handler sede: cambia estado local → hook reactivo → 1 query ─────────
   const handleSedeChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     setSedeId(e.target.value === 'ALL' ? null : e.target.value);
   }, []);
+
+  // Si el usuario no tiene permiso de ver métricas del dashboard general, mostrar el Hub de Trabajo
+  if (!hasDashboard) {
+    const modulesAvailable = [
+      { id: 'pos', name: 'Punto de Venta (POS)', desc: 'Facturación y ventas en vivo.', icon: ShoppingCart, href: '/dashboard/ventas' },
+      { id: 'caja', altId: 'finanzas', name: 'Cierre de Caja', desc: 'Arqueos y cuadres diarios.', icon: Receipt, href: '/dashboard/caja' },
+      { id: 'inventario', name: 'Inventario & Recetas', desc: 'Existencias y catálogo de productos.', icon: Store, href: '/dashboard/inventario' },
+      { id: 'compras', name: 'Compras & Gastos', desc: 'Registro de compras y facturas de insumos.', icon: ShoppingCart, href: '/dashboard/compras' },
+      { id: 'reportes', name: 'Informes & Reportes', desc: 'Historiales y reportes del negocio.', icon: FileOutput, href: '/dashboard/informes' },
+      { id: 'clientes', name: 'Directorio de Clientes', desc: 'Gestión de clientes y contactos.', icon: Store, href: '/dashboard/clientes' },
+    ].filter(m => permisos.includes(m.id) || (m.altId && permisos.includes(m.altId)));
+
+    return (
+      <div className="p-4 sm:p-8 max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
+        <div className="bg-neutral-900 border border-neutral-800 p-6 sm:p-8 rounded-2xl space-y-2">
+          <h1 className="text-2xl font-bold text-white tracking-tight">Panel de Operaciones</h1>
+          <p className="text-sm text-neutral-400">
+            Bienvenido a Niteo. Selecciona uno de tus módulos activos para comenzar:
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {modulesAvailable.length > 0 ? (
+            modulesAvailable.map((mod) => {
+              const Icon = mod.icon;
+              return (
+                <Link
+                  key={mod.href}
+                  href={mod.href}
+                  className="bg-neutral-900 hover:bg-neutral-800/80 border border-neutral-800 hover:border-indigo-500/40 p-5 rounded-2xl flex items-center justify-between group transition-all"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-105 transition-transform">
+                      <Icon size={22} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-white group-hover:text-indigo-300 transition-colors text-base">{mod.name}</h3>
+                      <p className="text-xs text-neutral-500 mt-0.5">{mod.desc}</p>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })
+          ) : (
+            <div className="col-span-full bg-neutral-900 border border-neutral-800 rounded-2xl p-8 text-center text-neutral-500">
+              <AlertCircle size={36} className="mx-auto mb-2 text-neutral-600" />
+              <p className="text-sm font-medium text-neutral-400">Sin módulos asignados</p>
+              <p className="text-xs text-neutral-600 mt-1">Tu usuario aún no tiene módulos asignados por el administrador.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">

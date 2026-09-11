@@ -14,6 +14,7 @@ interface EmpresaContextType {
   empresaId: string | null;
   userRole: string;
   userSedeId: string | null;
+  permisos: string[];
   formatCurrency: (amount: number) => string;
 }
 
@@ -22,6 +23,7 @@ const EmpresaContext = createContext<EmpresaContextType>({
   empresaId: null,
   userRole: 'CAJERO',
   userSedeId: null,
+  permisos: [],
   formatCurrency: (amount: number) =>
     `${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`,
 });
@@ -33,12 +35,14 @@ export default function EmpresaProvider({
   empresaId,
   userRole,
   userSedeId,
+  permisos = [],
   children,
 }: {
   empresa: any;
   empresaId: string | null;
   userRole: string;
   userSedeId: string | null;
+  permisos?: string[];
   children: React.ReactNode;
 }) {
   const formatCurrency = (amount: number) => {
@@ -50,7 +54,7 @@ export default function EmpresaProvider({
   };
 
   return (
-    <EmpresaContext.Provider value={{ empresa, empresaId, userRole, userSedeId, formatCurrency }}>
+    <EmpresaContext.Provider value={{ empresa, empresaId, userRole, userSedeId, permisos, formatCurrency }}>
       {children}
     </EmpresaContext.Provider>
   );

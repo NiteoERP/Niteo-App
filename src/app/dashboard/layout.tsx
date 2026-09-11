@@ -119,8 +119,8 @@ export default async function DashboardLayout({
               </div>
             )}
 
-            {/* Badge Plan — solo desktop */}
-            {(licencia?.estado === 'ACTIVA' || licencia?.estado === 'GRACIA') && (
+            {/* Badge Plan — solo MASTER / SUPERADMIN, solo desktop */}
+            {(licencia?.estado === 'ACTIVA' || licencia?.estado === 'GRACIA') && (userRole === 'MASTER' || dbProfile?.rol === 'SUPERADMIN') && (
               <Link 
                 href="/dashboard/billing"
                 className="hidden md:flex items-center gap-2 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 px-3 py-1.5 rounded-full transition-colors cursor-pointer group"
@@ -162,8 +162,9 @@ export default async function DashboardLayout({
             empresaId={empresa_id ?? null}
             userRole={userRole}
             userSedeId={dbProfile?.sede_id ?? null}
+            permisos={permisos}
           >
-            {licencia && userRole !== 'CAJERO' && <LicenseBanner licencia={licencia} />}
+            {licencia && (userRole === 'MASTER' || dbProfile?.rol === 'SUPERADMIN') && <LicenseBanner licencia={licencia} />}
             {children}
           </EmpresaProvider>
         </main>
