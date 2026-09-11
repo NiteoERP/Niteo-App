@@ -27,35 +27,20 @@ export default async function DashboardLayout({
     .from('perfiles').select('permisos').eq('id', user.id).single();
   const permisos = dbProfile?.permisos || [];
 
-  let subPlan  = 'BASICO';
-  let subEstado = 'INACTIVA';
-  let daysLeft = 0;
-  let empresaData = null;
+  const { getEstadoLicencia } = await import('@/actions/licencia-actions');
+  const licencia = await getEstadoLicencia();
 
+  let empresaData = null;
   if (empresa_id) {
     const { data: emp } = await supabase
       .from('empresas')
-      .select('nombre, moneda, simbolo_moneda, zona_horaria, metodos_pago')
+      .select('nombre_comercial, moneda, simbolo_moneda, zona_horaria, metodos_pago')
       .eq('id', empresa_id)
       .single();
     if (emp) empresaData = emp;
-
-    const { data: sub } = await supabase
-      .from('suscripciones_empresas')
-      .select('plan, fecha_vencimiento, estado')
-      .eq('empresa_id', empresa_id)
-      .single();
-
-    if (sub) {
-      subPlan   = sub.plan;
-      subEstado = sub.estado;
-      const today      = new Date();
-      const expiration = new Date(sub.fecha_vencimiento);
-      daysLeft = Math.ceil((expiration.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    }
   }
 
-  const isTrial = daysLeft > 0 && daysLeft <= 14;
+  const { default: LicenseBanner } = await import('@/components/licencias/LicenseBanner');
 
   return (
     <div className="flex h-[100dvh] bg-neutral-950 text-white font-sans overflow-hidden selection:bg-indigo-500/30">
@@ -92,22 +77,24 @@ export default async function DashboardLayout({
           <div className="flex items-center gap-2 md:gap-4">
 
             {/* Badge TRIAL — solo MASTER, solo desktop */}
-            {isTrial && userRole === 'MASTER' && (
+            {licencia?.estado === 'TRIAL' && userRole === 'MASTER' && (
               <div className="hidden md:flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 px-3 py-1.5 rounded-full">
                 <span className="text-orange-400 text-xs font-semibold tracking-wide">
-                  TRIAL: Quedan {daysLeft} días
+                  TRIAL: Quedan {licencia.diasRestantes} días
                 </span>
                 <Link href="/dashboard/billing"
                       className="text-orange-300 hover:text-white text-xs underline decoration-orange-500/30 font-medium transition-colors">
-                  Actualizar a PRO
+                  Activar Plan
                 </Link>
               </div>
             )}
 
-            {/* Badge PRO — solo desktop */}
-            {!isTrial && subEstado === 'ACTIVA' && subPlan === 'PRO' && (
+            {/* Badge Plan — solo desktop */}
+            {licencia?.estado === 'ACTIVA' && (
               <div className="hidden md:flex items-center bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-full">
-                <span className="text-indigo-400 text-xs font-bold tracking-widest uppercase">VERSIÓN PRO</span>
+                <span className="text-indigo-400 text-xs font-bold tracking-widest uppercase">
+                  PLAN {licencia.planSuscripcion}
+                </span>
               </div>
             )}
 
@@ -135,6 +122,7 @@ export default async function DashboardLayout({
                          pb-20 md:pb-6
                          bg-[#0a0a0a]">
           <EmpresaProvider empresa={empresaData}>
+            {licencia && userRole !== 'CAJERO' && <LicenseBanner licencia={licencia} />}
             {children}
           </EmpresaProvider>
         </main>

@@ -22,6 +22,7 @@ interface TerminalVirtualProps {
   metodosDisponibles?: string[];
   tasaActiva?: number;
   empresaNombre?: string;
+  licencia?: any;
 }
 
 const METODOS_DEFAULT = ['Efectivo USD', 'Transferencia', 'Zelle', 'Pago Móvil', 'Punto de Venta'];
@@ -32,6 +33,7 @@ export default function TerminalVirtual({
   metodosDisponibles = METODOS_DEFAULT,
   tasaActiva = 1,
   empresaNombre = 'Mi Empresa',
+  licencia,
 }: TerminalVirtualProps) {
   const [busqueda, setBusqueda] = useState('');
   const [carrito, setCarrito] = useState<ItemCarrito[]>([]);
@@ -255,9 +257,14 @@ export default function TerminalVirtual({
           <div className="flex items-center gap-2">
             <Zap size={18} className="text-indigo-400" />
             <h2 className="text-base font-bold text-white">Terminal Virtual</h2>
-            <span className="text-xs px-2 py-0.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-full font-medium">
+            <span className="text-xs px-2 py-0.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-full font-medium hidden sm:inline-block">
               {catalogo.length} productos
             </span>
+            {licencia?.diasVencido >= 10 && (
+              <span className="text-xs px-2 py-0.5 bg-red-500/10 border border-red-500/20 text-red-400 rounded-full font-bold ml-2">
+                ¡Licencia Vencida! Avise a Gerencia
+              </span>
+            )}
           </div>
 
           <button

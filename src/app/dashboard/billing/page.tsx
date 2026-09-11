@@ -1,60 +1,94 @@
 import React from 'react';
 import { createClient } from '@/utils/supabase/server';
+import { getEstadoLicencia } from '@/actions/licencia-actions';
+import BillingClientForm from './BillingClientForm';
+import { CheckCircle, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { redirect } from 'next/navigation';
-import BillingClient from './BillingClient';
 
 export default async function BillingPage() {
+  const licencia = await getEstadoLicencia();
+  
+  if (!licencia) {
+    redirect('/login');
+  }
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user?.id).single();
   
-  if (!user) return null;
-
-  // FIX: solo el rol MASTER puede acceder a los planes de suscripción
-  const userRole = user.app_metadata?.user_role;
-  if (userRole !== 'MASTER') redirect('/dashboard');
-
-  const empresaId = user.app_metadata?.empresa_id;
-
-  let sub = null;
-  if (empresaId) {
-    const { data } = await supabase
-      .from('suscripciones_empresas')
-      .select('*')
-      .eq('empresa_id', empresaId)
-      .single();
-    sub = data;
-  }
-
-  // Determine current active plan
-  let planActual = 'INACTIVO';
-  if (sub?.estado === 'activa') {
-    planActual = sub.plan || 'TRIAL';
-  }
+  const { data: historialPagos } = await supabase
+    .from('pagos_suscripcion')
+    .select('*')
+    .eq('empresa_id', perfil?.empresa_id)
+    .order('fecha_reporte', { ascending: false });
 
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-12 animate-in fade-in duration-500">
-      
-      {planActual !== 'LIFETIME' && (
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">
-            Escala tu negocio con <span className="text-indigo-400">Niteo PRO</span>
-          </h1>
-          <p className="text-neutral-400 max-w-2xl mx-auto text-lg">
-            Elige el plan que mejor se adapte al tamaño de tu empresa. Cambia de plan o cancela en cualquier momento.
-          </p>
+    <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Facturación y Licencia</h1>
+          <p className="text-neutral-400 text-sm">Gestiona tu plan de Niteo, añade módulos y reporta tus pagos.</p>
         </div>
-      )}
+      </div>
 
-      <BillingClient planActual={planActual} />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Columna Izquierda: Estado actual */}
+        <div className="lg:col-span-1 space-y-6">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
+            <h2 className="text-lg font-bold text-white mb-4">Estado Actual</h2>
+            
+            <div className={`p-4 rounded-xl border mb-6 ${
+              licencia.estado === 'ACTIVA' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
+              licencia.estado === 'TRIAL' ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' :
+              licencia.estado === 'GRACIA' ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' :
+              'bg-red-500/10 border-red-500/20 text-red-400'
+            }`}>
+              <div className="flex items-center gap-2 font-bold mb-1">
+                {licencia.estado === 'ACTIVA' && <CheckCircle size={18} />}
+                {licencia.estado === 'TRIAL' && <ShieldCheck size={18} />}
+                {(licencia.estado === 'GRACIA' || licencia.estado === 'VENCIDA') && <AlertTriangle size={18} />}
+                Licencia {licencia.estado}
+              </div>
+              <p className="text-sm opacity-90">
+                {licencia.estado === 'VENCIDA' 
+                  ? `Vencida hace ${licencia.diasVencido} días` 
+                  : `Quedan ${licencia.diasRestantes} días`}
+              </p>
+            </div>
 
-      {planActual !== 'LIFETIME' && (
-        <div className="text-center pt-12 border-t border-neutral-800">
-          <p className="text-sm text-neutral-500">
-            Aceptamos Binance Pay para pagos automáticos en criptomonedas, y transferencias manuales vía Zelle o Pago Móvil.
-            <br/> Tu suscripción se activará inmediatamente tras la confirmación.
-          </p>
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs text-neutral-500 uppercase font-bold tracking-wider mb-1">Plan Actual</p>
+                <p className="text-white font-medium capitalize">{licencia.planSuscripcion}</p>
+              </div>
+              <div>
+                <p className="text-xs text-neutral-500 uppercase font-bold tracking-wider mb-1">Módulos Activos</p>
+                {licencia.modulosActivos.length > 0 ? (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {licencia.modulosActivos.map(m => (
+                      <span key={m} className="px-2 py-1 bg-neutral-800 text-neutral-300 rounded text-xs">
+                        {m}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-neutral-400 text-sm">Ninguno</p>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
-      )}
+
+        {/* Columna Derecha: Reportar Pago */}
+        <div className="lg:col-span-2">
+          <BillingClientForm 
+            historialPagos={historialPagos || []} 
+            planActual={licencia.planSuscripcion}
+          />
+        </div>
+
+      </div>
     </div>
   );
 }

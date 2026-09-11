@@ -43,8 +43,12 @@ export default async function TerminalPage() {
   
   const metodosPago: string[] = empresaData?.metodos_pago ?? ['Efectivo USD', 'Transferencia', 'Zelle', 'Pago Móvil', 'Punto de Venta'];
 
+  const { getEstadoLicencia } = await import('@/actions/licencia-actions');
+  const licencia = await getEstadoLicencia();
+
   const { getTasaBcvAction } = await import('@/actions/config-actions');
-  const rateData = await getTasaBcvAction();
+  // Solo obtener tasa si no está vencido (Degradación suave)
+  const rateData = (!licencia?.bloqueoFuerte) ? await getTasaBcvAction() : { tasa: 1 };
   const tasaActiva = rateData.tasa || 1;
 
   return (
@@ -68,6 +72,7 @@ export default async function TerminalPage() {
           metodosDisponibles={metodosPago}
           tasaActiva={tasaActiva}
           empresaNombre={empresaData?.nombre_comercial || 'Mi Empresa'}
+          licencia={licencia}
         />
       ) : (
         <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
