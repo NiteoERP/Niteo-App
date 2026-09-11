@@ -41,102 +41,104 @@ export default function SedesClient({ initialSedes }: { initialSedes: Sede[] }) 
       {/* Lista de Sedes */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {initialSedes.map((sede) => (
-          <div key={sede.id} className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 flex flex-col justify-between hover:border-neutral-700 transition-colors">
-            
-            <div className="space-y-4">
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 text-indigo-400">
-                    {sede.tipo_sede === 'VIRTUAL' ? <MonitorSmartphone size={20} /> : <MapPin size={20} />}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-semibold text-white">{sede.nombre_sede}</h3>
-                      <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md border uppercase tracking-wider ${
-                        sede.tipo_sede === 'VIRTUAL' 
-                        ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' 
-                        : 'bg-neutral-800 text-neutral-300 border-neutral-700'
-                      }`}>
-                        {sede.tipo_sede}
-                      </span>
-                    </div>
-                    <p className="text-sm text-neutral-400">{sede.direccion || 'Sin dirección registrada'}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {sede.estado_activo ? (
-                    <span className="px-2.5 py-1 text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full flex items-center gap-1.5">
-                      <CheckCircle2 size={12} /> Activa
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-1 text-xs font-medium bg-neutral-800 text-neutral-400 border border-neutral-700 rounded-full">
-                      Inactiva
-                    </span>
-                  )}
-                  <button
-                    onClick={() => handleDelete(sede.id, sede.nombre_sede)}
-                    disabled={isPending}
-                    className="p-1.5 text-neutral-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors disabled:opacity-50"
-                    title="Eliminar sede"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
+          <div key={sede.id} className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 hover:border-neutral-700 transition-colors flex flex-col h-full relative overflow-hidden">
+            <div className="flex gap-4 items-start mb-6">
+              <div className="w-12 h-12 shrink-0 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 text-indigo-400 mt-1">
+                {sede.tipo_sede === 'VIRTUAL' ? <MonitorSmartphone size={24} /> : <MapPin size={24} />}
               </div>
-
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-neutral-800/50">
-                {sede.tipo_sede === 'FISICA' ? (
-                  <>
-                    <div>
-                      <p className="text-xs text-neutral-500 uppercase tracking-wider font-semibold mb-1">Emparejamiento</p>
-                      {sede.master_key ? (
-                        <div className="flex items-center gap-2 text-sm text-neutral-300">
-                          <Key size={14} className="text-indigo-400" />
-                          <span>Llave configurada</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2 text-sm text-amber-400">
-                          <AlertCircle size={14} />
-                          <span>Sin vincular</span>
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-xs text-neutral-500 uppercase tracking-wider font-semibold mb-1">Última Sincronización</p>
-                      <div className="flex items-center gap-2 text-sm text-neutral-300">
-                        <Clock size={14} />
-                        <span>{sede.ultima_sincronizacion ? new Date(sede.ultima_sincronizacion).toLocaleString() : 'Nunca'}</span>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div>
-                      <p className="text-xs text-neutral-500 uppercase tracking-wider font-semibold mb-1">Tecnología</p>
-                      <div className="flex items-center gap-2 text-sm text-indigo-300">
-                        <MonitorSmartphone size={14} />
-                        <span>Terminal Nativo</span>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs text-neutral-500 uppercase tracking-wider font-semibold mb-1">Sincronización</p>
-                      <div className="flex items-center gap-2 text-sm text-neutral-400">
-                        <CheckCircle2 size={14} className="text-emerald-500" />
-                        <span>En tiempo real</span>
-                      </div>
-                    </div>
-                  </>
-                )}
+              
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-start gap-2">
+                  <div className="min-w-0">
+                    <h3 className="text-lg font-bold text-white truncate">{sede.nombre_sede}</h3>
+                    <p className="text-sm text-neutral-400 truncate">{sede.direccion || 'Sin dirección registrada'}</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {sede.estado_activo ? (
+                      <span className="px-2.5 py-1 text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg">
+                        Activa
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-1 text-xs font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700 rounded-lg">
+                        Inactiva
+                      </span>
+                    )}
+                    <button
+                      onClick={() => handleDelete(sede.id, sede.nombre_sede)}
+                      disabled={isPending}
+                      className="p-1.5 text-neutral-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors disabled:opacity-50"
+                      title="Eliminar sede"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="mt-3">
+                  <span className={`inline-flex items-center gap-1.5 px-2 py-1 text-[10px] font-bold rounded-md border uppercase tracking-wider ${
+                    sede.tipo_sede === 'VIRTUAL' 
+                    ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' 
+                    : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
+                  }`}>
+                    {sede.tipo_sede === 'VIRTUAL' ? <MonitorSmartphone size={12} /> : <MapPin size={12} />}
+                    Sede {sede.tipo_sede}
+                  </span>
+                </div>
               </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-4 py-4 border-t border-neutral-800/50 mt-auto">
+              {sede.tipo_sede === 'FISICA' ? (
+                <>
+                  <div className="min-w-0">
+                    <p className="text-xs text-neutral-500 uppercase tracking-wider font-semibold mb-1 truncate">Emparejamiento</p>
+                    {sede.master_key ? (
+                      <div className="flex items-center gap-2 text-sm text-neutral-300">
+                        <Key size={14} className="text-indigo-400 shrink-0" />
+                        <span className="truncate">Configurada</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-sm text-amber-400">
+                        <AlertCircle size={14} className="shrink-0" />
+                        <span className="truncate">Sin vincular</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-neutral-500 uppercase tracking-wider font-semibold mb-1 truncate">Sincronización</p>
+                    <div className="flex items-center gap-2 text-sm text-neutral-300">
+                      <Clock size={14} className="shrink-0" />
+                      <span className="truncate">{sede.ultima_sincronizacion ? new Date(sede.ultima_sincronizacion).toLocaleString() : 'Nunca'}</span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="min-w-0">
+                    <p className="text-xs text-neutral-500 uppercase tracking-wider font-semibold mb-1 truncate">Tecnología</p>
+                    <div className="flex items-center gap-2 text-sm text-purple-300">
+                      <MonitorSmartphone size={14} className="shrink-0" />
+                      <span className="truncate">Terminal Nativo</span>
+                    </div>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-neutral-500 uppercase tracking-wider font-semibold mb-1 truncate">Sincronización</p>
+                    <div className="flex items-center gap-2 text-sm text-neutral-400">
+                      <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                      <span className="truncate">En tiempo real</span>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
             {sede.tipo_sede === 'FISICA' && (
-              <div className="mt-6 pt-4 border-t border-neutral-800/50">
+              <div className="pt-4 border-t border-neutral-800/50">
                 {newKeyVisible?.id === sede.id ? (
                   <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4 text-center space-y-2 animate-in fade-in zoom-in duration-200">
-                    <p className="text-sm text-indigo-200">Nueva Pairing Code generada:</p>
+                    <p className="text-sm text-indigo-200">Pairing Code generado:</p>
                     <p className="text-2xl font-mono font-bold text-white tracking-widest">{newKeyVisible.key}</p>
-                    <p className="text-xs text-indigo-300">Ingresa este código en Niteo Sync. Desaparecerá al recargar la página.</p>
+                    <p className="text-[10px] text-indigo-300">Ingresa esto en Niteo Sync. Desaparecerá al recargar.</p>
                   </div>
                 ) : (
                   <button 
@@ -150,7 +152,6 @@ export default function SedesClient({ initialSedes }: { initialSedes: Sede[] }) 
                 )}
               </div>
             )}
-
           </div>
         ))}
       </div>
