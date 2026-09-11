@@ -174,3 +174,51 @@ export async function getSedeVirtualId(): Promise<string | null> {
 
   return sede?.id ?? null;
 }
+
+/**
+ * Elimina una sede. Si tiene datos asociados (llave foránea), la desactiva (soft-delete).
+ */
+export async function eliminarSede(sedeId: string) {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'No autorizado' };
+
+  const { data: perfil } = await supabase
+    .from('perfiles')
+    .select('empresa_id')
+    .eq('id', user.id)
+    .single();
+
+  if (!perfil) return { error: 'Perfil no encontrado' };
+
+  // Intentamos eliminar la sede físicamente
+  const { error } = await supabase
+    .from('sedes')
+    .delete()
+    .eq('id', sedeId)
+    .eq('empresa_id', perfil.empresa_id);
+
+  if (error) {
+    // Código 23503 = foreign_key_violation
+    if (error.code === '23503') {
+      // Tiene historial, hacemos un soft-delete
+      const { error: softError } = await supabase
+        .from('sedes')
+        .update({ estado_activo: false })
+        .eq('id', sedeId)
+        .eq('empresa_id', perfil.empresa_id);
+        
+      if (softError) {
+        return { error: 'No se pudo desactivar la sede.' };
+      }
+      revalidatePath('/dashboard/configuracion/sedes');
+      return { success: true, softDeleted: true, message: 'La sede tiene historial y no se puede borrar por completo, pero ha sido ocultada/desactivada exitosamente.' };
+    }
+    console.error('Error al eliminar sede:', error);
+    return { error: 'Ocurrió un error al intentar eliminar la sede.' };
+  }
+
+  revalidatePath('/dashboard/configuracion/sedes');
+  return { success: true, softDeleted: false, message: 'Sede eliminada de forma permanente.' };
+}

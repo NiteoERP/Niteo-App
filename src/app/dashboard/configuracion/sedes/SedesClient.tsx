@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useTransition } from 'react';
-import { Sede, generarMasterKey, crearSede } from '@/actions/sedes-actions';
-import { Key, Plus, MapPin, MonitorSmartphone, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { Sede, generarMasterKey, crearSede, eliminarSede } from '@/actions/sedes-actions';
+import { Key, Plus, MapPin, MonitorSmartphone, CheckCircle2, Clock, AlertCircle, Trash2 } from 'lucide-react';
 
 export default function SedesClient({ initialSedes }: { initialSedes: Sede[] }) {
   const [isPending, startTransition] = useTransition();
@@ -21,6 +21,19 @@ export default function SedesClient({ initialSedes }: { initialSedes: Sede[] }) 
         alert(result.error || 'Ocurrió un error.');
       }
     });
+  };
+
+  const handleDelete = (sedeId: string, nombreSede: string) => {
+    if (confirm(`¿Estás seguro de que deseas eliminar la sede "${nombreSede}"?`)) {
+      startTransition(async () => {
+        const res = await eliminarSede(sedeId);
+        if (res.error) {
+          alert(res.error);
+        } else {
+          alert(res.message);
+        }
+      });
+    }
   };
 
   return (
@@ -50,15 +63,25 @@ export default function SedesClient({ initialSedes }: { initialSedes: Sede[] }) 
                     <p className="text-sm text-neutral-400">{sede.direccion || 'Sin dirección registrada'}</p>
                   </div>
                 </div>
-                {sede.estado_activo ? (
-                  <span className="px-2.5 py-1 text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full flex items-center gap-1.5">
-                    <CheckCircle2 size={12} /> Activa
-                  </span>
-                ) : (
-                  <span className="px-2.5 py-1 text-xs font-medium bg-neutral-800 text-neutral-400 border border-neutral-700 rounded-full">
-                    Inactiva
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  {sede.estado_activo ? (
+                    <span className="px-2.5 py-1 text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full flex items-center gap-1.5">
+                      <CheckCircle2 size={12} /> Activa
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-1 text-xs font-medium bg-neutral-800 text-neutral-400 border border-neutral-700 rounded-full">
+                      Inactiva
+                    </span>
+                  )}
+                  <button
+                    onClick={() => handleDelete(sede.id, sede.nombre_sede)}
+                    disabled={isPending}
+                    className="p-1.5 text-neutral-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors disabled:opacity-50"
+                    title="Eliminar sede"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 pt-4 border-t border-neutral-800/50">
