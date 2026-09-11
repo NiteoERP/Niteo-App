@@ -65,7 +65,7 @@ export default function NuevoCierreCaja() {
   const [metodos, setMetodos] = useState<MetodoConfig[]>(METODOS_DEFAULT);
 
   // Hook de sincronización en tiempo real con Supabase Broadcast
-  useCajaSync(selectedSedeId, transacciones, setTransacciones, metodos, setMetodos);
+  const { status: syncStatus, onlineCount } = useCajaSync(selectedSedeId, transacciones, setTransacciones, metodos, setMetodos);
 
   // Modal para nuevo método
   const [showNewMetodo, setShowNewMetodo] = useState(false);
@@ -432,7 +432,7 @@ export default function NuevoCierreCaja() {
               <button onClick={() => router.push('/dashboard/caja')} className="w-8 h-8 flex items-center justify-center rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white transition-colors" title="Volver al Historial (Se guardará el borrador)">
                 <ArrowLeft size={18} />
               </button>
-              <h1 className="text-2xl font-bold text-white tracking-tight">Cierre de Caja</h1>
+              <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">Cierre de Caja{syncStatus === 'connected' && onlineCount > 1 && (<span className="text-xs px-2 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full flex items-center gap-1.5 animate-pulse"><span className="w-2 h-2 rounded-full bg-emerald-400"></span>{onlineCount} en l�nea</span>)}{syncStatus === 'connected' && onlineCount <= 1 && (<span className="text-xs px-2 py-1 bg-neutral-800 text-neutral-400 border border-neutral-700 rounded-full flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-neutral-500"></span>Conectado</span>)}</h1>
             </div>
           <p className="text-neutral-400 text-sm mt-1 mb-4">Tasa BCV: <span className="text-emerald-400 font-medium">{tasaCambio.toFixed(2)} Bs/$</span></p>
           
