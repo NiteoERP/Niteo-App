@@ -58,8 +58,9 @@ export function generarTicketPOS(factura: any, empresa: any, items: any[], pagos
   yPos += 2;
 
   // Separador
-  doc.setLineDash([1, 1], 0);
+  (doc as any).setLineDash([1, 1], 0);
   doc.line(margin, yPos, pageWidth - margin, yPos);
+  (doc as any).setLineDash([]); // Reset
   yPos += 5;
 
   // Encabezados Items
