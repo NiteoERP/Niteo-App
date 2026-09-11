@@ -139,7 +139,7 @@ export default function DocumentoForm({ catalogo, sedeVirtualId, empresa, client
               onClick={handleImprimir}
               className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-indigo-500/20 transition-all"
             >
-              <FileDown size={18} /> Descargar PDF (A4)
+              <FileDown size={18} /> Descargar PDF
             </button>
             <button 
               onClick={() => {
@@ -171,7 +171,7 @@ export default function DocumentoForm({ catalogo, sedeVirtualId, empresa, client
               onChange={e => setTipoDoc(e.target.value as any)}
               className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white font-semibold focus:outline-none focus:border-indigo-500"
             >
-               <option value="FACTURA">Factura B2B</option>
+               <option value="FACTURA">Factura</option>
                <option value="PRESUPUESTO">Presupuesto / Cotización</option>
                <option value="NOTA_ENTREGA">Nota de Entrega</option>
             </select>

@@ -48,9 +48,9 @@ export default async function NuevoDocumentoPage() {
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-20">
       <div>
-        <h1 className="text-xl md:text-2xl font-bold text-white">Nuevo Documento Elaborado</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-white">Facturación</h1>
         <p className="text-neutral-400 text-sm mt-1">
-          Crea Facturas, Presupuestos y Notas de Entrega B2B en formato A4
+          Genera facturas, presupuestos y notas de entrega
         </p>
       </div>
 

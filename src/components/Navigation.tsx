@@ -60,17 +60,17 @@ export function SidebarNav({ permisos, userRole }: NavProps) {
 
       {hasPerm('pos') && (
         <>
-          <Link href="/dashboard/ventas" className={getLinkClass('/dashboard/ventas')}>
-            <ShoppingCart size={20} />
-            <span className="text-sm font-medium">Reporte de Ventas</span>
-          </Link>
           <Link href="/dashboard/terminal" className={getLinkClass('/dashboard/terminal')}>
             <MonitorSmartphone size={20} />
-            <span className="text-sm font-medium">Terminal POS</span>
+            <span className="text-sm font-medium">Nueva Venta</span>
           </Link>
           <Link href="/dashboard/documentos/nuevo" className={getLinkClass('/dashboard/documentos/nuevo')}>
             <FileText size={20} />
-            <span className="text-sm font-medium">Documentos (B2B)</span>
+            <span className="text-sm font-medium">Facturación</span>
+          </Link>
+          <Link href="/dashboard/ventas" className={getLinkClass('/dashboard/ventas')}>
+            <ShoppingCart size={20} />
+            <span className="text-sm font-medium">Historial</span>
           </Link>
         </>
       )}
@@ -103,7 +103,7 @@ export function SidebarNav({ permisos, userRole }: NavProps) {
           </Link>
           <Link href="/dashboard/proveedores" className={getLinkClass('/dashboard/proveedores')}>
             <Truck size={20} />
-            <span className="text-sm font-medium">Proveedores (CxP)</span>
+            <span className="text-sm font-medium">Proveedores</span>
           </Link>
         </>
       )}
@@ -116,7 +116,7 @@ export function SidebarNav({ permisos, userRole }: NavProps) {
           </Link>
           <Link href="/dashboard/creditos" className={getLinkClass('/dashboard/creditos')}>
             <Wallet size={20} className="shrink-0 text-emerald-400" />
-            <span className="font-medium">Cuentas por Cobrar</span>
+            <span className="font-medium">Créditos</span>
           </Link>
           <Link href="/dashboard/equipo" className={getLinkClass('/dashboard/equipo')}>
             <UserCircle size={20} />
@@ -214,10 +214,10 @@ export function MobileNav({ permisos, userRole }: NavProps) {
               {hasPerm('pos') && (
                 <>
                   <Link href="/dashboard/terminal" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/terminal')}>
-                    <MonitorSmartphone size={22} /> Terminal POS
+                    <MonitorSmartphone size={22} /> Nueva Venta
                   </Link>
                   <Link href="/dashboard/documentos/nuevo" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/documentos/nuevo')}>
-                    <FileText size={22} /> Documentos (B2B)
+                    <FileText size={22} /> Facturación
                   </Link>
                 </>
               )}
@@ -238,17 +238,17 @@ export function MobileNav({ permisos, userRole }: NavProps) {
               )}
               {hasPerm('compras') && (
                 <Link href="/dashboard/proveedores" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/proveedores')}>
-                  <Truck size={22} /> Proveedores (CxP)
+                  <Truck size={22} /> Proveedores
                 </Link>
               )}
               {hasPerm('clientes') && (
                 <Link href="/dashboard/clientes" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/clientes')}>
-                  <Users size={22} /> Clientes
+                  <Users size={22} /> Directorio
                 </Link>
               )}
               {hasPerm('creditos') && (
                 <Link href="/dashboard/creditos" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/creditos')}>
-                  <Wallet size={22} /> Cuentas por Cobrar
+                  <Wallet size={22} /> Créditos
                 </Link>
               )}
               {hasPerm('equipo') && (
@@ -263,7 +263,7 @@ export function MobileNav({ permisos, userRole }: NavProps) {
               )}
               {(hasPerm('ajustes') || hasPerm('auditoria')) && (
                 <Link href="/dashboard/configuracion" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/configuracion')}>
-                  <Settings size={22} /> Ajustes Generales
+                  <Settings size={22} /> Ajustes
                 </Link>
               )}
             </div>

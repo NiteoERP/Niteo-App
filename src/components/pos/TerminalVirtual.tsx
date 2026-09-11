@@ -396,7 +396,7 @@ export default function TerminalVirtual({
                    onClick={handleImprimirTicket}
                    className="w-full h-12 rounded-xl text-sm font-bold flex items-center justify-center gap-2 bg-neutral-800 hover:bg-neutral-700 text-white transition-colors border border-neutral-700"
                  >
-                    <Receipt size={16} /> Imprimir Ticket PDF
+                    <Receipt size={16} /> Imprimir Recibo
                  </button>
                  <button 
                    onClick={handleNuevaVenta}

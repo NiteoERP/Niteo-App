@@ -53,10 +53,10 @@ export default async function TerminalPage() {
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
             <ShoppingCart className="text-indigo-500" size={24} />
-            Punto de Venta
+            Nueva Venta
           </h1>
           <p className="text-neutral-400 text-xs md:text-sm mt-1">
-            Terminal de venta nativa — registra ventas directamente desde Niteo
+            Registra ventas de mostrador rápidamente
           </p>
         </div>
       </div>
