@@ -21,8 +21,8 @@ export interface VentaPOS {
 }
 
 export interface VentaDetalle {
-  id_detalle: number;
-  producto_id: number;
+  id_detalle: string;    // uuid en schema real
+  producto_id: string;   // productos.id es uuid, no integer
   cantidad: number;
   precio_unitario: number;
   total: number;
@@ -31,7 +31,7 @@ export interface VentaDetalle {
 }
 
 export interface ProductoPOS {
-  producto_id: number;
+  producto_id: string;   // productos.id es uuid, no integer
   codigo_barras: string;
   nombre: string;
   precio_venta: number;

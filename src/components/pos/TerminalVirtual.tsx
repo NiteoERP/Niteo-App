@@ -14,7 +14,7 @@ import type { ProductoPOS } from '@/actions/pos-actions';
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface ItemCarrito {
-  producto_id: number;
+  producto_id: string;   // productos.id es uuid en schema real
   nombre: string;
   precio_unitario: number;
   cantidad: number;
@@ -88,7 +88,7 @@ export default function TerminalVirtual({
     setResultado(null);
   }, []);
 
-  const cambiarCantidad = useCallback((producto_id: number, delta: number) => {
+  const cambiarCantidad = useCallback((producto_id: string, delta: number) => {
     setCarrito((prev) =>
       prev
         .map((i) => (i.producto_id === producto_id ? { ...i, cantidad: i.cantidad + delta } : i))
@@ -96,7 +96,7 @@ export default function TerminalVirtual({
     );
   }, []);
 
-  const eliminarItem = useCallback((producto_id: number) => {
+  const eliminarItem = useCallback((producto_id: string) => {
     setCarrito((prev) => prev.filter((i) => i.producto_id !== producto_id));
   }, []);
 

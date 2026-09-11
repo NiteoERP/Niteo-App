@@ -25,11 +25,10 @@ COMMENT ON COLUMN public.sedes.tipo_sede IS
 -- PASO 2: TABLA productos — Ajustes para ventas nativas
 -- ===========================================================================
 
--- 2a. Hacer id_pos nullable (antes podía ser NOT NULL por la sincronización Aronium)
-ALTER TABLE public.productos
-  ALTER COLUMN id_pos DROP NOT NULL;
+-- NOTA: productos.id_pos ya era nullable en el schema — no se requiere ALTER.
+-- El schema real muestra: id_pos character varying (sin NOT NULL).
 
--- 2b. Agregar canal_venta: controla en qué terminal aparece cada producto
+-- 2a. Agregar canal_venta: controla en qué terminal aparece cada producto
 ALTER TABLE public.productos
   ADD COLUMN IF NOT EXISTS canal_venta VARCHAR(15) DEFAULT 'AMBOS'
   CHECK (canal_venta IN ('AMBOS', 'SOLO_NITEO', 'SOLO_ARONIUM'));
