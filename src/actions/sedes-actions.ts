@@ -116,6 +116,17 @@ export async function crearSede(formData: FormData) {
 
   if (!nombreSede) return { error: 'Nombre es requerido' };
 
+  const { data: existingSede } = await supabase
+    .from('sedes')
+    .select('id')
+    .eq('empresa_id', perfil.empresa_id)
+    .ilike('nombre_sede', nombreSede)
+    .maybeSingle();
+
+  if (existingSede) {
+    return { error: 'Ya existe una sede con ese nombre. Por favor elige otro.' };
+  }
+
   const { error } = await supabase
     .from('sedes')
     .insert({

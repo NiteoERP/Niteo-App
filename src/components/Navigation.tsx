@@ -15,7 +15,8 @@ import {
   FileText,
   Wallet,
   Menu,
-  X 
+  X,
+  MonitorSmartphone
 } from 'lucide-react';
 
 interface NavProps {
@@ -58,10 +59,16 @@ export function SidebarNav({ permisos, userRole }: NavProps) {
       )}
 
       {hasPerm('pos') && (
-        <Link href="/dashboard/ventas" className={getLinkClass('/dashboard/ventas')}>
-          <ShoppingCart size={20} />
-          <span className="text-sm font-medium">Ventas</span>
-        </Link>
+        <>
+          <Link href="/dashboard/ventas" className={getLinkClass('/dashboard/ventas')}>
+            <ShoppingCart size={20} />
+            <span className="text-sm font-medium">Reporte de Ventas</span>
+          </Link>
+          <Link href="/dashboard/terminal" className={getLinkClass('/dashboard/terminal')}>
+            <MonitorSmartphone size={20} />
+            <span className="text-sm font-medium">Terminal POS</span>
+          </Link>
+        </>
       )}
 
       {hasPerm('reportes') && (
@@ -198,6 +205,11 @@ export function MobileNav({ permisos, userRole }: NavProps) {
               {hasPerm('inventario') && (
                 <Link href="/dashboard/inventario" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/inventario')}>
                   <Package size={22} /> Inventario
+                </Link>
+              )}
+              {hasPerm('pos') && (
+                <Link href="/dashboard/terminal" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/terminal')}>
+                  <MonitorSmartphone size={22} /> Terminal POS
                 </Link>
               )}
               {hasPerm('reportes') && (

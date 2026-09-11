@@ -1,21 +1,19 @@
 import React from 'react';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
-import { getVentasRecientes, getProductosCatalogo, getProductosCatalogoVirtual, VentaPOS, ProductoPOS } from '@/actions/pos-actions';
-import { getSedeVirtualId } from '@/actions/sedes-actions';
+import { getVentasRecientes, getProductosCatalogo, VentaPOS, ProductoPOS } from '@/actions/pos-actions';
 import LiveSalesFeed from '@/components/pos/LiveSalesFeed';
 import CuentasAbiertasWidget from '@/components/pos/CuentasAbiertasWidget';
 import CatalogView from '@/components/pos/CatalogView';
 import HistorialVentas from '@/components/pos/HistorialVentas';
-import TerminalVirtual from '@/components/pos/TerminalVirtual';
 import SedeSelector from '@/components/inventario/SedeSelector';
 import { cookies } from 'next/headers';
-import { Store, PackageSearch, Users, History, ShoppingCart } from 'lucide-react';
+import { Store, PackageSearch, Users, History } from 'lucide-react';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Ventas | Niteo',
-  description: 'Panel de ventas.',
+  title: 'Reporte de Ventas | Niteo',
+  description: 'Panel de reporte de ventas de sucursales.',
 };
 
 export default async function POSPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
@@ -60,28 +58,12 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
   // Fetch initial data based on tab
   let initialSales: VentaPOS[] = [];
   let catalog: ProductoPOS[] = [];
-  let catalogoVirtual: ProductoPOS[] = [];
-  let sedeVirtualId: string | null = null;
 
   if (tab === 'ventas') {
     initialSales = await getVentasRecientes(activeSedeId);
   } else if (tab === 'catalogo') {
     catalog = await getProductosCatalogo(perfil.empresa_id);
-  } else if (tab === 'terminal') {
-    [catalogoVirtual, sedeVirtualId] = await Promise.all([
-      getProductosCatalogoVirtual(perfil.empresa_id),
-      getSedeVirtualId(),
-    ]);
   }
-
-  // Métodos de pago desde la empresa (si existen)
-  const { data: empresaData } = await supabase
-    .from('empresas')
-    .select('metodos_pago')
-    .eq('id', perfil.empresa_id)
-    .single();
-  
-  const metodosPago: string[] = empresaData?.metodos_pago ?? ['Efectivo USD', 'Transferencia', 'Zelle', 'Pago Móvil', 'Punto de Venta'];
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -91,12 +73,10 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
             <Store className="text-indigo-500" size={24} />
-            Ventas
+            Reporte de Ventas
           </h1>
           <p className="text-neutral-400 text-xs md:text-sm mt-1">
-            {tab === 'terminal'
-              ? 'Terminal de venta nativa — registra ventas directamente desde Niteo'
-              : 'Monitoreo en tiempo real de tu caja local Aronium'}
+            Monitoreo en tiempo real de tu caja local Aronium
           </p>
 
         </div>
@@ -155,17 +135,6 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
             <History size={16} />
             Historial de Ventas
           </a>
-          <a
-            href="?tab=terminal"
-            className={`flex flex-1 items-center justify-center gap-2 h-14 px-4 rounded-md text-sm font-medium transition-all whitespace-nowrap shrink-0 ${
-              tab === 'terminal'
-                ? 'bg-indigo-600/20 text-indigo-300 shadow-sm border border-indigo-500/20'
-                : 'text-neutral-400 hover:text-white hover:bg-neutral-800/50'
-            }`}
-          >
-            <ShoppingCart size={16} />
-            Terminal Virtual
-          </a>
         </div>
       </div>
 
@@ -181,40 +150,6 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
       )}
       {tab === 'historial' && (
         <HistorialVentas sedeId={activeSedeId} />
-      )}
-
-      {tab === 'terminal' && (
-        <>
-          {sedeVirtualId ? (
-            <TerminalVirtual
-              catalogo={catalogoVirtual}
-              sedeVirtualId={sedeVirtualId}
-              metodosDisponibles={metodosPago}
-            />
-          ) : (
-            /* Aviso si no existe ninguna sede virtual configurada */
-            <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-                <ShoppingCart size={28} className="text-indigo-400" />
-              </div>
-              <div>
-                <h3 className="text-white font-bold text-lg">Sin Sede Virtual Configurada</h3>
-                <p className="text-neutral-400 text-sm mt-1 max-w-md">
-                  Para usar el Terminal Virtual debes crear una sede de tipo{' '}
-                  <span className="text-indigo-400 font-semibold">VIRTUAL</span> en
-                  Configuración → Sedes.
-                </p>
-              </div>
-              <a
-                href="/dashboard/configuracion/sedes"
-                className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors"
-              >
-                <Store size={16} />
-                Ir a Configuración de Sedes
-              </a>
-            </div>
-          )}
-        </>
       )}
     </div>
   );
