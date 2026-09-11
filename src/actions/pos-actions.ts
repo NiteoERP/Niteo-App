@@ -6,7 +6,7 @@ import { registrarAsiento } from './contabilidad-actions';
 export interface VentaPOS {
   verificado?: boolean;
   id_factura: string;
-  id_pos: number;
+  id_pos: string;
   numero_documento: string;
   numero_orden?: string;
   fecha_venta: string;
@@ -154,6 +154,7 @@ export async function getProductosCatalogoVirtual(empresaId: string): Promise<Pr
 export interface HistorialVentaPOS extends VentaPOS {
   cliente_nombre?: string;
   pagos: { tipo_pago: string; monto: number }[];
+  estado_activo: boolean;
 }
 
 export async function getHistorialVentasCompleto(sedeId: string, fechaFiltro?: string): Promise<HistorialVentaPOS[]> {
@@ -199,6 +200,7 @@ export async function getHistorialVentasCompleto(sedeId: string, fechaFiltro?: s
     total: v.total,
     descuento: v.descuento,
     tipo_documento: v.tipo_documento,
+    estado_activo: v.estado_activo,
     esta_pagado: v.estado_pago === 1,
     cliente_nombre: v.clientes?.nombre,
     pagos: (v.ventas_pagos || []).map((p: any) => ({
@@ -229,6 +231,27 @@ export async function toggleVentaVerificada(facturaId: string, verificado: boole
     console.error('Error toggling verificado:', error);
     return { success: false, error };
   }
+  return { success: true };
+}
+
+export async function anularVentaPOS(facturaId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autorizado' };
+
+  const { error } = await supabase
+    .from('ventas_facturas')
+    .update({ estado_activo: false })
+    .eq('id', facturaId);
+  
+  if (error) {
+    return { success: false, error: error.message };
+  }
+  
+  // Opcional: Revertir inventario si es necesario (el trigger on delete/update de ventas_detalles lo podría hacer,
+  // pero Niteo asume que cambiar estado_activo no revierte automáticamente a menos que haya un trigger.
+  // Por ahora, con inactivarlo lo saca de los reportes.
+  
   return { success: true };
 }
 

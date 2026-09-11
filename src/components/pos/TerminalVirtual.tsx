@@ -2,10 +2,9 @@
 
 import React, { useState, useTransition, useMemo, useCallback } from 'react';
 import {
-  Search, ShoppingCart, Plus, Minus, Trash2, Zap,
-  CheckCircle, AlertCircle, Package, X, CreditCard,
-  Loader2, Receipt, Edit3, User, UserCircle
+  Search, Plus, Minus, Trash2, Zap, X, ShoppingCart, User, UserCircle, CreditCard, ChevronLeft, ChevronRight, CheckCircle, Receipt, Edit3, History, AlertCircle, Package, Loader2
 } from 'lucide-react';
+import HistorialVentas from '@/components/pos/HistorialVentas';
 import { procesarVentaVirtual, MetodoPagoVirtual } from '@/actions/ventas-virtual-actions';
 import type { ProductoPOS } from '@/actions/pos-actions';
 
@@ -126,6 +125,7 @@ export default function TerminalVirtual({
 
   // Venta Exitosa Data
   const [ventaExitosa, setVentaExitosa] = useState<any>(null);
+  const [historialAbierto, setHistorialAbierto] = useState(false);
 
   const totalPagado = pagos.reduce((acc, p) => acc + (parseFloat(p.montoStr) || 0), 0);
   const restante = Math.max(0, total - totalPagado);
@@ -246,10 +246,10 @@ export default function TerminalVirtual({
           </button>
         </div>
 
-        <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 w-4 h-4" />
-          <input
-            type="text"
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 w-4 h-4" />
+            <input
             placeholder="Buscar por nombre o código de barras..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
@@ -264,6 +264,13 @@ export default function TerminalVirtual({
               <X size={14} />
             </button>
           )}
+          </div>
+          <button 
+             onClick={() => setHistorialAbierto(true)}
+             className="px-4 py-3 bg-neutral-800 hover:bg-neutral-700 text-white rounded-xl font-medium transition-colors border border-neutral-700 whitespace-nowrap flex items-center gap-2"
+          >
+             <History size={18} /> <span className="hidden sm:inline">Historial</span>
+          </button>
         </div>
 
         {resultado && (
@@ -646,6 +653,26 @@ export default function TerminalVirtual({
               </div>
 
            </div>
+        </div>
+      )}
+
+      {/* ── Modal de Historial de Ventas ── */}
+      {historialAbierto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-neutral-800">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2"><History size={24} className="text-indigo-400" /> Historial de Turno</h2>
+              <button 
+                onClick={() => setHistorialAbierto(false)}
+                className="p-2 text-neutral-500 hover:text-white bg-neutral-800 rounded-lg transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2 bg-neutral-950">
+               <HistorialVentas sedeId={sedeVirtualId} />
+            </div>
+          </div>
         </div>
       )}
 

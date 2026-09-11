@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { HistorialVentaPOS, getHistorialVentasCompleto, toggleVentaVerificada } from '@/actions/pos-actions';
-import { Search, Calendar, ChevronDown, ChevronUp, Receipt, DollarSign, Clock, Users, CheckCircle2, Circle, Hash, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Calendar, ChevronDown, ChevronUp, Receipt, DollarSign, Clock, Users, CheckCircle2, Circle, Hash, ChevronLeft, ChevronRight, Printer, Ban } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import {
   format, startOfMonth, endOfMonth, eachDayOfInterval,
@@ -92,6 +92,46 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
     setAllMonthVentas(updated);
   };
 
+  const handleAnular = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (!confirm("¿Estás seguro de anular esta venta? Esta acción no se puede deshacer (se marcará inactiva).")) return;
+    
+    const { anularVentaPOS } = await import('@/actions/pos-actions');
+    const res = await anularVentaPOS(id);
+    if (res.success) {
+      setVentas(prev => prev.map(v => v.id_factura.toString() === id ? { ...v, estado_activo: false } : v));
+      alert("Venta anulada correctamente.");
+    } else {
+      alert("Error al anular: " + res.error);
+    }
+  };
+
+  const handleReimprimir = async (e: React.MouseEvent, venta: HistorialVentaPOS) => {
+    e.stopPropagation();
+    try {
+      const { generarTicketPOS, generarDocumentoA4 } = await import('@/utils/pdf-generator');
+      
+      // Fetch data on demand to avoid bloat
+      const { createClient } = await import('@/utils/supabase/client');
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user?.id).single();
+      const { data: empresa } = await supabase.from('empresas').select('nombre_comercial').eq('id', perfil?.empresa_id).single();
+      const { getTasaBcvAction } = await import('@/actions/config-actions');
+      const rateData = await getTasaBcvAction();
+      
+      if (venta.id_pos === 'DOC_FORMAL') {
+        const cliente = venta.cliente_nombre ? { nombre_comercial: venta.cliente_nombre } : null;
+        generarDocumentoA4(venta, empresa, venta.detalles, cliente);
+      } else {
+        generarTicketPOS(venta, empresa, venta.detalles, venta.pagos, rateData.tasa || 1);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error al imprimir el recibo.");
+    }
+  };
+
   const filtradas = ventas.filter(v => {
     if (busqueda) {
       const b = busqueda.toLowerCase();
@@ -115,7 +155,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
       ) : (
         <div className="space-y-3">
           {filtradas.map(venta => (
-            <div key={venta.id_factura} className="bg-black/20 border border-neutral-800 rounded-lg overflow-hidden transition-all hover:border-neutral-700">
+            <div key={venta.id_factura} className={`bg-black/20 border ${venta.estado_activo === false ? 'border-red-900/50 opacity-75' : 'border-neutral-800'} rounded-lg overflow-hidden transition-all hover:border-neutral-700`}>
               {/* Resumen Fila */}
               <div 
                 className="p-4 cursor-pointer flex flex-wrap md:flex-nowrap items-center justify-between gap-4"
@@ -133,7 +173,10 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                       <Receipt size={20} className="text-indigo-400" />
                     </div>
                   <div>
-                    <p className="text-white font-bold">{formatDocNumber(venta.numero_documento)}</p>
+                    <div className="flex items-center gap-2">
+                      <p className={`font-bold ${venta.estado_activo === false ? 'text-red-400 line-through' : 'text-white'}`}>{formatDocNumber(venta.numero_documento)}</p>
+                      {venta.estado_activo === false && <span className="bg-red-500/20 text-red-400 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">Anulada</span>}
+                    </div>
                     <div className="flex items-center gap-2 text-xs text-neutral-400 mt-1">
                       <Clock size={12} /> {formatDateTime(venta.fecha_venta)}
                     </div>
@@ -159,7 +202,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
 
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <p className="text-sm font-bold text-emerald-400">{formatCurrency(venta.total)}</p>
+                    <p className={`text-sm font-bold ${venta.estado_activo === false ? 'text-red-400' : 'text-emerald-400'}`}>{formatCurrency(venta.total)}</p>
                     <p className="text-xs text-neutral-500">{venta.pagos?.length > 0 ? venta.pagos.map(p => p.tipo_pago).join(', ') : (venta.esta_pagado ? 'No registrado' : 'A Crédito / Por pagar')}</p>
                   </div>
                   {expandedId === venta.id_factura.toString() ? <ChevronUp size={20} className="text-neutral-500" /> : <ChevronDown size={20} className="text-neutral-500" />}
@@ -169,7 +212,19 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
               {/* Detalle Expandido */}
               {expandedId === venta.id_factura.toString() && (
                 <div className="bg-neutral-900/50 p-4 border-t border-neutral-800">
-                  <h4 className="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">Detalle de la Orden</h4>
+                  <div className="flex flex-col md:flex-row justify-between gap-4 mb-4">
+                    <h4 className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Detalle de la Orden</h4>
+                    <div className="flex gap-2">
+                       <button onClick={(e) => handleReimprimir(e, venta)} className="text-xs flex items-center gap-1.5 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 px-3 py-1.5 rounded-lg transition-colors font-semibold">
+                          <Printer size={14} /> Reimprimir
+                       </button>
+                       {venta.estado_activo !== false && (
+                         <button onClick={(e) => handleAnular(e, venta.id_factura.toString())} className="text-xs flex items-center gap-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 px-3 py-1.5 rounded-lg transition-colors font-semibold">
+                            <Ban size={14} /> Anular / Reembolso
+                         </button>
+                       )}
+                    </div>
+                  </div>
                   <div className="space-y-2">
                     {venta.detalles.map(d => (
                       <div key={d.id_detalle} className="flex justify-between items-center text-sm py-1.5 border-b border-neutral-800/50 last:border-0">
