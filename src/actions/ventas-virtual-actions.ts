@@ -19,10 +19,18 @@ export interface ItemVentaVirtual {
   precio_unitario: number;
 }
 
+export interface MetodoPagoVirtual {
+  tipo_pago: string;
+  monto: number;
+}
+
 export interface ProcesarVentaVirtualInput {
   sede_id: string;
   items: ItemVentaVirtual[];
-  metodo_pago: string;
+  pagos: MetodoPagoVirtual[];
+  cliente_id?: string;
+  cliente_nombre?: string;
+  mesero_nombre?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -37,13 +45,6 @@ function generarNumeroDocumento(): string {
 // ─────────────────────────────────────────────────────────────────────────────
 // procesarVentaVirtual
 // Inserción atómica: ventas_facturas → ventas_detalles → ventas_pagos
-//
-// Campos NOT NULL cubiertos según schema real:
-//   ventas_facturas : id_pos, empresa_id, sede_id, numero_documento,
-//                     fecha_venta, total
-//   ventas_detalles : id_pos, empresa_id, factura_id, cantidad,
-//                     precio_unitario, total
-//   ventas_pagos    : id_pos, empresa_id, factura_id, tipo_pago, monto
 // ─────────────────────────────────────────────────────────────────────────────
 export async function procesarVentaVirtual(input: ProcesarVentaVirtualInput): Promise<{
   success: boolean;
@@ -71,8 +72,11 @@ export async function procesarVentaVirtual(input: ProcesarVentaVirtualInput): Pr
   if (!input.items || input.items.length === 0) {
     return { success: false, error: 'El carrito está vacío' };
   }
+  if (!input.pagos) {
+    return { success: false, error: 'Métodos de pago son requeridos' };
+  }
 
-  // Verificar que la sede pertenece a la empresa y es VIRTUAL (security hardening)
+  // Verificar que la sede pertenece a la empresa y es VIRTUAL
   const { data: sede } = await supabase
     .from('sedes')
     .select('id, tipo_sede')
@@ -85,31 +89,43 @@ export async function procesarVentaVirtual(input: ProcesarVentaVirtualInput): Pr
     return { success: false, error: 'Sede virtual no encontrada o no pertenece a tu empresa' };
   }
 
-  // ── Calcular total ─────────────────────────────────────────────────────────
+  // ── Calcular total y saldo ─────────────────────────────────────────────────
   const total = input.items.reduce(
     (acc, item) => acc + item.precio_unitario * item.cantidad,
     0
   );
 
+  const totalPagado = input.pagos.reduce((acc, p) => acc + p.monto, 0);
+  const saldo_pendiente = Math.max(0, total - totalPagado);
+  
+  // Si la venta tiene crédito (saldo_pendiente > 0), obligatoriamente debe haber un cliente_id
+  if (saldo_pendiente > 0 && !input.cliente_id) {
+    return { success: false, error: 'Para ventas a crédito (con saldo pendiente), debes seleccionar un cliente registrado en el directorio.' };
+  }
+
+  const estado_pago = saldo_pendiente > 0 ? 2 : 1; // 1 = Pagado, 2 = Crédito/Pendiente
+
   const numeroDocumento = generarNumeroDocumento();
   const fechaVenta = new Date().toISOString();
 
   // ── PASO 1: Insertar cabecera en ventas_facturas ───────────────────────────
-  // id_pos NOT NULL → usamos marcador 'NITEO-VRT' para ventas nativas
   const { data: factura, error: errorFactura } = await supabase
     .from('ventas_facturas')
     .insert({
       empresa_id: empresaId,
       sede_id: input.sede_id,
-      id_pos: ID_POS_VIRTUAL,             // NOT NULL — marcador de venta nativa
+      cliente_id: input.cliente_id || null,
+      cliente_nombre: input.cliente_nombre || null,
+      mesero_nombre: input.mesero_nombre || null,
+      id_pos: ID_POS_VIRTUAL,             
       numero_documento: numeroDocumento,
       tipo_documento: 'VENTA_VIRTUAL',
       fecha_venta: fechaVenta,
       total,
       descuento: 0,
-      saldo_pendiente: 0,
-      estado_pago: 1,                     // 1 = pagado inmediatamente
-      verificado: true,                   // Las ventas nativas van verificadas por defecto
+      saldo_pendiente,
+      estado_pago,
+      verificado: true,
     })
     .select('id')
     .single();
@@ -122,13 +138,11 @@ export async function procesarVentaVirtual(input: ProcesarVentaVirtualInput): Pr
   const facturaId: string = factura.id;
 
   // ── PASO 2: Insertar ítems en ventas_detalles ──────────────────────────────
-  // empresa_id NOT NULL y id_pos NOT NULL deben incluirse.
-  // El trigger descontar_insumos_por_venta se ejecuta AFTER INSERT por cada fila.
   const detalles = input.items.map((item) => ({
-    empresa_id: empresaId,                // NOT NULL en schema
+    empresa_id: empresaId,
     factura_id: facturaId,
-    producto_id: item.producto_id,        // UUID string
-    id_pos: ID_POS_VIRTUAL,              // NOT NULL en schema
+    producto_id: item.producto_id,
+    id_pos: ID_POS_VIRTUAL,
     cantidad: item.cantidad,
     precio_unitario: item.precio_unitario,
     total: item.precio_unitario * item.cantidad,
@@ -141,27 +155,30 @@ export async function procesarVentaVirtual(input: ProcesarVentaVirtualInput): Pr
 
   if (errorDetalles) {
     console.error('[procesarVentaVirtual] Error insertando detalles:', errorDetalles);
-    // Limpiar la cabecera huérfana para no dejar datos inconsistentes
     await supabase.from('ventas_facturas').delete().eq('id', facturaId);
     return { success: false, error: `Error al registrar los productos: ${errorDetalles.message}` };
   }
 
-  // ── PASO 3: Insertar pago en ventas_pagos ─────────────────────────────────
-  // empresa_id NOT NULL y id_pos NOT NULL deben incluirse.
-  const { error: errorPago } = await supabase
-    .from('ventas_pagos')
-    .insert({
-      empresa_id: empresaId,              // NOT NULL en schema
+  // ── PASO 3: Insertar pagos en ventas_pagos ─────────────────────────────────
+  if (input.pagos.length > 0) {
+    const pagosToInsert = input.pagos.filter(p => p.monto > 0).map(p => ({
+      empresa_id: empresaId,
       factura_id: facturaId,
-      id_pos: ID_POS_VIRTUAL,            // NOT NULL en schema
-      tipo_pago: input.metodo_pago,
-      monto: total,
+      id_pos: ID_POS_VIRTUAL,
+      tipo_pago: p.tipo_pago,
+      monto: p.monto,
       fecha_pago: fechaVenta,
-    });
+    }));
 
-  if (errorPago) {
-    // El pago es no-crítico para la integridad de la venta — log y continúa
-    console.error('[procesarVentaVirtual] Error insertando pago (no crítico):', errorPago);
+    if (pagosToInsert.length > 0) {
+      const { error: errorPago } = await supabase
+        .from('ventas_pagos')
+        .insert(pagosToInsert);
+
+      if (errorPago) {
+        console.error('[procesarVentaVirtual] Error insertando pagos:', errorPago);
+      }
+    }
   }
 
   // ── Revalidar cache ────────────────────────────────────────────────────────

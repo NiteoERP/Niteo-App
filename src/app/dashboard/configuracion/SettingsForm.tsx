@@ -1,8 +1,8 @@
-﻿'use client';
+'use client';
 
 import { useState, useTransition } from 'react';
 import { updateEmpresaSaaS } from './actions';
-import { Building2, Save, Loader2, AlertCircle, Globe, DollarSign, Calculator, Package, FlaskConical, Info } from 'lucide-react';
+import { Building2, Save, Loader2, AlertCircle, Globe, DollarSign, Calculator, Package, FlaskConical, Info, X } from 'lucide-react';
 
 export default function SettingsForm({ empresa }: { empresa: any }) {
   const [formData, setFormData] = useState({
@@ -115,15 +115,59 @@ export default function SettingsForm({ empresa }: { empresa: any }) {
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-neutral-300 mb-1.5">Métodos de Pago Personalizados (Separados por coma)</label>
-            <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 w-5 h-5" />
-              <input type="text" placeholder="Efectivo, Pago Móvil, Zelle, Tarjeta, Binance..."
-                value={formData.metodos_pago?.join(', ')}
-                onChange={(e) => setFormData({...formData, metodos_pago: e.target.value.split(',').map(m => m.trim()).filter(m => m)})}
-                className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" />
+            <label className="block text-sm font-medium text-neutral-300 mb-1.5">Métodos de Pago Disponibles</label>
+            <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-4">
+               <div className="flex flex-wrap gap-2 mb-4">
+                  {formData.metodos_pago.map((metodo: string, idx: number) => (
+                     <div key={idx} className="flex items-center gap-1.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-sm font-medium px-3 py-1.5 rounded-lg">
+                        <span>{metodo}</span>
+                        <button 
+                           type="button" 
+                           onClick={() => setFormData({...formData, metodos_pago: formData.metodos_pago.filter((_: string, i: number) => i !== idx)})}
+                           className="text-indigo-400 hover:text-red-400 p-0.5 transition-colors"
+                        >
+                           <X size={14} />
+                        </button>
+                     </div>
+                  ))}
+               </div>
+               <div className="flex items-center gap-2 max-w-sm">
+                  <div className="relative flex-1">
+                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 w-4 h-4" />
+                     <input 
+                        type="text" 
+                        placeholder="Añadir método (ej. Zelle)"
+                        id="nuevoMetodoInput"
+                        onKeyDown={e => {
+                           if (e.key === 'Enter') {
+                              e.preventDefault();
+                              const val = e.currentTarget.value.trim();
+                              if (val && !formData.metodos_pago.includes(val)) {
+                                 setFormData({...formData, metodos_pago: [...formData.metodos_pago, val]});
+                                 e.currentTarget.value = '';
+                              }
+                           }
+                        }}
+                        className="w-full bg-neutral-900 border border-neutral-800 text-white rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition-colors" 
+                     />
+                  </div>
+                  <button 
+                     type="button"
+                     onClick={() => {
+                        const input = document.getElementById('nuevoMetodoInput') as HTMLInputElement;
+                        const val = input?.value.trim();
+                        if (val && !formData.metodos_pago.includes(val)) {
+                           setFormData({...formData, metodos_pago: [...formData.metodos_pago, val]});
+                           if (input) input.value = '';
+                        }
+                     }}
+                     className="bg-neutral-800 hover:bg-neutral-700 text-white text-sm font-medium px-3 py-2 rounded-lg transition-colors border border-neutral-700"
+                  >
+                     Añadir
+                  </button>
+               </div>
+               <p className="text-xs text-neutral-500 mt-3">Presiona <kbd className="bg-neutral-800 border border-neutral-700 px-1 py-0.5 rounded text-[10px]">Enter</kbd> para agregar. Si quieres permitir ventas a crédito, añade <strong>Crédito</strong> a la lista.</p>
             </div>
-            <p className="text-xs text-neutral-500 mt-1.5">Estos métodos aparecerán como opciones al registrar ventas en el POS.</p>
           </div>
         </div>
       </div>

@@ -36,6 +36,7 @@ export interface ProductoPOS {
   nombre: string;
   precio_venta: number;
   costo: number;
+  precio_modificable?: boolean;
 }
 
 export async function getVentasRecientes(sedeId: string): Promise<VentaPOS[]> {
@@ -129,7 +130,7 @@ export async function getProductosCatalogoVirtual(empresaId: string): Promise<Pr
 
   const { data: productos, error } = await supabase
     .from('productos')
-    .select('id, codigo_barras, nombre, precio_venta, costo')
+    .select('id, codigo_barras, nombre, precio_venta, costo, precio_modificable')
     .eq('empresa_id', empresaId)
     .eq('estado_activo', true)
     .in('canal_venta', ['SOLO_NITEO', 'AMBOS'])
@@ -146,6 +147,7 @@ export async function getProductosCatalogoVirtual(empresaId: string): Promise<Pr
     nombre: p.nombre,
     precio_venta: p.precio_venta,
     costo: p.costo,
+    precio_modificable: p.precio_modificable,
   }));
 }
 

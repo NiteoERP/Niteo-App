@@ -43,6 +43,10 @@ export default async function TerminalPage() {
   
   const metodosPago: string[] = empresaData?.metodos_pago ?? ['Efectivo USD', 'Transferencia', 'Zelle', 'Pago Móvil', 'Punto de Venta'];
 
+  const { getTasaBcvAction } = await import('@/actions/config-actions');
+  const rateData = await getTasaBcvAction();
+  const tasaActiva = rateData.tasa || 1;
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -62,6 +66,7 @@ export default async function TerminalPage() {
           catalogo={catalogoVirtual}
           sedeVirtualId={sedeVirtualId}
           metodosDisponibles={metodosPago}
+          tasaActiva={tasaActiva}
         />
       ) : (
         <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
