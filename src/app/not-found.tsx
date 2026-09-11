@@ -21,11 +21,11 @@ export default function NotFound() {
         </span>
 
         <h1 className="text-2xl font-black text-white tracking-tight mb-2">
-          Módulo o Página no disponible
+          Modulo o Pagina no disponible
         </h1>
 
         <p className="text-sm text-neutral-400 leading-relaxed mb-8">
-          La ruta que intentas consultar no existe o tu perfil de usuario no cuenta con los permisos necesarios para este módulo.
+          La ruta que intentas consultar no existe o tu perfil de usuario no cuenta con los permisos necesarios para este modulo.
         </p>
 
         <div className="space-y-3">
