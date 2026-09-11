@@ -6,10 +6,11 @@ import { redirect } from 'next/navigation';
 export async function registrarUsuario(formData: FormData) {
   const supabase = await createClient();
   
-  const email = formData.get('email') as string;
+  const rawEmail = formData.get('email') as string;
+  const email = rawEmail ? rawEmail.trim().toLowerCase() : '';
   const password = formData.get('password') as string;
-  const fullName = formData.get('fullName') as string;
-  const companyName = formData.get('companyName') as string;
+  const fullName = (formData.get('fullName') as string)?.trim();
+  const companyName = (formData.get('companyName') as string)?.trim();
 
   // Validación básica
   if (!email || !password || !fullName || !companyName) {

@@ -5,11 +5,12 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 
 export async function login(prevState: any, formData: FormData) {
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
+  const rawEmail = formData.get('email') as string;
+  const email = rawEmail ? rawEmail.trim().toLowerCase() : '';
+  const password = formData.get('password') as string;
 
   if (!email || !password) {
-    return { error: 'Por favor, completa todos los campos.' }
+    return { error: 'Por favor, completa todos los campos.' };
   }
 
   const supabase = await createClient()

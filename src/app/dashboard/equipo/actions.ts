@@ -24,6 +24,7 @@ export async function updateMemberAccess(memberId: string, permisos: string[], s
 }
 
 export async function createUser(email: string, password: string, nombreCompleto: string, permisos: string[], sede_id: string | null, rol: string = 'CAJERO') {
+  const cleanEmail = email.trim().toLowerCase();
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const empresaId = user?.app_metadata?.empresa_id;
@@ -66,7 +67,7 @@ export async function createUser(email: string, password: string, nombreCompleto
   // Crear el usuario en auth con empresa_id Y user_role en app_metadata.
   // Sin user_role el middleware no puede leer el rol del JWT y envía al usuario a /onboarding.
   const { data: newUser, error } = await supabaseAdmin.auth.admin.createUser({
-    email: email,
+    email: cleanEmail,
     password: password,
     email_confirm: true,
     user_metadata: {
