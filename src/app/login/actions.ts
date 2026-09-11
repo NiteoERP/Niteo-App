@@ -24,6 +24,17 @@ export async function login(prevState: any, formData: FormData) {
     return { error: `Error: ${error.message}` }
   }
 
+  const { data: perfil } = await supabase
+    .from('perfiles')
+    .select('rol')
+    .eq('id', (await supabase.auth.getUser()).data.user?.id)
+    .single()
+
+  if (perfil?.rol === 'SUPERADMIN') {
+    revalidatePath('/admin')
+    redirect('/admin')
+  }
+
   revalidatePath('/dashboard')
   redirect('/dashboard')
 }

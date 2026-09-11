@@ -28,6 +28,11 @@ async function getAuthContext() {
     idSede = activeSedeCookie;
   }
 
+  if (!idSede) {
+    const { data: sedes } = await supabase.from('sedes').select('id').eq('empresa_id', perfil.empresa_id).limit(1).single();
+    if (sedes) idSede = sedes.id;
+  }
+
   const userRole = user.app_metadata?.user_role || perfil.rol || 'CAJERO';
   const userName = user.user_metadata?.full_name || perfil.nombre_completo || user.email;
 
@@ -35,7 +40,7 @@ async function getAuthContext() {
     supabase, 
     user, 
     idEmpresa: perfil.empresa_id, 
-    idSede: perfil.sede_id,
+    idSede,
     permisos: perfil.permisos || [],
     userRole,
     userName

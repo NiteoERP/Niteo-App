@@ -48,12 +48,33 @@ export async function getEstadoLicencia(): Promise<EstadoLicencia | null> {
   }
 
   const difDias = differenceInDays(fechaVenc, hoy);
+
+  // Validación de "Gracia Silenciosa" (5 días) por pago pendiente
+  const { data: pagoPendiente } = await supabase
+    .from('pagos_suscripcion')
+    .select('fecha_reporte')
+    .eq('empresa_id', perfil.empresa_id)
+    .eq('estado', 'PENDIENTE')
+    .order('fecha_reporte', { ascending: false })
+    .limit(1)
+    .single();
+
+  let enGraciaSilenciosa = false;
+  if (pagoPendiente) {
+    const diasDesdePago = differenceInDays(hoy, new Date(pagoPendiente.fecha_reporte));
+    if (diasDesdePago <= 5) {
+      enGraciaSilenciosa = true;
+    }
+  }
   
   let estado: 'ACTIVA' | 'TRIAL' | 'GRACIA' | 'VENCIDA' = 'ACTIVA';
   let bloqueoFuerte = false;
 
   if (difDias < 0) {
-    if (difDias >= -3) {
+    if (enGraciaSilenciosa) {
+       estado = 'GRACIA';
+       bloqueoFuerte = false;
+    } else if (difDias >= -3) {
       estado = 'GRACIA';
     } else {
       estado = 'VENCIDA';

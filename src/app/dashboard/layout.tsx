@@ -99,14 +99,31 @@ export default async function DashboardLayout({
             )}
 
             {/* User info — truncar nombre en mobile */}
-            <div className="hidden sm:block text-right border-l border-neutral-800 pl-3 md:pl-4 max-w-[140px]">
-              <p className="text-sm font-medium text-neutral-200 truncate">{userName}</p>
-              <p className="text-xs text-indigo-400 font-bold tracking-wide uppercase">{userRole}</p>
-            </div>
-
-            {/* Avatar */}
-            <div className="w-9 h-9 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shrink-0">
-              <UserCircle size={22} className="text-indigo-400" />
+            <div className="hidden sm:flex items-center gap-3 border-l border-neutral-800 pl-3 md:pl-4">
+              <div className="text-right">
+                <p className="text-sm font-bold text-neutral-200">{userName}</p>
+                <p className="text-xs text-indigo-400 font-semibold tracking-wide uppercase truncate max-w-[150px]">
+                  {empresaData?.nombre_comercial || userRole}
+                </p>
+              </div>
+              <div className="group relative">
+                <button className="w-10 h-10 rounded-full bg-indigo-500/10 hover:bg-indigo-500/20 flex items-center justify-center border border-indigo-500/20 shrink-0 transition-colors cursor-pointer">
+                  <UserCircle size={24} className="text-indigo-400" />
+                </button>
+                {/* Menú desplegable flotante */}
+                <div className="absolute right-0 mt-2 w-48 bg-neutral-900 border border-neutral-800 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                  <div className="p-3 border-b border-neutral-800">
+                    <p className="text-xs text-neutral-400 uppercase tracking-wider font-bold mb-1">Empresa Actual</p>
+                    <p className="text-sm text-white font-medium truncate">{empresaData?.nombre_comercial}</p>
+                  </div>
+                  <div className="p-2">
+                    <button className="w-full text-left px-3 py-2 text-sm text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-md transition-colors flex items-center gap-2" onClick={() => alert('Próximamente: Selector de múltiples empresas')}>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                      Cambiar de cuenta
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Logout — siempre visible */}
