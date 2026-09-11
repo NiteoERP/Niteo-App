@@ -157,7 +157,7 @@ export interface HistorialVentaPOS extends VentaPOS {
   estado_activo: boolean;
 }
 
-export async function getHistorialVentasCompleto(sedeId: string, fechaFiltro?: string): Promise<HistorialVentaPOS[]> {
+export async function getHistorialVentasCompleto(sedeId: string, fechaFiltro?: string, page: number = 1, limit: number = 50): Promise<HistorialVentaPOS[]> {
   const supabase = await createClient();
 
   let query = supabase
@@ -176,12 +176,20 @@ export async function getHistorialVentasCompleto(sedeId: string, fechaFiltro?: s
     .order('fecha_venta', { ascending: false });
 
   if (fechaFiltro) {
-    // Filtra exactamente por ese día, usando UTC ya que los datos de Aronium vienen con +00:00
-    query = query
-      .gte('fecha_venta', `${fechaFiltro}T00:00:00+00:00`)
-      .lte('fecha_venta', `${fechaFiltro}T23:59:59.999+00:00`);
+    if (fechaFiltro.length === 7) { // yyyy-MM
+      query = query
+        .gte('fecha_venta', `${fechaFiltro}-01T00:00:00+00:00`)
+        .lte('fecha_venta', `${fechaFiltro}-31T23:59:59.999+00:00`);
+    } else { // yyyy-MM-dd
+      query = query
+        .gte('fecha_venta', `${fechaFiltro}T00:00:00+00:00`)
+        .lte('fecha_venta', `${fechaFiltro}T23:59:59.999+00:00`);
+    }
   }
-  query = query.limit(100);
+  
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+  query = query.range(from, to);
 
   const { data: ventas, error } = await query;
 

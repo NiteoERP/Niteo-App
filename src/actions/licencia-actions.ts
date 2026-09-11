@@ -65,7 +65,7 @@ export async function getEstadoLicencia(): Promise<EstadoLicencia | null> {
     } else {
       const regDate = (sub?.fecha_registro || empresa?.fecha_registro) ? new Date(sub?.fecha_registro || empresa?.fecha_registro) : new Date();
       fechaVenc = new Date(regDate);
-      fechaVenc.setDate(fechaVenc.getDate() + 14);
+      fechaVenc.setDate(fechaVenc.getDate() + 7); // Changed from 14 to 7 for the 7-day trial
     }
 
     const difDias = differenceInDays(fechaVenc, hoy);
@@ -106,7 +106,8 @@ export async function getEstadoLicencia(): Promise<EstadoLicencia | null> {
         bloqueoFuerte = true;
       }
     } else {
-      const estadoSub = (sub?.estado || 'ACTIVA').toUpperCase();
+      // If there is a sub record, check its state. Otherwise default to TRIAL.
+      const estadoSub = sub ? (sub.estado || 'TRIAL').toUpperCase() : 'TRIAL';
       estado = (estadoSub === 'ACTIVA' || estadoSub === 'ACTIVO') ? 'ACTIVA' : 'TRIAL';
     }
 

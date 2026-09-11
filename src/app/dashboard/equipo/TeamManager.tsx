@@ -4,6 +4,7 @@ import React, { useState, useTransition } from 'react';
 import { updateMemberRole, deleteUser } from './actions';
 import { UserCircle, Shield, ShieldAlert, Loader2, CheckCircle2, Trash2 } from 'lucide-react';
 import AddUserModal from './AddUserModal';
+import ChangePasswordModal from './ChangePasswordModal';
 
 type Member = {
   id: string;
@@ -142,17 +143,20 @@ export default function TeamManager({ initialMembers, currentUserId }: { initial
                 </td>
                 <td className="px-6 py-4 text-right">
                   {member.id !== currentUserId && (
-                    <button
-                      onClick={() => handleDelete(member.id, member.nombre_completo)}
-                      disabled={deletingId === member.id}
-                      className="p-1.5 text-neutral-600 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors disabled:opacity-40"
-                      title="Eliminar usuario"
-                    >
-                      {deletingId === member.id
-                        ? <Loader2 size={16} className="animate-spin" />
-                        : <Trash2 size={16} />
-                      }
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      <ChangePasswordModal memberId={member.id} nombreCompleto={member.nombre_completo || 'Usuario'} />
+                      <button
+                        onClick={() => handleDelete(member.id, member.nombre_completo)}
+                        disabled={deletingId === member.id}
+                        className="p-1.5 text-neutral-600 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors disabled:opacity-40"
+                        title="Eliminar usuario"
+                      >
+                        {deletingId === member.id
+                          ? <Loader2 size={16} className="animate-spin" />
+                          : <Trash2 size={16} />
+                        }
+                      </button>
+                    </div>
                   )}
                 </td>
               </tr>
@@ -197,13 +201,16 @@ export default function TeamManager({ initialMembers, currentUserId }: { initial
                   </span>
                 )}
                 {member.id !== currentUserId && (
-                  <button
-                    onClick={() => handleDelete(member.id, member.nombre_completo)}
-                    disabled={deletingId === member.id}
-                    className="p-1.5 text-neutral-600 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors disabled:opacity-40"
-                  >
-                    {deletingId === member.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                  </button>
+                  <>
+                    <ChangePasswordModal memberId={member.id} nombreCompleto={member.nombre_completo || 'Usuario'} />
+                    <button
+                      onClick={() => handleDelete(member.id, member.nombre_completo)}
+                      disabled={deletingId === member.id}
+                      className="p-1.5 text-neutral-600 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors disabled:opacity-40"
+                    >
+                      {deletingId === member.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                    </button>
+                  </>
                 )}
               </div>
             </div>

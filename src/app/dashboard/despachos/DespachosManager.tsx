@@ -23,7 +23,7 @@ interface CartItem {
   cantidad: number;
 }
 
-export default function DespachosManager({ empresaId }: { empresaId: string }) {
+export default function DespachosManager({ empresaId, userSedeId, userRole }: { empresaId: string, userSedeId: string, userRole: string }) {
   const [sedes, setSedes] = useState<Sede[]>([]);
   const [origenId, setOrigenId] = useState('');
   const [destinoId, setDestinoId] = useState('');
@@ -42,6 +42,8 @@ export default function DespachosManager({ empresaId }: { empresaId: string }) {
 
   const supabase = createClient();
 
+  const isRestricted = userRole !== 'MASTER' && userRole !== 'ADMIN';
+
   useEffect(() => {
     loadSedes();
   }, [empresaId]);
@@ -57,7 +59,12 @@ export default function DespachosManager({ empresaId }: { empresaId: string }) {
 
   const loadSedes = async () => {
     const { data } = await supabase.from('sedes').select('id, nombre_sede').eq('empresa_id', empresaId).eq('estado_activo', true);
-    if (data) setSedes(data);
+    if (data) {
+      setSedes(data);
+      if (isRestricted && userSedeId) {
+        setOrigenId(userSedeId); // Forzar selección
+      }
+    }
   };
 
   const loadInsumosOrigen = async () => {
@@ -170,7 +177,8 @@ export default function DespachosManager({ empresaId }: { empresaId: string }) {
           <select 
             value={origenId} 
             onChange={e => setOrigenId(e.target.value)}
-            className="w-full h-14 bg-neutral-900 border border-neutral-800 text-white rounded-xl px-4 outline-none focus:border-indigo-500"
+            disabled={isRestricted}
+            className={`w-full h-14 bg-neutral-900 border border-neutral-800 text-white rounded-xl px-4 outline-none focus:border-indigo-500 ${isRestricted ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
             <option value="">Selecciona el origen...</option>
             {sedes.map(s => <option key={s.id} value={s.id}>{s.nombre_sede}</option>)}

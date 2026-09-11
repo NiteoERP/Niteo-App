@@ -19,6 +19,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
   const [fechaFiltro, setFechaFiltro] = useState('');
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [busqueda, setBusqueda] = useState('');
+  const [page, setPage] = useState(1);
   
   // Estado del calendario
   const [calMonth, setCalMonth] = useState<Date>(startOfMonth(new Date()));
@@ -26,7 +27,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
 
   const cargarVentas = async () => {
     setLoading(true);
-    const data = await getHistorialVentasCompleto(sedeId, fechaFiltro || undefined);
+    const data = await getHistorialVentasCompleto(sedeId, fechaFiltro || undefined, page, 50);
     setVentas(data);
     setLoading(false);
   };
@@ -38,16 +39,16 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
     const supabase = createClient();
     const channel = supabase.channel('realtime_ventas_historial')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'ventas_facturas', filter: `sede_id=eq.${sedeId}` }, () => {
-        getHistorialVentasCompleto(sedeId, fechaFiltro || undefined).then(data => setVentas(data));
-        getHistorialVentasCompleto(sedeId, format(calMonth, 'yyyy-MM')).then(setAllMonthVentas);
+        getHistorialVentasCompleto(sedeId, fechaFiltro || undefined, page, 50).then(data => setVentas(data));
+        getHistorialVentasCompleto(sedeId, format(calMonth, 'yyyy-MM'), 1, 1000).then(setAllMonthVentas);
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [sedeId, fechaFiltro]);
+  }, [sedeId, fechaFiltro, page]);
 
   useEffect(() => {
-    getHistorialVentasCompleto(sedeId, format(calMonth, 'yyyy-MM')).then(setAllMonthVentas);
+    getHistorialVentasCompleto(sedeId, format(calMonth, 'yyyy-MM'), 1, 1000).then(setAllMonthVentas);
   }, [sedeId, calMonth]);
 
   const dayStatusMap = useMemo(() => {
@@ -88,7 +89,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
     const nuevoEstado = !estadoActual;
     setVentas(prev => prev.map(v => v.id_factura.toString() === id ? { ...v, verificado: nuevoEstado } : v));
     await toggleVentaVerificada(id, nuevoEstado);
-    const updated = await getHistorialVentasCompleto(sedeId, format(calMonth, 'yyyy-MM'));
+    const updated = await getHistorialVentasCompleto(sedeId, format(calMonth, 'yyyy-MM'), 1, 1000);
     setAllMonthVentas(updated);
   };
 
@@ -254,6 +255,24 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
               )}
             </div>
           ))}
+          
+          <div className="flex justify-between items-center pt-4 border-t border-neutral-800">
+            <button 
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1 || loading}
+              className="px-4 py-2 bg-neutral-800 text-white rounded-lg disabled:opacity-50"
+            >
+              Anterior
+            </button>
+            <span className="text-neutral-400">Página {page}</span>
+            <button 
+              onClick={() => setPage(p => p + 1)}
+              disabled={ventas.length < 50 || loading}
+              className="px-4 py-2 bg-neutral-800 text-white rounded-lg disabled:opacity-50"
+            >
+              Siguiente
+            </button>
+          </div>
         </div>
       )}
     </div>

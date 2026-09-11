@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
+import { translateAuthError } from '@/utils/errors'
 
 export async function login(prevState: any, formData: FormData) {
   const rawEmail = formData.get('email') as string;
@@ -22,7 +23,7 @@ export async function login(prevState: any, formData: FormData) {
 
   if (error) {
     console.error('Login error:', error.message);
-    return { error: `Error: ${error.message}` }
+    return { error: translateAuthError(error.message) }
   }
 
   const { data: perfil } = await supabase

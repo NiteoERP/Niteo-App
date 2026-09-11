@@ -3,6 +3,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
+import { translateAuthError } from '@/utils/errors';
 
 export async function updateMemberAccess(memberId: string, permisos: string[], sede_id: string | null) {
   const supabase = await createClient();
@@ -80,7 +81,7 @@ export async function createUser(email: string, password: string, nombreCompleto
   });
 
   if (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: translateAuthError(error.message) };
   }
 
   // Upsert explícito del perfil para garantizar que empresa_id, rol y nombre_completo
@@ -138,5 +139,35 @@ export async function deleteUser(memberId: string) {
   if (error) return { success: false, error: error.message };
 
   revalidatePath('/dashboard/equipo');
+  return { success: true };
+}
+
+export async function changeUserPassword(memberId: string, newPassword: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (user?.app_metadata?.user_role !== 'MASTER') {
+    return { success: false, error: 'No autorizado' };
+  }
+
+  const { data: targetProfile } = await supabase.from('perfiles').select('empresa_id').eq('id', memberId).single();
+  
+  if (!targetProfile || targetProfile.empresa_id !== user?.app_metadata?.empresa_id) {
+    return { success: false, error: 'Usuario no pertenece a tu empresa' };
+  }
+
+  const supabaseAdmin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const { error } = await supabaseAdmin.auth.admin.updateUserById(memberId, {
+    password: newPassword
+  });
+
+  if (error) {
+    return { success: false, error: translateAuthError(error.message) };
+  }
+
   return { success: true };
 }

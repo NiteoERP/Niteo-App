@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
+import { translateAuthError } from '@/utils/errors';
 
 export async function registrarUsuario(formData: FormData) {
   const supabase = await createClient();
@@ -22,8 +23,6 @@ export async function registrarUsuario(formData: FormData) {
   }
 
   // 1. Registro en Supabase Auth
-  // Pasamos el fullName y companyName como metadata para que el Trigger SQL
-  // construya el Tenant automáticamente sin riesgo de fallos parciales.
   const { error } = await supabase.auth.signUp({
     email,
     password,
@@ -36,7 +35,7 @@ export async function registrarUsuario(formData: FormData) {
   });
 
   if (error) {
-    return redirect(`/register?error=${encodeURIComponent(error.message)}`);
+    return redirect(`/register?error=${encodeURIComponent(translateAuthError(error.message))}`);
   }
 
   // Al no tener confirmación de email (PLG activado), la sesión ya se establece.
@@ -57,7 +56,7 @@ export async function iniciarSesion(formData: FormData) {
 
   if (error) {
     console.error('Login error:', error.message);
-    return redirect(`/login?error=${encodeURIComponent('Error: ' + error.message)}`);
+    return redirect(`/login?error=${encodeURIComponent(translateAuthError(error.message))}`);
   }
 
   redirect('/dashboard');
