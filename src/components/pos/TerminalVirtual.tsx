@@ -22,6 +22,7 @@ interface TerminalVirtualProps {
   sedeVirtualId: string;
   metodosDisponibles?: string[];
   tasaActiva?: number;
+  empresaNombre?: string;
 }
 
 const METODOS_DEFAULT = ['Efectivo USD', 'Transferencia', 'Zelle', 'Pago Móvil', 'Punto de Venta'];
@@ -31,6 +32,7 @@ export default function TerminalVirtual({
   sedeVirtualId,
   metodosDisponibles = METODOS_DEFAULT,
   tasaActiva = 1,
+  empresaNombre = 'Mi Empresa',
 }: TerminalVirtualProps) {
   const [busqueda, setBusqueda] = useState('');
   const [carrito, setCarrito] = useState<ItemCarrito[]>([]);
@@ -122,6 +124,9 @@ export default function TerminalVirtual({
     setModalPagoAbierto(true);
   };
 
+  // Venta Exitosa Data
+  const [ventaExitosa, setVentaExitosa] = useState<any>(null);
+
   const totalPagado = pagos.reduce((acc, p) => acc + (parseFloat(p.montoStr) || 0), 0);
   const restante = Math.max(0, total - totalPagado);
   const vuelto = Math.max(0, totalPagado - total);
@@ -141,8 +146,6 @@ export default function TerminalVirtual({
   };
 
   const handleProcesar = () => {
-    // Validar que el total pagado cubra el monto, a menos que el cliente quiera crédito (que por ahora no manejamos con saldo_pendiente explícito acá si es venta de contado)
-    // Para simplificar, asumimos que si el totalPagado < total, se va a crédito, pero obligamos a poner nombre
     if (restante > 0 && !clienteNombre.trim()) {
       alert("Si la orden no está pagada en su totalidad, debes ingresar el nombre del cliente para el crédito.");
       return;
@@ -153,8 +156,6 @@ export default function TerminalVirtual({
         .map(p => ({ tipo_pago: p.tipo, monto: parseFloat(p.montoStr) || 0 }))
         .filter(p => p.monto > 0);
 
-      // Si pagó de más (vuelto), reducimos el monto del método "Efectivo USD" o el primero para cuadrar exacto a la DB
-      // (Aronium maneja el vuelto internamente, aquí cuadramos el pago exacto a la factura)
       let montoAjustar = vuelto;
       if (montoAjustar > 0) {
          for (let i = 0; i < pagosMap.length; i++) {
@@ -166,31 +167,56 @@ export default function TerminalVirtual({
          }
       }
 
+      const itemsParaVender = carrito.map((i) => ({
+        producto_id: i.producto_id,
+        nombre: i.nombre,
+        cantidad: i.cantidad,
+        precio_unitario: i.precio_unitario,
+      }));
+
       const res = await procesarVentaVirtual({
         sede_id: sedeVirtualId,
-        items: carrito.map((i) => ({
-          producto_id: i.producto_id,
-          nombre: i.nombre,
-          cantidad: i.cantidad,
-          precio_unitario: i.precio_unitario,
-        })),
+        items: itemsParaVender,
         pagos: pagosMap,
         cliente_nombre: clienteNombre.trim() || undefined,
         mesero_nombre: meseroNombre.trim() || undefined,
       });
 
-      if (res.success) {
+      if (res.success && res.factura) {
+        setVentaExitosa({
+           factura: res.factura,
+           items: itemsParaVender,
+           pagos: pagosMap,
+           tasa: tasaActiva
+        });
         setResultado({ ok: true, msg: `Venta registrada correctamente.` });
         setCarrito([]);
         setClienteNombre('');
         setMeseroNombre('');
         setModalPagoAbierto(false);
-        setCarritoAbierto(false);
       } else {
         setResultado({ ok: false, msg: res.error || 'Error desconocido al procesar la venta.' });
       }
     });
   };
+
+  const handleImprimirTicket = async () => {
+    if (!ventaExitosa) return;
+    try {
+      const { generarTicketPOS } = await import('@/utils/pdf-generator');
+      generarTicketPOS(ventaExitosa.factura, { nombre_comercial: empresaNombre }, ventaExitosa.items, ventaExitosa.pagos, ventaExitosa.tasa);
+    } catch (e) {
+      console.error("Error al generar ticket:", e);
+      alert("Hubo un error al generar el ticket.");
+    }
+  };
+
+  const handleNuevaVenta = () => {
+    setVentaExitosa(null);
+    setCarritoAbierto(false);
+    setResultado(null);
+  };
+
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 h-full min-h-[calc(100vh-200px)]">
@@ -353,133 +379,164 @@ export default function TerminalVirtual({
           </div>
         </div>
 
-        {/* Cliente y Mesero */}
-        <div className="flex flex-col gap-2 shrink-0 bg-neutral-950/50 p-3 rounded-xl border border-neutral-800/50">
-           <div className="flex items-center gap-2">
-             <User size={14} className="text-neutral-500" />
-             <input 
-               type="text" 
-               placeholder="Nombre del Cliente (Opcional)" 
-               value={clienteNombre}
-               onChange={e => setClienteNombre(e.target.value)}
-               className="bg-transparent border-b border-neutral-800 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 w-full py-1"
-             />
-           </div>
-           <div className="flex items-center gap-2">
-             <UserCircle size={14} className="text-neutral-500" />
-             <input 
-               type="text" 
-               placeholder="Mesero / Vendedor (Opcional)" 
-               value={meseroNombre}
-               onChange={e => setMeseroNombre(e.target.value)}
-               className="bg-transparent border-b border-neutral-800 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 w-full py-1"
-             />
-           </div>
-        </div>
-
-        <div className="flex-1 flex flex-col gap-2 overflow-y-auto">
-          {carrito.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 text-neutral-600 gap-2 h-full">
-              <ShoppingCart size={32} />
-              <p className="text-xs">Toca un producto para agregarlo</p>
-            </div>
-          ) : (
-            carrito.map((item) => (
-              <div
-                key={item.producto_id}
-                className="flex items-center gap-3 bg-neutral-950/50 border border-neutral-800/50 rounded-xl p-3 relative group"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-neutral-200 truncate pr-4">{item.nombre}</p>
-                  
-                  {editandoPrecioId === item.producto_id ? (
-                     <div className="flex items-center gap-1 mt-1">
-                       <span className="text-xs text-neutral-500">$</span>
-                       <input 
-                         type="number" 
-                         autoFocus
-                         className="bg-neutral-900 border border-indigo-500/50 rounded px-1 w-16 text-xs text-white outline-none"
-                         value={precioEditTemp}
-                         onChange={e => setPrecioEditTemp(e.target.value)}
-                         onKeyDown={e => { if(e.key === 'Enter') guardarPrecioEditado(item.producto_id); }}
-                         onBlur={() => guardarPrecioEditado(item.producto_id)}
-                       />
-                     </div>
-                  ) : (
-                     <div className="flex items-center gap-1">
-                        <p className="text-xs text-emerald-400 font-medium">
-                          ${Number(item.precio_unitario).toFixed(2)} c/u
-                        </p>
-                        {item.precio_modificable && (
-                           <button 
-                             onClick={() => { setEditandoPrecioId(item.producto_id); setPrecioEditTemp(item.precio_unitario.toString()); }}
-                             className="text-neutral-600 hover:text-indigo-400 p-0.5 transition-colors hidden group-hover:block"
-                             title="Editar precio"
-                           >
-                              <Edit3 size={10} />
-                           </button>
-                        )}
-                     </div>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <button
-                    onClick={() => cambiarCantidad(item.producto_id, -1)}
-                    className="w-6 h-6 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 flex items-center justify-center"
-                  >
-                    <Minus size={10} />
-                  </button>
-                  <span className="text-sm font-bold text-white w-5 text-center">{item.cantidad}</span>
-                  <button
-                    onClick={() => cambiarCantidad(item.producto_id, 1)}
-                    className="w-6 h-6 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 flex items-center justify-center"
-                  >
-                    <Plus size={10} />
-                  </button>
-                </div>
-
-                <div className="flex flex-col items-end gap-1 shrink-0 w-12">
-                  <span className="text-sm font-bold text-white">
-                    ${(item.precio_unitario * item.cantidad).toFixed(2)}
-                  </span>
-                  <button
-                    onClick={() => eliminarItem(item.producto_id)}
-                    className="text-neutral-600 hover:text-red-400 transition-colors"
-                  >
-                    <Trash2 size={11} />
-                  </button>
-                </div>
+        {/* Si hay una venta exitosa, mostrar pantalla de éxito, de lo contrario mostrar carrito normal */}
+        {ventaExitosa ? (
+           <div className="flex-1 flex flex-col items-center justify-center py-10 gap-6">
+              <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 flex items-center justify-center rounded-full">
+                 <CheckCircle size={32} />
               </div>
-            ))
-          )}
-        </div>
+              <div className="text-center">
+                 <h3 className="text-xl font-bold text-white mb-1">¡Venta Exitosa!</h3>
+                 <p className="text-sm text-neutral-400">Documento: {ventaExitosa.factura.numero_documento}</p>
+                 <p className="text-sm text-emerald-400 font-bold mt-1">Total: ${ventaExitosa.factura.total.toFixed(2)}</p>
+              </div>
 
-        <div className="flex flex-col gap-3 shrink-0">
-          <div className="bg-indigo-500/10 border border-indigo-500/20 p-4 rounded-xl flex items-center justify-between">
-            <div className="flex flex-col">
-               <span className="text-xs text-indigo-300 uppercase font-bold tracking-wider">Total</span>
-               <span className="text-[10px] text-neutral-400">Tasa: Bs {tasaActiva.toFixed(2)}</span>
-            </div>
-            <div className="flex flex-col items-end">
-               <span className="text-2xl font-black text-white">${total.toFixed(2)}</span>
-               <span className="text-sm font-semibold text-neutral-400">Bs {(total * tasaActiva).toFixed(2)}</span>
-            </div>
-          </div>
+              <div className="flex flex-col gap-3 w-full mt-4">
+                 <button 
+                   onClick={handleImprimirTicket}
+                   className="w-full h-12 rounded-xl text-sm font-bold flex items-center justify-center gap-2 bg-neutral-800 hover:bg-neutral-700 text-white transition-colors border border-neutral-700"
+                 >
+                    <Receipt size={16} /> Imprimir Ticket PDF
+                 </button>
+                 <button 
+                   onClick={handleNuevaVenta}
+                   className="w-full h-12 rounded-xl text-sm font-bold flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white transition-colors shadow-[0_0_20px_rgba(99,102,241,0.2)]"
+                 >
+                    <Plus size={16} /> Nueva Venta
+                 </button>
+              </div>
+           </div>
+        ) : (
+           <>
+              {/* Cliente y Mesero */}
+              <div className="flex flex-col gap-2 shrink-0 bg-neutral-950/50 p-3 rounded-xl border border-neutral-800/50">
+                 <div className="flex items-center gap-2">
+                   <User size={14} className="text-neutral-500" />
+                   <input 
+                     type="text" 
+                     placeholder="Nombre del Cliente (Opcional)" 
+                     value={clienteNombre}
+                     onChange={e => setClienteNombre(e.target.value)}
+                     className="bg-transparent border-b border-neutral-800 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 w-full py-1"
+                   />
+                 </div>
+                 <div className="flex items-center gap-2">
+                   <UserCircle size={14} className="text-neutral-500" />
+                   <input 
+                     type="text" 
+                     placeholder="Mesero / Vendedor (Opcional)" 
+                     value={meseroNombre}
+                     onChange={e => setMeseroNombre(e.target.value)}
+                     className="bg-transparent border-b border-neutral-800 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 w-full py-1"
+                   />
+                 </div>
+              </div>
 
-          <button
-            onClick={abrirModalPago}
-            disabled={carrito.length === 0}
-            className={`w-full h-12 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 ${
-              carrito.length === 0
-                ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
-                : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_24px_rgba(99,102,241,0.45)] active:scale-[0.98]'
-            }`}
-          >
-            <CreditCard size={16} />
-            Pagar Orden
-          </button>
-        </div>
+              <div className="flex-1 flex flex-col gap-2 overflow-y-auto">
+                {carrito.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-10 text-neutral-600 gap-2 h-full">
+                    <ShoppingCart size={32} />
+                    <p className="text-xs">Toca un producto para agregarlo</p>
+                  </div>
+                ) : (
+                  carrito.map((item) => (
+                    <div
+                      key={item.producto_id}
+                      className="flex items-center gap-3 bg-neutral-950/50 border border-neutral-800/50 rounded-xl p-3 relative group"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-neutral-200 truncate pr-4">{item.nombre}</p>
+                        
+                        {editandoPrecioId === item.producto_id ? (
+                           <div className="flex items-center gap-1 mt-1">
+                             <span className="text-xs text-neutral-500">$</span>
+                             <input 
+                               type="number" 
+                               autoFocus
+                               className="bg-neutral-900 border border-indigo-500/50 rounded px-1 w-16 text-xs text-white outline-none"
+                               value={precioEditTemp}
+                               onChange={e => setPrecioEditTemp(e.target.value)}
+                               onKeyDown={e => { if(e.key === 'Enter') guardarPrecioEditado(item.producto_id); }}
+                               onBlur={() => guardarPrecioEditado(item.producto_id)}
+                             />
+                           </div>
+                        ) : (
+                           <div className="flex items-center gap-1">
+                              <p className="text-xs text-emerald-400 font-medium">
+                                ${Number(item.precio_unitario).toFixed(2)} c/u
+                              </p>
+                              {item.precio_modificable && (
+                                 <button 
+                                   onClick={() => { setEditandoPrecioId(item.producto_id); setPrecioEditTemp(item.precio_unitario.toString()); }}
+                                   className="text-neutral-600 hover:text-indigo-400 p-0.5 transition-colors hidden group-hover:block"
+                                   title="Editar precio"
+                                 >
+                                    <Edit3 size={10} />
+                                 </button>
+                              )}
+                           </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          onClick={() => cambiarCantidad(item.producto_id, -1)}
+                          className="w-6 h-6 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 flex items-center justify-center"
+                        >
+                          <Minus size={10} />
+                        </button>
+                        <span className="text-sm font-bold text-white w-5 text-center">{item.cantidad}</span>
+                        <button
+                          onClick={() => cambiarCantidad(item.producto_id, 1)}
+                          className="w-6 h-6 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 flex items-center justify-center"
+                        >
+                          <Plus size={10} />
+                        </button>
+                      </div>
+
+                      <div className="flex flex-col items-end gap-1 shrink-0 w-12">
+                        <span className="text-sm font-bold text-white">
+                          ${(item.precio_unitario * item.cantidad).toFixed(2)}
+                        </span>
+                        <button
+                          onClick={() => eliminarItem(item.producto_id)}
+                          className="text-neutral-600 hover:text-red-400 transition-colors"
+                        >
+                          <Trash2 size={11} />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="flex flex-col gap-3 shrink-0">
+                <div className="bg-indigo-500/10 border border-indigo-500/20 p-4 rounded-xl flex items-center justify-between">
+                  <div className="flex flex-col">
+                     <span className="text-xs text-indigo-300 uppercase font-bold tracking-wider">Total</span>
+                     <span className="text-[10px] text-neutral-400">Tasa: Bs {tasaActiva.toFixed(2)}</span>
+                  </div>
+                  <div className="flex flex-col items-end">
+                     <span className="text-2xl font-black text-white">${total.toFixed(2)}</span>
+                     <span className="text-sm font-semibold text-neutral-400">Bs {(total * tasaActiva).toFixed(2)}</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={abrirModalPago}
+                  disabled={carrito.length === 0}
+                  className={`w-full h-12 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 ${
+                    carrito.length === 0
+                      ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
+                      : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_24px_rgba(99,102,241,0.45)] active:scale-[0.98]'
+                  }`}
+                >
+                  <CreditCard size={16} />
+                  Pagar Orden
+                </button>
+              </div>
+           </>
+        )}
       </div>
 
       {/* ── Modal de Pago Avanzado ── */}

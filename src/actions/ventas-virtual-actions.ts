@@ -49,6 +49,7 @@ function generarNumeroDocumento(): string {
 export async function procesarVentaVirtual(input: ProcesarVentaVirtualInput): Promise<{
   success: boolean;
   facturaId?: string;
+  factura?: any;
   error?: string;
 }> {
   const supabase = await createClient();
@@ -184,5 +185,17 @@ export async function procesarVentaVirtual(input: ProcesarVentaVirtualInput): Pr
   // ── Revalidar cache ────────────────────────────────────────────────────────
   revalidatePath('/dashboard/ventas');
 
-  return { success: true, facturaId };
+  return { 
+    success: true, 
+    facturaId,
+    factura: {
+      numero_documento: numeroDocumento,
+      fecha_venta: fechaVenta,
+      total,
+      saldo_pendiente,
+      cliente_nombre: input.cliente_nombre || null,
+      cliente_id: input.cliente_id || null,
+      mesero_nombre: input.mesero_nombre || null,
+    }
+  };
 }

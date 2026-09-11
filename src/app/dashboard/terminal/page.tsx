@@ -37,7 +37,7 @@ export default async function TerminalPage() {
 
   const { data: empresaData } = await supabase
     .from('empresas')
-    .select('metodos_pago')
+    .select('metodos_pago, nombre_comercial')
     .eq('id', perfil.empresa_id)
     .single();
   
@@ -67,6 +67,7 @@ export default async function TerminalPage() {
           sedeVirtualId={sedeVirtualId}
           metodosDisponibles={metodosPago}
           tasaActiva={tasaActiva}
+          empresaNombre={empresaData?.nombre_comercial || 'Mi Empresa'}
         />
       ) : (
         <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">

@@ -68,6 +68,10 @@ export function SidebarNav({ permisos, userRole }: NavProps) {
             <MonitorSmartphone size={20} />
             <span className="text-sm font-medium">Terminal POS</span>
           </Link>
+          <Link href="/dashboard/documentos/nuevo" className={getLinkClass('/dashboard/documentos/nuevo')}>
+            <FileText size={20} />
+            <span className="text-sm font-medium">Documentos (B2B)</span>
+          </Link>
         </>
       )}
 
@@ -208,9 +212,14 @@ export function MobileNav({ permisos, userRole }: NavProps) {
                 </Link>
               )}
               {hasPerm('pos') && (
-                <Link href="/dashboard/terminal" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/terminal')}>
-                  <MonitorSmartphone size={22} /> Terminal POS
-                </Link>
+                <>
+                  <Link href="/dashboard/terminal" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/terminal')}>
+                    <MonitorSmartphone size={22} /> Terminal POS
+                  </Link>
+                  <Link href="/dashboard/documentos/nuevo" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/documentos/nuevo')}>
+                    <FileText size={22} /> Documentos (B2B)
+                  </Link>
+                </>
               )}
               {hasPerm('reportes') && (
                 <Link href="/dashboard/informes" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/informes')}>
