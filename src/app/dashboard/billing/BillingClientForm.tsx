@@ -17,16 +17,24 @@ const PLUGINS_DISPONIBLES = [
   { id: 'caja-extra', nombre: 'Licencia de Caja Adicional', precio: 5, desc: 'Conectar un punto de cobro físico extra' },
 ];
 
-export default function BillingClientForm({ historialPagos, planActual }: { historialPagos: any[], planActual: string }) {
+export default function BillingClientForm({ 
+  historialPagos, 
+  planActual,
+  modulosActuales = []
+}: { 
+  historialPagos: any[]; 
+  planActual: string;
+  modulosActuales?: string[];
+}) {
   const [tab, setTab] = useState<'reportar' | 'historial'>('reportar');
   const [loading, setLoading] = useState(false);
   const [exito, setExito] = useState(false);
   const [error, setError] = useState('');
 
-  // Configuración interactiva de plan y addons
+  // Configuración interactiva de plan y addons (pre-seleccionamos los que ya tiene contratados)
   const initialPlan = (planActual?.toUpperCase() in PLANES_CONFIG) ? planActual.toUpperCase() : 'STARTER';
   const [selectedPlan, setSelectedPlan] = useState<string>(initialPlan);
-  const [selectedPlugins, setSelectedPlugins] = useState<string[]>([]);
+  const [selectedPlugins, setSelectedPlugins] = useState<string[]>(modulosActuales);
 
   // Datos de pago
   const [metodo, setMetodo] = useState('Zelle');

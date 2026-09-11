@@ -62,7 +62,13 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
   if (tab === 'ventas') {
     initialSales = await getVentasRecientes(activeSedeId);
   } else if (tab === 'catalogo') {
-    catalog = await getProductosCatalogo(perfil.empresa_id);
+    const { unstable_cache } = require('next/cache');
+    const cachedCatalogo = unstable_cache(
+      async () => getProductosCatalogo(perfil.empresa_id),
+      [`productos-${perfil.empresa_id}`],
+      { revalidate: 600, tags: [`productos-${perfil.empresa_id}`] }
+    );
+    catalog = await cachedCatalogo();
   }
 
   return (

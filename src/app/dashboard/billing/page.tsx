@@ -91,6 +91,7 @@ export default async function BillingPage() {
           <BillingClientForm 
             historialPagos={historialPagos || []} 
             planActual={licencia.planSuscripcion}
+            modulosActuales={licencia.modulosActivos || []}
           />
         </div>
 

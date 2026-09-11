@@ -75,8 +75,18 @@ export default async function DashboardLayout({
           </Link>
         </div>
         
-        <SidebarNav permisos={permisos} userRole={userRole} />
-        <SidebarBottom permisos={permisos} userRole={userRole} />
+        <SidebarNav 
+          permisos={permisos} 
+          userRole={userRole} 
+          modulosActivos={licencia?.modulosActivos || []} 
+          planSuscripcion={licencia?.planSuscripcion || 'STARTER'} 
+        />
+        <SidebarBottom 
+          permisos={permisos} 
+          userRole={userRole} 
+          modulosActivos={licencia?.modulosActivos || []} 
+          planSuscripcion={licencia?.planSuscripcion || 'STARTER'} 
+        />
       </aside>
 
       {/* Main Content Area */}
@@ -152,7 +162,12 @@ export default async function DashboardLayout({
         </main>
 
         {/* BOTTOM NAVIGATION (mobile only — rendering delegado al Client Component) */}
-        <MobileNav permisos={permisos} userRole={userRole} />
+        <MobileNav 
+          permisos={permisos} 
+          userRole={userRole} 
+          modulosActivos={licencia?.modulosActivos || []} 
+          planSuscripcion={licencia?.planSuscripcion || 'STARTER'} 
+        />
       </div>
     </div>
   );

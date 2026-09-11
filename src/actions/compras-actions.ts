@@ -290,6 +290,8 @@ export async function registrarFacturaInsumos(factura: {
   }
   revalidatePath('/dashboard/inventario');   
   revalidatePath('/dashboard/compras');   
+  const { revalidateTag } = require('next/cache');
+  revalidateTag(`insumos-${profile.empresa_id}${activeSedeId ? `-${activeSedeId}` : ''}`);
   return { success: true }; 
 }
 

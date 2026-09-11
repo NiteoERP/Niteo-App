@@ -22,9 +22,11 @@ import {
 interface NavProps {
   permisos: string[];
   userRole: string;
+  modulosActivos?: string[];
+  planSuscripcion?: string;
 }
 
-export function SidebarNav({ permisos, userRole }: NavProps) {
+export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscripcion = 'STARTER' }: NavProps) {
   const pathname = usePathname();
   const hasPerm = (p: string) => permisos.includes(p) || userRole === 'MASTER';
 
@@ -88,7 +90,8 @@ export function SidebarNav({ permisos, userRole }: NavProps) {
         </Link>
       )}
       
-      {(hasPerm('inventario') || hasPerm('pos')) && (
+      {/* Módulo Despachos: solo si está contratado o en plan Enterprise */}
+      {(modulosActivos.includes('despachos') || planSuscripcion?.toUpperCase() === 'ENTERPRISE') && (hasPerm('inventario') || hasPerm('pos')) && (
         <Link href="/dashboard/despachos" className={getLinkClass('/dashboard/despachos')}>
           <Truck size={20} />
           <span className="text-sm font-medium">Despachos</span>
@@ -157,7 +160,7 @@ export function SidebarBottom({ permisos, userRole }: NavProps) {
   );
 }
 
-export function MobileNav({ permisos, userRole }: NavProps) {
+export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscripcion = 'STARTER' }: NavProps) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const hasPerm = (p: string) => permisos.includes(p) || userRole === 'MASTER';
@@ -231,7 +234,7 @@ export function MobileNav({ permisos, userRole }: NavProps) {
                   <TrendingUp size={22} /> Finanzas
                 </Link>
               )}
-              {(hasPerm('inventario') || hasPerm('pos')) && (
+              {(modulosActivos.includes('despachos') || planSuscripcion?.toUpperCase() === 'ENTERPRISE') && (hasPerm('inventario') || hasPerm('pos')) && (
                 <Link href="/dashboard/despachos" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/despachos')}>
                   <Truck size={22} /> Despachos
                 </Link>

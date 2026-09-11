@@ -7,9 +7,8 @@ import {
   Package, AlertTriangle, Receipt, Star, BarChart2, X, Loader2,
   Store, Tag, ShieldAlert, LayoutGrid, Trash2, List,
 } from 'lucide-react';
-import { getSedes } from '@/actions/dashboard-actions';
 import { useEmpresa } from '@/components/providers/EmpresaProvider';
-import { generateReport, getCategorias, getCajeros, getClientes, ExtraFilters } from '@/actions/informes-actions';
+import { useSedes, useCatalogosInformes, useGenerateReport, ExtraFilters } from '@/hooks/useInformesData';
 import { format, subDays, startOfWeek, endOfWeek, startOfDay, endOfDay,
   startOfMonth, endOfMonth, startOfYear, endOfYear,
   subMonths,
@@ -156,8 +155,8 @@ const DATE_PILLS: { key: DateRangeKey; label: string }[] = [
 // ─── Componente principal ────────────────────────────────────────────────────
 
 export default function InformesPage() {
-  const { empresa } = useEmpresa();
-  const [sedes, setSedes] = useState<any[]>([]);
+  const { empresa, empresaId, userRole, userSedeId } = useEmpresa();
+  const sedes = useSedes(empresaId || '', userRole, userSedeId);
   const [sedeId, setSedeId] = useState('ALL');
 
   // Fecha global
@@ -178,21 +177,14 @@ export default function InformesPage() {
   const [sheetDateKey,   setSheetDateKey]   = useState<DateRangeKey>('este_mes');
 
   // ── Filtros extra (categoría / cajero / cliente) ──────────────────────────
-  const [categorias,       setCategorias]       = useState<string[]>([]);
-  const [cajeros,          setCajeros]          = useState<{ id: string; nombre: string }[]>([]);
-  const [clientes,         setClientes]         = useState<{ id: string; nombre: string }[]>([]);
+  const { categorias, cajeros, clientes, isLoading: loadingFilters } = useCatalogosInformes(empresaId || '');
   const [categoriaFilter,  setCategoriaFilter]  = useState('');
   const [cajeroFilter,     setCajeroFilter]     = useState('');
   const [clienteFilter,    setClienteFilter]    = useState('');
-  const [loadingFilters,   setLoadingFilters]   = useState(false);
 
   // Resultado del reporte
-  const [isLoading,        setIsLoading]        = useState(false);
-  const [reportData,       setReportData]       = useState<any[] | null>(null);
-  const [reportError,      setReportError]      = useState('');
+  const { reportData, isGenerating: isLoading, error: reportError, generateReport, setReportData, setError: setReportError } = useGenerateReport(empresaId || '');
   const [showPreviewModal, setShowPreviewModal] = useState(false);
-
-  useEffect(() => { getSedes().then(setSedes); }, []);
 
 
 
@@ -230,42 +222,13 @@ export default function InformesPage() {
   }, [selectedReport, sheetStartDate, sheetEndDate, categoriaFilter, cajeroFilter, clienteFilter]);
 
 
-  useEffect(() => {
-    if (selectedReport && sheetStartDate && sheetEndDate) {
-      handleGenerate(selectedReport.id, sheetStartDate, sheetEndDate);
-    }
-  }, [selectedReport, sheetStartDate, sheetEndDate, categoriaFilter, cajeroFilter, clienteFilter]);
-
   const handleGenerate = async (reportId: string, s: Date, e: Date) => {
-    setIsLoading(true);
-    setReportError('');
-    setReportData(null);
-    try {
-      const extra: ExtraFilters = {
-        categoriaFilter: categoriaFilter || undefined,
-        cajeroId:        cajeroFilter    || undefined,
-        clienteId:       clienteFilter   || undefined,
-      };
-      const res = await generateReport(
-        reportId, 
-        sedeId, 
-        format(startOfDay(s), "yyyy-MM-dd'T'HH:mm:ssXXX"), 
-        format(endOfDay(e), "yyyy-MM-dd'T'HH:mm:ssXXX"), 
-        extra
-      );
-      if (res.success) {
-        let data = res.data;
-        setReportData(data);
-        
-      } else {
-          setReportError(res.error || 'Error desconocido.');
-          setReportData(null);
-        }
-    } catch (err: any) {
-      setReportError(err.message || 'Error de conexión.');
-    } finally {
-      setIsLoading(false);
-    }
+    const extra: ExtraFilters = {
+      categoriaFilter: categoriaFilter || undefined,
+      cajeroId:        cajeroFilter    || undefined,
+      clienteId:       clienteFilter   || undefined,
+    };
+    await generateReport(reportId, sedeId, s, e, extra);
   };
 
   // ── Catálogo filtrado por búsqueda ────────────────────────────────────────
@@ -291,25 +254,6 @@ export default function InformesPage() {
     setSheetDateKey('este_mes');
     applyDatePreset('este_mes', setSheetStartDate, setSheetEndDate);
 
-    const needs = report.extraFilters ?? [];
-    if (needs.length === 0) return;
-
-    setLoadingFilters(true);
-    try {
-      await Promise.all([
-        needs.includes('categoria') && categorias.length === 0
-          ? getCategorias().then(setCategorias)
-          : Promise.resolve(),
-        needs.includes('cajero') && cajeros.length === 0
-          ? getCajeros().then(setCajeros)
-          : Promise.resolve(),
-        needs.includes('cliente') && clientes.length === 0
-          ? getClientes().then(setClientes)
-          : Promise.resolve(),
-      ]);
-    } finally {
-      setLoadingFilters(false);
-    }
   };
 
 
@@ -607,7 +551,7 @@ export default function InformesPage() {
                     className="w-full h-12 bg-neutral-950 border border-neutral-800 text-white text-base rounded-xl pl-9 pr-3 appearance-none focus:outline-none focus:border-indigo-500"
                   >
                     <option value="ALL">Todas las sedes</option>
-                    {sedes.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                    {sedes.map((s: any) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
                   </select>
                 </div>
               </div>
@@ -790,7 +734,7 @@ export default function InformesPage() {
                     Período: <span className="font-semibold text-neutral-800">{format(sheetStartDate,'dd/MM/yyyy')} - {format(sheetEndDate,'dd/MM/yyyy')}</span>
                   </p>
                   <p className="text-neutral-500 text-sm">
-                    Sede: <span className="font-semibold text-neutral-800">{sedeId === 'ALL' ? 'Todas las Sucursales' : sedes.find(s => s.id === sedeId)?.nombre ?? sedeId}</span>
+                    Sede: <span className="font-semibold text-neutral-800">{sedeId === 'ALL' ? 'Todas las Sucursales' : sedes.find((s: any) => s.id === sedeId)?.nombre ?? sedeId}</span>
                   </p>
                 </div>
                 <div className="text-left sm:text-right">
