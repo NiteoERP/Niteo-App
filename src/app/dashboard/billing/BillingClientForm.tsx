@@ -6,13 +6,12 @@ import { CheckCircle, Clock, UploadCloud, FileText, AlertCircle, RefreshCw, Chec
 
 const PLANES_CONFIG: Record<string, { nombre: string; precio: number; desc: string }> = {
   STARTER: { nombre: 'Starter', precio: 10, desc: '1 Sede · Inventario y Compras · Hasta 3 usuarios' },
-  PRO: { nombre: 'Pro', precio: 25, desc: 'Hasta 2 Sedes · Motor de Recetas · Costeo promedio · Usuarios ilimitados' },
+  PRO: { nombre: 'Pro', precio: 25, desc: 'Hasta 2 Sedes · Despachos y traslados · Motor de Recetas · Costeo promedio' },
   ENTERPRISE: { nombre: 'Enterprise', precio: 45, desc: 'Sedes ilimitadas · Auditoría Invisible · Soporte prioritario' },
 };
 
 const PLUGINS_DISPONIBLES = [
   { id: 'multi-price', nombre: 'Múltiples Listas de Precios', precio: 5, desc: 'Tarifas por mayorista, mostrador o delivery' },
-  { id: 'despachos', nombre: 'Gestor de Despachos Internos', precio: 6, desc: 'Guías de traslado y recepción entre sedes' },
   { id: 'virtual-pos', nombre: 'Terminal de Venta Virtual', precio: 8, desc: 'Canal de facturación cloud para redes o WhatsApp' },
   { id: 'caja-extra', nombre: 'Licencia de Caja Adicional', precio: 5, desc: 'Conectar un punto de cobro físico extra' },
 ];

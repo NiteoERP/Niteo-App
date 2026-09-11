@@ -47,82 +47,61 @@ function getDateRange(range: string): { startDate: Date; endDate: Date } {
 
 // ─── Hook: Sedes ─────────────────────────────────────────────────────────────
 // Lee las sedes una sola vez por sesión. No hay re-fetch salvo montaje inicial.
+const fetchSedes = async (empresaId: string) => {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from('sedes')
+    .select('id, nombre_sede, direccion')
+    .eq('empresa_id', empresaId);
+  return data?.map(s => ({ id: s.id, nombre: s.nombre_sede, direccion: s.direccion })) || [];
+};
+
 export function useSedes(empresaId: string, userRole: string, userSedeId: string | null) {
-  const [sedes, setSedes] = useState<Sede[]>([]);
   const isGlobal = ['MASTER', 'ADMIN', 'GERENTE'].includes(userRole);
+  
+  const { data } = useSWR(
+    (empresaId && isGlobal) ? `sedes-${empresaId}` : null,
+    () => fetchSedes(empresaId),
+    { revalidateOnFocus: false }
+  );
 
-  useEffect(() => {
-    if (!empresaId || !isGlobal) return; // cajeros no ven selector
-    const supabase = createClient();
-    supabase
-      .from('sedes')
-      .select('id, nombre_sede, direccion')
-      .eq('empresa_id', empresaId)
-      .then(({ data }) => {
-        if (data) setSedes(data.map(s => ({ id: s.id, nombre: s.nombre_sede, direccion: s.direccion })));
-      });
-  }, [empresaId, isGlobal]);
-
-  return sedes;
+  return data ?? [];
 }
 
 // ─── Hook principal: Dashboard KPIs ──────────────────────────────────────────
 // Carga UNA VEZ por [range, sedeId]. Los filtros/KPIs se calculan en JS.
+import useSWR from 'swr';
+
+const fetchDashboard = async ([_, empresaId, range, sedeId]: [string, string, string, string | null]) => {
+  if (!empresaId) return [];
+  const { startDate, endDate } = getDateRange(range);
+  const supabase = createClient();
+  const { data: rows, error: rpcError } = await supabase.rpc(
+    'get_dashboard_rentabilidad',
+    {
+      p_empresa_id: empresaId,
+      p_fecha_inicio: startDate.toISOString(),
+      p_fecha_fin: endDate.toISOString(),
+      p_sede_id: sedeId,
+    },
+  );
+  if (rpcError) throw new Error(rpcError.message);
+  return (rows || []).map((r: any) => ({
+    ...r,
+    dia: r.dia ?? r.fecha ?? r.date ?? 'N/A',
+  }));
+};
+
 export function useDashboardData(
   range: string,
   sedeId: string | null,
   empresaId: string,
 ) {
-  const [data, setData] = useState<DashboardRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, error, isLoading, mutate } = useSWR(
+    empresaId ? ['dashboard', empresaId, range, sedeId] : null,
+    fetchDashboard,
+    { keepPreviousData: true }
+  );
 
-  // Ref para abortar peticiones en vuelo si el usuario cambia filtros rápido
-  const abortRef = useRef<AbortController | null>(null);
-
-  const fetchData = useCallback(async () => {
-    if (!empresaId) return;
-
-    // Cancelar petición anterior si aún está pendiente
-    abortRef.current?.abort();
-    abortRef.current = new AbortController();
-
-    setIsLoading(true);
-    setError(null);
-
-    const { startDate, endDate } = getDateRange(range);
-    const supabase = createClient();
-
-    const { data: rows, error: rpcError } = await supabase.rpc(
-      'get_dashboard_rentabilidad',
-      {
-        p_empresa_id: empresaId,
-        p_fecha_inicio: startDate.toISOString(),
-        p_fecha_fin: endDate.toISOString(),
-        p_sede_id: sedeId,
-      },
-    );
-
-    if (rpcError) {
-      setError(rpcError.message);
-      setIsLoading(false);
-      return;
-    }
-
-    // Normalizar campo "dia" (algunos RPCs retornan "fecha" o "date")
-    const normalized: DashboardRow[] = (rows || []).map((r: any) => ({
-      ...r,
-      dia: r.dia ?? r.fecha ?? r.date ?? 'N/A',
-    }));
-
-    setData(normalized);
-    setIsLoading(false);
-  }, [range, sedeId, empresaId]);
-
-  useEffect(() => {
-    fetchData();
-    return () => abortRef.current?.abort();
-  }, [fetchData]);
-
-  return { data, isLoading, error, refetch: fetchData };
+  return { data: data ?? [], isLoading, error: error?.message ?? null, refetch: mutate };
 }

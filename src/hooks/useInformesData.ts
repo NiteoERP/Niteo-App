@@ -27,57 +27,36 @@ export interface CatalogoItem {
 // Carga los 3 catálogos UNA SOLA VEZ por empresaId usando Promise.all (paralelo).
 // Si falla cualquier catálogo retorna array vacío — no quiebra la UI.
 
+import useSWR from 'swr';
+
+const fetchCatalogos = async (empresaId: string) => {
+  const supabase = createClient();
+  const [catRes, cajRes, cliRes] = await Promise.all([
+    supabase.rpc('get_categorias_productos', { p_empresa_id: empresaId }),
+    supabase.rpc('get_cajeros_empresa', { p_empresa_id: empresaId }),
+    supabase.from('clientes').select('id, nombre').eq('empresa_id', empresaId).order('nombre')
+  ]);
+  
+  return {
+    categorias: (catRes?.data as any[] || []).map((r: any) => r.categoria as string).filter(Boolean),
+    cajeros: (cajRes?.data as CatalogoItem[]) || [],
+    clientes: (cliRes?.data as CatalogoItem[]) || []
+  };
+};
+
 export function useCatalogosInformes(empresaId: string) {
-  const [categorias, setCategorias] = useState<string[]>([]);
-  const [cajeros, setCajeros] = useState<CatalogoItem[]>([]);
-  const [clientes, setClientes] = useState<CatalogoItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const loaded = useRef(false);
+  const { data, isLoading } = useSWR(
+    empresaId ? `catalogos-${empresaId}` : null,
+    () => fetchCatalogos(empresaId),
+    { revalidateOnFocus: false }
+  );
 
-  useEffect(() => {
-    if (!empresaId || loaded.current) return;
-    loaded.current = true;
-
-    const loadData = async () => {
-      setIsLoading(true);
-      const supabase = createClient();
-      try {
-        const [catRes, cajRes, cliRes] = await Promise.all([
-          supabase.rpc('get_categorias_productos', { p_empresa_id: empresaId }),
-          supabase.rpc('get_cajeros_empresa', { p_empresa_id: empresaId }),
-          supabase.from('clientes').select('id, nombre').eq('empresa_id', empresaId).order('nombre')
-        ]);
-
-        if (catRes?.data) {
-          setCategorias((catRes.data as any[]).map((r: any) => r.categoria as string).filter(Boolean));
-        } else {
-          setCategorias([]);
-        }
-
-        if (cajRes?.data) {
-          setCajeros(cajRes.data as CatalogoItem[]);
-        } else {
-          setCajeros([]);
-        }
-
-        if (cliRes?.data) {
-          setClientes(cliRes.data as CatalogoItem[]);
-        } else {
-          setClientes([]);
-        }
-      } catch {
-        setCategorias([]);
-        setCajeros([]);
-        setClientes([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadData();
-  }, [empresaId]);
-
-  return { categorias, cajeros, clientes, isLoading };
+  return { 
+    categorias: data?.categorias ?? [], 
+    cajeros: data?.cajeros ?? [], 
+    clientes: data?.clientes ?? [], 
+    isLoading 
+  };
 }
 
 // ─── Hook: Generador de Reportes ──────────────────────────────────────────────

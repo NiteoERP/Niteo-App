@@ -1,25 +1,20 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useActionState } from 'react';
 import { registerShrinkageAction } from '@/actions/mermas-actions';
 
 export default function ShrinkageForm({ 
     reasons, 
-    onOptimisticAdd 
+    onOptimisticAdd,
+    onSuccess
 }: { 
     reasons: any[],
-    onOptimisticAdd: (shrinkage: any) => void
+    onOptimisticAdd: (shrinkage: any) => void,
+    onSuccess: () => void
 }) {
     const formRef = useRef<HTMLFormElement>(null);
-    const [isPending, setIsPending] = useState(false);
-    const [error, setError] = useState('');
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        setError('');
-        
-        const formData = new FormData(e.currentTarget);
-        
+    const [state, formAction, isPending] = useActionState(async (prevState: any, formData: FormData) => {
         // 1. Extraer los datos para el estado optimista instantáneo
         const quantity = parseFloat(formData.get('quantity') as string);
         const unitCost = parseFloat(formData.get('unit_cost') as string);
@@ -43,22 +38,20 @@ export default function ShrinkageForm({
         
         // 3. Limpiar formulario inmediatamente para que el usuario pueda seguir trabajando
         formRef.current?.reset();
-        setIsPending(true);
 
         try {
             // 4. Disparar el Server Action en segundo plano
             await registerShrinkageAction(formData);
+            if (onSuccess) onSuccess();
+            return { error: null };
         } catch (err: any) {
-            setError(err.message || 'Error al registrar merma, refrescando...');
-            // En un caso real más avanzado se manejaría el rollback o toast alert
-        } finally {
-            setIsPending(false);
+            return { error: err.message || 'Error al registrar merma' };
         }
-    };
+    }, { error: null });
 
     return (
-        <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
-            {error && <div className="text-red-500 text-sm bg-red-50 p-2 rounded">{error}</div>}
+        <form ref={formRef} action={formAction} className="space-y-4">
+            {state.error && <div className="text-red-500 text-sm bg-red-50 p-2 rounded">{state.error}</div>}
             
             <div>
                 <label className="block text-sm font-medium mb-1">ID Producto</label>

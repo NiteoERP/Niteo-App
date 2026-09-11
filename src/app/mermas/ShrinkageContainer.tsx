@@ -1,21 +1,25 @@
 'use client';
 
+
+
 import { useOptimistic } from 'react';
 import ShrinkageForm from './ShrinkageForm';
 import ShrinkageList from './ShrinkageList';
+import { useMermasData } from '@/hooks/useMermasData';
+import { Loader2 } from 'lucide-react';
 
-export default function ShrinkageContainer({ 
-    initialShrinkages, 
-    reasons 
-}: { 
-    initialShrinkages: any[], 
-    reasons: any[] 
-}) {
+export default function ShrinkageContainer() {
+    const { mermas, reasons, isLoading, refetch } = useMermasData();
+    
     // Implementación de Zero-Latency con useOptimistic
     const [optimisticShrinkages, addOptimisticShrinkage] = useOptimistic(
-        initialShrinkages,
+        mermas,
         (state, newShrinkage: any) => [newShrinkage, ...state]
     );
+
+    if (isLoading) {
+        return <div className="flex items-center gap-2 text-gray-500"><Loader2 className="animate-spin" /> Cargando...</div>;
+    }
 
     // Recalcular métricas de forma optimista
     const totalLoss = optimisticShrinkages.reduce((acc, curr) => acc + (Number(curr.total_loss) || 0), 0);
@@ -40,7 +44,7 @@ export default function ShrinkageContainer({
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
                         <h2 className="text-xl font-semibold mb-4">Registrar Merma</h2>
                         {/* Pasamos la función optimista al formulario */}
-                        <ShrinkageForm reasons={reasons} onOptimisticAdd={addOptimisticShrinkage} />
+                        <ShrinkageForm reasons={reasons} onOptimisticAdd={addOptimisticShrinkage} onSuccess={refetch} />
                     </div>
                 </div>
                 

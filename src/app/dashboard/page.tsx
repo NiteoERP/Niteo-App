@@ -42,7 +42,7 @@ export default function DashboardPage() {
   const kpis = useMemo(
     () =>
       data.reduce(
-        (acc, curr) => ({
+        (acc: any, curr: any) => ({
           ventas:   acc.ventas   + Number(curr.ventas_brutas),
           cogs:     acc.cogs     + Number(curr.cogs),
           gastos:   acc.gastos   + Number(curr.gastos_operativos),
@@ -214,7 +214,7 @@ export default function DashboardPage() {
 
             {/* VISTA MÓVIL (Tarjetas) */}
             <div className="grid grid-cols-1 gap-4 md:hidden">
-              {data.map((row, i) => (
+              {data.map((row: any, i: number) => (
                 <div key={i} className="bg-neutral-50 dark:bg-neutral-800/50 rounded-xl p-4 border border-neutral-100 dark:border-neutral-800">
                   <div className="flex justify-between items-center mb-3 pb-3 border-b border-neutral-200 dark:border-neutral-700/50">
                     <span className="font-bold text-neutral-900 dark:text-white">{row.dia}</span>
@@ -258,7 +258,7 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.map((row, i) => (
+                  {data.map((row: any, i: number) => (
                     <tr key={i} className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
                       <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{row.dia}</td>
                       <td className="px-6 py-4 text-green-600 font-bold">{formatCurrency(row.ventas_brutas)}</td>

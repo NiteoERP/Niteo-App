@@ -263,6 +263,7 @@ export default async function LandingPage() {
                   {[
                     'Todo lo del Starter',
                     'Hasta 2 Sedes operativas',
+                    'Gestor de Despachos y Traslados entre Sedes',
                     'Motor de Recetas y Escandallos (Restaurantes)',
                     'Costo Promedio Ponderado de Insumos',
                     'Dashboard Financiero y Conciliación Bancaria',
@@ -312,14 +313,13 @@ export default async function LandingPage() {
         <div className="max-w-4xl mx-auto text-center">
           <h3 className="text-2xl font-black text-white mb-2">Expande tu plan con módulos a la carta</h3>
           <p className="text-neutral-400 text-sm mb-8">Paga exactamente por lo que necesitas.</p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
               { name: 'Múltiples Listas de Precios', price: '$5/mes' },
-              { name: 'Gestor de Despachos Internos', price: '$6/mes' },
               { name: 'Terminal de Venta Virtual', price: '$8/mes' },
               { name: 'Caja Adicional por Sede', price: '$5/mes' },
             ].map((m, i) => (
-              <div key={i} className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 text-left">
+              <div key={i} className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 text-left">
                 <p className="text-sm font-bold text-white mb-1 leading-tight">{m.name}</p>
                 <p className="text-indigo-400 text-sm font-black">{m.price}</p>
               </div>

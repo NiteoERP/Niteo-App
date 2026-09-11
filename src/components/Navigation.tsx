@@ -90,8 +90,8 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
         </Link>
       )}
       
-      {/* Módulo Despachos: solo si está contratado o en plan Enterprise */}
-      {(modulosActivos.includes('despachos') || planSuscripcion?.toUpperCase() === 'ENTERPRISE') && (hasPerm('inventario') || hasPerm('pos')) && (
+      {/* Módulo Despachos: incluido de forma nativa en PRO y ENTERPRISE (múltiples sedes) */}
+      {(planSuscripcion?.toUpperCase() === 'PRO' || planSuscripcion?.toUpperCase() === 'ENTERPRISE') && (hasPerm('inventario') || hasPerm('pos')) && (
         <Link href="/dashboard/despachos" className={getLinkClass('/dashboard/despachos')}>
           <Truck size={20} />
           <span className="text-sm font-medium">Despachos</span>
@@ -234,7 +234,7 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
                   <TrendingUp size={22} /> Finanzas
                 </Link>
               )}
-              {(modulosActivos.includes('despachos') || planSuscripcion?.toUpperCase() === 'ENTERPRISE') && (hasPerm('inventario') || hasPerm('pos')) && (
+              {(planSuscripcion?.toUpperCase() === 'PRO' || planSuscripcion?.toUpperCase() === 'ENTERPRISE') && (hasPerm('inventario') || hasPerm('pos')) && (
                 <Link href="/dashboard/despachos" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/despachos')}>
                   <Truck size={22} /> Despachos
                 </Link>
