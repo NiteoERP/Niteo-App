@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useActionState } from 'react';
+import React, { useActionState, useState } from 'react';
 import Link from 'next/link';
+import { Eye, EyeOff, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { login } from './actions';
 
 export default function LoginPage() {
   const [state, formAction, isPending] = useActionState(login, null);
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <div className="min-h-screen bg-neutral-950 flex flex-col md:flex-row text-neutral-200 font-sans selection:bg-indigo-500/30">
@@ -17,20 +19,44 @@ export default function LoginPage() {
         <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-3xl translate-x-1/3 translate-y-1/3"></div>
         
         <div className="relative z-10">
-          <h1 className="text-3xl font-bold tracking-tighter text-white flex items-center gap-3">
-            <img src="/logo.png" alt="Niteo Logo" className="w-14 h-14 object-contain drop-shadow-[0_0_12px_rgba(99,102,241,0.5)]" />
-            Niteo
-          </h1>
+          <Link 
+            href="/" 
+            className="inline-flex items-center gap-3 group transition-all duration-200 hover:opacity-90"
+            title="Volver a la página principal"
+          >
+            <img 
+              src="/logo.png" 
+              alt="Niteo Logo" 
+              className="w-12 h-12 object-contain drop-shadow-[0_0_12px_rgba(99,102,241,0.5)] group-hover:scale-105 transition-transform" 
+            />
+            <span className="text-3xl font-black tracking-tighter text-white">Niteo</span>
+          </Link>
         </div>
 
         {/* Copy central */}
-        <div className="relative z-10 space-y-6 max-w-lg mb-12">
+        <div className="relative z-10 space-y-6 max-w-lg mb-8">
           <h2 className="text-4xl lg:text-5xl font-medium text-white leading-tight">
             Da luz y claridad a los números de tu negocio.
           </h2>
-          <p className="text-neutral-400 text-lg leading-relaxed">
+          <p className="text-neutral-400 text-base lg:text-lg leading-relaxed">
             El sistema de gestión integral diseñado para simplificar la administración de tu restaurante e inventario, impulsando decisiones más inteligentes.
           </p>
+          
+          {/* Bullets de valor */}
+          <div className="pt-4 space-y-3">
+            <div className="flex items-center gap-3 text-sm text-neutral-300">
+              <CheckCircle2 size={18} className="text-indigo-400 shrink-0" />
+              <span>Punto de Venta 100% Offline con sincronización en la nube</span>
+            </div>
+            <div className="flex items-center gap-3 text-sm text-neutral-300">
+              <CheckCircle2 size={18} className="text-indigo-400 shrink-0" />
+              <span>Gestión de recetas y escandallos con costeo preciso</span>
+            </div>
+            <div className="flex items-center gap-3 text-sm text-neutral-300">
+              <CheckCircle2 size={18} className="text-indigo-400 shrink-0" />
+              <span>Multi-moneda con actualización de tasa automática</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -40,22 +66,35 @@ export default function LoginPage() {
         {/* Luz tenue de fondo en móvil */}
         <div className="md:hidden absolute top-0 left-0 w-full h-64 bg-indigo-900/10 blur-3xl -translate-y-1/2 rounded-full"></div>
 
-        <div className="w-full max-w-[420px] space-y-10 relative z-10">
+        <div className="w-full max-w-[420px] space-y-8 relative z-10">
           
+          {/* Botón sutil para volver a la página principal */}
+          <div className="flex justify-between items-center">
+            <Link 
+              href="/" 
+              className="inline-flex items-center gap-2 text-xs font-medium text-neutral-400 hover:text-white transition-colors"
+            >
+              <ArrowLeft size={14} /> Volver a la página principal
+            </Link>
+          </div>
+
           <div className="text-center md:text-left space-y-3">
             {/* Logo solo visible en móvil */}
-            <div className="md:hidden flex justify-center mb-8">
-              <img src="/logo.png" alt="Niteo Logo" className="w-16 h-16 object-contain drop-shadow-[0_0_12px_rgba(99,102,241,0.5)]" />
+            <div className="md:hidden flex justify-center mb-6">
+              <Link href="/" className="inline-flex items-center gap-2.5 group">
+                <img src="/logo.png" alt="Niteo Logo" className="w-14 h-14 object-contain drop-shadow-[0_0_12px_rgba(99,102,241,0.5)] group-hover:scale-105 transition-transform" />
+                <span className="text-2xl font-black tracking-tight text-white">Niteo</span>
+              </Link>
             </div>
             <h2 className="text-3xl font-semibold tracking-tight text-white">
               Bienvenido de vuelta
             </h2>
-            <p className="text-neutral-400">
+            <p className="text-neutral-400 text-sm">
               Ingresa tus credenciales para acceder a tu panel.
             </p>
           </div>
 
-          <form className="space-y-6" action={formAction}>
+          <form className="space-y-5" action={formAction}>
             <div className="space-y-2">
               <label className="text-sm font-medium text-neutral-300" htmlFor="email">
                 Correo electrónico
@@ -65,7 +104,7 @@ export default function LoginPage() {
                 name="email"
                 type="email"
                 placeholder="nombre@empresa.com"
-                className="w-full px-4 py-3.5 bg-neutral-900/50 border border-neutral-800 rounded-xl text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all disabled:opacity-50"
+                className="w-full px-4 py-3 bg-neutral-900/50 border border-neutral-800 rounded-xl text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all disabled:opacity-50"
                 required
                 disabled={isPending}
               />
@@ -80,15 +119,25 @@ export default function LoginPage() {
                   ¿Olvidaste tu contraseña?
                 </Link>
               </div>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="••••••••"
-                className="w-full px-4 py-3.5 bg-neutral-900/50 border border-neutral-800 rounded-xl text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all disabled:opacity-50"
-                required
-                disabled={isPending}
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-3 pr-11 bg-neutral-900/50 border border-neutral-800 rounded-xl text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all disabled:opacity-50"
+                  required
+                  disabled={isPending}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300 transition-colors"
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             {/* Mensaje de Error */}
