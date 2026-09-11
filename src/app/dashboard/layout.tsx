@@ -30,6 +30,10 @@ export default async function DashboardLayout({
   const { getEstadoLicencia } = await import('@/actions/licencia-actions');
   const licencia = await getEstadoLicencia();
 
+  const { saveCurrentSessionToVault, getSavedAccounts } = await import('@/actions/vault-actions');
+  await saveCurrentSessionToVault();
+  const savedAccounts = await getSavedAccounts();
+
   let empresaData = null;
   if (empresa_id) {
     const { data: emp } = await supabase
@@ -41,32 +45,32 @@ export default async function DashboardLayout({
   }
 
   const { default: LicenseBanner } = await import('@/components/licencias/LicenseBanner');
+  const { default: AccountSwitcher } = await import('@/components/AccountSwitcher');
 
   return (
     <div className="flex h-[100dvh] bg-neutral-950 text-white font-sans overflow-hidden selection:bg-indigo-500/30">
       
-      {/* ── SIDEBAR (desktop only) ────────────────────────────────── */}
-      <aside className="w-64 bg-neutral-900 border-r border-neutral-800 hidden md:flex flex-col shrink-0">
-        <div className="h-16 flex items-center px-5 border-b border-neutral-800 shrink-0">
-          <img src="/logo.png" alt="Niteo Logo"
-               className="w-12 h-12 object-contain scale-125 mr-3 ml-1 drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
-          <span className="font-black text-3xl tracking-tight text-white drop-shadow-md">Niteo</span>
+      {/* Sidebar Desktop */}
+      <aside className="w-[260px] bg-black border-r border-neutral-800 flex-col hidden md:flex z-20 shadow-xl shadow-black/50">
+        <div className="h-16 flex items-center px-6 border-b border-neutral-800 shrink-0">
+          <Link href="/dashboard" className="flex items-center gap-3 group">
+            <img src="/logo.png" alt="Niteo Logo" className="w-8 h-8 object-contain drop-shadow-[0_0_8px_rgba(99,102,241,0.5)] group-hover:drop-shadow-[0_0_12px_rgba(99,102,241,0.8)] transition-all" />
+            <span className="text-xl font-bold tracking-tighter text-white">Niteo</span>
+          </Link>
         </div>
-        <SidebarNav    permisos={permisos} userRole={userRole} />
+        
+        <SidebarNav permisos={permisos} userRole={userRole} />
         <SidebarBottom permisos={permisos} userRole={userRole} />
       </aside>
 
-      {/* ── ÁREA PRINCIPAL ───────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0">
-
-        {/* TOPBAR */}
-        <header className="h-14 md:h-16 border-b border-neutral-800 bg-neutral-950/90 backdrop-blur-md
-                           flex items-center justify-between px-4 md:px-6 z-10 shrink-0">
-
-          {/* Izquierda: logo (solo mobile) + título */}
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col h-[100dvh] relative min-w-0">
+        
+        {/* Header Global */}
+        <header className="h-16 bg-black/50 backdrop-blur-md border-b border-neutral-800 flex items-center justify-between px-4 md:px-6 shrink-0 z-10 sticky top-0">
+          
           <div className="flex items-center gap-3">
-            {/* Logo visible solo en mobile (reemplaza el sidebar) */}
-            <img src="/logo.png" alt="Niteo"
+            <img src="/logo.png" alt="Niteo Logo" 
                  className="md:hidden w-9 h-9 object-contain drop-shadow-[0_0_6px_rgba(99,102,241,0.6)]" />
             <h2 className="text-base md:text-lg font-semibold text-neutral-200 tracking-tight">
               Panel de Control
@@ -98,33 +102,15 @@ export default async function DashboardLayout({
               </div>
             )}
 
-            {/* User info — truncar nombre en mobile */}
-            <div className="hidden sm:flex items-center gap-3 border-l border-neutral-800 pl-3 md:pl-4">
-              <div className="text-right">
-                <p className="text-sm font-bold text-neutral-200">{userName}</p>
-                <p className="text-xs text-indigo-400 font-semibold tracking-wide uppercase truncate max-w-[150px]">
-                  {empresaData?.nombre_comercial || userRole}
-                </p>
-              </div>
-              <div className="group relative">
-                <button className="w-10 h-10 rounded-full bg-indigo-500/10 hover:bg-indigo-500/20 flex items-center justify-center border border-indigo-500/20 shrink-0 transition-colors cursor-pointer">
-                  <UserCircle size={24} className="text-indigo-400" />
-                </button>
-                {/* Menú desplegable flotante */}
-                <div className="absolute right-0 mt-2 w-48 bg-neutral-900 border border-neutral-800 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                  <div className="p-3 border-b border-neutral-800">
-                    <p className="text-xs text-neutral-400 uppercase tracking-wider font-bold mb-1">Empresa Actual</p>
-                    <p className="text-sm text-white font-medium truncate">{empresaData?.nombre_comercial}</p>
-                  </div>
-                  <div className="p-2">
-                    <button className="w-full text-left px-3 py-2 text-sm text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-md transition-colors flex items-center gap-2" onClick={() => alert('Próximamente: Selector de múltiples empresas')}>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
-                      Cambiar de cuenta
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* Selector de Sesiones Guardadas (Estilo Instagram) */}
+            {empresaData && (
+              <AccountSwitcher 
+                currentUserId={user.id}
+                currentUserName={userName}
+                currentUserRole={empresaData.nombre_comercial}
+                savedAccounts={savedAccounts}
+              />
+            )}
 
             {/* Logout — siempre visible */}
             <LogoutButton />
