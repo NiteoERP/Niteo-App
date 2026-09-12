@@ -1,10 +1,19 @@
 import { unstable_cache } from 'next/cache';
-import { createClient } from '@/utils/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+
+// Usamos el Service Role para cachear data de forma global (bypassing RLS), 
+// ya que las funciones se filtran explcitamente por empresaId.
+const getAdminClient = () => {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+};
 
 export const getCatalogoCachedInsumos = (empresaId: string, sedeId?: string) =>
   unstable_cache(
     async () => {
-      const supabase = await createClient();
+      const supabase = getAdminClient();
       let query = supabase
         .from('inventario_insumos')
         .select('*')
@@ -28,7 +37,7 @@ export const getCatalogoCachedInsumos = (empresaId: string, sedeId?: string) =>
 export const getCatalogoProductos = (empresaId: string) =>
   unstable_cache(
     async () => {
-      const supabase = await createClient();
+      const supabase = getAdminClient();
       const { data } = await supabase
         .from('productos')
         .select('id, nombre, codigo_barras, precio_venta, descripcion, es_compuesto, costo, estado_activo')
@@ -46,7 +55,7 @@ export const getCatalogoProductos = (empresaId: string) =>
 export const getSedesCached = (empresaId: string) =>
   unstable_cache(
     async () => {
-      const supabase = await createClient();
+      const supabase = getAdminClient();
       const { data } = await supabase
         .from('sedes')
         .select('id, nombre_sede')

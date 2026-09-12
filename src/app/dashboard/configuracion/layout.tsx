@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Layout, Bell, Calendar, Settings, MapPin } from 'lucide-react';
+import { Layout, Bell, Calendar, Settings, MapPin, Database } from 'lucide-react';
 
 export default function ConfiguracionLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -11,9 +11,7 @@ export default function ConfiguracionLayout({ children }: { children: React.Reac
   const navItems = [
     { name: 'General', href: '/dashboard/configuracion', icon: Layout },
     { name: 'Sedes y Master Key', href: '/dashboard/configuracion/sedes', icon: MapPin },
-    // { name: 'Mensajes y Alertas', href: '#', icon: Bell },
-    // { name: 'Día laborable', href: '#', icon: Calendar },
-    // { name: 'Avanzado', href: '#', icon: Settings },
+    { name: 'Migración de Datos', href: '/dashboard/configuracion/migracion', icon: Database },
   ];
 
   return (

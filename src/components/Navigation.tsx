@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
@@ -60,6 +60,13 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
       )}
 
       {hasPerm('inventario') && (
+        <Link href="/dashboard/catalogo" className={getLinkClass('/dashboard/catalogo')}>
+          <ShoppingCart size={20} />
+          <span className="text-sm font-medium">Catálogo de Ventas</span>
+        </Link>
+      )}
+
+      {hasPerm('inventario') && (
         <Link href="/dashboard/inventario" className={getLinkClass('/dashboard/inventario')}>
           <Package size={20} />
           <span className="text-sm font-medium">Inventario</span>
@@ -74,7 +81,7 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
           </Link>
           <Link href="/dashboard/documentos/nuevo" className={getLinkClass('/dashboard/documentos/nuevo')}>
             <FileText size={20} />
-            <span className="text-sm font-medium">Facturación</span>
+            <span className="text-sm font-medium">FacturaciÃ³n</span>
           </Link>
           <Link href="/dashboard/ventas" className={getLinkClass('/dashboard/ventas')}>
             <ShoppingCart size={20} />
@@ -96,7 +103,7 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
         </Link>
       )}
       
-      {/* Módulo Despachos: incluido de forma nativa en PRO y ENTERPRISE (múltiples sedes) */}
+      {/* MÃ³dulo Despachos: incluido de forma nativa en PRO y ENTERPRISE (mÃºltiples sedes) */}
       {(planSuscripcion?.toUpperCase() === 'PRO' || planSuscripcion?.toUpperCase() === 'ENTERPRISE') && (hasPerm('inventario') || hasPerm('pos')) && (
         <Link href="/dashboard/despachos" className={getLinkClass('/dashboard/despachos')}>
           <Truck size={20} />
@@ -126,7 +133,7 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
       {hasPerm('creditos') && (
         <Link href="/dashboard/creditos" className={getLinkClass('/dashboard/creditos')}>
           <Wallet size={20} className="shrink-0 text-emerald-400" />
-          <span className="font-medium">Créditos</span>
+          <span className="font-medium">CrÃ©ditos</span>
         </Link>
       )}
       {(hasPerm('equipo') || hasPerm('usuarios') || userRole === 'MASTER') && (
@@ -155,7 +162,7 @@ export function SidebarBottom({ permisos, userRole }: NavProps) {
       {hasPerm('auditoria') && (
         <Link href="/dashboard/auditoria" className={getLinkClass('/dashboard/auditoria')}>
           <ShieldAlert size={20} />
-          <span className="text-sm font-medium">Auditoría</span>
+          <span className="text-sm font-medium">AuditorÃ­a</span>
         </Link>
       )}
       {hasPerm('ajustes') && (
@@ -181,7 +188,7 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
     return false;
   };
 
-  // Clases del ítem de la barra inferior
+  // Clases del Ã­tem de la barra inferior
   const navItem = (path: string, exact = false) => {
     const isActive = exact ? pathname === path : pathname.startsWith(path);
     return {
@@ -192,7 +199,7 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
     };
   };
 
-  // Clases del ítem del drawer
+  // Clases del Ã­tem del drawer
   const drawerItem = (path: string) => {
     const isActive = pathname.startsWith(path);
     return isActive
@@ -202,10 +209,10 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
 
   return (
     <>
-      {/* ── BOTTOM SHEET DRAWER (Más Módulos) ────────────────────── */}
+      {/* â”€â”€ BOTTOM SHEET DRAWER (MÃ¡s MÃ³dulos) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {menuOpen && (
         <>
-          {/* Backdrop — tap to close */}
+          {/* Backdrop â€” tap to close */}
           <div
             className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
             onClick={() => setMenuOpen(false)}
@@ -221,7 +228,7 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
               <div className="w-10 h-1 rounded-full bg-neutral-700" />
             </div>
             <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest px-6 pb-3 shrink-0">
-              Todos los Módulos
+              Todos los MÃ³dulos
             </p>
 
             <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-1 custom-scrollbar">
@@ -231,6 +238,13 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
                 </Link>
               )}
               {hasPerm('inventario') && (
+        <Link href="/dashboard/catalogo" className={getLinkClass('/dashboard/catalogo')}>
+          <ShoppingCart size={20} />
+          <span className="text-sm font-medium">Catálogo de Ventas</span>
+        </Link>
+      )}
+
+      {hasPerm('inventario') && (
                 <Link href="/dashboard/inventario" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/inventario')}>
                   <Package size={22} /> Inventario
                 </Link>
@@ -241,7 +255,7 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
                     <MonitorSmartphone size={22} /> Nueva Venta
                   </Link>
                   <Link href="/dashboard/documentos/nuevo" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/documentos/nuevo')}>
-                    <FileText size={22} /> Facturación
+                    <FileText size={22} /> FacturaciÃ³n
                   </Link>
                 </>
               )}
@@ -272,7 +286,7 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
               )}
               {hasPerm('creditos') && (
                 <Link href="/dashboard/creditos" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/creditos')}>
-                  <Wallet size={22} /> Créditos
+                  <Wallet size={22} /> CrÃ©ditos
                 </Link>
               )}
               {hasPerm('equipo') && (
@@ -282,7 +296,7 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
               )}
               {(hasPerm('ajustes') || hasPerm('auditoria')) && (
                 <Link href="/dashboard/auditoria" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/auditoria')}>
-                  <ShieldAlert size={22} /> Auditoría
+                  <ShieldAlert size={22} /> AuditorÃ­a
                 </Link>
               )}
               {(hasPerm('ajustes') || hasPerm('auditoria')) && (
@@ -295,7 +309,7 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
         </>
       )}
 
-      {/* ── BOTTOM NAVIGATION BAR ─────────────────────────────────── */}
+      {/* â”€â”€ BOTTOM NAVIGATION BAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {/* h-16 visible + padding seguro en dispositivos con home bar */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-30
                       bg-neutral-900/95 backdrop-blur-md border-t border-neutral-800
@@ -303,7 +317,7 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
                       h-[calc(4rem+env(safe-area-inset-bottom))]
                       pb-[env(safe-area-inset-bottom)]">
 
-        {/* 1. Inicio — SIEMPRE VISIBLE: En /dashboard muestra métricas o el Panel de Operaciones */}
+        {/* 1. Inicio â€” SIEMPRE VISIBLE: En /dashboard muestra mÃ©tricas o el Panel de Operaciones */}
         {(() => {
           const { link, isActive } = navItem('/dashboard', true);
           return (
@@ -315,7 +329,7 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
           );
         })()}
 
-        {/* Módulos dinámicos para los siguientes 3 espacios según permisos del usuario */}
+        {/* MÃ³dulos dinÃ¡micos para los siguientes 3 espacios segÃºn permisos del usuario */}
         {(() => {
           const candidateTabs = [
             ...(hasPerm('pos') ? [{ path: '/dashboard/ventas', label: 'Ventas', icon: ShoppingCart }] : []),
@@ -338,7 +352,7 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
           });
         })()}
 
-        {/* Botón "Más" — abre el bottom sheet */}
+        {/* BotÃ³n "MÃ¡s" â€” abre el bottom sheet */}
         <button
           onClick={() => setMenuOpen(!menuOpen)}
           className={`relative flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors ${
@@ -347,12 +361,13 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
         >
           {menuOpen && <span className="absolute top-2 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-indigo-500" />}
           {menuOpen ? <X size={22} /> : <Menu size={22} />}
-          <span className="text-[10px] font-medium">{menuOpen ? 'Cerrar' : 'Más'}</span>
+          <span className="text-[10px] font-medium">{menuOpen ? 'Cerrar' : 'MÃ¡s'}</span>
         </button>
       </nav>
     </>
   );
 }
+
 
 
 
