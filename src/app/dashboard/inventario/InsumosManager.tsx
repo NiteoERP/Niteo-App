@@ -83,27 +83,27 @@ function buildChartData(movimientos: Movimiento[], insumos: Insumo[], period: Pe
     case 'años':   count = 5;  fmt = 'yyyy';   stepFn = subYears;  truncFn = startOfYear;  break;
   }
 
-  const currentValue = insumos.reduce((s, i) => s + i.costo_promedio * i.cantidad_actual, 0);
+  const currentValue = (insumos || []).reduce((s, i) => s + (Number(i.costo_promedio) || 0) * (Number(i.cantidad_actual) || 0), 0);
   let reconstructedValue = currentValue;
 
   for (let i = 0; i < count; i++) {
     const pointDate = truncFn(stepFn(now, i));
     const nextDate = i === 0 ? now : truncFn(stepFn(now, i - 1));
-    const movsInPeriod = movimientos.filter(m => {
+    const movsInPeriod = (movimientos || []).filter(m => {
       const d = parseISO(m.fecha_movimiento);
       return d >= pointDate && d < nextDate;
     });
     if (i > 0) {
       movsInPeriod.forEach(m => {
-        const unitCost = insumos.find(ins => ins.id === m.insumo_id)?.costo_promedio || 0;
-        const val = m.cantidad * unitCost;
+        const unitCost = Number((insumos || []).find(ins => ins.id === m.insumo_id)?.costo_promedio) || 0;
+        const val = (Number(m.cantidad) || 0) * unitCost;
         if (m.tipo_movimiento === 'ENTRADA') reconstructedValue -= val;
         else reconstructedValue += val;
       });
     }
     points.unshift({
       label: format(pointDate, fmt, { locale: es }),
-      valor: Math.max(0, parseFloat(reconstructedValue.toFixed(2))),
+      valor: Math.max(0, parseFloat((Number(reconstructedValue) || 0).toFixed(2))),
       date: pointDate,
     });
   }
@@ -355,13 +355,13 @@ export default function InsumosManager({
 
   // ── Metrics ─────────────────────────────────────────────────────────────────
   const totalValue = useMemo(
-    () => optimisticInsumos.reduce((s, i) => s + i.costo_promedio * i.cantidad_actual, 0),
+    () => optimisticInsumos.reduce((s, i) => s + (Number(i.costo_promedio) || 0) * (Number(i.cantidad_actual) || 0), 0),
     [optimisticInsumos]
   );
   const topInsumo = useMemo(
     () => optimisticInsumos.reduce<Insumo | null>((top, i) => {
-      const v = i.costo_promedio * i.cantidad_actual;
-      const topV = top ? top.costo_promedio * top.cantidad_actual : -1;
+      const v = (Number(i.costo_promedio) || 0) * (Number(i.cantidad_actual) || 0);
+      const topV = top ? (Number(top.costo_promedio) || 0) * (Number(top.cantidad_actual) || 0) : -1;
       return v > topV ? i : top;
     }, null),
     [optimisticInsumos]
@@ -371,10 +371,10 @@ export default function InsumosManager({
     [initialMovimientos, optimisticInsumos, period]
   );
   const allMotivos = useMemo(() => {
-    const set = new Set(initialMovimientos.map(m => m.motivo));
+    const set = new Set((initialMovimientos || []).map(m => m.motivo));
     return ['TODOS', ...Array.from(set)];
   }, [initialMovimientos]);
-  const filteredMovimientos = useMemo(() => initialMovimientos.filter(m => {
+  const filteredMovimientos = useMemo(() => (initialMovimientos || []).filter(m => {
     const tipoOk = filterTipo === 'TODOS' || m.tipo_movimiento === filterTipo;
     const motivoOk = filterMotivo === 'TODOS' || m.motivo === filterMotivo;
     return tipoOk && motivoOk;
@@ -384,8 +384,12 @@ export default function InsumosManager({
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nombre || !costo || !stock) return;
+    if (!sedeId) {
+      setError('Debes tener o seleccionar una sede activa para registrar insumos.');
+      return;
+    }
     setError('');
-    const newInsumo = { empresa_id: empresaId, nombre, unidad_medida: unidad, costo_promedio: parseFloat(costo), cantidad_actual: parseFloat(stock) };
+    const newInsumo = { empresa_id: empresaId, nombre, unidad_medida: unidad, costo_promedio: parseFloat(costo) || 0, cantidad_actual: parseFloat(stock) || 0 };
     setNombre(''); setCosto(''); setStock('');
     startTransition(async () => {
       addOptimisticInsumo({ type: 'add', payload: newInsumo });
@@ -532,7 +536,7 @@ export default function InsumosManager({
               <div className="overflow-hidden">
                 <p className="text-neutral-500 text-xs">Mayor Valor en Stock</p>
                 <p className="text-white font-bold text-sm truncate">{topInsumo?.nombre || '—'}</p>
-                {topInsumo && <p className="text-amber-400 text-xs">${(topInsumo.costo_promedio * topInsumo.cantidad_actual).toFixed(2)}</p>}
+                {topInsumo && <p className="text-amber-400 text-xs">${((Number(topInsumo.costo_promedio) || 0) * (Number(topInsumo.cantidad_actual) || 0)).toFixed(2)}</p>}
               </div>
             </div>
           </div>
@@ -657,7 +661,7 @@ export default function InsumosManager({
                   {optimisticInsumos.length === 0 ? (
                     <tr><td colSpan={canSeeCosts ? 6 : 4} className="py-12 text-center text-neutral-500">No hay insumos registrados. Agrega el primero arriba.</td></tr>
                   ) : optimisticInsumos.map(insumo => {
-                    const valorTotal = insumo.costo_promedio * insumo.cantidad_actual;
+                    const valorTotal = (Number(insumo.costo_promedio) || 0) * (Number(insumo.cantidad_actual) || 0);
                     return (
                       <tr key={insumo.id} onClick={() => handleInsumoClick(insumo)} className="hover:bg-white/5 transition-colors text-neutral-300 cursor-pointer group">
                         <td className="py-4 px-6 font-medium text-neutral-200 group-hover:text-indigo-400 transition-colors">
@@ -668,9 +672,9 @@ export default function InsumosManager({
                           <span className="bg-neutral-800 text-neutral-300 px-2.5 py-1 rounded-md text-xs font-medium border border-neutral-700">{insumo.unidad_medida}</span>
                         </td>
                         {canSeeCosts && (
-                          <td className="py-4 px-6 font-mono text-sm text-neutral-300">${insumo.costo_promedio.toFixed(4)}</td>
+                          <td className="py-4 px-6 font-mono text-sm text-neutral-300">${(Number(insumo.costo_promedio) || 0).toFixed(4)}</td>
                         )}
-                        <td className="py-4 px-6 font-bold text-white">{insumo.cantidad_actual}</td>
+                        <td className="py-4 px-6 font-bold text-white">{insumo.cantidad_actual ?? 0}</td>
                         {canSeeCosts && (
                           <td className="py-4 px-6 text-right">
                             <span className={`font-semibold ${valorTotal > 0 ? 'text-emerald-400' : 'text-neutral-500'}`}>${valorTotal.toFixed(2)}</span>
@@ -690,7 +694,7 @@ export default function InsumosManager({
                   <tfoot className="border-t border-neutral-800 bg-black/30">
                     <tr>
                       <td colSpan={4} className="py-3 px-6 text-right text-neutral-400 font-medium">Total del Inventario:</td>
-                      <td className="py-3 px-6 text-right font-black text-white text-base">${totalValue.toFixed(2)}</td>
+                      <td className="py-3 px-6 text-right font-black text-white text-base">${(Number(totalValue) || 0).toFixed(2)}</td>
                       <td></td>
                     </tr>
                   </tfoot>
@@ -917,12 +921,12 @@ export default function InsumosManager({
                       <div className="w-px bg-neutral-800"></div>
                       <div>
                         <p className="text-xs text-neutral-500 font-medium">Costo Promedio</p>
-                        <p className="text-lg font-bold text-indigo-400">${selectedInsumo.costo_promedio.toFixed(4)}</p>
+                        <p className="text-lg font-bold text-indigo-400">${(Number(selectedInsumo.costo_promedio) || 0).toFixed(4)}</p>
                       </div>
                       <div className="w-px bg-neutral-800"></div>
                       <div>
                         <p className="text-xs text-neutral-500 font-medium">Valor Total del Stock</p>
-                        <p className="text-lg font-bold text-emerald-400">${(selectedInsumo.costo_promedio * selectedInsumo.cantidad_actual).toFixed(2)}</p>
+                        <p className="text-lg font-bold text-emerald-400">${((Number(selectedInsumo.costo_promedio) || 0) * (Number(selectedInsumo.cantidad_actual) || 0)).toFixed(2)}</p>
                       </div>
                     </>
                   )}

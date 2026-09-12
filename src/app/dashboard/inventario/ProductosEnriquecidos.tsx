@@ -185,7 +185,7 @@ export default function ProductosEnriquecidos({ productos, insumos, recetas, emp
                           
                         const costoReceta = isSubproduct 
                           ? 0 // Cálculo recursivo complejo para frontend, dejamos en 0 por ahora
-                          : (r.cantidad_necesaria * (insumos.find(i => i.id === r.insumo_id)?.costo_unitario || 0));
+                          : ((Number(r.cantidad_necesaria) || 0) * (Number(insumos.find(i => i.id === r.insumo_id)?.costo_promedio) || 0));
 
                         return (
                           <tr key={r.id}>
@@ -212,7 +212,7 @@ export default function ProductosEnriquecidos({ productos, insumos, recetas, emp
                         <tr>
                           <td colSpan={2} className="px-4 py-3 text-right font-medium text-neutral-300">Costo Base Directo:</td>
                           <td className="px-4 py-3 text-right font-medium text-rose-400">
-                            ${productRecipes.reduce((acc, r) => acc + (r.insumo_id ? (r.cantidad_necesaria * (insumos.find(i => i.id === r.insumo_id)?.costo_unitario || 0)) : 0), 0).toFixed(2)}
+                            ${productRecipes.reduce((acc, r) => acc + (r.insumo_id ? ((Number(r.cantidad_necesaria) || 0) * (Number(insumos.find(i => i.id === r.insumo_id)?.costo_promedio) || 0)) : 0), 0).toFixed(2)}
                           </td>
                           <td></td>
                         </tr>

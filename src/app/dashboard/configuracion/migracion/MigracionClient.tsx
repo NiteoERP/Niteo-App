@@ -141,7 +141,7 @@ export default function MigracionClient() {
                 disabled={loadingImport}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed" 
               />
-              <div className={w-full py-2.5 px-4  text-white text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-colors}>
+              <div className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-colors">
                 {loadingImport ? <Loader2 className="animate-spin" size={16} /> : <Upload size={16} />}
                 {loadingImport ? 'Importando...' : 'Subir Archivo Excel'}
               </div>

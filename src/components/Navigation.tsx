@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
@@ -238,11 +238,10 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
                 </Link>
               )}
               {hasPerm('inventario') && (
-        <Link href="/dashboard/catalogo" className={getLinkClass('/dashboard/catalogo')}>
-          <ShoppingCart size={20} />
-          <span className="text-sm font-medium">Catálogo de Ventas</span>
-        </Link>
-      )}
+                <Link href="/dashboard/catalogo" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/catalogo')}>
+                  <ShoppingCart size={22} /> Catálogo de Ventas
+                </Link>
+              )}
 
       {hasPerm('inventario') && (
                 <Link href="/dashboard/inventario" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/inventario')}>

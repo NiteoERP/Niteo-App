@@ -4,11 +4,10 @@ import InsumosManager from './InsumosManager';
 import TransformacionesManager from './TransformacionesManager';
 import { ArrowRightLeft } from 'lucide-react';
 import ProductosEnriquecidos from './ProductosEnriquecidos';
-import { Package, FileBox } from 'lucide-react';
+import { Package, FileBox, Store, AlertTriangle } from 'lucide-react';
 import SedeSelector from '@/components/inventario/SedeSelector';
 import { getMovimientosInventario } from './actions';
-
-import { getCatalogoCachedInsumos, getCatalogoProductos, getSedesCached } from '@/lib/cache';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,13 +20,20 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
   if (!empresaId) return <div className="p-8 text-rose-400">Error: No tienes empresa configurada.</div>;
 
   const { data: profile } = await supabase.from('perfiles').select('sede_id, rol, permisos').eq('id', user?.id).single();
-  const sedes = await getSedesCached(empresaId);
+  
+  // Consultar sedes de la empresa directamente con la sesión autenticada
+  const { data: sedesData } = await supabase
+    .from('sedes')
+    .select('id, nombre_sede')
+    .eq('empresa_id', empresaId)
+    .order('nombre_sede');
+  const sedes = sedesData || [];
 
   // Ver costos y movimientos: solo MASTER o quien tenga el permiso 'finanzas'
   const canSeeCosts = profile?.rol === 'MASTER' || (profile?.permisos || []).includes('finanzas');
 
   let activeSedeId = profile?.sede_id;
-  if (profile?.rol === 'MASTER' && params.sede) {
+  if ((profile?.rol === 'MASTER' || !profile?.sede_id) && params.sede) {
     activeSedeId = params.sede;
   } else if (!activeSedeId && sedes.length > 0) {
     activeSedeId = sedes[0].id;
@@ -41,21 +47,68 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
   let movimientos: any[] = [];
 
   if (currentTab === 'insumos' || currentTab === 'transformaciones') {
-    insumos = await getCatalogoCachedInsumos(empresaId, activeSedeId);
+    let queryInsumos = supabase
+      .from('inventario_insumos')
+      .select('*')
+      .eq('empresa_id', empresaId)
+      .order('nombre');
+
+    if (activeSedeId) {
+      queryInsumos = queryInsumos.eq('sede_id', activeSedeId);
+    }
+
+    const { data: insumosData } = await queryInsumos;
+    insumos = insumosData || [];
 
     // Movimientos solo para usuarios con acceso financiero
     if (currentTab === 'insumos' && canSeeCosts) {
       movimientos = await getMovimientosInventario(empresaId, activeSedeId || undefined);
     }
   } else if (currentTab === 'productos') {
-    const [cachedProductos, cachedInsumos, resRecetas] = await Promise.all([
-      getCatalogoProductos(empresaId),
-      getCatalogoCachedInsumos(empresaId, activeSedeId),
+    let queryInsumos = supabase
+      .from('inventario_insumos')
+      .select('*')
+      .eq('empresa_id', empresaId)
+      .order('nombre');
+
+    if (activeSedeId) {
+      queryInsumos = queryInsumos.eq('sede_id', activeSedeId);
+    }
+
+    const [resProds, resInsumos, resRecetas] = await Promise.all([
+      supabase
+        .from('productos')
+        .select('id, nombre, codigo_barras, precio_venta, descripcion, es_compuesto, costo, estado_activo')
+        .eq('empresa_id', empresaId)
+        .order('nombre'),
+      queryInsumos,
       supabase.from('recetas').select('*').eq('empresa_id', empresaId),
     ]);
-    productos = cachedProductos;
-    insumos = cachedInsumos;
+    productos = resProds.data || [];
+    insumos = resInsumos.data || [];
     recetas = resRecetas.data || [];
+  }
+
+  if (sedes.length === 0) {
+    return (
+      <div className="max-w-xl mx-auto my-12 p-8 bg-neutral-900 border border-neutral-800 rounded-2xl text-center space-y-4 shadow-xl">
+        <div className="w-14 h-14 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center mx-auto text-amber-400">
+          <Store size={28} />
+        </div>
+        <h2 className="text-xl font-bold text-white">No tienes sedes registradas</h2>
+        <p className="text-neutral-400 text-sm">
+          Para gestionar el inventario de insumos y materia prima, tu empresa necesita tener al menos una sede creada.
+        </p>
+        <div className="pt-2">
+          <Link
+            href="/dashboard/configuracion"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-xl transition-colors shadow-lg shadow-indigo-600/20"
+          >
+            Configurar Sedes
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -70,8 +123,15 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
             </h1>
             <p className="text-neutral-400 text-xs md:text-sm mt-1">Controla tu materia prima y diseña el escandallo de tus productos.</p>
           </div>
-          {profile?.rol === 'MASTER' && activeSedeId && (
-            <SedeSelector sedes={sedes} activeSedeId={activeSedeId} />
+          {sedes.length > 0 && activeSedeId && (
+            (profile?.rol === 'MASTER' || !profile?.sede_id) ? (
+              <SedeSelector sedes={sedes} activeSedeId={activeSedeId} />
+            ) : (
+              <div className="flex items-center gap-2 bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-1.5 w-fit text-sm text-neutral-300">
+                <Store size={16} className="text-indigo-400" />
+                <span>Sede: <strong className="text-white">{sedes.find(s => s.id === activeSedeId)?.nombre_sede || 'Asignada'}</strong></span>
+              </div>
+            )
           )}
         </div>
       </div>
