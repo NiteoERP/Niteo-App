@@ -50,11 +50,11 @@ export default function CatalogView({ catalog }: { catalog: any[] }) {
               </tr>
             ) : (
               filteredCatalog.map((prod) => (
-                <tr key={prod.id_producto} className="hover:bg-neutral-800/30 transition-colors">
+                <tr key={prod.producto_id || prod.id} className="hover:bg-neutral-800/30 transition-colors">
                   <td className="px-6 py-4 font-mono text-xs">{prod.codigo_barras || '-'}</td>
                   <td className="px-6 py-4 font-medium text-neutral-200">{prod.nombre}</td>
-                  <td className="px-6 py-4 text-right">${Number(prod.costo).toFixed(2)}</td>
-                  <td className="px-6 py-4 text-right text-emerald-400 font-medium">${Number(prod.precio_venta).toFixed(2)}</td>
+                  <td className="px-6 py-4 text-right">${(Number(prod.costo) || 0).toFixed(2)}</td>
+                  <td className="px-6 py-4 text-right text-emerald-400 font-medium">${(Number(prod.precio_venta) || 0).toFixed(2)}</td>
                 </tr>
               ))
             )}
@@ -69,7 +69,7 @@ export default function CatalogView({ catalog }: { catalog: any[] }) {
             </div>
           ) : (
             filteredCatalog.map((prod) => (
-              <div key={prod.id_producto} className="min-w-[260px] shrink-0 snap-center bg-neutral-950 border border-neutral-800 rounded-xl p-4 flex flex-col gap-2 shadow-lg">
+              <div key={prod.producto_id || prod.id} className="min-w-[260px] shrink-0 snap-center bg-neutral-950 border border-neutral-800 rounded-xl p-4 flex flex-col gap-2 shadow-lg">
                 <div className="flex justify-between items-start">
                   <span className="font-bold text-white text-base leading-tight">{prod.nombre}</span>
                   <span className="font-mono text-xs text-neutral-500 bg-neutral-900 px-2 py-1 rounded">{prod.codigo_barras || 'S/N'}</span>
@@ -77,11 +77,11 @@ export default function CatalogView({ catalog }: { catalog: any[] }) {
                 <div className="flex justify-between items-center mt-2 pt-2 border-t border-neutral-800/50">
                   <div className="flex flex-col">
                     <span className="text-xs text-neutral-500 uppercase font-bold">Costo</span>
-                    <span className="text-neutral-400">${Number(prod.costo).toFixed(2)}</span>
+                    <span className="text-neutral-400">${(Number(prod.costo) || 0).toFixed(2)}</span>
                   </div>
                   <div className="flex flex-col text-right">
                     <span className="text-xs text-emerald-500/70 uppercase font-bold">Precio Venta</span>
-                    <span className="text-emerald-400 font-bold text-lg">${Number(prod.precio_venta).toFixed(2)}</span>
+                    <span className="text-emerald-400 font-bold text-lg">${(Number(prod.precio_venta) || 0).toFixed(2)}</span>
                   </div>
                 </div>
               </div>

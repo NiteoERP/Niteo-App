@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useTransition } from 'react';
 import { Plus, Search, Edit2, Trash2, PackageSearch, Box } from 'lucide-react';
@@ -84,8 +84,12 @@ export default function CatalogoClient({ productos, sedes }: { productos: any[],
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 font-mono text-neutral-400"></td>
-                  <td className="px-6 py-4 font-mono font-medium text-white"></td>
+                  <td className="px-6 py-4 font-mono text-neutral-400">
+                    ${(Number(p.costo) || 0).toFixed(2)}
+                  </td>
+                  <td className="px-6 py-4 font-mono font-medium text-white">
+                    ${(Number(p.precio_venta) || 0).toFixed(2)}
+                  </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <button onClick={() => handleEdit(p)} className="text-neutral-500 hover:text-indigo-400 transition-colors"><Edit2 size={16} /></button>

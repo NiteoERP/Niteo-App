@@ -1,4 +1,4 @@
-﻿'use server';
+'use server';
 
 import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
@@ -26,18 +26,17 @@ export async function createProducto(data: any) {
       codigo_barras: data.codigo_barras || '',
       precio_venta: parseFloat(data.precio_venta) || 0,
       costo: parseFloat(data.costo) || 0,
-      precio_modificable: data.precio_modificable,
+      precio_modificable: !!data.precio_modificable,
       estado_activo: true,
       canal_venta: 'AMBOS',
       es_compuesto: data.tipo === 'ELABORADO', // Si es elaborado requiere receta
-      unidad_medida: data.unidad_medida || 'unidades'
     })
     .select()
     .single();
 
   if (prodErr) {
     console.error('Error creando producto:', prodErr);
-    return { success: false, error: 'Error al crear producto en catálogo.' };
+    return { success: false, error: 'Error al crear producto: ' + prodErr.message };
   }
 
   // 2. Si el producto es de tipo "REVENTA" (Insumo Directo), creamos su espejo en el inventario
@@ -67,10 +66,10 @@ export async function createProducto(data: any) {
         await supabase
           .from('recetas')
           .insert({
+            empresa_id: perfil.empresa_id,
             producto_id: nuevoProd.id,
             insumo_id: nuevoInsumo.id,
             cantidad_necesaria: 1,
-            unidad_medida: data.unidad_medida || 'unidades'
           });
       }
     }
@@ -96,9 +95,8 @@ export async function updateProducto(id: string, data: any) {
       codigo_barras: data.codigo_barras || '',
       precio_venta: parseFloat(data.precio_venta) || 0,
       costo: parseFloat(data.costo) || 0,
-      precio_modificable: data.precio_modificable,
+      precio_modificable: !!data.precio_modificable,
       es_compuesto: data.tipo === 'ELABORADO',
-      unidad_medida: data.unidad_medida || 'unidades'
   }).eq('id', id);
   
   if (error) return { success: false, error: error.message };

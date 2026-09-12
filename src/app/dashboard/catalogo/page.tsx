@@ -1,7 +1,7 @@
-﻿import React from 'react';
+import React from 'react';
 import { createClient } from '@/utils/supabase/server';
 import CatalogoClient from './CatalogoClient';
-import { getSedesCaja } from '@/actions/sedes-actions';
+import { redirect } from 'next/navigation';
 
 export const metadata = {
   title: 'Catálogo de Ventas | Niteo',
@@ -12,14 +12,34 @@ export const dynamic = 'force-dynamic';
 export default async function CatalogoPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user?.id).single();
 
-  const sedes = await getSedesCaja();
+  if (!user) {
+    redirect('/login');
+  }
+
+  const { data: perfil } = await supabase
+    .from('perfiles')
+    .select('empresa_id')
+    .eq('id', user.id)
+    .single();
+
+  const empresaId = user.app_metadata?.empresa_id || perfil?.empresa_id;
+
+  if (!empresaId) {
+    return <div className="p-8 text-rose-400">Error: No tienes empresa configurada.</div>;
+  }
+
+  // Obtener sedes directamente para la empresa
+  const { data: sedes } = await supabase
+    .from('sedes')
+    .select('id, nombre_sede')
+    .eq('empresa_id', empresaId)
+    .order('nombre_sede');
 
   const { data: productos } = await supabase
     .from('productos')
     .select('*')
-    .eq('empresa_id', perfil?.empresa_id)
+    .eq('empresa_id', empresaId)
     .order('nombre');
 
   return (
