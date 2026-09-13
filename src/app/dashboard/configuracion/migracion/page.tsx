@@ -1,6 +1,6 @@
 ﻿import React from 'react';
 import MigracionClient from './MigracionClient';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 
 export const metadata = {
@@ -34,3 +34,4 @@ export default async function MigracionPage() {
     </div>
   );
 }
+

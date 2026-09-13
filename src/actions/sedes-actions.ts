@@ -1,4 +1,4 @@
-'use server';
+﻿'use server';
 
 import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
@@ -231,7 +231,9 @@ export async function eliminarSede(sedeId: string) {
   if (!perfil) return { error: 'Perfil no encontrado' };
 
   // Intentamos eliminar la sede físicamente
-  const { error } = await supabase
+  const { createClient: createAdminClient } = await import('@supabase/supabase-js');
+  const supabaseAdmin = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  const { error } = await supabaseAdmin
     .from('sedes')
     .delete()
     .eq('id', sedeId)
@@ -241,7 +243,7 @@ export async function eliminarSede(sedeId: string) {
     // Código 23503 = foreign_key_violation
     if (error.code === '23503') {
       // Tiene historial, hacemos un soft-delete
-      const { error: softError } = await supabase
+      const { error: softError } = await supabaseAdmin
         .from('sedes')
         .update({ estado_activo: false })
         .eq('id', sedeId)
@@ -292,3 +294,6 @@ export async function activarSede(sedeId: string) {
   revalidatePath('/dashboard/configuracion/sedes');
   return { success: true, message: 'Sede reactivada exitosamente.' };
 }
+
+
+

@@ -29,7 +29,7 @@ interface Transaccion {
 // Clave de borrador en localStorage
 
 const METODOS_DEFAULT: MetodoConfig[] = [
-  { id: 'Pago MÃ³vil', icon: Smartphone, color: 'text-indigo-400', defaultMoneda: 'VES' },
+  { id: 'Pago Móvil', icon: Smartphone, color: 'text-indigo-400', defaultMoneda: 'VES' },
   { id: 'Punto de Venta', icon: CreditCard, color: 'text-emerald-400', defaultMoneda: 'VES' },
   { id: 'Zelle', icon: DollarSign, color: 'text-purple-400', defaultMoneda: 'USD' },
   { id: 'Efectivo', icon: Wallet, color: 'text-amber-400', defaultMoneda: 'USD' },
@@ -59,15 +59,15 @@ export default function NuevoCierreCaja() {
     
   // Transacciones
   const [transacciones, setTransacciones] = useState<Transaccion[]>([]);
-  const [expandedMetodo, setExpandedMetodo] = useState<string | null>('Pago MÃ³vil');
+  const [expandedMetodo, setExpandedMetodo] = useState<string | null>('Pago Móvil');
 
-  // Metodos dinÃ¡micos
+  // Metodos dinámicos
   const [metodos, setMetodos] = useState<MetodoConfig[]>(METODOS_DEFAULT);
 
-  // Hook de sincronizaciÃ³n en tiempo real con Supabase Broadcast
+  // Hook de sincronización en tiempo real con Supabase Broadcast
   const { status: syncStatus, onlineCount } = useCajaSync(selectedSedeId, transacciones, setTransacciones, metodos, setMetodos);
 
-  // Modal para nuevo mÃ©todo
+  // Modal para nuevo método
   const [showNewMetodo, setShowNewMetodo] = useState(false);
   const [newMetodoName, setNewMetodoName] = useState('');
   const [newMetodoMoneda, setNewMetodoMoneda] = useState<Moneda>('VES');
@@ -143,7 +143,7 @@ export default function NuevoCierreCaja() {
           color: m.color,
           defaultMoneda: m.defaultMoneda,
           isCustom: true,
-          iconKey: 'GripHorizontal', // Ãºnico tipo custom por ahora
+          iconKey: 'GripHorizontal', // único tipo custom por ahora
         }));
       if (selectedSedeId) {
         localStorage.setItem(`niteo_draft_cierre_${selectedSedeId}`, JSON.stringify({ transacciones, metodos_custom }));
@@ -381,7 +381,7 @@ export default function NuevoCierreCaja() {
       if (res.error) {
         alert(res.error);
       } else {
-        // FIX 1: limpiar el borrador al guardar con Ã©xito
+        // FIX 1: limpiar el borrador al guardar con éxito
         if (selectedSedeId) localStorage.removeItem(`niteo_draft_cierre_${selectedSedeId}`);
         setHasDraft(false);
         alert('Cierre guardado correctamente!');
@@ -412,7 +412,7 @@ export default function NuevoCierreCaja() {
             <div>
               <p className="text-amber-300 text-sm font-semibold">Borrador restaurado</p>
               <p className="text-amber-500/80 text-xs">
-                Tienes {transacciones.length} transacciÃ³n(es) guardada(s) de una sesiÃ³n anterior.
+                Tienes {transacciones.length} transacción(es) guardada(s) de una sesión anterior.
               </p>
             </div>
           </div>
@@ -429,7 +429,7 @@ export default function NuevoCierreCaja() {
       <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 md:p-8 flex justify-between items-center shadow-sm">
         <div>
           <div className="flex items-center gap-3">
-              <button onClick={() => router.push('/dashboard/caja')} className="w-8 h-8 flex items-center justify-center rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white transition-colors" title="Volver al Historial (Se guardarÃ¡ el borrador)">
+              <button onClick={() => router.push('/dashboard/caja')} className="w-8 h-8 flex items-center justify-center rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white transition-colors" title="Volver al Historial (Se guardará el borrador)">
                 <ArrowLeft size={18} />
               </button>
               <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">Cierre de Caja{syncStatus === 'connected' && onlineCount > 1 && (<span className="text-xs px-2 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full flex items-center gap-1.5 animate-pulse"><span className="w-2 h-2 rounded-full bg-emerald-400"></span>{onlineCount} en linea</span>)}{syncStatus === 'connected' && onlineCount <= 1 && (<span className="text-xs px-2 py-1 bg-neutral-800 text-neutral-400 border border-neutral-700 rounded-full flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-neutral-500"></span>Conectado</span>)}</h1>
@@ -668,7 +668,7 @@ export default function NuevoCierreCaja() {
                     onClick={() => handleAddTransaccion(metodo.id, metodo.defaultMoneda)}
                     className="w-full py-4 border-2 border-dashed border-neutral-800 rounded-xl text-neutral-400 hover:text-white hover:border-neutral-700 hover:bg-neutral-800/50 flex items-center justify-center gap-2 transition-all font-medium"
                   >
-                    <Plus size={18} /> Agregar TransacciÃ³n en {metodo.id}
+                    <Plus size={18} /> Agregar Transacción en {metodo.id}
                   </button>
                 </div>
               )}
@@ -689,7 +689,7 @@ export default function NuevoCierreCaja() {
         {showNewMetodo ? (
           <div className="bg-neutral-900 border border-indigo-500/50 rounded-2xl p-4 animate-in fade-in">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-lg">Nuevo MÃ©todo DinÃ¡mico</h3>
+              <h3 className="font-bold text-lg">Nuevo Método Dinámico</h3>
               <button onClick={() => setShowNewMetodo(false)} className="text-neutral-400 hover:text-white">
                 <X size={20} />
               </button>
@@ -713,8 +713,8 @@ export default function NuevoCierreCaja() {
                   onChange={(e) => setNewMetodoMoneda(e.target.value as Moneda)}
                   className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-white outline-none focus:border-indigo-500 cursor-pointer"
                 >
-                  <option value="VES">BolÃ­vares (VES)</option>
-                  <option value="USD">DÃ³lares (USD)</option>
+                  <option value="VES">Bolívares (VES)</option>
+                  <option value="USD">Dólares (USD)</option>
                 </select>
               </div>
             </div>
@@ -723,7 +723,7 @@ export default function NuevoCierreCaja() {
               disabled={!newMetodoName.trim()}
               className="mt-4 w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-neutral-800 disabled:text-neutral-500 text-white rounded-xl py-3 font-bold transition-colors"
             >
-              Confirmar Nuevo MÃ©todo
+              Confirmar Nuevo Método
             </button>
           </div>
         ) : (
@@ -731,7 +731,7 @@ export default function NuevoCierreCaja() {
             onClick={() => setShowNewMetodo(true)}
             className="w-full py-4 border-2 border-dashed border-indigo-500/30 rounded-xl text-indigo-400 hover:text-white hover:border-indigo-500 hover:bg-indigo-500/10 flex items-center justify-center gap-2 transition-all font-medium"
           >
-            <Plus size={18} /> Crear Nuevo MÃ©todo de Pago
+            <Plus size={18} /> Crear Nuevo Método de Pago
           </button>
         )}
       </div>
@@ -739,7 +739,7 @@ export default function NuevoCierreCaja() {
       {/* FOOTER CONTAINED */}
       <div className="sticky bottom-6 bg-neutral-900/95 backdrop-blur-xl border border-neutral-800 p-4 md:p-6 z-30 shadow-2xl rounded-2xl mx-2 md:mx-0 flex items-center justify-between mt-8">
         <div>
-          <p className="text-xs text-neutral-400 uppercase tracking-widest">VerificaciÃ³n FÃ­sica</p>
+          <p className="text-xs text-neutral-400 uppercase tracking-widest">Verificación Física</p>
           <p className="text-3xl font-black text-emerald-400">${granTotalUSD.toFixed(2)}</p>
           {totalEsperado > 0 && (
             <p className={`text-xs mt-1 font-medium ${granTotalUSD >= totalEsperado ? 'text-emerald-500' : 'text-rose-500'}`}>

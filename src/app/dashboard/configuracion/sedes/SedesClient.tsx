@@ -10,6 +10,7 @@ export default function SedesClient({ initialSedes }: { initialSedes: Sede[] }) 
   const [successMsg, setSuccessMsg] = useState('');
   const formRef = React.useRef<HTMLFormElement>(null);
 
+  const handleRevealKey = (sedeId: string, key: string) => { setNewKeyVisible({ id: sedeId, key }); };
   const handleGenerateKey = async (sedeId: string) => {
     
 
@@ -165,6 +166,14 @@ export default function SedesClient({ initialSedes }: { initialSedes: Sede[] }) 
                     <p className="text-2xl font-mono font-bold text-white tracking-widest">{newKeyVisible.key}</p>
                     <p className="text-[10px] text-indigo-300">Ingresa esto en Niteo Sync. Desaparecerá al recargar.</p>
                   </div>
+                ) : sede.master_key ? (
+                  <button 
+                    onClick={() => handleRevealKey(sede.id, sede.master_key!)}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white text-sm font-medium rounded-xl transition-colors"
+                  >
+                    <Key size={16} />
+                    Mostrar Código de Enlace
+                  </button>
                 ) : (
                   <button 
                     onClick={() => handleGenerateKey(sede.id)}
@@ -258,3 +267,4 @@ export default function SedesClient({ initialSedes }: { initialSedes: Sede[] }) 
     </div>
   );
 }
+

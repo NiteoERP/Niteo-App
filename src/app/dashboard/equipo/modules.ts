@@ -7,16 +7,16 @@
 
 export const CATEGORY_LABELS: Record<string, string> = {
   operaciones: 'Ventas, POS y Caja',
-  inventario: 'Inventario y AlmacÃ©n',
+  inventario: 'Inventario y Almacén',
   clientes: 'Clientes y Finanzas',
-  admin: 'Control y AdministraciÃ³n',
+  admin: 'Control y Administración',
 };
 
 export const AVAILABLE_MODULES: ModuleDefinition[] = [
   // Ventas y Caja
   { 
     id: 'pos', 
-    label: 'Ventas y FacturaciÃ³n (POS)', 
+    label: 'Ventas y Facturación (POS)', 
     description: 'Punto de venta, cobro de tickets y terminal de venta', 
     category: 'operaciones' 
   },
@@ -29,7 +29,7 @@ export const AVAILABLE_MODULES: ModuleDefinition[] = [
   { 
     id: 'compras', 
     label: 'Compras y Facturas de Insumos', 
-    description: 'RecepciÃ³n de insumos, registro de facturas y notas de compra', 
+    description: 'Recepción de insumos, registro de facturas y notas de compra', 
     category: 'operaciones' 
   },
   { 
@@ -49,7 +49,7 @@ export const AVAILABLE_MODULES: ModuleDefinition[] = [
   { 
     id: 'despachos', 
     label: 'Despachos entre Sedes', 
-    description: 'Traslados de stock, envÃ­os y recepciones entre sucursales', 
+    description: 'Traslados de stock, envíos y recepciones entre sucursales', 
     category: 'inventario' 
   },
 
@@ -57,52 +57,52 @@ export const AVAILABLE_MODULES: ModuleDefinition[] = [
   { 
     id: 'clientes', 
     label: 'Directorio de Clientes', 
-    description: 'GestiÃ³n y datos de contacto de clientes registrados', 
+    description: 'Gestión y datos de contacto de clientes registrados', 
     category: 'clientes' 
   },
   { 
     id: 'creditos', 
-    label: 'CrÃ©ditos y Cobranzas', 
-    description: 'GestiÃ³n de cuentas por cobrar, abonos y ventas fiadas', 
+    label: 'Créditos y Cobranzas', 
+    description: 'Gestión de cuentas por cobrar, abonos y ventas fiadas', 
     category: 'clientes' 
   },
   { 
     id: 'reportes', 
     label: 'Informes de Ventas', 
-    description: 'Reportes de ventas, productos mÃ¡s vendidos y mÃ©tricas', 
+    description: 'Reportes de ventas, productos más vendidos y métricas', 
     category: 'clientes' 
   },
   { 
     id: 'finanzas', 
     label: 'Finanzas y Flujo', 
-    description: 'MÃ©tricas de ingresos brutos, costos operativos y margen neto', 
+    description: 'Métricas de ingresos brutos, costos operativos y margen neto', 
     category: 'clientes' 
   },
 
-  // AdministraciÃ³n
+  // Administración
   { 
     id: 'dashboard', 
     label: 'Dashboard / Inicio', 
-    description: 'GrÃ¡ficos ejecutivos y KPIs de rendimiento del negocio', 
+    description: 'Gráficos ejecutivos y KPIs de rendimiento del negocio', 
     category: 'admin' 
   },
   { 
     id: 'equipo', 
-    label: 'GestiÃ³n de Equipo', 
-    description: 'Crear personal, asignar permisos y cambiar contraseÃ±as', 
+    label: 'Gestión de Equipo', 
+    description: 'Crear personal, asignar permisos y cambiar contraseñas', 
     category: 'admin' 
   },
   
   { 
     id: 'ajustes', 
     label: 'Ajustes de Empresa', 
-    description: 'ConfiguraciÃ³n general de empresa, tasas y mÃ©todos de pago', 
+    description: 'Configuración general de empresa, tasas y métodos de pago', 
     category: 'admin' 
   },
   { 
     id: 'ver_todas_compras', 
     label: 'Ver Compras Globales', 
-    description: 'Visualizar compras de todas las sucursales sin restricciÃ³n de sede', 
+    description: 'Visualizar compras de todas las sucursales sin restricción de sede', 
     category: 'admin' 
   },
 ];
