@@ -14,7 +14,7 @@ export default async function MigracionPage() {
 
   const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
   
-  let sedes = [];
+  let sedes: any[] = [];
   if (perfil) {
     const { data: sedesData } = await supabase.from('sedes').select('id, nombre_sede').eq('empresa_id', perfil.empresa_id);
     sedes = sedesData || [];
@@ -34,4 +34,5 @@ export default async function MigracionPage() {
     </div>
   );
 }
+
 
