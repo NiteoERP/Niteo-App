@@ -3,7 +3,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 
-export async function importarProductos(productosImport: any[]) {
+export async function importarProductos(productosImport: any[], sedeId: string) {
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -20,6 +20,7 @@ export async function importarProductos(productosImport: any[]) {
   const nuevosProductos = productosImport.map((p: any) => {
     return {
       empresa_id: perfil.empresa_id,
+        sede_id: sedeId,
       nombre: p.Nombre,
       codigo_barras: p['Cdigo de Barras']?.toString() || '',
       precio_venta: parseFloat(p['Precio de Venta']) || 0,
@@ -70,3 +71,4 @@ export async function exportarCatalogo() {
 
   return { success: true, data: productos };
 }
+

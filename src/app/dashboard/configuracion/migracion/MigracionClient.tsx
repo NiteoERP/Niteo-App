@@ -5,7 +5,8 @@ import { Download, Upload, FileSpreadsheet, Loader2, AlertCircle, CheckCircle2 }
 import * as XLSX from 'xlsx';
 import { importarProductos, exportarCatalogo } from '@/actions/migracion-actions';
 
-export default function MigracionClient() {
+export default function MigracionClient({ sedes }: { sedes: any[] }) {
+  const [selectedSede, setSelectedSede] = useState(sedes[0]?.id || '');
   const [loadingExport, setLoadingExport] = useState(false);
   const [loadingImport, setLoadingImport] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +22,7 @@ export default function MigracionClient() {
       'Unidad de Medida': 'unidades'
     }]);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Catálogo");
+    XLSX.utils.book_append_sheet(wb, ws, "CatÃ¡logo");
     XLSX.writeFile(wb, "Niteo_Plantilla_Productos.xlsx");
   };
 
@@ -45,7 +46,7 @@ export default function MigracionClient() {
 
       const ws = XLSX.utils.json_to_sheet(rows);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Catálogo Actual");
+      XLSX.utils.book_append_sheet(wb, ws, "CatÃ¡logo Actual");
       XLSX.writeFile(wb, "Niteo_Catalogo_Exportado.xlsx");
     } catch (err: any) {
       setError(err.message);
@@ -75,12 +76,12 @@ export default function MigracionClient() {
           throw new Error('El archivo est vaco.');
         }
 
-        const res = await importarProductos(data);
+        const res = await importarProductos(data, selectedSede);
         if (!res.success) {
-          throw new Error(res.error || 'Error importando catálogo');
+          throw new Error(res.error || 'Error importando catÃ¡logo');
         }
 
-        setSuccess('¡Sincronización exitosa! Se importaron los productos.');
+        setSuccess('Â¡SincronizaciÃ³n exitosa! Se importaron los productos.');
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -119,10 +120,23 @@ export default function MigracionClient() {
           <div className="w-12 h-12 bg-indigo-500/10 rounded-xl flex items-center justify-center mb-4">
             <Upload className="text-indigo-400" size={24} />
           </div>
-          <h3 className="text-lg font-bold text-white mb-2">Importar Catálogo</h3>
+          <h3 className="text-lg font-bold text-white mb-2">Importar CatÃ¡logo</h3>
           <p className="text-sm text-neutral-400 mb-6">
             Sube un archivo Excel (.xlsx) para cargar mltiples productos al mismo tiempo.
           </p>
+
+          <div className="mb-4 space-y-2">
+            <label className="text-sm font-medium text-neutral-400">Sede Destino</label>
+            <select
+              value={selectedSede}
+              onChange={(e) => setSelectedSede(e.target.value)}
+              className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2.5 text-white focus:border-indigo-500 transition-colors text-sm outline-none"
+            >
+              {sedes.map(s => (
+                <option key={s.id} value={s.id}>{s.nombre_sede}</option>
+              ))}
+            </select>
+          </div>
           
           <div className="space-y-4">
             <button 
@@ -156,7 +170,7 @@ export default function MigracionClient() {
           </div>
           <h3 className="text-lg font-bold text-white mb-2">Exportar Datos</h3>
           <p className="text-sm text-neutral-400 mb-6">
-            Descarga todo el catálogo actual de la Nube en un formato compatible con Excel.
+            Descarga todo el catÃ¡logo actual de la Nube en un formato compatible con Excel.
           </p>
           
           <button 
@@ -165,7 +179,7 @@ export default function MigracionClient() {
             className="w-full mt-auto py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-colors"
           >
             {loadingExport ? <Loader2 className="animate-spin" size={16} /> : <FileSpreadsheet size={16} />}
-            {loadingExport ? 'Generando Excel...' : 'Descargar Catálogo Completo'}
+            {loadingExport ? 'Generando Excel...' : 'Descargar CatÃ¡logo Completo'}
           </button>
         </div>
 
@@ -173,3 +187,5 @@ export default function MigracionClient() {
     </div>
   );
 }
+
+
