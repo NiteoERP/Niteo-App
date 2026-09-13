@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
@@ -62,7 +62,7 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
       {hasPerm('inventario') && (
         <Link href="/dashboard/catalogo" className={getLinkClass('/dashboard/catalogo')}>
           <ShoppingCart size={20} />
-          <span className="text-sm font-medium">CatÃ¡logo de Ventas</span>
+          <span className="text-sm font-medium">Catálogo de Ventas</span>
         </Link>
       )}
 
@@ -81,7 +81,7 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
           </Link>
           <Link href="/dashboard/documentos/nuevo" className={getLinkClass('/dashboard/documentos/nuevo')}>
             <FileText size={20} />
-            <span className="text-sm font-medium">FacturaciÃƒÂ³n</span>
+            <span className="text-sm font-medium">FacturaciÃ³n</span>
           </Link>
           <Link href="/dashboard/ventas" className={getLinkClass('/dashboard/ventas')}>
             <ShoppingCart size={20} />
@@ -103,7 +103,7 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
         </Link>
       )}
       
-      {/* MÃƒÂ³dulo Despachos: incluido de forma nativa en PRO y ENTERPRISE (mÃƒÂºltiples sedes) */}
+      {/* MÃ³dulo Despachos: incluido de forma nativa en PRO y ENTERPRISE (mÃºltiples sedes) */}
       {(planSuscripcion?.toUpperCase() === 'PRO' || planSuscripcion?.toUpperCase() === 'ENTERPRISE') && (hasPerm('inventario') || hasPerm('pos')) && (
         <Link href="/dashboard/despachos" className={getLinkClass('/dashboard/despachos')}>
           <Truck size={20} />
@@ -133,7 +133,7 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
       {hasPerm('creditos') && (
         <Link href="/dashboard/creditos" className={getLinkClass('/dashboard/creditos')}>
           <Wallet size={20} className="shrink-0 text-emerald-400" />
-          <span className="font-medium">CrÃƒÂ©ditos</span>
+          <span className="font-medium">CrÃ©ditos</span>
         </Link>
       )}
       {(hasPerm('equipo') || hasPerm('usuarios') || userRole === 'MASTER') && (
@@ -159,9 +159,167 @@ export function SidebarBottom({ permisos, userRole }: NavProps) {
 
   return (
     <div className="p-4 border-t border-neutral-800 shrink-0 space-y-1">
-      ()}
+      
+      {hasPerm('ajustes') && (
+        <Link href="/dashboard/configuracion" className={getLinkClass('/dashboard/configuracion')}>
+          <Settings size={20} />
+          <span className="text-sm font-medium">Ajustes</span>
+        </Link>
+      )}
+    </div>
+  );
+}
 
-        {/* MÃƒÂ³dulos dinÃƒÂ¡micos para los siguientes 3 espacios segÃƒÂºn permisos del usuario */}
+export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscripcion = 'STARTER' }: NavProps) {
+  const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const hasPerm = (p: string) => {
+    if (userRole === 'MASTER' || userRole === 'SUPERADMIN') return true;
+    if (permisos.includes(p)) return true;
+    if (p === 'caja' && (permisos.includes('finanzas') || userRole === 'CAJERO')) return true;
+    if (p === 'finanzas' && permisos.includes('caja')) return true;
+    if (p === 'equipo' && (permisos.includes('usuarios') || permisos.includes('equipo'))) return true;
+    if (p === 'usuarios' && (permisos.includes('usuarios') || permisos.includes('equipo'))) return true;
+    return false;
+  };
+
+  // Clases del Ã­tem de la barra inferior
+  const navItem = (path: string, exact = false) => {
+    const isActive = exact ? pathname === path : pathname.startsWith(path);
+    return {
+      link: `relative flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors ${
+        isActive ? 'text-indigo-400' : 'text-neutral-500 active:text-white'
+      }`,
+      isActive,
+    };
+  };
+
+  // Clases del Ã­tem del drawer
+  const drawerItem = (path: string) => {
+    const isActive = pathname.startsWith(path);
+    return isActive
+      ? 'flex items-center gap-4 px-4 py-4 rounded-2xl bg-indigo-500/10 text-indigo-400 font-semibold'
+      : 'flex items-center gap-4 px-4 py-4 rounded-2xl text-neutral-300 active:bg-neutral-800 font-medium transition-colors';
+  };
+
+  return (
+    <>
+      {/* â”€â”€ BOTTOM SHEET DRAWER (MÃ¡s MÃ³dulos) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {menuOpen && (
+        <>
+          {/* Backdrop â€” tap to close */}
+          <div
+            className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+            onClick={() => setMenuOpen(false)}
+          />
+          {/* Sheet */}
+          <div className="md:hidden fixed bottom-0 inset-x-0 z-50
+                          bg-neutral-900 border-t border-neutral-800 rounded-t-3xl
+                          animate-in slide-in-from-bottom duration-300
+                          pb-[env(safe-area-inset-bottom)]
+                          max-h-[80dvh] flex flex-col">
+            {/* Handle */}
+            <div className="flex justify-center pt-3 pb-2 shrink-0">
+              <div className="w-10 h-1 rounded-full bg-neutral-700" />
+            </div>
+            <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest px-6 pb-3 shrink-0">
+              Todos los MÃ³dulos
+            </p>
+
+            <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-1 custom-scrollbar">
+              {hasPerm('caja') && (
+                <Link href="/dashboard/caja" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/caja')}>
+                  <Wallet size={22} /> Cierres de Caja
+                </Link>
+              )}
+              {hasPerm('inventario') && (
+                <Link href="/dashboard/catalogo" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/catalogo')}>
+                  <ShoppingCart size={22} /> Catálogo de Ventas
+                </Link>
+              )}
+
+      {hasPerm('inventario') && (
+                <Link href="/dashboard/inventario" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/inventario')}>
+                  <Package size={22} /> Inventario
+                </Link>
+              )}
+              {hasPerm('pos') && (
+                <>
+                  <Link href="/dashboard/terminal" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/terminal')}>
+                    <MonitorSmartphone size={22} /> Nueva Venta
+                  </Link>
+                  <Link href="/dashboard/documentos/nuevo" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/documentos/nuevo')}>
+                    <FileText size={22} /> FacturaciÃ³n
+                  </Link>
+                </>
+              )}
+              {hasPerm('reportes') && (
+                <Link href="/dashboard/informes" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/informes')}>
+                  <FileText size={22} /> Informes
+                </Link>
+              )}
+              {(hasPerm('reportes') || userRole === 'MASTER') && (
+                <Link href="/dashboard/finanzas" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/finanzas')}>
+                  <TrendingUp size={22} /> Finanzas
+                </Link>
+              )}
+              {(planSuscripcion?.toUpperCase() === 'PRO' || planSuscripcion?.toUpperCase() === 'ENTERPRISE') && (hasPerm('inventario') || hasPerm('pos')) && (
+                <Link href="/dashboard/despachos" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/despachos')}>
+                  <Truck size={22} /> Despachos
+                </Link>
+              )}
+              {hasPerm('compras') && (
+                <Link href="/dashboard/proveedores" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/proveedores')}>
+                  <Truck size={22} /> Proveedores
+                </Link>
+              )}
+              {hasPerm('clientes') && (
+                <Link href="/dashboard/clientes" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/clientes')}>
+                  <Users size={22} /> Directorio
+                </Link>
+              )}
+              {hasPerm('creditos') && (
+                <Link href="/dashboard/creditos" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/creditos')}>
+                  <Wallet size={22} /> CrÃ©ditos
+                </Link>
+              )}
+              {hasPerm('equipo') && (
+                <Link href="/dashboard/equipo" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/equipo')}>
+                  <Users size={22} /> Equipo
+                </Link>
+              )}
+              
+              {(hasPerm('ajustes') || hasPerm('auditoria')) && (
+                <Link href="/dashboard/configuracion" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/configuracion')}>
+                  <Settings size={22} /> Ajustes
+                </Link>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* â”€â”€ BOTTOM NAVIGATION BAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* h-16 visible + padding seguro en dispositivos con home bar */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-30
+                      bg-neutral-900/95 backdrop-blur-md border-t border-neutral-800
+                      flex items-stretch
+                      h-[calc(4rem+env(safe-area-inset-bottom))]
+                      pb-[env(safe-area-inset-bottom)]">
+
+        {/* 1. Inicio â€” SIEMPRE VISIBLE: En /dashboard muestra mÃ©tricas o el Panel de Operaciones */}
+        {(() => {
+          const { link, isActive } = navItem('/dashboard', true);
+          return (
+            <Link href="/dashboard" onClick={() => setMenuOpen(false)} className={link}>
+              {isActive && <span className="absolute top-2 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-indigo-500" />}
+              <LayoutDashboard size={22} />
+              <span className="text-[10px] font-medium">Inicio</span>
+            </Link>
+          );
+        })()}
+
+        {/* MÃ³dulos dinÃ¡micos para los siguientes 3 espacios segÃºn permisos del usuario */}
         {(() => {
           const candidateTabs = [
             ...(hasPerm('pos') ? [{ path: '/dashboard/ventas', label: 'Ventas', icon: ShoppingCart }] : []),
@@ -184,7 +342,7 @@ export function SidebarBottom({ permisos, userRole }: NavProps) {
           });
         })()}
 
-        {/* BotÃƒÂ³n "MÃƒÂ¡s" Ã¢â‚¬â€ abre el bottom sheet */}
+        {/* BotÃ³n "MÃ¡s" â€” abre el bottom sheet */}
         <button
           onClick={() => setMenuOpen(!menuOpen)}
           className={`relative flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors ${
@@ -193,14 +351,12 @@ export function SidebarBottom({ permisos, userRole }: NavProps) {
         >
           {menuOpen && <span className="absolute top-2 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-indigo-500" />}
           {menuOpen ? <X size={22} /> : <Menu size={22} />}
-          <span className="text-[10px] font-medium">{menuOpen ? 'Cerrar' : 'MÃƒÂ¡s'}</span>
+          <span className="text-[10px] font-medium">{menuOpen ? 'Cerrar' : 'MÃ¡s'}</span>
         </button>
       </nav>
     </>
   );
 }
-
-
 
 
 
