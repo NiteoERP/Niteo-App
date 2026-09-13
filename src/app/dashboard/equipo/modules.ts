@@ -1,4 +1,4 @@
-export interface ModuleDefinition {
+﻿export interface ModuleDefinition {
   id: string;
   label: string;
   description: string;
@@ -7,16 +7,16 @@ export interface ModuleDefinition {
 
 export const CATEGORY_LABELS: Record<string, string> = {
   operaciones: 'Ventas, POS y Caja',
-  inventario: 'Inventario y Almacén',
+  inventario: 'Inventario y AlmacÃ©n',
   clientes: 'Clientes y Finanzas',
-  admin: 'Control y Administración',
+  admin: 'Control y AdministraciÃ³n',
 };
 
 export const AVAILABLE_MODULES: ModuleDefinition[] = [
   // Ventas y Caja
   { 
     id: 'pos', 
-    label: 'Ventas y Facturación (POS)', 
+    label: 'Ventas y FacturaciÃ³n (POS)', 
     description: 'Punto de venta, cobro de tickets y terminal de venta', 
     category: 'operaciones' 
   },
@@ -29,7 +29,7 @@ export const AVAILABLE_MODULES: ModuleDefinition[] = [
   { 
     id: 'compras', 
     label: 'Compras y Facturas de Insumos', 
-    description: 'Recepción de insumos, registro de facturas y notas de compra', 
+    description: 'RecepciÃ³n de insumos, registro de facturas y notas de compra', 
     category: 'operaciones' 
   },
   { 
@@ -49,7 +49,7 @@ export const AVAILABLE_MODULES: ModuleDefinition[] = [
   { 
     id: 'despachos', 
     label: 'Despachos entre Sedes', 
-    description: 'Traslados de stock, envíos y recepciones entre sucursales', 
+    description: 'Traslados de stock, envÃ­os y recepciones entre sucursales', 
     category: 'inventario' 
   },
 
@@ -57,57 +57,52 @@ export const AVAILABLE_MODULES: ModuleDefinition[] = [
   { 
     id: 'clientes', 
     label: 'Directorio de Clientes', 
-    description: 'Gestión y datos de contacto de clientes registrados', 
+    description: 'GestiÃ³n y datos de contacto de clientes registrados', 
     category: 'clientes' 
   },
   { 
     id: 'creditos', 
-    label: 'Créditos y Cobranzas', 
-    description: 'Gestión de cuentas por cobrar, abonos y ventas fiadas', 
+    label: 'CrÃ©ditos y Cobranzas', 
+    description: 'GestiÃ³n de cuentas por cobrar, abonos y ventas fiadas', 
     category: 'clientes' 
   },
   { 
     id: 'reportes', 
     label: 'Informes de Ventas', 
-    description: 'Reportes de ventas, productos más vendidos y métricas', 
+    description: 'Reportes de ventas, productos mÃ¡s vendidos y mÃ©tricas', 
     category: 'clientes' 
   },
   { 
     id: 'finanzas', 
     label: 'Finanzas y Flujo', 
-    description: 'Métricas de ingresos brutos, costos operativos y margen neto', 
+    description: 'MÃ©tricas de ingresos brutos, costos operativos y margen neto', 
     category: 'clientes' 
   },
 
-  // Administración
+  // AdministraciÃ³n
   { 
     id: 'dashboard', 
     label: 'Dashboard / Inicio', 
-    description: 'Gráficos ejecutivos y KPIs de rendimiento del negocio', 
+    description: 'GrÃ¡ficos ejecutivos y KPIs de rendimiento del negocio', 
     category: 'admin' 
   },
   { 
     id: 'equipo', 
-    label: 'Gestión de Equipo', 
-    description: 'Crear personal, asignar permisos y cambiar contraseñas', 
+    label: 'GestiÃ³n de Equipo', 
+    description: 'Crear personal, asignar permisos y cambiar contraseÃ±as', 
     category: 'admin' 
   },
-  { 
-    id: 'auditoria', 
-    label: 'Registro de Auditoría', 
-    description: 'Historial de actividades, anulaciones y cambios de usuarios', 
-    category: 'admin' 
-  },
+  
   { 
     id: 'ajustes', 
     label: 'Ajustes de Empresa', 
-    description: 'Configuración general de empresa, tasas y métodos de pago', 
+    description: 'ConfiguraciÃ³n general de empresa, tasas y mÃ©todos de pago', 
     category: 'admin' 
   },
   { 
     id: 'ver_todas_compras', 
     label: 'Ver Compras Globales', 
-    description: 'Visualizar compras de todas las sucursales sin restricción de sede', 
+    description: 'Visualizar compras de todas las sucursales sin restricciÃ³n de sede', 
     category: 'admin' 
   },
 ];
@@ -121,3 +116,4 @@ export const ROLE_PRESETS: Record<string, string[]> = {
   COMPRADOR: ['compras', 'proveedores', 'inventario'],
   MASTER: AVAILABLE_MODULES.map(m => m.id),
 };
+
