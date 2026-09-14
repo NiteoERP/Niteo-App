@@ -266,7 +266,7 @@ export default function MigraciónClient({ sedes }: { sedes: any[] }) {
          }
       }
 
-      setImportStatusText('Migrando CatÃ¡logo de Productos...');
+      setImportStatusText('Migrando Catálogo de Productos...');
       if (dbEntitiesData.productos?.length > 0) {
         const prodChunks = 500;
         for (let i = 0; i < dbEntitiesData.productos.length; i += prodChunks) {
@@ -277,7 +277,7 @@ export default function MigraciónClient({ sedes }: { sedes: any[] }) {
         }
       }
 
-      setImportStatusText('Migrando Facturas HistÃ³ricas...');
+      setImportStatusText('Migrando Facturas Históricas...');
       const chunkSize = 100; let successCount = 0;
       for (let i = 0; i < dbParsedData.length; i += chunkSize) {
         const batch = dbParsedData.slice(i, i + chunkSize);
@@ -288,7 +288,7 @@ export default function MigraciónClient({ sedes }: { sedes: any[] }) {
               total: f.total, tipo_pedido: f.tipo === 'compra' ? 'compra' : 'venta_rapida', estado: f.paidStatus === 0 ? 'pendiente' : 'cobrado', fecha_creacion: f.fecha, descuento: f.descuento || 0
            }).select('id').single();
            if (!errP && pedido && f.items?.length > 0) {
-              const itemsToInsert = f.items.map((it: any) => ({ pedido_id: pedido.id, nombre_custom: it.nombre, cantidad: it.cantidad, precio_unitario: it.precio, notas: 'MigraciÃ³n DB' }));
+              const itemsToInsert = f.items.map((it: any) => ({ pedido_id: pedido.id, nombre_custom: it.nombre, cantidad: it.cantidad, precio_unitario: it.precio, notas: 'Migración DB' }));
               await supabase.from('detalles_pedido').insert(itemsToInsert);
            }
         }
@@ -296,7 +296,7 @@ export default function MigraciónClient({ sedes }: { sedes: any[] }) {
         setImportProgress(Math.round((successCount / dbParsedData.length) * 100));
         setImportStatusText(`Procesando Factura ${successCount} de ${dbParsedData.length}...`);
       }
-      setMessage({ type: 'success', text: `Â¡MigraciÃ³n de Aronium completada con Ã©xito!` });
+      setMessage({ type: 'success', text: `Â¡Migración de Aronium completada con Ã©xito!` });
       setDbFile(null);
     } catch (err: any) { setMessage({ type: 'error', text: err.message }); } finally { setImportingDb(false); setImportStatusText(''); }
   };
@@ -363,7 +363,7 @@ export default function MigraciónClient({ sedes }: { sedes: any[] }) {
         }
       }
 
-      setMessage({ type: 'success', text: `Â¡MigraciÃ³n Universal completada!` });
+      setMessage({ type: 'success', text: `Â¡Migración Universal completada!` });
       setDbFile(null);
     } catch (err: any) { setMessage({ type: 'error', text: err.message }); } finally { setImportingDb(false); setImportStatusText(''); }
   };
@@ -375,7 +375,7 @@ export default function MigraciónClient({ sedes }: { sedes: any[] }) {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
             <h2 className="text-xl font-bold text-neutral-900 dark:text-white">Niteo Data Studio</h2>
-            <p className="text-sm text-neutral-500">MÃ³dulo de ImportaciÃ³n Universal y MigraciÃ³n HistÃ³rica</p>
+            <p className="text-sm text-neutral-500">Módulo de Importación Universal y Migración Histórica</p>
           </div>
           
           <div className="w-full sm:w-64">
@@ -398,7 +398,7 @@ export default function MigraciónClient({ sedes }: { sedes: any[] }) {
             <FileSpreadsheet size={16} className="inline mr-2" /> Productos e Inventario (.xlsx / .csv)
           </button>
           <button onClick={() => { setActiveTab('db'); setMessage(null); }} className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors ${activeTab === 'db' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-neutral-500'}`}>
-            <Database size={16} className="inline mr-2" /> MigraciÃ³n SQLite (.db)
+            <Database size={16} className="inline mr-2" /> Migración SQLite (.db)
           </button>
         </div>
 
@@ -494,11 +494,11 @@ export default function MigraciónClient({ sedes }: { sedes: any[] }) {
                    <div className="animate-in fade-in space-y-4">
                      <div className="grid grid-cols-2 gap-4">
                        <div className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 p-6 rounded-xl text-center shadow-sm">
-                         <h4 className="text-neutral-500 dark:text-neutral-400 font-bold text-sm mb-1">CatÃ¡logo a migrar</h4>
+                         <h4 className="text-neutral-500 dark:text-neutral-400 font-bold text-sm mb-1">Catálogo a migrar</h4>
                          <p className="text-lg font-black text-neutral-900 dark:text-white">{dbStats.prodCount} Prod | {dbStats.catCount} Cat | {dbStats.custCount} Cli</p>
                        </div>
                        <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 p-6 rounded-xl text-center shadow-sm">
-                         <h4 className="text-emerald-800 dark:text-emerald-400 font-bold text-sm mb-1">HistÃ³rico de Ventas</h4>
+                         <h4 className="text-emerald-800 dark:text-emerald-400 font-bold text-sm mb-1">Histórico de Ventas</h4>
                          <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400">{dbStats.ventas} Docs</p>
                        </div>
                      </div>
@@ -510,7 +510,7 @@ export default function MigraciónClient({ sedes }: { sedes: any[] }) {
                      )}
                      <button onClick={executeDbImportAronium} disabled={importingDb} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-bold flex justify-center items-center gap-2">
                        {importingDb ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-                       {importingDb ? 'Trabajando directamente con Supabase...' : `Iniciar MigraciÃ³n Maestra Aronium`}
+                       {importingDb ? 'Sincronizando con Niteo Cloud...' : `Iniciar Migración Maestra Aronium`}
                      </button>
                    </div>
                  )}
@@ -577,7 +577,7 @@ export default function MigraciónClient({ sedes }: { sedes: any[] }) {
                        </div>
                      )}
                      <button onClick={executeDbImportUniversal} disabled={importingDb || (!univProdTable && !univCustTable)} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-4 rounded-xl font-bold">
-                       {importingDb ? 'Importando Modo Universal...' : 'Ejecutar MigraciÃ³n Universal'}
+                       {importingDb ? 'Importando Modo Universal...' : 'Ejecutar Migración Universal'}
                      </button>
                    </div>
                  )}
