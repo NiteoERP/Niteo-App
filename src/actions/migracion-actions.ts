@@ -4,7 +4,7 @@ import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 
 export async function importarProductos(productosImport: any[], sedeId: string) {
-  return procesarImportacionGenerica(productosImport.map(p => ({
+  return procesarImportacionUniversal(productosImport.map(p => ({
     nombre: p.Nombre,
     codigo_barras: p['Código de Barras']?.toString() || '',
     precio_venta: parseFloat(p['Precio de Venta']) || 0,
@@ -30,7 +30,7 @@ export async function exportarCatalogo() {
   return { success: true, data: productos };
 }
 
-export async function procesarImportacionGenerica(productos: any[], sedeId: string) {
+export async function procesarImportacionUniversal(productos: any[], sedeId: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'No autorizado' };
@@ -147,3 +147,4 @@ export async function procesarHistoricoAronium(facturas: any[], sedeId: string) 
   revalidatePath('/dashboard/historial');
   return { success: true, count: successCount };
 }
+

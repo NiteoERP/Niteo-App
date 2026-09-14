@@ -5,7 +5,7 @@ import { Download, Upload, FileSpreadsheet, Loader2, Database, ArrowRight, Check
 import * as XLSX from 'xlsx';
 import initSqlJs from 'sql.js';
 import { createClient } from '@/utils/supabase/client';
-import { procesarImportacionGenerica } from '@/actions/migracion-actions';
+import { procesarImportacionUniversal } from '@/actions/migracion-actions';
 
 type TabType = 'excel' | 'db';
 type DbModeType = 'aronium' | 'universal' | null;
@@ -121,7 +121,7 @@ export default function MigraciónClient({ sedes }: { sedes: any[] }) {
         unidad_medida: 'unidades',
         precio_modificable: false
       })).filter(p => p.nombre);
-      const res = await procesarImportacionGenerica(mapped, selectedSede);
+      const res = await procesarImportacionUniversal(mapped, selectedSede);
       if (res.success) {
         setMessage({ type: 'success', text: `Â¡Se importaron ${res.count} productos exitosamente!` });
         setExcelFile(null);
@@ -590,4 +590,5 @@ export default function MigraciónClient({ sedes }: { sedes: any[] }) {
     </div>
   );
 }
+
 
