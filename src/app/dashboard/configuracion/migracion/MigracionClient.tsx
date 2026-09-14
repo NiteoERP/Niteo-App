@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useRef } from 'react';
 import { Download, Upload, FileSpreadsheet, Loader2, Database, ArrowRight, CheckCircle2, AlertCircle, Settings } from 'lucide-react';
@@ -50,22 +50,22 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
 
   const excelTargetFields = [
     { key: 'nombre', label: 'Nombre del Producto (Requerido)' },
-    { key: 'codigo_barras', label: 'Código de Barras' },
+    { key: 'codigo_barras', label: 'CÃ³digo de Barras' },
     { key: 'precio_venta', label: 'Precio de Venta' },
     { key: 'costo', label: 'Costo' }
   ];
 
   const dbProdTargetFields = [
     { key: 'nombre', label: 'Nombre' },
-    { key: 'codigo_barras', label: 'Código de Barras' },
+    { key: 'codigo_barras', label: 'CÃ³digo de Barras' },
     { key: 'precio_venta', label: 'Precio' },
     { key: 'costo', label: 'Costo' }
   ];
 
   const dbCustTargetFields = [
     { key: 'nombre', label: 'Nombre del Cliente' },
-    { key: 'email', label: 'Correo Electrónico' },
-    { key: 'telefono', label: 'Teléfono' }
+    { key: 'email', label: 'Correo ElectrÃ³nico' },
+    { key: 'telefono', label: 'TelÃ©fono' }
   ];
 
   // ================== EXCEL LOGIC ==================
@@ -123,9 +123,9 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
       })).filter(p => p.nombre);
       const res = await procesarImportacionGenerica(mapped, selectedSede);
       if (res.success) {
-        setMessage({ type: 'success', text: `¡Se importaron ${res.count} productos exitosamente!` });
+        setMessage({ type: 'success', text: `Â¡Se importaron ${res.count} productos exitosamente!` });
         setExcelFile(null);
-      } else setMessage({ type: 'error', text: res.error || 'Error en la importación' });
+      } else setMessage({ type: 'error', text: res.error || 'Error en la importaciÃ³n' });
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message });
     } finally {
@@ -172,7 +172,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
         await extractAroniumData(db);
       } else {
         setDbMode('universal');
-        setMessage({ type: 'success', text: 'Base de datos genérica detectada. Usa el Mapeador Universal abajo.' });
+        setMessage({ type: 'success', text: 'Base de datos genÃ©rica detectada. Usa el Mapeador Universal abajo.' });
       }
     } catch (err: any) {
       setMessage({ type: 'error', text: 'Error procesando .db: ' + err.message });
@@ -217,7 +217,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
       if (docsResult.length > 0) {
         const columns = docsResult[0].columns;
         const rows = docsResult[0].values;
-        const colIdx = columns.reduce((acc, col, idx) => ({ ...acc, [col]: idx }), {} as Record<string, number>);
+        const colIdx = columns.reduce((acc: any, col: any, idx: number) => ({ ...acc, [col]: idx }), {} as Record<string, number>);
 
         for (const row of rows) {
           const docId = row[colIdx.docId] as number;
@@ -246,11 +246,11 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
     try {
       setImportStatusText('Autenticando...');
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No estás autenticado');
+      if (!user) throw new Error('No estÃ¡s autenticado');
       const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
       const empresaId = perfil?.empresa_id;
 
-      setImportStatusText('Creando Categorías...');
+      setImportStatusText('Creando CategorÃ­as...');
       if (dbEntitiesData.categorias?.length > 0) {
          for (const c of dbEntitiesData.categorias) {
            await supabase.from('categorias').insert({ empresa_id: empresaId, sede_id: selectedSede, nombre: c.Name, color: '#4F46E5', icono: 'Box' });
@@ -266,7 +266,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
          }
       }
 
-      setImportStatusText('Migrando Catálogo de Productos...');
+      setImportStatusText('Migrando CatÃ¡logo de Productos...');
       if (dbEntitiesData.productos?.length > 0) {
         const prodChunks = 500;
         for (let i = 0; i < dbEntitiesData.productos.length; i += prodChunks) {
@@ -277,7 +277,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
         }
       }
 
-      setImportStatusText('Migrando Facturas Históricas...');
+      setImportStatusText('Migrando Facturas HistÃ³ricas...');
       const chunkSize = 100; let successCount = 0;
       for (let i = 0; i < dbParsedData.length; i += chunkSize) {
         const batch = dbParsedData.slice(i, i + chunkSize);
@@ -288,7 +288,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
               total: f.total, tipo_pedido: f.tipo === 'compra' ? 'compra' : 'venta_rapida', estado: f.paidStatus === 0 ? 'pendiente' : 'cobrado', fecha_creacion: f.fecha, descuento: f.descuento || 0
            }).select('id').single();
            if (!errP && pedido && f.items?.length > 0) {
-              const itemsToInsert = f.items.map((it: any) => ({ pedido_id: pedido.id, nombre_custom: it.nombre, cantidad: it.cantidad, precio_unitario: it.precio, notas: 'Migración DB' }));
+              const itemsToInsert = f.items.map((it: any) => ({ pedido_id: pedido.id, nombre_custom: it.nombre, cantidad: it.cantidad, precio_unitario: it.precio, notas: 'MigraciÃ³n DB' }));
               await supabase.from('detalles_pedido').insert(itemsToInsert);
            }
         }
@@ -296,7 +296,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
         setImportProgress(Math.round((successCount / dbParsedData.length) * 100));
         setImportStatusText(`Procesando Factura ${successCount} de ${dbParsedData.length}...`);
       }
-      setMessage({ type: 'success', text: `¡Migración de Aronium completada con éxito!` });
+      setMessage({ type: 'success', text: `Â¡MigraciÃ³n de Aronium completada con Ã©xito!` });
       setDbFile(null);
     } catch (err: any) { setMessage({ type: 'error', text: err.message }); } finally { setImportingDb(false); setImportStatusText(''); }
   };
@@ -311,7 +311,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
       const db = dbRef.current;
       setImportStatusText('Autenticando...');
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No estás autenticado');
+      if (!user) throw new Error('No estÃ¡s autenticado');
       const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
       const empresaId = perfil?.empresa_id;
 
@@ -323,7 +323,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
         if (res.length > 0) {
           const cols = res[0].columns;
           const rows = res[0].values;
-          const colIdx = cols.reduce((acc, col, idx) => ({ ...acc, [col]: idx }), {} as Record<string, number>);
+          const colIdx = cols.reduce((acc: any, col: any, idx: number) => ({ ...acc, [col]: idx }), {} as Record<string, number>);
           
           const batch = rows.map((row: any) => ({
              empresa_id: empresaId,
@@ -346,7 +346,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
         if (res.length > 0) {
           const cols = res[0].columns;
           const rows = res[0].values;
-          const colIdx = cols.reduce((acc, col, idx) => ({ ...acc, [col]: idx }), {} as Record<string, number>);
+          const colIdx = cols.reduce((acc: any, col: any, idx: number) => ({ ...acc, [col]: idx }), {} as Record<string, number>);
           
           const batch = rows.map((row: any) => ({
              empresa_id: empresaId, sede_id: selectedSede, estado_activo: true, canal_venta: 'AMBOS',
@@ -363,7 +363,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
         }
       }
 
-      setMessage({ type: 'success', text: `¡Migración Universal completada!` });
+      setMessage({ type: 'success', text: `Â¡MigraciÃ³n Universal completada!` });
       setDbFile(null);
     } catch (err: any) { setMessage({ type: 'error', text: err.message }); } finally { setImportingDb(false); setImportStatusText(''); }
   };
@@ -375,7 +375,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
             <h2 className="text-xl font-bold text-neutral-900 dark:text-white">Niteo Data Studio</h2>
-            <p className="text-sm text-neutral-500">Módulo de Importación Universal y Migración Histórica</p>
+            <p className="text-sm text-neutral-500">MÃ³dulo de ImportaciÃ³n Universal y MigraciÃ³n HistÃ³rica</p>
           </div>
           
           <div className="w-full sm:w-64">
@@ -398,7 +398,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
             <FileSpreadsheet size={16} className="inline mr-2" /> Productos e Inventario (.xlsx / .csv)
           </button>
           <button onClick={() => { setActiveTab('db'); setMessage(null); }} className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors ${activeTab === 'db' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-neutral-500'}`}>
-            <Database size={16} className="inline mr-2" /> Migración SQLite (.db)
+            <Database size={16} className="inline mr-2" /> MigraciÃ³n SQLite (.db)
           </button>
         </div>
 
@@ -418,7 +418,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
                      <Upload size={32} />
                    </div>
                    <h3 className="text-lg font-bold text-neutral-900 dark:text-white mb-2">Selecciona un archivo Excel o CSV</h3>
-                   <p className="text-sm text-neutral-500">Sube tu listado de productos para mapearlo dinámicamente.</p>
+                   <p className="text-sm text-neutral-500">Sube tu listado de productos para mapearlo dinÃ¡micamente.</p>
                  </label>
                </div>
             ) : (
@@ -478,7 +478,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
                    <h3 className="text-lg font-bold text-neutral-900 dark:text-white mb-2">
                      {dbLoading ? 'Analizando archivo .db...' : 'Sube tu base de datos SQLite (.db)'}
                    </h3>
-                   <p className="text-sm text-neutral-500">Detecta Aronium automáticamente, o permite mapear cualquier otro sistema.</p>
+                   <p className="text-sm text-neutral-500">Detecta Aronium automÃ¡ticamente, o permite mapear cualquier otro sistema.</p>
                  </label>
                </div>
             ) : (
@@ -494,11 +494,11 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
                    <div className="animate-in fade-in space-y-4">
                      <div className="grid grid-cols-2 gap-4">
                        <div className="bg-white border border-neutral-200 p-6 rounded-xl text-center shadow-sm">
-                         <h4 className="text-neutral-500 font-bold text-sm mb-1">Catálogo a migrar</h4>
+                         <h4 className="text-neutral-500 font-bold text-sm mb-1">CatÃ¡logo a migrar</h4>
                          <p className="text-lg font-black text-neutral-900">{dbStats.prodCount} Prod | {dbStats.catCount} Cat | {dbStats.custCount} Cli</p>
                        </div>
                        <div className="bg-emerald-50 border border-emerald-200 p-6 rounded-xl text-center shadow-sm">
-                         <h4 className="text-emerald-800 font-bold text-sm mb-1">Histórico de Ventas</h4>
+                         <h4 className="text-emerald-800 font-bold text-sm mb-1">HistÃ³rico de Ventas</h4>
                          <p className="text-3xl font-black text-emerald-600">{dbStats.ventas} Docs</p>
                        </div>
                      </div>
@@ -510,7 +510,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
                      )}
                      <button onClick={executeDbImportAronium} disabled={importingDb} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-bold flex justify-center items-center gap-2">
                        {importingDb ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-                       {importingDb ? 'Trabajando directamente con Supabase...' : `Iniciar Migración Maestra Aronium`}
+                       {importingDb ? 'Trabajando directamente con Supabase...' : `Iniciar MigraciÃ³n Maestra Aronium`}
                      </button>
                    </div>
                  )}
@@ -519,7 +519,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
                    <div className="animate-in fade-in space-y-6">
                      <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-xl text-indigo-800 text-sm">
                        <Settings className="inline mr-2 mb-1" size={16}/>
-                       <strong>Modo Universal:</strong> El sistema no detectó Aronium. Puedes mapear manualmente las tablas de Productos y Clientes de tu archivo.
+                       <strong>Modo Universal:</strong> El sistema no detectÃ³ Aronium. Puedes mapear manualmente las tablas de Productos y Clientes de tu archivo.
                      </div>
 
                      {/* Productos Mapper */}
@@ -577,7 +577,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
                        </div>
                      )}
                      <button onClick={executeDbImportUniversal} disabled={importingDb || (!univProdTable && !univCustTable)} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-4 rounded-xl font-bold">
-                       {importingDb ? 'Importando Modo Universal...' : 'Ejecutar Migración Universal'}
+                       {importingDb ? 'Importando Modo Universal...' : 'Ejecutar MigraciÃ³n Universal'}
                      </button>
                    </div>
                  )}
@@ -590,3 +590,4 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
     </div>
   );
 }
+
