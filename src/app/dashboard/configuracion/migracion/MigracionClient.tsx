@@ -5,7 +5,7 @@ import { Download, Upload, FileSpreadsheet, Loader2, Database, ArrowRight, Check
 import * as XLSX from 'xlsx';
 import initSqlJs from 'sql.js';
 import { createClient } from '@/utils/supabase/client';
-import { procesarImportacionGenerica } from '@/actions/migracion-actions'; // Dejamos el de Excel en server por ahora
+import { procesarImportacionGenerica } from '@/actions/migracion-actions';
 
 type TabType = 'excel' | 'aronium';
 
@@ -34,6 +34,13 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
 
   const supabase = createClient();
 
+  const targetFields = [
+    { key: 'nombre', label: 'Nombre del Producto (Requerido)' },
+    { key: 'codigo_barras', label: 'Código de Barras' },
+    { key: 'precio_venta', label: 'Precio de Venta' },
+    { key: 'costo', label: 'Costo' }
+  ];
+
   const handleExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -49,9 +56,9 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
         const autoMap: Record<string, string> = {};
         headers.forEach(h => {
            const lowH = h.toLowerCase();
-           if (lowH.includes('nombre')) autoMap['nombre'] = h;
-           else if (lowH.includes('precio')) autoMap['precio_venta'] = h;
-           else if (lowH.includes('costo')) autoMap['costo'] = h;
+           if (lowH.includes('nombre') || lowH.includes('name') || lowH.includes('producto')) autoMap['nombre'] = h;
+           else if (lowH.includes('precio') || lowH.includes('price')) autoMap['precio_venta'] = h;
+           else if (lowH.includes('costo') || lowH.includes('cost')) autoMap['costo'] = h;
            else if (lowH.includes('codigo') || lowH.includes('sku') || lowH.includes('barras')) autoMap['codigo_barras'] = h;
         });
         setColumnMapping(autoMap);
@@ -63,7 +70,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
   };
 
   const executeExcelImport = async () => {
-    if (!columnMapping['nombre']) return setMessage({ type: 'error', text: 'Mapea el nombre.' });
+    if (!columnMapping['nombre']) return setMessage({ type: 'error', text: 'Mapea el nombre obligatoriamente.' });
     setImportingExcel(true);
     try {
       const mapped = excelData.map(row => ({
@@ -76,14 +83,26 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
       })).filter(p => p.nombre);
       const res = await procesarImportacionGenerica(mapped, selectedSede);
       if (res.success) {
-        setMessage({ type: 'success', text: `Ã‚Â¡Se importaron ${res.count} productos!` });
+        setMessage({ type: 'success', text: `¡Se importaron ${res.count} productos exitosamente!` });
         setExcelFile(null);
-      } else setMessage({ type: 'error', text: res.error || 'Error' });
+      } else setMessage({ type: 'error', text: res.error || 'Error en la importación' });
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message });
     } finally {
       setImportingExcel(false);
     }
+  };
+
+  const downloadTemplate = () => {
+    const ws = XLSX.utils.json_to_sheet([{
+      "Nombre del Producto": "Coca Cola 2L",
+      "Codigo de Barras": "759123456789",
+      "Precio Venta": 2.50,
+      "Costo": 1.50
+    }]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Plantilla Niteo");
+    XLSX.writeFile(wb, "Niteo_Plantilla_Inventario.xlsx");
   };
 
   const handleDbUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,7 +121,6 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
       const catRes = db.exec("SELECT Id, Name FROM ProductGroup");
       const payRes = db.exec("SELECT Id, Name FROM PaymentType");
       
-      // Probar extraer clientes (si falla silenciosamente lo atrapamos si la tabla varÃƒÂ­a en versiones viejas)
       let custRes: any = [];
       try { custRes = db.exec("SELECT Id, Name, Email, PhoneNumber FROM Customer"); } catch (e) {}
       
@@ -138,13 +156,13 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
             if (docType === 2) ventas++;
             if (docType === 5) compras++;
             facturasMap.set(docId, {
-              customerId: row[colIdx.customerId] || null,
-              paidStatus: row[colIdx.paidStatus],
               fecha: row[colIdx.date],
               total: row[colIdx.total],
               descuento: row[colIdx.discount],
               tipo: docType === 2 ? 'venta' : 'compra',
               nombre_eventual: 'Ref Aronium: ' + row[colIdx.number],
+              customerId: row[colIdx.customerId] || null,
+              paidStatus: row[colIdx.paidStatus],
               items: []
             });
           }
@@ -175,44 +193,33 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
     setImportProgress(0);
     
     try {
-      // 1. Obtener contexto del usuario DIRECTO desde el navegador
       setImportStatusText('Autenticando...');
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No estÃƒÂ¡s autenticado');
+      if (!user) throw new Error('No estás autenticado');
       
       const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
-      if (!perfil) throw new Error('No se encontrÃƒÂ³ tu perfil de empresa');
-      
+      if (!perfil) throw new Error('No se encontró tu perfil de empresa');
       const empresaId = perfil.empresa_id;
 
-      // 2. Migrar Categorias
-      setImportStatusText('Creando CategorÃƒÂ­as...');
+      setImportStatusText('Creando Categorías...');
       if (dbEntitiesData.categorias && dbEntitiesData.categorias.length > 0) {
          for (const c of dbEntitiesData.categorias) {
            await supabase.from('categorias').insert({ empresa_id: empresaId, sede_id: selectedSede, nombre: c.Name, color: '#4F46E5', icono: 'Box' });
          }
       }
 
-      // 2.5 Migrar Clientes y Guardar Mapeo (Aronium ID -> Supabase ID)
       setImportStatusText('Creando Clientes...');
       const customerMap = new Map<number, string>();
       if (dbEntitiesData.clientes && dbEntitiesData.clientes.length > 0) {
          for (const c of dbEntitiesData.clientes) {
            const { data: insertedClient } = await supabase.from('clientes').insert({ 
-             empresa_id: empresaId, 
-             nombre: c.Name,
-             email: c.Email || null,
-             telefono: c.Phone || null
+             empresa_id: empresaId, nombre: c.Name, email: c.Email || null, telefono: c.Phone || null
            }).select('id').single();
-           
-           if (insertedClient) {
-             customerMap.set(c.Id, insertedClient.id);
-           }
+           if (insertedClient) customerMap.set(c.Id, insertedClient.id);
          }
       }
 
-      // 3. Migrar Productos (En Chunks de 500)
-      setImportStatusText('Migrando CatÃƒÂ¡logo de Productos...');
+      setImportStatusText('Migrando Catálogo de Productos...');
       if (dbEntitiesData.productos && dbEntitiesData.productos.length > 0) {
         const prodChunks = 500;
         for (let i = 0; i < dbEntitiesData.productos.length; i += prodChunks) {
@@ -223,44 +230,36 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
         }
       }
 
-      // 4. Migrar Facturas HistÃƒÂ³ricas
-      setImportStatusText('Migrando Facturas HistÃƒÂ³ricas...');
+      setImportStatusText('Migrando Facturas Históricas...');
       const chunkSize = 100; 
       let successCount = 0;
       
       for (let i = 0; i < dbParsedData.length; i += chunkSize) {
         const batch = dbParsedData.slice(i, i + chunkSize);
-        
-        // Optimizamos enviando Pedidos y Detalles al mismo tiempo
         for (const f of batch) {
            const supabaseClienteId = f.customerId ? (customerMap.get(f.customerId) || null) : null;
-           // En Aronium, las ventas a crÃ©dito muchas veces se diferencian por el mÃ©todo de pago o se dejan sin pagar. 
-           // Si el usuario necesita ver la deuda, requerimos el cliente_id.
-           // AquÃ­ mapearemos 'pendiente' si el Documento no estÃ¡ pagado en Aronium (o lo simularemos).
-           
            const { data: pedido, error: errP } = await supabase.from('pedidos').insert({
               empresa_id: empresaId, sede_id: selectedSede, 
               cliente_id: supabaseClienteId, 
               nombre_eventual: f.nombre_eventual || 'Migracion Aronium',
               total: f.total, tipo_pedido: f.tipo === 'compra' ? 'compra' : 'venta_rapida', 
-              estado: 'cobrado', // Puedes ajustar la lÃ³gica si Aronium arroja 'PaidStatus' = 0
+              estado: f.paidStatus === 0 ? 'pendiente' : 'cobrado',
               fecha_creacion: f.fecha, descuento: f.descuento || 0
            }).select('id').single();
            
            if (!errP && pedido && f.items && f.items.length > 0) {
               const itemsToInsert = f.items.map((it: any) => ({
-                 pedido_id: pedido.id, nombre_custom: it.nombre, cantidad: it.cantidad, precio_unitario: it.precio, notas: 'MigraciÃƒÂ³n DB'
+                 pedido_id: pedido.id, nombre_custom: it.nombre, cantidad: it.cantidad, precio_unitario: it.precio, notas: 'Migración DB'
               }));
               await supabase.from('detalles_pedido').insert(itemsToInsert);
            }
         }
-        
         successCount += batch.length;
         setImportProgress(Math.round((successCount / dbParsedData.length) * 100));
         setImportStatusText(`Procesando Factura ${successCount} de ${dbParsedData.length}...`);
       }
 
-      setMessage({ type: 'success', text: `Ã‚Â¡Se migraron los catÃƒÂ¡logos y ${successCount} facturas histÃƒÂ³ricas! Completado al 100% (Bypass Vercel)` });
+      setMessage({ type: 'success', text: `¡Se migraron los catálogos y ${successCount} facturas históricas! Completado al 100% (Bypass Vercel)` });
       setDbFile(null);
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message });
@@ -277,7 +276,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
             <h2 className="text-xl font-bold text-neutral-900 dark:text-white">Niteo Data Studio</h2>
-            <p className="text-sm text-neutral-500">MÃƒÂ³dulo de ImportaciÃƒÂ³n Universal y MigraciÃƒÂ³n HistÃƒÂ³rica</p>
+            <p className="text-sm text-neutral-500">Módulo de Importación Universal y Migración Histórica</p>
           </div>
           
           <div className="w-full sm:w-64">
@@ -306,12 +305,72 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
 
         {activeTab === 'excel' && (
           <div className="space-y-6 animate-in fade-in">
-            {/* Excel Upload UI (omitted for brevity, keep simple button) */}
-            <input type="file" onChange={handleExcelUpload} />
-            {excelFile && (
-               <button onClick={executeExcelImport} disabled={importingExcel} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold">
-                 {importingExcel ? 'Procesando...' : `Importar ${excelData.length} Productos`}
+            <div className="flex justify-end">
+               <button onClick={downloadTemplate} className="flex items-center gap-2 text-sm text-indigo-600 font-bold hover:underline">
+                 <Download size={16} /> Descargar Plantilla Excel de Ejemplo
                </button>
+            </div>
+
+            {!excelFile ? (
+               <div className="border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-2xl p-12 text-center hover:bg-neutral-50 dark:hover:bg-neutral-950/50 transition-colors">
+                 <input type="file" id="excel-upload" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleExcelUpload} />
+                 <label htmlFor="excel-upload" className="cursor-pointer flex flex-col items-center">
+                   <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-500/10 text-indigo-600 rounded-full flex items-center justify-center mb-4">
+                     <Upload size={32} />
+                   </div>
+                   <h3 className="text-lg font-bold text-neutral-900 dark:text-white mb-2">Selecciona un archivo Excel o CSV</h3>
+                   <p className="text-sm text-neutral-500">Sube tu listado de productos para mapearlo dinámicamente.</p>
+                 </label>
+               </div>
+            ) : (
+               <div className="space-y-6">
+                 <div className="flex items-center justify-between bg-neutral-50 dark:bg-neutral-950 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800">
+                   <div>
+                     <p className="text-sm font-bold text-neutral-900 dark:text-white">Archivo Listo: {excelFile.name}</p>
+                     <p className="text-xs text-neutral-500">{excelData.length} filas detectadas</p>
+                   </div>
+                   <button onClick={() => setExcelFile(null)} className="text-sm text-red-500 font-bold hover:underline">Cambiar Archivo</button>
+                 </div>
+
+                 <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden">
+                   <div className="bg-neutral-50 dark:bg-neutral-950 px-6 py-4 border-b border-neutral-200 dark:border-neutral-800">
+                     <h3 className="font-bold text-neutral-900 dark:text-white">Mapeo de Columnas (Data Mapper)</h3>
+                     <p className="text-xs text-neutral-500">Relaciona los campos de tu archivo con los campos de Niteo.</p>
+                   </div>
+                   
+                   <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
+                     {targetFields.map(field => (
+                       <div key={field.key} className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 gap-4">
+                         <div className="w-1/2">
+                           <p className="text-sm font-bold text-neutral-900 dark:text-white">{field.label}</p>
+                           <p className="text-xs text-neutral-500">Campo interno: {field.key}</p>
+                         </div>
+                         <div className="w-1/2">
+                           <select 
+                             className="w-full bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2 text-sm text-neutral-900 dark:text-white"
+                             value={columnMapping[field.key] || ''}
+                             onChange={(e) => setColumnMapping({...columnMapping, [field.key]: e.target.value})}
+                           >
+                             <option value="">-- Ignorar este campo --</option>
+                             {excelHeaders.map(h => (
+                               <option key={h} value={h}>{h}</option>
+                             ))}
+                           </select>
+                         </div>
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+
+                 <button 
+                   onClick={executeExcelImport}
+                   disabled={importingExcel}
+                   className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold flex justify-center items-center gap-2"
+                 >
+                   {importingExcel ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
+                   {importingExcel ? 'Procesando e Importando...' : `Importar ${excelData.length} Productos`}
+                 </button>
+               </div>
             )}
           </div>
         )}
@@ -328,7 +387,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
                    <h3 className="text-lg font-bold text-neutral-900 dark:text-white mb-2">
                      {dbLoading ? 'Extrayendo 30,000+ filas localmente...' : 'Selecciona el backup local de Aronium (.db)'}
                    </h3>
-                   <p className="text-sm text-neutral-500">Se migrarÃƒÂ¡n CategorÃƒÂ­as, Productos, MÃƒÂ©todos de Pago y el HistÃƒÂ³rico de Facturas.</p>
+                   <p className="text-sm text-neutral-500">Se migrarán Categorías, Productos, Métodos de Pago y el Histórico de Facturas.</p>
                  </label>
                </div>
             ) : (
@@ -343,11 +402,11 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
                  {dbStats && (
                    <div className="grid grid-cols-2 gap-4">
                      <div className="bg-white border border-neutral-200 p-6 rounded-xl text-center shadow-sm">
-                       <h4 className="text-neutral-500 font-bold text-sm mb-1">CatÃƒÂ¡logo a migrar</h4>
+                       <h4 className="text-neutral-500 font-bold text-sm mb-1">Catálogo a migrar</h4>
                        <p className="text-lg font-black text-neutral-900">{dbStats.prodCount} Prod | {dbStats.catCount} Cat | {dbStats.custCount} Clientes</p>
                      </div>
                      <div className="bg-emerald-50 border border-emerald-200 p-6 rounded-xl text-center shadow-sm">
-                       <h4 className="text-emerald-800 font-bold text-sm mb-1">HistÃƒÂ³rico de Ventas</h4>
+                       <h4 className="text-emerald-800 font-bold text-sm mb-1">Histórico de Ventas</h4>
                        <p className="text-3xl font-black text-emerald-600">{dbStats.ventas} Docs</p>
                      </div>
                    </div>
@@ -371,7 +430,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
                    className="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-bold flex justify-center items-center gap-2"
                  >
                    {importingDb ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-                   {importingDb ? 'Trabajando directamente con Supabase...' : `Iniciar MigraciÃƒÂ³n Maestra AutomÃƒÂ¡tica (Direct To Supabase)`}
+                   {importingDb ? 'Trabajando directamente con Supabase...' : `Iniciar Migración Maestra Automática (Direct To Supabase)`}
                  </button>
               </div>
             )}
@@ -382,5 +441,3 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
     </div>
   );
 }
-
-
