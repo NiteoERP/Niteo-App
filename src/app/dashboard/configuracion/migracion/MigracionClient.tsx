@@ -306,7 +306,7 @@ export default function MigraciónClient({ sedes }: { sedes: any[] }) {
       }
 
       setImportStatusText('Migrando Facturas Históricas...');
-      const chunkSize = 100; let successCount = 0;
+      const chunkSize = 1000; let successCount = 0;
       for (let i = 0; i < dbParsedData.length; i += chunkSize) {
         const batch = dbParsedData.filter((f: any) => !setPed.has(f.nombre_eventual)).slice(i, i + chunkSize);
         if (batch.length === 0) continue;
