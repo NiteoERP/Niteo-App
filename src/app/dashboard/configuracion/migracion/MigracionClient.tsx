@@ -5,12 +5,12 @@ import { Download, Upload, FileSpreadsheet, Loader2, Database, ArrowRight, Check
 import * as XLSX from 'xlsx';
 import initSqlJs from 'sql.js';
 import { createClient } from '@/utils/supabase/client';
-import { procesarImportacionGenerica } from '@/actions/migracion-actions';
+import { procesarImportaciónGenerica } from '@/actions/migracion-actions';
 
 type TabType = 'excel' | 'db';
 type DbModeType = 'aronium' | 'universal' | null;
 
-export default function MigracionClient({ sedes }: { sedes: any[] }) {
+export default function MigraciónClient({ sedes }: { sedes: any[] }) {
   const [activeTab, setActiveTab] = useState<TabType>('excel');
   const [selectedSede, setSelectedSede] = useState(sedes[0]?.id || '');
   const [message, setMessage] = useState<{ type: 'success'|'error', text: string } | null>(null);
@@ -121,7 +121,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
         unidad_medida: 'unidades',
         precio_modificable: false
       })).filter(p => p.nombre);
-      const res = await procesarImportacionGenerica(mapped, selectedSede);
+      const res = await procesarImportaciónGenerica(mapped, selectedSede);
       if (res.success) {
         setMessage({ type: 'success', text: `Â¡Se importaron ${res.count} productos exitosamente!` });
         setExcelFile(null);
@@ -493,13 +493,13 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
                  {dbMode === 'aronium' && dbStats && (
                    <div className="animate-in fade-in space-y-4">
                      <div className="grid grid-cols-2 gap-4">
-                       <div className="bg-white border border-neutral-200 p-6 rounded-xl text-center shadow-sm">
-                         <h4 className="text-neutral-500 font-bold text-sm mb-1">CatÃ¡logo a migrar</h4>
-                         <p className="text-lg font-black text-neutral-900">{dbStats.prodCount} Prod | {dbStats.catCount} Cat | {dbStats.custCount} Cli</p>
+                       <div className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 p-6 rounded-xl text-center shadow-sm">
+                         <h4 className="text-neutral-500 dark:text-neutral-400 font-bold text-sm mb-1">CatÃ¡logo a migrar</h4>
+                         <p className="text-lg font-black text-neutral-900 dark:text-white">{dbStats.prodCount} Prod | {dbStats.catCount} Cat | {dbStats.custCount} Cli</p>
                        </div>
-                       <div className="bg-emerald-50 border border-emerald-200 p-6 rounded-xl text-center shadow-sm">
-                         <h4 className="text-emerald-800 font-bold text-sm mb-1">HistÃ³rico de Ventas</h4>
-                         <p className="text-3xl font-black text-emerald-600">{dbStats.ventas} Docs</p>
+                       <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 p-6 rounded-xl text-center shadow-sm">
+                         <h4 className="text-emerald-800 dark:text-emerald-400 font-bold text-sm mb-1">HistÃ³rico de Ventas</h4>
+                         <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400">{dbStats.ventas} Docs</p>
                        </div>
                      </div>
                      {importingDb && (
@@ -523,7 +523,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
                      </div>
 
                      {/* Productos Mapper */}
-                     <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
+                     <div className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden">
                        <div className="bg-neutral-50 px-6 py-4 border-b border-neutral-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                          <h3 className="font-bold">Mapeo de Productos</h3>
                          <select value={univProdTable} onChange={e => { setUnivProdTable(e.target.value); getTableColumns(dbRef.current, e.target.value); }} className="bg-white border rounded px-2 py-1 text-sm w-full sm:w-auto">
@@ -547,7 +547,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
                      </div>
 
                      {/* Clientes Mapper */}
-                     <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
+                     <div className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden">
                        <div className="bg-neutral-50 px-6 py-4 border-b border-neutral-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                          <h3 className="font-bold">Mapeo de Clientes</h3>
                          <select value={univCustTable} onChange={e => { setUnivCustTable(e.target.value); getTableColumns(dbRef.current, e.target.value); }} className="bg-white border rounded px-2 py-1 text-sm w-full sm:w-auto">
