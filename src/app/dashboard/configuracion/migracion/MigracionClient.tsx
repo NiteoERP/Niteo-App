@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { Download, Upload, FileSpreadsheet, Loader2, Database, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react';
@@ -102,11 +102,16 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
       const catRes = db.exec("SELECT Id, Name FROM ProductGroup");
       const payRes = db.exec("SELECT Id, Name FROM PaymentType");
       
+      // Probar extraer clientes (si falla silenciosamente lo atrapamos si la tabla varía en versiones viejas)
+      let custRes: any = [];
+      try { custRes = db.exec("SELECT Id, Name, Email, PhoneNumber FROM Customer"); } catch (e) {}
+      
       const productos = prodRes.length > 0 ? prodRes[0].values.map(v => ({ Id: v[0], Name: v[1], Barcode: v[2], Price: v[3], Cost: v[4] })) : [];
       const categorias = catRes.length > 0 ? catRes[0].values.map(v => ({ Id: v[0], Name: v[1] })) : [];
       const metodos = payRes.length > 0 ? payRes[0].values.map(v => ({ Id: v[0], Name: v[1] })) : [];
+      const clientes = custRes.length > 0 ? custRes[0].values.map((v: any) => ({ Id: v[0], Name: v[1], Email: v[2], Phone: v[3] })) : [];
       
-      setDbEntitiesData({ productos, categorias, metodos });
+      setDbEntitiesData({ productos, categorias, metodos, clientes });
 
       const docsResult = db.exec(`
         SELECT d.Id as docId, d.Date as date, d.Total as total, d.Discount as discount, d.DocumentTypeId as docType, d.Number as number, di.Quantity as quantity, di.Price as price, p.Name as productName
@@ -152,7 +157,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
         }
       }
 
-      setDbStats({ ventas, compras, prodCount: productos.length, catCount: categorias.length });
+      setDbStats({ ventas, compras, prodCount: productos.length, catCount: categorias.length, custCount: clientes.length });
       setDbParsedData(Array.from(facturasMap.values()));
       
     } catch (err: any) {
@@ -183,6 +188,19 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
       if (dbEntitiesData.categorias && dbEntitiesData.categorias.length > 0) {
          for (const c of dbEntitiesData.categorias) {
            await supabase.from('categorias').insert({ empresa_id: empresaId, sede_id: selectedSede, nombre: c.Name, color: '#4F46E5', icono: 'Box' });
+         }
+      }
+
+      // 2.5 Migrar Clientes
+      setImportStatusText('Creando Clientes...');
+      if (dbEntitiesData.clientes && dbEntitiesData.clientes.length > 0) {
+         for (const c of dbEntitiesData.clientes) {
+           await supabase.from('clientes').insert({ 
+             empresa_id: empresaId, 
+             nombre: c.Name,
+             email: c.Email || null,
+             telefono: c.Phone || null
+           });
          }
       }
 
@@ -310,7 +328,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
                    <div className="grid grid-cols-2 gap-4">
                      <div className="bg-white border border-neutral-200 p-6 rounded-xl text-center shadow-sm">
                        <h4 className="text-neutral-500 font-bold text-sm mb-1">Catálogo a migrar</h4>
-                       <p className="text-2xl font-black text-neutral-900">{dbStats.prodCount} Productos / {dbStats.catCount} Categorías</p>
+                       <p className="text-lg font-black text-neutral-900">{dbStats.prodCount} Prod | {dbStats.catCount} Cat | {dbStats.custCount} Clientes</p>
                      </div>
                      <div className="bg-emerald-50 border border-emerald-200 p-6 rounded-xl text-center shadow-sm">
                        <h4 className="text-emerald-800 font-bold text-sm mb-1">Histórico de Ventas</h4>
