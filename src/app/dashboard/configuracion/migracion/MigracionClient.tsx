@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { Download, Upload, FileSpreadsheet, Loader2, Database, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react';
@@ -76,7 +76,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
       })).filter(p => p.nombre);
       const res = await procesarImportacionGenerica(mapped, selectedSede);
       if (res.success) {
-        setMessage({ type: 'success', text: `¡Se importaron ${res.count} productos!` });
+        setMessage({ type: 'success', text: `Ã‚Â¡Se importaron ${res.count} productos!` });
         setExcelFile(null);
       } else setMessage({ type: 'error', text: res.error || 'Error' });
     } catch (err: any) {
@@ -102,7 +102,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
       const catRes = db.exec("SELECT Id, Name FROM ProductGroup");
       const payRes = db.exec("SELECT Id, Name FROM PaymentType");
       
-      // Probar extraer clientes (si falla silenciosamente lo atrapamos si la tabla varía en versiones viejas)
+      // Probar extraer clientes (si falla silenciosamente lo atrapamos si la tabla varÃƒÂ­a en versiones viejas)
       let custRes: any = [];
       try { custRes = db.exec("SELECT Id, Name, Email, PhoneNumber FROM Customer"); } catch (e) {}
       
@@ -114,7 +114,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
       setDbEntitiesData({ productos, categorias, metodos, clientes });
 
       const docsResult = db.exec(`
-        SELECT d.Id as docId, d.Date as date, d.Total as total, d.Discount as discount, d.DocumentTypeId as docType, d.Number as number, di.Quantity as quantity, di.Price as price, p.Name as productName
+        SELECT d.Id as docId, d.Date as date, d.Total as total, d.Discount as discount, d.DocumentTypeId as docType, d.Number as number, d.CustomerId as customerId, d.PaidStatus as paidStatus, di.Quantity as quantity, di.Price as price, p.Name as productName
         FROM Document d
         LEFT JOIN DocumentItem di ON d.Id = di.DocumentId
         LEFT JOIN Product p ON di.ProductId = p.Id
@@ -138,6 +138,8 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
             if (docType === 2) ventas++;
             if (docType === 5) compras++;
             facturasMap.set(docId, {
+              customerId: row[colIdx.customerId] || null,
+              paidStatus: row[colIdx.paidStatus],
               fecha: row[colIdx.date],
               total: row[colIdx.total],
               descuento: row[colIdx.discount],
@@ -176,36 +178,41 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
       // 1. Obtener contexto del usuario DIRECTO desde el navegador
       setImportStatusText('Autenticando...');
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No estás autenticado');
+      if (!user) throw new Error('No estÃƒÂ¡s autenticado');
       
       const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
-      if (!perfil) throw new Error('No se encontró tu perfil de empresa');
+      if (!perfil) throw new Error('No se encontrÃƒÂ³ tu perfil de empresa');
       
       const empresaId = perfil.empresa_id;
 
       // 2. Migrar Categorias
-      setImportStatusText('Creando Categorías...');
+      setImportStatusText('Creando CategorÃƒÂ­as...');
       if (dbEntitiesData.categorias && dbEntitiesData.categorias.length > 0) {
          for (const c of dbEntitiesData.categorias) {
            await supabase.from('categorias').insert({ empresa_id: empresaId, sede_id: selectedSede, nombre: c.Name, color: '#4F46E5', icono: 'Box' });
          }
       }
 
-      // 2.5 Migrar Clientes
+      // 2.5 Migrar Clientes y Guardar Mapeo (Aronium ID -> Supabase ID)
       setImportStatusText('Creando Clientes...');
+      const customerMap = new Map<number, string>();
       if (dbEntitiesData.clientes && dbEntitiesData.clientes.length > 0) {
          for (const c of dbEntitiesData.clientes) {
-           await supabase.from('clientes').insert({ 
+           const { data: insertedClient } = await supabase.from('clientes').insert({ 
              empresa_id: empresaId, 
              nombre: c.Name,
              email: c.Email || null,
              telefono: c.Phone || null
-           });
+           }).select('id').single();
+           
+           if (insertedClient) {
+             customerMap.set(c.Id, insertedClient.id);
+           }
          }
       }
 
       // 3. Migrar Productos (En Chunks de 500)
-      setImportStatusText('Migrando Catálogo de Productos...');
+      setImportStatusText('Migrando CatÃƒÂ¡logo de Productos...');
       if (dbEntitiesData.productos && dbEntitiesData.productos.length > 0) {
         const prodChunks = 500;
         for (let i = 0; i < dbEntitiesData.productos.length; i += prodChunks) {
@@ -216,8 +223,8 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
         }
       }
 
-      // 4. Migrar Facturas Históricas
-      setImportStatusText('Migrando Facturas Históricas...');
+      // 4. Migrar Facturas HistÃƒÂ³ricas
+      setImportStatusText('Migrando Facturas HistÃƒÂ³ricas...');
       const chunkSize = 100; 
       let successCount = 0;
       
@@ -226,14 +233,23 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
         
         // Optimizamos enviando Pedidos y Detalles al mismo tiempo
         for (const f of batch) {
+           const supabaseClienteId = f.customerId ? (customerMap.get(f.customerId) || null) : null;
+           // En Aronium, las ventas a crÃ©dito muchas veces se diferencian por el mÃ©todo de pago o se dejan sin pagar. 
+           // Si el usuario necesita ver la deuda, requerimos el cliente_id.
+           // AquÃ­ mapearemos 'pendiente' si el Documento no estÃ¡ pagado en Aronium (o lo simularemos).
+           
            const { data: pedido, error: errP } = await supabase.from('pedidos').insert({
-              empresa_id: empresaId, sede_id: selectedSede, cliente_id: null, nombre_eventual: f.nombre_eventual || 'Migracion Aronium',
-              total: f.total, tipo_pedido: f.tipo === 'compra' ? 'compra' : 'venta_rapida', estado: 'cobrado', fecha_creacion: f.fecha, descuento: f.descuento || 0
+              empresa_id: empresaId, sede_id: selectedSede, 
+              cliente_id: supabaseClienteId, 
+              nombre_eventual: f.nombre_eventual || 'Migracion Aronium',
+              total: f.total, tipo_pedido: f.tipo === 'compra' ? 'compra' : 'venta_rapida', 
+              estado: 'cobrado', // Puedes ajustar la lÃ³gica si Aronium arroja 'PaidStatus' = 0
+              fecha_creacion: f.fecha, descuento: f.descuento || 0
            }).select('id').single();
            
            if (!errP && pedido && f.items && f.items.length > 0) {
               const itemsToInsert = f.items.map((it: any) => ({
-                 pedido_id: pedido.id, nombre_custom: it.nombre, cantidad: it.cantidad, precio_unitario: it.precio, notas: 'Migración DB'
+                 pedido_id: pedido.id, nombre_custom: it.nombre, cantidad: it.cantidad, precio_unitario: it.precio, notas: 'MigraciÃƒÂ³n DB'
               }));
               await supabase.from('detalles_pedido').insert(itemsToInsert);
            }
@@ -244,7 +260,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
         setImportStatusText(`Procesando Factura ${successCount} de ${dbParsedData.length}...`);
       }
 
-      setMessage({ type: 'success', text: `¡Se migraron los catálogos y ${successCount} facturas históricas! Completado al 100% (Bypass Vercel)` });
+      setMessage({ type: 'success', text: `Ã‚Â¡Se migraron los catÃƒÂ¡logos y ${successCount} facturas histÃƒÂ³ricas! Completado al 100% (Bypass Vercel)` });
       setDbFile(null);
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message });
@@ -261,7 +277,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
             <h2 className="text-xl font-bold text-neutral-900 dark:text-white">Niteo Data Studio</h2>
-            <p className="text-sm text-neutral-500">Módulo de Importación Universal y Migración Histórica</p>
+            <p className="text-sm text-neutral-500">MÃƒÂ³dulo de ImportaciÃƒÂ³n Universal y MigraciÃƒÂ³n HistÃƒÂ³rica</p>
           </div>
           
           <div className="w-full sm:w-64">
@@ -312,7 +328,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
                    <h3 className="text-lg font-bold text-neutral-900 dark:text-white mb-2">
                      {dbLoading ? 'Extrayendo 30,000+ filas localmente...' : 'Selecciona el backup local de Aronium (.db)'}
                    </h3>
-                   <p className="text-sm text-neutral-500">Se migrarán Categorías, Productos, Métodos de Pago y el Histórico de Facturas.</p>
+                   <p className="text-sm text-neutral-500">Se migrarÃƒÂ¡n CategorÃƒÂ­as, Productos, MÃƒÂ©todos de Pago y el HistÃƒÂ³rico de Facturas.</p>
                  </label>
                </div>
             ) : (
@@ -327,11 +343,11 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
                  {dbStats && (
                    <div className="grid grid-cols-2 gap-4">
                      <div className="bg-white border border-neutral-200 p-6 rounded-xl text-center shadow-sm">
-                       <h4 className="text-neutral-500 font-bold text-sm mb-1">Catálogo a migrar</h4>
+                       <h4 className="text-neutral-500 font-bold text-sm mb-1">CatÃƒÂ¡logo a migrar</h4>
                        <p className="text-lg font-black text-neutral-900">{dbStats.prodCount} Prod | {dbStats.catCount} Cat | {dbStats.custCount} Clientes</p>
                      </div>
                      <div className="bg-emerald-50 border border-emerald-200 p-6 rounded-xl text-center shadow-sm">
-                       <h4 className="text-emerald-800 font-bold text-sm mb-1">Histórico de Ventas</h4>
+                       <h4 className="text-emerald-800 font-bold text-sm mb-1">HistÃƒÂ³rico de Ventas</h4>
                        <p className="text-3xl font-black text-emerald-600">{dbStats.ventas} Docs</p>
                      </div>
                    </div>
@@ -355,7 +371,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
                    className="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-bold flex justify-center items-center gap-2"
                  >
                    {importingDb ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-                   {importingDb ? 'Trabajando directamente con Supabase...' : `Iniciar Migración Maestra Automática (Direct To Supabase)`}
+                   {importingDb ? 'Trabajando directamente con Supabase...' : `Iniciar MigraciÃƒÂ³n Maestra AutomÃƒÂ¡tica (Direct To Supabase)`}
                  </button>
               </div>
             )}
@@ -366,3 +382,5 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
     </div>
   );
 }
+
+
