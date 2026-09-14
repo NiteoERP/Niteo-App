@@ -260,6 +260,22 @@ export default function MigraciónClient({ sedes }: { sedes: any[] }) {
       const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
       const empresaId = perfil?.empresa_id;
 
+      // SINCRONIZACION DELTA
+      setImportStatusText('Descargando índice para evitar duplicados (Sincronización Delta)...');
+      
+      const { data: existCat } = await supabase.from('categorias').select('nombre').eq('empresa_id', empresaId);
+      const setCat = new Set(existCat?.map((c: any) => c.nombre.toLowerCase()) || []);
+      
+      const { data: existCli } = await supabase.from('clientes').select('nombre').eq('empresa_id', empresaId);
+      const setCli = new Set(existCli?.map((c: any) => c.nombre.toLowerCase()) || []);
+      
+      const { data: existProd } = await supabase.from('productos').select('nombre').eq('empresa_id', empresaId);
+      const setProd = new Set(existProd?.map((p: any) => p.nombre.toLowerCase()) || []);
+      
+      const { data: existPed } = await supabase.from('pedidos').select('nombre_eventual').eq('sede_id', selectedSede).not('nombre_eventual', 'is', null);
+      const setPed = new Set(existPed?.map((p: any) => p.nombre_eventual) || []);
+
+
       setImportStatusText('Creando CategorÃ­as...');
       if (dbEntitiesData.categorias?.length > 0) {
          for (const c of dbEntitiesData.categorias) {
@@ -282,7 +298,7 @@ export default function MigraciónClient({ sedes }: { sedes: any[] }) {
       if (dbEntitiesData.productos?.length > 0) {
         const prodChunks = 500;
         for (let i = 0; i < dbEntitiesData.productos.length; i += prodChunks) {
-          const batch = dbEntitiesData.productos.filter(p => p.Name && !setProd.has(p.Name.toLowerCase())).slice(i, i + prodChunks).map((p: any) => ({
+          const batch = dbEntitiesData.productos.filter((p: any) => p.Name && !setProd.has(p.Name.toLowerCase())).slice(i, i + prodChunks).map((p: any) => ({
             empresa_id: empresaId, sede_id: selectedSede, nombre: p.Name, codigo_barras: p.Barcode, precio_venta: p.Price, costo: p.Cost, estado_activo: true, canal_venta: 'AMBOS'
           }));
           await supabase.from('productos').insert(batch);
@@ -292,7 +308,7 @@ export default function MigraciónClient({ sedes }: { sedes: any[] }) {
       setImportStatusText('Migrando Facturas Históricas...');
       const chunkSize = 100; let successCount = 0;
       for (let i = 0; i < dbParsedData.length; i += chunkSize) {
-        const batch = dbParsedData.filter(f => !setPed.has(f.nombre_eventual)).slice(i, i + chunkSize);
+        const batch = dbParsedData.filter((f: any) => !setPed.has(f.nombre_eventual)).slice(i, i + chunkSize);
         if (batch.length === 0) continue;
         for (const f of batch) {
            const supabaseClienteId = f.customerId ? (customerMap.get(f.customerId) || null) : null;
