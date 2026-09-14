@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { Download, Upload, FileSpreadsheet, Loader2, Database, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react';
@@ -117,14 +117,24 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
       const buffer = await file.arrayBuffer();
       const db = new SQL.Database(new Uint8Array(buffer));
 
-      const prodRes = db.exec("SELECT Id, Name, Barcode, Price, Cost FROM Product");
+      let prodRes: any = [];
+      try {
+        prodRes = db.exec("SELECT Id, Name, Code as Barcode, Price, Cost FROM Product");
+      } catch (err) {
+        try {
+          prodRes = db.exec("SELECT Id, Name, Barcode, Price, Cost FROM Product");
+        } catch (err2) {
+          prodRes = db.exec("SELECT Id, Name, '' as Barcode, Price, Cost FROM Product");
+        }
+      }
+      
       const catRes = db.exec("SELECT Id, Name FROM ProductGroup");
       const payRes = db.exec("SELECT Id, Name FROM PaymentType");
       
       let custRes: any = [];
       try { custRes = db.exec("SELECT Id, Name, Email, PhoneNumber FROM Customer"); } catch (e) {}
       
-      const productos = prodRes.length > 0 ? prodRes[0].values.map(v => ({ Id: v[0], Name: v[1], Barcode: v[2], Price: v[3], Cost: v[4] })) : [];
+      const productos = prodRes.length > 0 ? prodRes[0].values.map((v: any) => ({ Id: v[0], Name: v[1], Barcode: v[2], Price: v[3], Cost: v[4] })) : [];
       const categorias = catRes.length > 0 ? catRes[0].values.map(v => ({ Id: v[0], Name: v[1] })) : [];
       const metodos = payRes.length > 0 ? payRes[0].values.map(v => ({ Id: v[0], Name: v[1] })) : [];
       const clientes = custRes.length > 0 ? custRes[0].values.map((v: any) => ({ Id: v[0], Name: v[1], Email: v[2], Phone: v[3] })) : [];
