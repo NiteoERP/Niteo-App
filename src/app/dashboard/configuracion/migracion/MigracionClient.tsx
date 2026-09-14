@@ -123,51 +123,62 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
       const buffer = await file.arrayBuffer();
       const db = new SQL.Database(new Uint8Array(buffer));
 
-      // Query Document (Ventas=2, Compras=5) - Simplifying for example
-      // In Aronium, Document table joins with DocumentItem
-      const docsResult = db.exec("SELECT Id, Date, Total, Discount, DocumentTypeId, Number FROM Document WHERE DocumentTypeId IN (2, 5)");
+      // OPTIMIZACIÓN: Hacer una sola consulta con JOIN para evitar el problema de N+1 que congela el navegador (con 15000+ facturas)
+      const docsResult = db.exec(`
+        SELECT 
+          d.Id as docId, d.Date as date, d.Total as total, d.Discount as discount, d.DocumentTypeId as docType, d.Number as number,
+          di.Quantity as quantity, di.Price as price, 
+          p.Name as productName
+        FROM Document d
+        LEFT JOIN DocumentItem di ON d.Id = di.DocumentId
+        LEFT JOIN Product p ON di.ProductId = p.Id
+        WHERE d.DocumentTypeId IN (2, 5)
+        ORDER BY d.Id
+      `);
       
-      let facturas: any[] = [];
+      let facturasMap = new Map<number, any>();
       let ventas = 0;
       let compras = 0;
 
       if (docsResult.length > 0) {
+        const columns = docsResult[0].columns;
         const rows = docsResult[0].values;
-        for (const row of rows) {
-          const [docId, date, total, discount, docType, number] = row as any[];
-          
-          if (docType === 2) ventas++;
-          if (docType === 5) compras++;
+        
+        // Map column names to indices for safety
+        const colIdx = columns.reduce((acc, col, idx) => ({ ...acc, [col]: idx }), {} as Record<string, number>);
 
-          // Query Items for this document
-          const itemsResult = db.exec(`SELECT ProductId, Quantity, Price, ExpectedQuantity FROM DocumentItem WHERE DocumentId = ${docId}`);
-          let items = [];
-          if (itemsResult.length > 0) {
-            for (const itemRow of itemsResult[0].values) {
-               // We need Product Name. Ideally JOIN with Product table.
-               const prodRes = db.exec(`SELECT Name FROM Product WHERE Id = ${itemRow[0]}`);
-               const pName = (prodRes.length > 0 && prodRes[0].values.length > 0) ? prodRes[0].values[0][0] : 'Producto Desconocido';
-               items.push({
-                 nombre: pName,
-                 cantidad: itemRow[1],
-                 precio: itemRow[2]
-               });
-            }
+        for (const row of rows) {
+          const docId = row[colIdx.docId] as number;
+          const docType = row[colIdx.docType] as number;
+          
+          if (!facturasMap.has(docId)) {
+            if (docType === 2) ventas++;
+            if (docType === 5) compras++;
+
+            facturasMap.set(docId, {
+              fecha: row[colIdx.date],
+              total: row[colIdx.total],
+              descuento: row[colIdx.discount],
+              tipo: docType === 2 ? 'venta' : 'compra',
+              nombre_eventual: 'Ref Aronium: ' + row[colIdx.number],
+              items: []
+            });
           }
 
-          facturas.push({
-            fecha: date, // Needs formatting usually
-            total: total,
-            descuento: discount,
-            tipo: docType === 2 ? 'venta' : 'compra',
-            nombre_eventual: 'Ref Aronium: ' + number,
-            items: items
-          });
+          // Si hay items (LEFT JOIN puede traer NULL si la factura está vacía, pero en Aronium es raro)
+          const productName = row[colIdx.productName];
+          if (productName !== null && productName !== undefined) {
+             facturasMap.get(docId).items.push({
+               nombre: productName,
+               cantidad: row[colIdx.quantity] || 0,
+               precio: row[colIdx.price] || 0
+             });
+          }
         }
       }
 
       setDbStats({ ventas, compras });
-      setDbParsedData(facturas);
+      setDbParsedData(Array.from(facturasMap.values()));
       
     } catch (err: any) {
       setMessage({ type: 'error', text: 'Error procesando .db: ' + err.message });
