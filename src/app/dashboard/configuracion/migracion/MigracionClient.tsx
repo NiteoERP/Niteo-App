@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { Download, Upload, FileSpreadsheet, Loader2, Database, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react';
@@ -177,7 +177,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
         const batch = dbParsedData.slice(i, i + chunkSize);
         const res = await procesarHistoricoAronium(batch, selectedSede);
         if (res.success) {
-           successCount += res.count;
+           successCount += res.count || 0;
            setImportProgress(Math.round(((i + chunkSize) / dbParsedData.length) * 100));
         } else {
            throw new Error(res.error);
