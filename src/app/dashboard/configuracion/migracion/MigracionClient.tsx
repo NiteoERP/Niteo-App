@@ -244,6 +244,16 @@ export default function MigraciónClient({ sedes }: { sedes: any[] }) {
   const executeDbImportAronium = async () => {
     setImportingDb(true); setMessage(null); setImportProgress(0);
     try {
+            setImportStatusText('Analizando Sede...');
+      const { count: prodCount } = await supabase.from('productos').select('*', { count: 'exact', head: true }).eq('sede_id', selectedSede);
+      if (prodCount && prodCount > 10) {
+         const confirmed = window.confirm('¡Atención Master!\n\nLa sede seleccionada ya contiene ' + prodCount + ' productos en Niteo Cloud.\n\nSi continúas, esta base de datos se inyectará sobre la sede y los datos se fusionarán. Podrías generar duplicados si es el mismo archivo.\n\n¿Estás absolutamente seguro de continuar?');
+         if (!confirmed) {
+            setImportingDb(false);
+            setImportStatusText('');
+            return;
+         }
+      }
       setImportStatusText('Autenticando...');
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No estÃ¡s autenticado');
