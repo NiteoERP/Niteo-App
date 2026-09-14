@@ -263,6 +263,7 @@ export default function MigraciónClient({ sedes }: { sedes: any[] }) {
       setImportStatusText('Creando CategorÃ­as...');
       if (dbEntitiesData.categorias?.length > 0) {
          for (const c of dbEntitiesData.categorias) {
+           if (c.Name && setCat.has(c.Name.toLowerCase())) continue;
            await supabase.from('categorias').insert({ empresa_id: empresaId, sede_id: selectedSede, nombre: c.Name, color: '#4F46E5', icono: 'Box' });
          }
       }
@@ -271,6 +272,7 @@ export default function MigraciónClient({ sedes }: { sedes: any[] }) {
       const customerMap = new Map<number, string>();
       if (dbEntitiesData.clientes?.length > 0) {
          for (const c of dbEntitiesData.clientes) {
+           if (c.Name && setCli.has(c.Name.toLowerCase())) continue;
            const { data: insertedClient } = await supabase.from('clientes').insert({ empresa_id: empresaId, nombre: c.Name, email: c.Email, telefono: c.Phone }).select('id').single();
            if (insertedClient) customerMap.set(c.Id, insertedClient.id);
          }
@@ -280,7 +282,7 @@ export default function MigraciónClient({ sedes }: { sedes: any[] }) {
       if (dbEntitiesData.productos?.length > 0) {
         const prodChunks = 500;
         for (let i = 0; i < dbEntitiesData.productos.length; i += prodChunks) {
-          const batch = dbEntitiesData.productos.slice(i, i + prodChunks).map((p: any) => ({
+          const batch = dbEntitiesData.productos.filter(p => p.Name && !setProd.has(p.Name.toLowerCase())).slice(i, i + prodChunks).map((p: any) => ({
             empresa_id: empresaId, sede_id: selectedSede, nombre: p.Name, codigo_barras: p.Barcode, precio_venta: p.Price, costo: p.Cost, estado_activo: true, canal_venta: 'AMBOS'
           }));
           await supabase.from('productos').insert(batch);
@@ -290,7 +292,8 @@ export default function MigraciónClient({ sedes }: { sedes: any[] }) {
       setImportStatusText('Migrando Facturas Históricas...');
       const chunkSize = 100; let successCount = 0;
       for (let i = 0; i < dbParsedData.length; i += chunkSize) {
-        const batch = dbParsedData.slice(i, i + chunkSize);
+        const batch = dbParsedData.filter(f => !setPed.has(f.nombre_eventual)).slice(i, i + chunkSize);
+        if (batch.length === 0) continue;
         for (const f of batch) {
            const supabaseClienteId = f.customerId ? (customerMap.get(f.customerId) || null) : null;
            const { data: pedido, error: errP } = await supabase.from('pedidos').insert({
