@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 import React, { useState } from 'react';
-import { Download, Upload, FileSpreadsheet, Loader2, Zap, ShieldCheck } from 'lucide-react';
+import { Download, Upload, FileSpreadsheet, Loader2, Zap, ShieldCheck, Database } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { createClient } from '@/utils/supabase/client';
 import { procesarImportacionUniversal } from '@/actions/migracion-actions';
@@ -117,7 +117,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
 
         <div className="flex border-b border-neutral-200 dark:border-neutral-800 mb-6">
           <button onClick={() => { setActiveTab('db'); setMessage(null); }} className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors ${activeTab === 'db' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-neutral-500'}`}>
-            <Zap size={16} className="inline mr-2" /> Niteo Importer (.db)
+            <Database size={16} className="inline mr-2" /> Base de Datos (.db)
           </button>
           <button onClick={() => { setActiveTab('excel'); setMessage(null); }} className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors ${activeTab === 'excel' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-neutral-500'}`}>
             <FileSpreadsheet size={16} className="inline mr-2" /> Productos e Inventario (.xlsx)
@@ -127,29 +127,34 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
         {activeTab === 'db' && (
           <div className="text-center py-8 animate-in fade-in">
             <div className="mx-auto w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mb-4">
-              <Zap className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+              <Database className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
             </div>
-            <h3 className="text-2xl font-bold text-neutral-900 dark:text-white mb-2">Niteo Importer (Nativo)</h3>
-            <p className="text-neutral-500 dark:text-neutral-400 max-w-2xl mx-auto mb-8">
-              Hemos evolucionado nuestro motor de migración de bases de datos. Para procesar decenas de miles de facturas y productos instantáneamente, descarga la herramienta nativa de escritorio.
+            <h3 className="text-2xl font-bold text-neutral-900 dark:text-white mb-2">Migrar desde Base de Datos (.db)</h3>
+            <p className="text-neutral-500 dark:text-neutral-400 max-w-2xl mx-auto mb-8 text-sm">
+              Migra tu información de manera rápida desde tu antigua base de datos .db directamente a Niteo.
             </p>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto mb-8">
-               <div className="p-4 border border-neutral-200 dark:border-neutral-800 rounded-xl bg-neutral-50 dark:bg-neutral-950 flex flex-col items-center">
-                  <ShieldCheck className="w-6 h-6 text-green-500 mb-2" />
-                  <h3 className="font-semibold dark:text-white">Conexión Segura</h3>
-                  <p className="text-xs text-neutral-500 text-center">Tus credenciales no se guardan. Usa tokens temporales encriptados.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto mb-8 text-left">
+               <div className="p-4 border border-neutral-200 dark:border-neutral-800 rounded-xl bg-neutral-50 dark:bg-neutral-950">
+                  <div className="w-7 h-7 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-lg flex items-center justify-center font-bold text-xs mb-2">1</div>
+                  <h4 className="font-semibold text-sm dark:text-white mb-1">Descarga la app</h4>
+                  <p className="text-xs text-neutral-500">Descarga Niteo Importer (.exe) en tu computadora.</p>
                </div>
-               <div className="p-4 border border-neutral-200 dark:border-neutral-800 rounded-xl bg-neutral-50 dark:bg-neutral-950 flex flex-col items-center">
-                  <Zap className="w-6 h-6 text-amber-500 mb-2" />
-                  <h3 className="font-semibold dark:text-white">Hyper-Velocidad</h3>
-                  <p className="text-xs text-neutral-500 text-center">Sube 30,000 facturas en segundos gracias al multiprocesamiento nativo de Go.</p>
+               <div className="p-4 border border-neutral-200 dark:border-neutral-800 rounded-xl bg-neutral-50 dark:bg-neutral-950">
+                  <div className="w-7 h-7 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-lg flex items-center justify-center font-bold text-xs mb-2">2</div>
+                  <h4 className="font-semibold text-sm dark:text-white mb-1">Inicia sesión</h4>
+                  <p className="text-xs text-neutral-500">Ingresa con tu correo y selecciona la sede destino.</p>
+               </div>
+               <div className="p-4 border border-neutral-200 dark:border-neutral-800 rounded-xl bg-neutral-50 dark:bg-neutral-950">
+                  <div className="w-7 h-7 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-lg flex items-center justify-center font-bold text-xs mb-2">3</div>
+                  <h4 className="font-semibold text-sm dark:text-white mb-1">Carga tu archivo .db</h4>
+                  <p className="text-xs text-neutral-500">Selecciona el archivo para importar tus datos en segundos.</p>
                </div>
             </div>
 
             <button 
               onClick={() => window.location.href = "/downloads/NiteoImporter.exe"}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all shadow-sm"
             >
               <Download className="w-5 h-5" />
               Descargar Niteo Importer (.exe)

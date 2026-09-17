@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import MigracionClient from './MigracionClient';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
@@ -27,7 +27,7 @@ export default async function MigracionPage() {
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-white">Migración de Datos</h2>
           <p className="text-sm text-neutral-400 mt-1">
-            Importa o exporta tu catálogo de productos utilizando archivos Excel (.xlsx).
+            Importa tus productos, clientes y facturación desde archivos Excel (.xlsx) o tu base de datos (.db).
           </p>
         </div>
       </div>
