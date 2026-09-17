@@ -148,16 +148,16 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
   const getSingleLinkClass = (path: string, exact = false) => {
     const isActive = exact ? pathname === path : pathname.startsWith(path);
     return isActive
-      ? "flex items-center gap-3 px-3 py-2 rounded-xl bg-indigo-500/10 text-indigo-400 font-medium transition-all border border-indigo-500/20 shadow-sm shadow-indigo-500/5"
-      : "flex items-center gap-3 px-3 py-2 rounded-xl text-neutral-400 hover:bg-white/5 hover:text-white transition-all";
+      ? "flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 font-semibold transition-all border border-indigo-500/20 shadow-sm shadow-indigo-500/5 text-sm"
+      : "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-neutral-400 hover:bg-white/5 hover:text-white transition-all text-sm font-medium";
   };
 
   return (
-    <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto custom-scrollbar select-none">
+    <nav className="flex-1 px-3.5 py-4 space-y-1.5 overflow-y-auto custom-scrollbar select-none">
       {/* 1. Inicio */}
       <Link href="/dashboard" className={getSingleLinkClass('/dashboard', true)}>
-        <LayoutDashboard size={18} />
-        <span className="text-sm">Inicio</span>
+        <LayoutDashboard size={20} />
+        <span>Inicio</span>
       </Link>
 
       <div className="pt-2 pb-1">
@@ -171,25 +171,25 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
         const isGroupActive = group.items.some(item => pathname.startsWith(item.path));
 
         return (
-          <div key={group.id} className="space-y-0.5">
+          <div key={group.id} className="space-y-1">
             {/* Cabecera del Grupo (Acordeón) */}
             <button
               type="button"
               onClick={() => toggleGroup(group.id)}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm transition-all ${
                 isGroupActive && !isOpen 
-                  ? "bg-indigo-500/10 text-indigo-300 font-semibold border border-indigo-500/20" 
+                  ? "bg-indigo-500/10 text-indigo-300 font-semibold border border-indigo-500/20 shadow-sm" 
                   : isOpen 
-                    ? "text-neutral-200 bg-white/[0.03]" 
-                    : "text-neutral-400 hover:bg-white/5 hover:text-white"
+                    ? "text-white bg-white/[0.04] font-semibold" 
+                    : "text-neutral-400 hover:bg-white/5 hover:text-white font-medium"
               }`}
             >
-              <div className="flex items-center gap-2.5">
-                <GroupIcon size={18} className={isGroupActive ? "text-indigo-400" : "text-neutral-400"} />
+              <div className="flex items-center gap-3">
+                <GroupIcon size={20} className={isGroupActive ? "text-indigo-400" : "text-neutral-400"} />
                 <span>{group.label}</span>
               </div>
               <ChevronDown 
-                size={15} 
+                size={16} 
                 className={`transition-transform duration-200 text-neutral-500 ${
                   isOpen ? "rotate-180 text-indigo-400" : ""
                 }`} 
@@ -198,7 +198,7 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
 
             {/* Sub-elementos desplegables */}
             {isOpen && (
-              <div className="ml-4 pl-3.5 border-l border-neutral-800/80 space-y-1 pt-1 pb-1 animate-in slide-in-from-top-1 duration-150">
+              <div className="ml-5 pl-3 border-l border-neutral-800 space-y-1 pt-1 pb-1 animate-in slide-in-from-top-1 duration-150">
                 {group.items.map(item => {
                   const ItemIcon = item.icon;
                   const isActive = item.exact ? pathname === item.path : pathname.startsWith(item.path);
@@ -207,13 +207,13 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
                     <Link
                       key={item.path}
                       href={item.path}
-                      className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      className={`flex items-center gap-3 px-3 py-2 rounded-xl text-[13.5px] transition-all ${
                         isActive 
-                          ? "bg-indigo-500/15 text-indigo-400 font-semibold shadow-sm" 
-                          : "text-neutral-400 hover:text-neutral-200 hover:bg-white/[0.04]"
+                          ? "bg-indigo-500/15 text-indigo-300 font-semibold shadow-sm border border-indigo-500/20" 
+                          : "text-neutral-400 hover:text-white hover:bg-white/[0.04] font-medium"
                       }`}
                     >
-                      <ItemIcon size={15} className={isActive ? "text-indigo-400" : "text-neutral-500"} />
+                      <ItemIcon size={17} className={isActive ? "text-indigo-400" : "text-neutral-500"} />
                       <span>{item.label}</span>
                     </Link>
                   );
@@ -231,8 +231,8 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
       {/* 3. Informes (Independiente) */}
       {hasPerm('reportes') && (
         <Link href="/dashboard/informes" className={getSingleLinkClass('/dashboard/informes')}>
-          <FileText size={18} />
-          <span className="text-sm font-medium">Informes</span>
+          <FileText size={20} />
+          <span>Informes</span>
         </Link>
       )}
     </nav>
@@ -246,8 +246,8 @@ export function SidebarBottom({ permisos, userRole }: NavProps) {
   const getLinkClass = (path: string, exact = false) => {
     const isActive = exact ? pathname === path : pathname.startsWith(path);
     return isActive
-      ? "flex items-center gap-3 px-3 py-2 rounded-xl bg-indigo-500/10 text-indigo-400 font-medium transition-colors border border-indigo-500/20"
-      : "flex items-center gap-3 px-3 py-2 rounded-xl text-neutral-400 hover:bg-white/5 hover:text-white transition-colors";
+      ? "flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 font-semibold transition-colors border border-indigo-500/20 text-sm"
+      : "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-neutral-400 hover:bg-white/5 hover:text-white transition-colors text-sm font-medium";
   };
 
   return (

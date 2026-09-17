@@ -67,7 +67,7 @@ export default async function DashboardLayout({
     <div className="flex h-[100dvh] bg-neutral-950 text-white font-sans overflow-hidden selection:bg-indigo-500/30">
       
       {/* Sidebar Desktop */}
-      <aside className="w-[260px] bg-black border-r border-neutral-800 flex-col hidden md:flex z-20 shadow-xl shadow-black/50">
+      <aside className="w-[270px] bg-black border-r border-neutral-800 flex-col hidden md:flex z-20 shadow-xl shadow-black/50">
         <div className="h-16 flex items-center px-6 border-b border-neutral-800 shrink-0">
           <Link href="/dashboard" className="flex items-center gap-3 group">
             <img src="/logo.png" alt="Niteo Logo" className="w-8 h-8 object-contain drop-shadow-[0_0_8px_rgba(99,102,241,0.5)] group-hover:drop-shadow-[0_0_12px_rgba(99,102,241,0.8)] transition-all" />
