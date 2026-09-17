@@ -60,12 +60,19 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
     return false;
   };
 
+  const isMultiSedePlan = 
+    planSuscripcion?.toUpperCase() === 'LIFETIME' ||
+    planSuscripcion?.toUpperCase() === 'PRO' ||
+    planSuscripcion?.toUpperCase() === 'ENTERPRISE';
+
   const isDespachosAllowed = 
-    userRole === 'MASTER' || 
-    userRole === 'SUPERADMIN' ||
-    hasPerm('despachos') ||
-    ((planSuscripcion?.toUpperCase() === 'PRO' || planSuscripcion?.toUpperCase() === 'ENTERPRISE') &&
-    (hasPerm('inventario') || hasPerm('pos')));
+    isMultiSedePlan && (
+      userRole === 'MASTER' || 
+      userRole === 'SUPERADMIN' ||
+      hasPerm('despachos') ||
+      hasPerm('inventario') ||
+      hasPerm('pos')
+    );
 
   // Definición de grupos desplegables
   const groups: NavGroup[] = [
@@ -296,12 +303,19 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
       : 'flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-neutral-300 active:bg-neutral-800 font-medium text-sm transition-colors';
   };
 
+  const isMultiSedePlan = 
+    planSuscripcion?.toUpperCase() === 'LIFETIME' ||
+    planSuscripcion?.toUpperCase() === 'PRO' ||
+    planSuscripcion?.toUpperCase() === 'ENTERPRISE';
+
   const isDespachosAllowed = 
-    userRole === 'MASTER' || 
-    userRole === 'SUPERADMIN' ||
-    hasPerm('despachos') ||
-    ((planSuscripcion?.toUpperCase() === 'PRO' || planSuscripcion?.toUpperCase() === 'ENTERPRISE') &&
-    (hasPerm('inventario') || hasPerm('pos')));
+    isMultiSedePlan && (
+      userRole === 'MASTER' || 
+      userRole === 'SUPERADMIN' ||
+      hasPerm('despachos') ||
+      hasPerm('inventario') ||
+      hasPerm('pos')
+    );
 
   return (
     <>
