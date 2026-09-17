@@ -61,8 +61,11 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
   };
 
   const isDespachosAllowed = 
-    (planSuscripcion?.toUpperCase() === 'PRO' || planSuscripcion?.toUpperCase() === 'ENTERPRISE') &&
-    (hasPerm('inventario') || hasPerm('pos'));
+    userRole === 'MASTER' || 
+    userRole === 'SUPERADMIN' ||
+    hasPerm('despachos') ||
+    ((planSuscripcion?.toUpperCase() === 'PRO' || planSuscripcion?.toUpperCase() === 'ENTERPRISE') &&
+    (hasPerm('inventario') || hasPerm('pos')));
 
   // Definición de grupos desplegables
   const groups: NavGroup[] = [
@@ -148,15 +151,15 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
   const getSingleLinkClass = (path: string, exact = false) => {
     const isActive = exact ? pathname === path : pathname.startsWith(path);
     return isActive
-      ? "flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 font-semibold transition-all border border-indigo-500/20 shadow-sm shadow-indigo-500/5 text-sm"
-      : "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-neutral-400 hover:bg-white/5 hover:text-white transition-all text-sm font-medium";
+      ? "flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 font-semibold transition-all border border-indigo-500/20 shadow-sm shadow-indigo-500/5 text-[15px]"
+      : "flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-neutral-400 hover:bg-white/5 hover:text-white transition-all text-[15px] font-medium";
   };
 
   return (
     <nav className="flex-1 px-3.5 py-4 space-y-1.5 overflow-y-auto custom-scrollbar select-none">
       {/* 1. Inicio */}
       <Link href="/dashboard" className={getSingleLinkClass('/dashboard', true)}>
-        <LayoutDashboard size={20} />
+        <LayoutDashboard size={21} />
         <span>Inicio</span>
       </Link>
 
@@ -176,20 +179,20 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
             <button
               type="button"
               onClick={() => toggleGroup(group.id)}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm transition-all ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[15px] transition-all ${
                 isGroupActive && !isOpen 
                   ? "bg-indigo-500/10 text-indigo-300 font-semibold border border-indigo-500/20 shadow-sm" 
                   : isOpen 
                     ? "text-white bg-white/[0.04] font-semibold" 
-                    : "text-neutral-400 hover:bg-white/5 hover:text-white font-medium"
+                    : "text-neutral-300 hover:bg-white/5 hover:text-white font-medium"
               }`}
             >
-              <div className="flex items-center gap-3">
-                <GroupIcon size={20} className={isGroupActive ? "text-indigo-400" : "text-neutral-400"} />
+              <div className="flex items-center gap-3.5">
+                <GroupIcon size={21} className={isGroupActive ? "text-indigo-400" : "text-neutral-400"} />
                 <span>{group.label}</span>
               </div>
               <ChevronDown 
-                size={16} 
+                size={17} 
                 className={`transition-transform duration-200 text-neutral-500 ${
                   isOpen ? "rotate-180 text-indigo-400" : ""
                 }`} 
@@ -207,13 +210,13 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
                     <Link
                       key={item.path}
                       href={item.path}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-xl text-[13.5px] transition-all ${
+                      className={`flex items-center gap-3 px-3.5 py-2 rounded-xl text-[14px] transition-all ${
                         isActive 
                           ? "bg-indigo-500/15 text-indigo-300 font-semibold shadow-sm border border-indigo-500/20" 
                           : "text-neutral-400 hover:text-white hover:bg-white/[0.04] font-medium"
                       }`}
                     >
-                      <ItemIcon size={17} className={isActive ? "text-indigo-400" : "text-neutral-500"} />
+                      <ItemIcon size={18} className={isActive ? "text-indigo-400" : "text-neutral-500"} />
                       <span>{item.label}</span>
                     </Link>
                   );
@@ -231,7 +234,7 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
       {/* 3. Informes (Independiente) */}
       {hasPerm('reportes') && (
         <Link href="/dashboard/informes" className={getSingleLinkClass('/dashboard/informes')}>
-          <FileText size={20} />
+          <FileText size={21} />
           <span>Informes</span>
         </Link>
       )}
@@ -246,8 +249,8 @@ export function SidebarBottom({ permisos, userRole }: NavProps) {
   const getLinkClass = (path: string, exact = false) => {
     const isActive = exact ? pathname === path : pathname.startsWith(path);
     return isActive
-      ? "flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 font-semibold transition-colors border border-indigo-500/20 text-sm"
-      : "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-neutral-400 hover:bg-white/5 hover:text-white transition-colors text-sm font-medium";
+      ? "flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 font-semibold transition-colors border border-indigo-500/20 text-[15px]"
+      : "flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-neutral-400 hover:bg-white/5 hover:text-white transition-colors text-[15px] font-medium";
   };
 
   return (
@@ -294,8 +297,11 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
   };
 
   const isDespachosAllowed = 
-    (planSuscripcion?.toUpperCase() === 'PRO' || planSuscripcion?.toUpperCase() === 'ENTERPRISE') &&
-    (hasPerm('inventario') || hasPerm('pos'));
+    userRole === 'MASTER' || 
+    userRole === 'SUPERADMIN' ||
+    hasPerm('despachos') ||
+    ((planSuscripcion?.toUpperCase() === 'PRO' || planSuscripcion?.toUpperCase() === 'ENTERPRISE') &&
+    (hasPerm('inventario') || hasPerm('pos')));
 
   return (
     <>
