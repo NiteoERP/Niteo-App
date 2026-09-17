@@ -58,7 +58,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
     daysInMonth.forEach(day => {
       const key = format(day, 'yyyy-MM-dd');
       const dayVentas = allMonthVentas.filter(v => {
-        const ventaDate = format(parseISO(v.fecha_venta), 'yyyy-MM-dd');
+        const ventaDate = v.fecha_venta ? v.fecha_venta.slice(0, 10) : '';
         return ventaDate === key;
       });
       if (dayVentas.length === 0) {
@@ -79,8 +79,8 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
   const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + ' USD';
   const formatDateTime = (iso: string) => {
     const d = new Date(iso);
-    const dateOpts: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short' };
-    const timeOpts: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' };
+    const dateOpts: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short', timeZone: 'UTC' };
+    const timeOpts: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' };
     return `${d.toLocaleDateString('es-ES', dateOpts)} - ${d.toLocaleTimeString('en-US', timeOpts)}`;
   };
   

@@ -97,8 +97,8 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
 
   const formatDateTime = (isoString: string) => {
     const d = new Date(isoString);
-    const dateOpts: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short' };
-    const timeOpts: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' };
+    const dateOpts: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short', timeZone: 'UTC' };
+    const timeOpts: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' };
     return `${d.toLocaleDateString('es-ES', dateOpts)} - ${d.toLocaleTimeString('en-US', timeOpts)}`;
   };
 
