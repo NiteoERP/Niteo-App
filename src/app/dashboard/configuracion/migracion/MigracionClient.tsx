@@ -28,7 +28,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
         </div>
 
         <button 
-          onClick={() => alert("La descarga de Niteo Importer .exe comenzará pronto.")}
+          onClick={() => window.location.href = "/downloads/NiteoImporter.exe"}
           className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all"
         >
           <Download className="w-5 h-5" />
@@ -38,3 +38,4 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
     </div>
   );
 }
+
