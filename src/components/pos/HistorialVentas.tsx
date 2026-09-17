@@ -198,6 +198,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                     key={key}
                     onClick={() => {
                       setFechaFiltro(isSelected ? '' : key);
+                      setPage(1);
                       setIsCalendarOpen(false);
                     }}
                     className={`relative text-center text-xs font-medium py-1.5 rounded-lg transition-all ${bgClass} ${isSelected ? 'ring-2 ring-indigo-500 ring-offset-1 ring-offset-neutral-900' : ''} ${isToday ? 'font-bold' : ''}`}
@@ -214,6 +215,22 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
               <span className="flex items-center gap-1 text-[10px] text-amber-400"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" /> Parcial</span>
               <span className="flex items-center gap-1 text-[10px] text-neutral-500"><span className="w-1.5 h-1.5 rounded-full bg-neutral-700 inline-block" /> Vacío</span>
             </div>
+
+            {fechaFiltro && (
+              <div className="mt-3 pt-2 border-t border-neutral-800/60 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFechaFiltro('');
+                    setPage(1);
+                    setIsCalendarOpen(false);
+                  }}
+                  className="text-xs text-rose-400 hover:text-rose-300 font-medium transition-colors"
+                >
+                  ✕ Quitar filtro de fecha (Ver todas)
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
