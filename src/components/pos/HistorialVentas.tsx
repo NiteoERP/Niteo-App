@@ -27,8 +27,8 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
 
   const cargarVentas = async () => {
     setLoading(true);
-    const data = await getHistorialVentasCompleto(sedeId, fechaFiltro || undefined, page, 50);
-    setVentas(data);
+    const data = await getHistorialVentasCompleto(sedeId, fechaFiltro || undefined, page, 100);
+    setVentas(prev => page === 1 ? data : [...prev, ...data]);
     setLoading(false);
   };
 
@@ -39,7 +39,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
     const supabase = createClient();
     const channel = supabase.channel('realtime_ventas_historial')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'ventas_facturas', filter: `sede_id=eq.${sedeId}` }, () => {
-        getHistorialVentasCompleto(sedeId, fechaFiltro || undefined, page, 50).then(data => setVentas(data));
+        getHistorialVentasCompleto(sedeId, fechaFiltro || undefined, page, 100).then(data => setVentas(data));
         getHistorialVentasCompleto(sedeId, format(calMonth, 'yyyy-MM'), 1, 1000).then(setAllMonthVentas);
       })
       .subscribe();
@@ -302,7 +302,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                       <div key={d.id_detalle} className="flex justify-between items-center text-sm py-1.5 border-b border-neutral-800/50 last:border-0">
                         <div className="flex items-center gap-2 text-neutral-300">
                           <span className="bg-neutral-800 text-indigo-400 text-xs px-2 py-0.5 rounded-full font-medium">{d.cantidad}x</span>
-                          <span>{d.producto_nombre || 'Producto'}</span>
+                          <span>{d.producto_nombre || 'Item Desconocido'}</span>
                         </div>
                         <span className="text-neutral-400 font-medium">{formatCurrency(d.total)}</span>
                       </div>
@@ -338,7 +338,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
             <span className="text-neutral-400">Página {page}</span>
             <button 
               onClick={() => setPage(p => p + 1)}
-              disabled={ventas.length < 50 || loading}
+              disabled={ventas.length < page * 100 || loading}
               className="px-4 py-2 bg-neutral-800 text-white rounded-lg disabled:opacity-50"
             >
               Siguiente
