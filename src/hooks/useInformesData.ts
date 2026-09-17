@@ -245,8 +245,15 @@ export function useGenerateReport(empresaId: string) {
         // ── Ventas por método de pago (query directa + pivot en JS) ───────────
         if (reportId === 'ventas_metodos_pago') {
           const query = supabase
-            .from('ventas')
-            .select('fecha_venta, metodo_pago, total_usd')
+            .from('ventas_facturas')
+            .select(`
+              fecha_venta,
+              total,
+              ventas_pagos (
+                tipo_pago,
+                monto
+              )
+            `)
             .eq('empresa_id', p_empresa_id)
             .gte('fecha_venta', p_fecha_inicio)
             .lte('fecha_venta', p_fecha_fin);
@@ -264,12 +271,58 @@ export function useGenerateReport(empresaId: string) {
             { fecha: string; total_usd: number; metodos: Record<string, number> }
           > = {};
 
-          for (const row of rows) {
+          for (const row of rows as any[]) {
             const fecha = (row.fecha_venta as string)?.split('T')[0] ?? '';
             if (!byDate[fecha]) byDate[fecha] = { fecha, total_usd: 0, metodos: {} };
-            const metodo = row.metodo_pago || 'Otro';
-            byDate[fecha].metodos[metodo] = (byDate[fecha].metodos[metodo] || 0) + Number(row.total_usd || 0);
-            byDate[fecha].total_usd += Number(row.total_usd || 0);
+            const pagos = row.ventas_pagos || [];
+            if (pagos.length > 0) {
+              for (const p of pagos) {
+                const metodo = p.tipo_pago || 'Otro';
+                byDate[fecha].metodos[metodo] = (byDate[fecha].metodos[metodo] || 0) + Number(p.monto || 0);
+              }
+            } else {
+              const metodo = 'Efectivo';
+              byDate[fecha].metodos[metodo] = (byDate[fecha].metodos[metodo] || 0) + Number(row.total || 0);
+            }
+            byDate[fecha].total_usd += Number(row.total || 0);
+          }
+
+          // Si no hay ventas en ventas_facturas para esas fechas, verificar en cierres_transacciones
+          if (rows.length === 0) {
+            let qCierres = supabase
+              .from('cierres_transacciones')
+              .select(`
+                monto,
+                moneda,
+                metodo,
+                cierres_caja!inner (
+                  fecha_cierre,
+                  tasa_cambio,
+                  sede_id,
+                  empresa_id
+                )
+              `)
+              .eq('cierres_caja.empresa_id', p_empresa_id)
+              .gte('cierres_caja.fecha_cierre', p_fecha_inicio.split('T')[0])
+              .lte('cierres_caja.fecha_cierre', p_fecha_fin.split('T')[0]);
+
+            if (p_sede_id) qCierres = qCierres.eq('cierres_caja.sede_id', p_sede_id);
+
+            const { data: cierresData } = await qCierres;
+            if (cierresData && cierresData.length > 0) {
+              for (const row of cierresData as any[]) {
+                const c = row.cierres_caja;
+                if (!c) continue;
+                const fecha = c.fecha_cierre || '';
+                if (!byDate[fecha]) byDate[fecha] = { fecha, total_usd: 0, metodos: {} };
+                const monto = Number(row.monto) || 0;
+                const isVES = row.moneda === 'VES';
+                const amountUSD = isVES ? monto / (c.tasa_cambio || 1) : monto;
+                const metodo = row.metodo?.toUpperCase() || 'DESCONOCIDO';
+                byDate[fecha].metodos[metodo] = (byDate[fecha].metodos[metodo] || 0) + amountUSD;
+                byDate[fecha].total_usd += amountUSD;
+              }
+            }
           }
 
           const formattedData = Object.values(byDate)
@@ -277,9 +330,11 @@ export function useGenerateReport(empresaId: string) {
             .map(row => {
               const obj: Record<string, any> = {
                 Fecha: row.fecha,
-                'Total (USD)': row.total_usd,
+                'Total (USD)': `$ ${row.total_usd.toFixed(2)}`,
               };
-              Object.entries(row.metodos).forEach(([m, v]) => { obj[m] = v; });
+              Object.entries(row.metodos).forEach(([m, v]) => { 
+                obj[m] = `$ ${Number(v).toFixed(2)}`; 
+              });
               return obj;
             });
 
