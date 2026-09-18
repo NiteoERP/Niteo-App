@@ -17,6 +17,30 @@ export async function createProducto(data: any) {
 
   if (!perfil) return { success: false, error: 'Perfil no encontrado' };
 
+  // Limpiar cualquier producto previo que haya quedado con '' en lugar de NULL para evitar violación de UNIQUE
+  await supabase
+    .from('productos')
+    .update({ codigo_barras: null })
+    .eq('empresa_id', perfil.empresa_id)
+    .eq('codigo_barras', '');
+
+  const barcode = (data.codigo_barras && String(data.codigo_barras).trim().length > 0)
+    ? String(data.codigo_barras).trim()
+    : null;
+
+  if (barcode) {
+    const { data: existingProd } = await supabase
+      .from('productos')
+      .select('id, nombre')
+      .eq('empresa_id', perfil.empresa_id)
+      .eq('codigo_barras', barcode)
+      .maybeSingle();
+
+    if (existingProd) {
+      return { success: false, error: `El código de barras "${barcode}" ya está asignado al producto "${existingProd.nombre}".` };
+    }
+  }
+
   // 1. Insertar el producto en la tabla productos
   const { data: nuevoProd, error: prodErr } = await supabase
     .from('productos')
@@ -25,7 +49,7 @@ export async function createProducto(data: any) {
       categoria_id: data.categoria_id || null,
       nombre: data.nombre,
       descripcion: data.descripcion ? data.descripcion.trim() : null,
-      codigo_barras: data.codigo_barras || '',
+      codigo_barras: barcode,
       precio_venta: parseFloat(data.precio_venta) || 0,
       costo: parseFloat(data.costo) || 0,
       precio_modificable: !!data.precio_modificable,
@@ -111,11 +135,36 @@ export async function updateProducto(id: string, data: any) {
   const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
   if (!perfil) return { success: false, error: 'Perfil no encontrado' };
 
+  // Limpiar cualquier producto previo que haya quedado con '' en lugar de NULL para evitar violación de UNIQUE
+  await supabase
+    .from('productos')
+    .update({ codigo_barras: null })
+    .eq('empresa_id', perfil.empresa_id)
+    .eq('codigo_barras', '');
+
+  const barcode = (data.codigo_barras && String(data.codigo_barras).trim().length > 0)
+    ? String(data.codigo_barras).trim()
+    : null;
+
+  if (barcode) {
+    const { data: existingProd } = await supabase
+      .from('productos')
+      .select('id, nombre')
+      .eq('empresa_id', perfil.empresa_id)
+      .eq('codigo_barras', barcode)
+      .neq('id', id)
+      .maybeSingle();
+
+    if (existingProd) {
+      return { success: false, error: `El código de barras "${barcode}" ya está asignado al producto "${existingProd.nombre}".` };
+    }
+  }
+
   const { error } = await supabase.from('productos').update({
       categoria_id: data.categoria_id || null,
       nombre: data.nombre,
       descripcion: data.descripcion ? data.descripcion.trim() : null,
-      codigo_barras: data.codigo_barras || '',
+      codigo_barras: barcode,
       precio_venta: parseFloat(data.precio_venta) || 0,
       costo: parseFloat(data.costo) || 0,
       precio_modificable: !!data.precio_modificable,

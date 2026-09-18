@@ -146,7 +146,13 @@ export default function ProductoForm({
     setError('');
     
     startTransition(async () => {
-      const action = isEditing ? updateProducto(initialData.id, formData) : createProducto(formData);
+      const payload = {
+        ...formData,
+        codigo_barras: formData.codigo_barras ? formData.codigo_barras.trim() : null,
+        descripcion: formData.descripcion ? formData.descripcion.trim() : null,
+        categoria_id: formData.categoria_id ? formData.categoria_id : null,
+      };
+      const action = isEditing ? updateProducto(initialData.id, payload) : createProducto(payload);
       const res = await action;
       if (res.success) {
         onClose();
