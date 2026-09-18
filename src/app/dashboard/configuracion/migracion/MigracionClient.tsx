@@ -1,23 +1,30 @@
 "use client";
 import React, { useState } from 'react';
-import { Download, Upload, FileSpreadsheet, Loader2, Zap, ShieldCheck, Database } from 'lucide-react';
+import { Download, Upload, FileSpreadsheet, Loader2, Zap, ShieldCheck, Database, Tag } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { createClient } from '@/utils/supabase/client';
-import { procesarImportacionUniversal } from '@/actions/migracion-actions';
+import { procesarImportacionUniversal, importarCategorias } from '@/actions/migracion-actions';
 
-type TabType = 'excel' | 'db';
+type TabType = 'excel' | 'categorias' | 'db';
 
 export default function MigracionClient({ sedes }: { sedes: any[] }) {
-  const [activeTab, setActiveTab] = useState<TabType>('db');
+  const [activeTab, setActiveTab] = useState<TabType>('excel');
   const [selectedSede, setSelectedSede] = useState(sedes[0]?.id || '');
   const [message, setMessage] = useState<{ type: 'success'|'error', text: string } | null>(null);
 
-  // --- EXCEL STATES ---
+  // --- EXCEL STATES (PRODUCTOS) ---
   const [excelFile, setExcelFile] = useState<File | null>(null);
   const [excelHeaders, setExcelHeaders] = useState<string[]>([]);
   const [excelData, setExcelData] = useState<any[]>([]);
   const [columnMapping, setColumnMapping] = useState<Record<string, string>>({});
   const [importingExcel, setImportingExcel] = useState(false);
+
+  // --- EXCEL STATES (CATEGORIAS) ---
+  const [catFile, setCatFile] = useState<File | null>(null);
+  const [catHeaders, setCatHeaders] = useState<string[]>([]);
+  const [catData, setCatData] = useState<any[]>([]);
+  const [catColumnMapping, setCatColumnMapping] = useState<Record<string, string>>({});
+  const [importingCats, setImportingCats] = useState(false);
 
   const supabase = createClient();
 
@@ -105,6 +112,71 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
     }
   };
 
+  const catTargetFields = [
+    { key: 'nombre', label: 'Nombre de la Categoría (Requerido)' }
+  ];
+
+  const downloadCatTemplate = () => {
+    const ws = XLSX.utils.json_to_sheet([
+      { "Nombre de la Categoría": "Bebidas" },
+      { "Nombre de la Categoría": "Comidas y Platos" },
+      { "Nombre de la Categoría": "Postres y Dulces" },
+      { "Nombre de la Categoría": "Snacks y Golosinas" }
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Categorías");
+    XLSX.writeFile(wb, "Niteo_Plantilla_Categorias.xlsx");
+  };
+
+  const handleCatExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCatFile(file);
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const wb = XLSX.read(evt.target?.result, { type: 'binary' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const headers = XLSX.utils.sheet_to_json(ws, { header: 1 })[0] as string[];
+        setCatHeaders(headers || []);
+        setCatData(XLSX.utils.sheet_to_json(ws));
+        const autoMap: Record<string, string> = {};
+        headers.forEach(h => {
+          const lowH = h.toLowerCase();
+          if (lowH.includes('cat') || lowH.includes('nombre') || lowH.includes('rubro') || lowH.includes('grupo')) {
+            autoMap['nombre'] = h;
+          }
+        });
+        setCatColumnMapping(autoMap);
+      } catch (err) {
+        setMessage({ type: 'error', text: 'El archivo Excel no es válido.' });
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
+  const executeCatImport = async () => {
+    if (!catColumnMapping['nombre']) return setMessage({ type: 'error', text: 'Mapea la columna con el nombre de la categoría.' });
+    setImportingCats(true);
+    try {
+      const mapped = catData.map(row => ({
+        nombre: row[catColumnMapping['nombre']] ? String(row[catColumnMapping['nombre']]).trim() : ''
+      })).filter(x => x.nombre);
+
+      const res = await importarCategorias(mapped, selectedSede);
+      if (res.success) {
+        setMessage({ type: 'success', text: `¡Se importaron ${res.count} categorías exitosamente!` });
+        setCatFile(null);
+      } else {
+        setMessage({ type: 'error', text: res.error || 'Error en la importación de categorías.' });
+      }
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message });
+    } finally {
+      setImportingCats(false);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto mt-8">
       <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-sm border border-neutral-200 dark:border-neutral-800">
@@ -129,12 +201,15 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
           </div>
         )}
 
-        <div className="flex border-b border-neutral-200 dark:border-neutral-800 mb-6">
-          <button onClick={() => { setActiveTab('db'); setMessage(null); }} className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors ${activeTab === 'db' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-neutral-500'}`}>
-            <Database size={16} className="inline mr-2" /> Base de Datos (.db)
-          </button>
+        <div className="flex flex-wrap border-b border-neutral-200 dark:border-neutral-800 mb-6">
           <button onClick={() => { setActiveTab('excel'); setMessage(null); }} className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors ${activeTab === 'excel' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-neutral-500'}`}>
             <FileSpreadsheet size={16} className="inline mr-2" /> Productos e Inventario (.xlsx)
+          </button>
+          <button onClick={() => { setActiveTab('categorias'); setMessage(null); }} className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors ${activeTab === 'categorias' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-neutral-500'}`}>
+            <Tag size={16} className="inline mr-2" /> Categorías (.xlsx)
+          </button>
+          <button onClick={() => { setActiveTab('db'); setMessage(null); }} className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors ${activeTab === 'db' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-neutral-500'}`}>
+            <Database size={16} className="inline mr-2" /> Base de Datos (.db)
           </button>
         </div>
 
@@ -234,6 +309,70 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
                  <button onClick={executeExcelImport} disabled={importingExcel} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold flex justify-center items-center gap-2 transition-all">
                    {importingExcel ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
                    {importingExcel ? 'Procesando...' : `Importar ${excelData.length} Productos`}
+                 </button>
+               </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'categorias' && (
+          <div className="space-y-6 animate-in fade-in">
+            <div className="flex justify-end">
+               <button onClick={downloadCatTemplate} className="flex items-center gap-2 text-sm text-indigo-600 font-bold hover:underline">
+                 <Download size={16} /> Descargar Plantilla de Categorías (.xlsx)
+               </button>
+            </div>
+
+            {!catFile ? (
+               <div className="border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-2xl p-12 text-center hover:bg-neutral-50 dark:hover:bg-neutral-950/50 transition-colors">
+                 <input type="file" id="cat-upload" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleCatExcelUpload} />
+                 <label htmlFor="cat-upload" className="cursor-pointer flex flex-col items-center">
+                   <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-500/10 text-indigo-600 rounded-full flex items-center justify-center mb-4">
+                     <Tag size={32} />
+                   </div>
+                   <h3 className="text-lg font-bold text-neutral-900 dark:text-white mb-2">Selecciona un archivo Excel de Categorías</h3>
+                   <p className="text-sm text-neutral-500">Sube tu listado de rubros o categorías para crearlos en bloque.</p>
+                 </label>
+               </div>
+            ) : (
+               <div className="space-y-6">
+                 <div className="flex items-center justify-between bg-neutral-50 dark:bg-neutral-950 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800">
+                   <div>
+                     <p className="text-sm font-bold text-neutral-900 dark:text-white">Archivo Listo: {catFile.name}</p>
+                     <p className="text-xs text-neutral-500">{catData.length} categorías detectadas</p>
+                   </div>
+                   <button onClick={() => setCatFile(null)} className="text-sm text-red-500 font-bold hover:underline">Cambiar Archivo</button>
+                 </div>
+
+                 <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden">
+                   <div className="bg-neutral-50 dark:bg-neutral-950 px-6 py-4 border-b border-neutral-200 dark:border-neutral-800">
+                     <h3 className="font-bold text-neutral-900 dark:text-white">Mapeo de Categoría</h3>
+                     <p className="text-xs text-neutral-500">Indica la columna que contiene el nombre de cada categoría.</p>
+                   </div>
+                   <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
+                     {catTargetFields.map(field => (
+                       <div key={field.key} className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 gap-4">
+                         <div className="w-1/2">
+                           <p className="text-sm font-bold text-neutral-900 dark:text-white">{field.label}</p>
+                         </div>
+                         <div className="w-full sm:w-1/2">
+                           <select 
+                             className="w-full bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-2 text-sm outline-none"
+                             value={catColumnMapping[field.key] || ''}
+                             onChange={(e) => setCatColumnMapping({...catColumnMapping, [field.key]: e.target.value})}
+                           >
+                             <option value="">-- Seleccionar Columna --</option>
+                             {catHeaders.map(h => <option key={h} value={h}>{h}</option>)}
+                           </select>
+                         </div>
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+
+                 <button onClick={executeCatImport} disabled={importingCats} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold flex justify-center items-center gap-2 transition-all">
+                   {importingCats ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
+                   {importingCats ? 'Procesando...' : `Importar ${catData.length} Categorías`}
                  </button>
                </div>
             )}

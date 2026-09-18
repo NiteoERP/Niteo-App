@@ -224,6 +224,54 @@ export async function procesarImportacionUniversal(productos: any[], sedeId: str
   return { success: true, count: successCount };
 }
 
+/**
+ * Importa un listado de categorías desde Excel.
+ */
+export async function importarCategorias(categoriasList: { nombre: string }[], sedeId?: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autorizado' };
+  const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
+  if (!perfil) return { success: false, error: 'Perfil no encontrado' };
+
+  if (!categoriasList || categoriasList.length === 0) {
+    return { success: false, error: 'No hay categorías para importar.' };
+  }
+
+  // Consultar categorías existentes para no duplicar
+  const { data: existing } = await supabase
+    .from('categorias')
+    .select('id, nombre')
+    .eq('empresa_id', perfil.empresa_id);
+
+  const existingSet = new Set((existing || []).map((c: any) => c.nombre.trim().toLowerCase()));
+
+  let count = 0;
+  for (const cat of categoriasList) {
+    const rawName = cat.nombre ? cat.nombre.toString().trim() : '';
+    if (!rawName) continue;
+    const key = rawName.toLowerCase();
+    if (existingSet.has(key)) continue;
+
+    const idPos = 'CAT-' + Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 6);
+    const { error } = await supabase.from('categorias').insert({
+      empresa_id: perfil.empresa_id,
+      sede_id: sedeId || null,
+      nombre: rawName,
+      id_pos: idPos,
+      estado_activo: true
+    });
+
+    if (!error) {
+      existingSet.add(key);
+      count++;
+    }
+  }
+
+  revalidatePath('/dashboard/catalogo');
+  return { success: true, count };
+}
+
 export async function procesarEntidadesAronium(entidades: any, sedeId: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -243,12 +291,41 @@ export async function procesarEntidadesAronium(entidades: any, sedeId: string) {
      }
   }
 
-  // Insertar Categorias
+  // Insertar o sincronizar Categorias
+  const catPosMap = new Map<string, string>(); // Id en Aronium -> id UUID en Supabase
   if (entidades.categorias && entidades.categorias.length > 0) {
      for (const c of entidades.categorias) {
-       await supabase.from('categorias').insert({
-         empresa_id: perfil.empresa_id, sede_id: sedeId, nombre: c.Name, color: '#4F46E5', icono: 'Box'
-       }).select('id').maybeSingle();
+       const idPos = (c.Id ?? ('CAT-' + Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 6))).toString();
+       
+       const { data: existing } = await supabase
+         .from('categorias')
+         .select('id')
+         .eq('empresa_id', perfil.empresa_id)
+         .ilike('nombre', c.Name)
+         .maybeSingle();
+
+       let catId: string | null = existing?.id || null;
+
+       if (!catId) {
+         const { data: newCat, error: errCat } = await supabase.from('categorias').insert({
+           empresa_id: perfil.empresa_id,
+           sede_id: sedeId || null,
+           nombre: c.Name,
+           id_pos: idPos,
+           estado_activo: true
+         }).select('id').maybeSingle();
+
+         if (!errCat && newCat) {
+           catId = newCat.id;
+         }
+       }
+
+       if (catId) {
+         if (c.Id !== undefined && c.Id !== null) {
+           catPosMap.set(c.Id.toString(), catId);
+         }
+         catPosMap.set(c.Name.toLowerCase().trim(), catId);
+       }
        successCount++;
      }
   }
@@ -257,21 +334,30 @@ export async function procesarEntidadesAronium(entidades: any, sedeId: string) {
   if (entidades.productos && entidades.productos.length > 0) {
     const chunkSize = 200;
     for (let i = 0; i < entidades.productos.length; i += chunkSize) {
-      const batch = entidades.productos.slice(i, i + chunkSize).map((p: any) => ({
-        empresa_id: perfil.empresa_id,
-        sede_id: sedeId,
-        nombre: p.Name,
-        codigo_barras: p.Barcode || '',
-        precio_venta: p.Price || 0,
-        costo: p.Cost || 0,
-        estado_activo: true,
-        canal_venta: 'AMBOS'
-      }));
+      const batch = entidades.productos.slice(i, i + chunkSize).map((p: any) => {
+        const catRef = (p.ProductGroupId ?? p.categoria_id ?? p.categoria)?.toString();
+        const categoria_id = catRef ? (catPosMap.get(catRef) || catPosMap.get(catRef.toLowerCase().trim()) || null) : null;
+
+        return {
+          empresa_id: perfil.empresa_id,
+          sede_id: sedeId,
+          categoria_id,
+          nombre: p.Name,
+          codigo_barras: p.Barcode || '',
+          precio_venta: p.Price || 0,
+          costo: p.Cost || 0,
+          estado_activo: true,
+          canal_venta: 'AMBOS',
+          es_reventa: true
+        };
+      });
       await supabase.from('productos').insert(batch);
       successCount += batch.length;
     }
   }
 
+  revalidatePath('/dashboard/catalogo');
+  revalidatePath('/dashboard/inventario');
   return { success: true, count: successCount };
 }
 
