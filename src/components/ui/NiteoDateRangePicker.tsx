@@ -226,12 +226,12 @@ export default function NiteoDateRangePicker({
         type="button"
         disabled={disabled}
         onClick={() => !disabled && setIsOpen(true)}
-        className={`flex items-center justify-between gap-3 bg-black/40 hover:bg-neutral-900 border border-neutral-800 hover:border-neutral-700 text-white text-sm rounded-xl px-4 py-2.5 transition-all duration-150 focus:outline-none focus:ring-1 focus:ring-sky-500 shadow-sm ${
-          isOpen ? 'ring-1 ring-sky-500 border-sky-500/50 bg-neutral-900' : ''
+        className={`flex items-center justify-between gap-3 bg-black/40 hover:bg-neutral-900 border border-neutral-800 hover:border-neutral-700 text-white text-sm rounded-xl px-4 py-2.5 transition-all duration-150 focus:outline-none focus:ring-1 focus:ring-indigo-500 shadow-sm ${
+          isOpen ? 'ring-1 ring-indigo-500 border-indigo-500/50 bg-neutral-900' : ''
         } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
       >
         <div className="flex items-center gap-2.5 truncate">
-          <CalendarIcon size={16} className="text-sky-400 shrink-0" />
+          <CalendarIcon size={16} className="text-indigo-400 shrink-0" />
           <span className={startDate || endDate ? 'text-white font-medium' : 'text-neutral-500'}>
             {triggerLabel}
           </span>
@@ -256,22 +256,22 @@ export default function NiteoDateRangePicker({
           )}
           <ChevronDown
             size={14}
-            className={`text-neutral-400 transition-transform duration-200 ${isOpen ? 'rotate-180 text-sky-400' : ''}`}
+            className={`text-neutral-400 transition-transform duration-200 ${isOpen ? 'rotate-180 text-indigo-400' : ''}`}
           />
         </div>
       </button>
 
-      {/* MODAL DIALOG estilo Aronium: nunca se corta por ningún panel ni overflow */}
+      {/* MODAL DIALOG estilo Aronium con temática Niteo */}
       {isOpen && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-xs animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
           <div 
-            className="bg-[#1c1f24] border border-neutral-800/80 rounded-2xl p-5 sm:p-6 shadow-2xl max-w-4xl w-full text-white animate-in zoom-in-95 duration-150 overflow-y-auto max-h-[95vh]"
+            className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 sm:p-6 shadow-2xl max-w-4xl w-full text-white animate-in zoom-in-95 duration-150 overflow-y-auto max-h-[95vh]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header: Período y Pill central */}
             <div className="text-center mb-6">
               <h2 className="text-lg font-bold text-neutral-200 mb-2">Período</h2>
-              <div className="inline-block bg-sky-500 text-white font-bold text-sm px-6 py-1.5 rounded-lg shadow-md">
+              <div className="inline-block bg-indigo-600 text-white font-bold text-sm px-6 py-1.5 rounded-xl shadow-[0_0_15px_rgba(99,102,241,0.35)]">
                 {pillDisplay}
               </div>
             </div>
@@ -326,9 +326,9 @@ export default function NiteoDateRangePicker({
                           onClick={() => handleSelectStartDay(day)}
                           className={`w-7 h-7 text-xs font-medium rounded-full flex items-center justify-center transition-all ${
                             isSelected
-                              ? 'bg-sky-500 text-white font-bold shadow-md'
+                              ? 'bg-indigo-600 text-white font-bold shadow-[0_0_10px_rgba(99,102,241,0.5)]'
                               : isCurDay
-                              ? 'border border-sky-400 text-sky-300'
+                              ? 'border border-indigo-400 text-indigo-300'
                               : inCurrentMonth
                               ? 'text-neutral-200 hover:bg-neutral-800'
                               : 'text-neutral-600 hover:text-neutral-400'
@@ -389,9 +389,9 @@ export default function NiteoDateRangePicker({
                           onClick={() => handleSelectEndDay(day)}
                           className={`w-7 h-7 text-xs font-medium rounded-full flex items-center justify-center transition-all ${
                             isSelected
-                              ? 'bg-sky-500 text-white font-bold shadow-md'
+                              ? 'bg-indigo-600 text-white font-bold shadow-[0_0_10px_rgba(99,102,241,0.5)]'
                               : isCurDay
-                              ? 'border border-sky-400 text-sky-300'
+                              ? 'border border-indigo-400 text-indigo-300'
                               : inCurrentMonth
                               ? 'text-neutral-200 hover:bg-neutral-800'
                               : 'text-neutral-600 hover:text-neutral-400'
@@ -480,7 +480,7 @@ export default function NiteoDateRangePicker({
                   <button
                     type="button"
                     onClick={handleConfirm}
-                    className="flex-1 bg-sky-600 hover:bg-sky-500 text-white font-bold py-2.5 px-4 rounded-lg text-xs flex items-center justify-center gap-2 transition-colors shadow-sm"
+                    className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 px-4 rounded-lg text-xs flex items-center justify-center gap-2 transition-colors shadow-[0_0_15px_rgba(99,102,241,0.3)]"
                   >
                     <Check size={15} /> Ok
                   </button>

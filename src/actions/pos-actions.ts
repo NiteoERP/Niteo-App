@@ -229,6 +229,40 @@ export async function getHistorialVentasCompleto(sedeId: string, fechaFiltro?: s
   }));
 }
 
+export async function getResumenVerificacionMes(sedeId: string, yearMonth: string) {
+  const supabase = await createClient();
+  const [y, m] = yearMonth.split('-').map(Number);
+  const lastDay = new Date(y, m, 0).getDate();
+
+  const { data, error } = await supabase
+    .from('ventas_facturas')
+    .select('fecha_venta, verificado')
+    .eq('sede_id', sedeId)
+    .neq('numero_documento', 'TEST')
+    .eq('estado_activo', true)
+    .gte('fecha_venta', `${yearMonth}-01T00:00:00+00:00`)
+    .lte('fecha_venta', `${yearMonth}-${String(lastDay).padStart(2, '0')}T23:59:59.999+00:00`);
+
+  if (error || !data) {
+    console.error('Error fetching monthly verification summary:', error);
+    return {};
+  }
+
+  const summary: Record<string, { total: number; verified: number }> = {};
+  for (const row of data) {
+    if (!row.fecha_venta) continue;
+    const dateKey = row.fecha_venta.slice(0, 10);
+    if (!summary[dateKey]) {
+      summary[dateKey] = { total: 0, verified: 0 };
+    }
+    summary[dateKey].total++;
+    if (row.verificado) {
+      summary[dateKey].verified++;
+    }
+  }
+
+  return summary;
+}
 
 export async function toggleVentaVerificada(facturaId: string, verificado: boolean) {
   const supabase = await createClient();

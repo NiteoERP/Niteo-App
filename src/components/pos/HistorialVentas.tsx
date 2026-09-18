@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { HistorialVentaPOS, getHistorialVentasCompleto, toggleVentaVerificada } from '@/actions/pos-actions';
+import { HistorialVentaPOS, getHistorialVentasCompleto, toggleVentaVerificada, getResumenVerificacionMes } from '@/actions/pos-actions';
 import { Search, Calendar, ChevronDown, ChevronUp, Receipt, DollarSign, Clock, Users, CheckCircle2, Circle, Hash, ChevronLeft, ChevronRight, Printer, Ban } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import {
@@ -21,9 +21,9 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
   const [busqueda, setBusqueda] = useState('');
   const [page, setPage] = useState(1);
   
-  // Estado del calendario
+  // Estado del calendario (resumen de verificación del mes exacto sin límites)
   const [calMonth, setCalMonth] = useState<Date>(startOfMonth(new Date()));
-  const [allMonthVentas, setAllMonthVentas] = useState<HistorialVentaPOS[]>([]);
+  const [monthSummary, setMonthSummary] = useState<Record<string, { total: number; verified: number }>>({});
 
   const cargarVentas = async () => {
     setLoading(true);
@@ -40,7 +40,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
     const channel = supabase.channel('realtime_ventas_historial')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'ventas_facturas', filter: `sede_id=eq.${sedeId}` }, () => {
         getHistorialVentasCompleto(sedeId, fechaFiltro || undefined, page, 100).then(data => setVentas(data));
-        getHistorialVentasCompleto(sedeId, format(calMonth, 'yyyy-MM'), 1, 1000).then(setAllMonthVentas);
+        getResumenVerificacionMes(sedeId, format(calMonth, 'yyyy-MM')).then(setMonthSummary);
       })
       .subscribe();
 
@@ -48,7 +48,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
   }, [sedeId, fechaFiltro, page]);
 
   useEffect(() => {
-    getHistorialVentasCompleto(sedeId, format(calMonth, 'yyyy-MM'), 1, 1000).then(setAllMonthVentas);
+    getResumenVerificacionMes(sedeId, format(calMonth, 'yyyy-MM')).then(setMonthSummary);
   }, [sedeId, calMonth]);
 
   const dayStatusMap = useMemo(() => {
@@ -57,20 +57,21 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
 
     daysInMonth.forEach(day => {
       const key = format(day, 'yyyy-MM-dd');
-      const dayVentas = allMonthVentas.filter(v => {
-        const ventaDate = v.fecha_venta ? v.fecha_venta.slice(0, 10) : '';
-        return ventaDate === key;
-      });
-      if (dayVentas.length === 0) {
+      const dayData = monthSummary[key];
+
+      if (!dayData || dayData.total === 0 || dayData.verified === 0) {
+        // Sin ventas o 0 ventas verificadas -> Vacío / Sin verificar
         map.set(key, 'empty');
-      } else if (dayVentas.every(v => v.verificado)) {
+      } else if (dayData.verified >= dayData.total) {
+        // Todas las ventas del día verificadas -> OK (Verde)
         map.set(key, 'verified');
       } else {
+        // Hay al menos 1 verificada pero faltan otras -> Parcial (Ámbar)
         map.set(key, 'partial');
       }
     });
     return map;
-  }, [allMonthVentas, calMonth]);
+  }, [monthSummary, calMonth]);
 
   const calDays = eachDayOfInterval({ start: startOfMonth(calMonth), end: endOfMonth(calMonth) });
   const firstDayOffset = getDay(startOfMonth(calMonth));
@@ -89,8 +90,8 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
     const nuevoEstado = !estadoActual;
     setVentas(prev => prev.map(v => v.id_factura.toString() === id ? { ...v, verificado: nuevoEstado } : v));
     await toggleVentaVerificada(id, nuevoEstado);
-    const updated = await getHistorialVentasCompleto(sedeId, format(calMonth, 'yyyy-MM'), 1, 1000);
-    setAllMonthVentas(updated);
+    const updatedSummary = await getResumenVerificacionMes(sedeId, format(calMonth, 'yyyy-MM'));
+    setMonthSummary(updatedSummary);
   };
 
   const handleAnular = async (e: React.MouseEvent, id: string) => {
