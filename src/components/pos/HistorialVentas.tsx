@@ -145,24 +145,25 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
   return (
     <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 md:p-6 animate-in fade-in space-y-6">
       
-            <div className="relative z-20">
+            <div className={`relative z-30 transition-all ${isCalendarOpen ? 'min-h-[440px]' : ''}`}>
         <div className="flex justify-between items-center bg-black/40 border border-neutral-800 rounded-2xl p-4 md:p-6 mb-4">
           <div>
             <h3 className="text-white font-bold">Estado de Verificación</h3>
             <p className="text-xs text-neutral-400">Las ventas verdes han sido verificadas en el Cierre de Caja.</p>
           </div>
-          <button 
-            onClick={() => setIsCalendarOpen(!isCalendarOpen)}
-            className="flex items-center gap-2 bg-neutral-800 hover:bg-neutral-700 text-white px-4 py-2 rounded-xl transition-colors text-sm font-medium border border-neutral-700"
-          >
-            <Calendar size={16} className="text-indigo-400" />
-            {fechaFiltro ? format(parseISO(fechaFiltro), 'dd MMM yyyy', { locale: es }) : 'Seleccionar Fecha'}
-            <ChevronDown size={14} className={`transition-transform ${isCalendarOpen ? 'rotate-180' : ''}`} />
-          </button>
-        </div>
+          
+          <div className="relative">
+            <button 
+              onClick={() => setIsCalendarOpen(!isCalendarOpen)}
+              className="flex items-center gap-2 bg-neutral-800 hover:bg-neutral-700 text-white px-4 py-2 rounded-xl transition-colors text-sm font-medium border border-neutral-700"
+            >
+              <Calendar size={16} className="text-indigo-400" />
+              {fechaFiltro ? format(parseISO(fechaFiltro), 'dd MMM yyyy', { locale: es }) : 'Seleccionar Fecha'}
+              <ChevronDown size={14} className={`transition-transform ${isCalendarOpen ? 'rotate-180' : ''}`} />
+            </button>
 
-        {isCalendarOpen && (
-          <div className="absolute top-[80px] right-0 md:right-auto md:left-1/2 md:-translate-x-1/2 bg-neutral-900 border border-neutral-800 p-6 rounded-2xl shadow-2xl z-50 w-[340px] animate-in fade-in zoom-in-95 duration-200">
+            {isCalendarOpen && (
+              <div className="absolute top-full mt-2 right-0 bg-neutral-900 border border-neutral-800 p-5 rounded-2xl shadow-2xl z-50 w-[330px] animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between mb-4">
               <button onClick={() => setCalMonth(subMonths(calMonth, 1))} className="p-1.5 text-neutral-500 hover:text-white hover:bg-neutral-800 rounded-lg transition-colors">
                 <ChevronLeft size={16} />
@@ -233,6 +234,8 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
             )}
           </div>
         )}
+          </div>
+        </div>
       </div>
 
       {loading ? (

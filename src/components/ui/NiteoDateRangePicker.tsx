@@ -2,9 +2,9 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
-  format, startOfMonth, endOfMonth, eachDayOfInterval, 
-  getDay, addMonths, subMonths, isSameDay, parseISO, isValid,
-  subDays, startOfYear, endOfYear
+  format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, 
+  addDays, addMonths, subMonths, subWeeks, subYears, isSameDay, 
+  isSameMonth, parseISO, isValid, subDays, startOfYear, endOfYear
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, ChevronDown, Check, X } from 'lucide-react';
@@ -25,27 +25,19 @@ export default function NiteoDateRangePicker({
   endDate = '',
   onChange,
   label,
-  placeholder = 'Seleccionar rango de fechas',
+  placeholder = 'Seleccionar período',
   align = 'right',
   className = '',
   disabled = false
 }: NiteoDateRangePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Estados temporales mientras el usuario selecciona en el modal
+  // Fechas temporales dentro del modal
   const [tempStart, setTempStart] = useState<string>(startDate);
   const [tempEnd, setTempEnd] = useState<string>(endDate);
-  const [hoverDate, setHoverDate] = useState<string | null>(null);
 
-  // Sincronizar con props
-  useEffect(() => {
-    setTempStart(startDate);
-    setTempEnd(endDate);
-  }, [startDate, endDate, isOpen]);
-
-  // Mes que se está visualizando en el calendario
-  const [viewMonth, setViewMonth] = useState<Date>(() => {
+  // Meses mostrados en los dos calendarios
+  const [monthStart, setMonthStart] = useState<Date>(() => {
     if (startDate) {
       const p = parseISO(startDate);
       if (isValid(p)) return p;
@@ -53,99 +45,142 @@ export default function NiteoDateRangePicker({
     return new Date();
   });
 
-  // Cerrar al hacer clic afuera
+  const [monthEnd, setMonthEnd] = useState<Date>(() => {
+    if (endDate) {
+      const p = parseISO(endDate);
+      if (isValid(p)) return p;
+    }
+    return new Date();
+  });
+
+  // Sincronizar cuando se abre el modal o cambian props
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen]);
-
-  const daysInMonth = useMemo(() => {
-    const start = startOfMonth(viewMonth);
-    const end = endOfMonth(viewMonth);
-    return eachDayOfInterval({ start, end });
-  }, [viewMonth]);
-
-  const firstDayOffset = useMemo(() => {
-    return getDay(startOfMonth(viewMonth));
-  }, [viewMonth]);
-
-  const todayStr = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
-
-  // Manejo de clic en día del calendario
-  const handleDayClick = (dayStr: string) => {
-    if (!tempStart || (tempStart && tempEnd)) {
-      // Primer clic: definir inicio
-      setTempStart(dayStr);
-      setTempEnd('');
-    } else if (tempStart && !tempEnd) {
-      // Segundo clic: si es menor al inicio, intercambiar
-      if (dayStr < tempStart) {
-        setTempEnd(tempStart);
-        setTempStart(dayStr);
-      } else {
-        setTempEnd(dayStr);
+      setTempStart(startDate);
+      setTempEnd(endDate);
+      if (startDate) {
+        const p = parseISO(startDate);
+        if (isValid(p)) setMonthStart(p);
+      }
+      if (endDate) {
+        const p = parseISO(endDate);
+        if (isValid(p)) setMonthEnd(p);
       }
     }
+  }, [isOpen, startDate, endDate]);
+
+  const today = useMemo(() => new Date(), []);
+
+  // Generador de matriz de 42 días (6 semanas) empezando en Lunes
+  const generateMonthGrid = (viewDate: Date) => {
+    const mStart = startOfMonth(viewDate);
+    const gridStart = startOfWeek(mStart, { weekStartsOn: 1 });
+    const days: Date[] = [];
+    let cur = gridStart;
+    for (let i = 0; i < 42; i++) {
+      days.push(cur);
+      cur = addDays(cur, 1);
+    }
+    return days;
   };
 
-  const applyRange = (s: string, e: string) => {
-    onChange(s, e);
-    setIsOpen(false);
+  const daysStartGrid = useMemo(() => generateMonthGrid(monthStart), [monthStart]);
+  const daysEndGrid = useMemo(() => generateMonthGrid(monthEnd), [monthEnd]);
+
+  // Manejo de clic en día del calendario "Inicio"
+  const handleSelectStartDay = (day: Date) => {
+    const dayStr = format(day, 'yyyy-MM-dd');
+    setTempStart(dayStr);
+    if (!isSameMonth(day, monthStart)) {
+      setMonthStart(day);
+    }
+    if (tempEnd && dayStr > tempEnd) {
+      setTempEnd(dayStr);
+      setMonthEnd(day);
+    }
   };
 
-  // Presets rápidos
-  const handlePreset = (type: 'today' | 'yesterday' | 'last7' | 'last30' | 'thisMonth' | 'lastMonth' | 'thisYear') => {
+  // Manejo de clic en día del calendario "Fin"
+  const handleSelectEndDay = (day: Date) => {
+    const dayStr = format(day, 'yyyy-MM-dd');
+    setTempEnd(dayStr);
+    if (!isSameMonth(day, monthEnd)) {
+      setMonthEnd(day);
+    }
+    if (tempStart && dayStr < tempStart) {
+      setTempStart(dayStr);
+      setMonthStart(day);
+    }
+  };
+
+  // Presets predefinidos estilo Aronium
+  const applyPreset = (type: 'hoy' | 'ayer' | 'estaSemana' | 'ultimaSemana' | 'esteMes' | 'ultimoMes' | 'esteAno' | 'ultimoAno') => {
     const now = new Date();
     let s = '';
     let e = '';
 
     switch (type) {
-      case 'today':
+      case 'hoy': {
         s = format(now, 'yyyy-MM-dd');
         e = s;
         break;
-      case 'yesterday': {
+      }
+      case 'ayer': {
         const y = subDays(now, 1);
         s = format(y, 'yyyy-MM-dd');
         e = s;
         break;
       }
-      case 'last7':
-        s = format(subDays(now, 6), 'yyyy-MM-dd');
-        e = format(now, 'yyyy-MM-dd');
+      case 'estaSemana': {
+        s = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+        e = format(endOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
         break;
-      case 'last30':
-        s = format(subDays(now, 29), 'yyyy-MM-dd');
-        e = format(now, 'yyyy-MM-dd');
+      }
+      case 'ultimaSemana': {
+        const prevW = subWeeks(now, 1);
+        s = format(startOfWeek(prevW, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+        e = format(endOfWeek(prevW, { weekStartsOn: 1 }), 'yyyy-MM-dd');
         break;
-      case 'thisMonth':
+      }
+      case 'esteMes': {
         s = format(startOfMonth(now), 'yyyy-MM-dd');
         e = format(endOfMonth(now), 'yyyy-MM-dd');
         break;
-      case 'lastMonth': {
+      }
+      case 'ultimoMes': {
         const prevM = subMonths(now, 1);
         s = format(startOfMonth(prevM), 'yyyy-MM-dd');
         e = format(endOfMonth(prevM), 'yyyy-MM-dd');
         break;
       }
-      case 'thisYear':
+      case 'esteAno': {
         s = format(startOfYear(now), 'yyyy-MM-dd');
         e = format(endOfYear(now), 'yyyy-MM-dd');
         break;
+      }
+      case 'ultimoAno': {
+        const prevY = subYears(now, 1);
+        s = format(startOfYear(prevY), 'yyyy-MM-dd');
+        e = format(endOfYear(prevY), 'yyyy-MM-dd');
+        break;
+      }
     }
 
     setTempStart(s);
     setTempEnd(e);
-    applyRange(s, e);
+    if (s) setMonthStart(parseISO(s));
+    if (e) setMonthEnd(parseISO(e));
+  };
+
+  const handleConfirm = () => {
+    if (tempStart) {
+      onChange(tempStart, tempEnd || tempStart);
+    }
+    setIsOpen(false);
+  };
+
+  const handleCancel = () => {
+    setIsOpen(false);
   };
 
   // Texto amigable para el botón activador
@@ -156,35 +191,48 @@ export default function NiteoDateRangePicker({
 
     if (sDate && eDate && isValid(sDate) && isValid(eDate)) {
       if (startDate === endDate) {
-        return format(sDate, 'dd MMM yyyy', { locale: es });
+        return format(sDate, 'd/M/yyyy');
       }
-      return `${format(sDate, 'dd MMM', { locale: es })} — ${format(eDate, 'dd MMM yyyy', { locale: es })}`;
+      return `${format(sDate, 'd/M/yyyy')} - ${format(eDate, 'd/M/yyyy')}`;
     }
-    if (sDate && isValid(sDate)) return `Desde ${format(sDate, 'dd MMM yyyy', { locale: es })}`;
-    if (eDate && isValid(eDate)) return `Hasta ${format(eDate, 'dd MMM yyyy', { locale: es })}`;
+    if (sDate && isValid(sDate)) return `Desde ${format(sDate, 'd/M/yyyy')}`;
+    if (eDate && isValid(eDate)) return `Hasta ${format(eDate, 'd/M/yyyy')}`;
     return placeholder;
   }, [startDate, endDate, placeholder]);
 
+  // Pill formateado en la cabecera del modal
+  const pillDisplay = useMemo(() => {
+    if (!tempStart) return 'Seleccione fecha de inicio';
+    const sDate = parseISO(tempStart);
+    const eDate = tempEnd ? parseISO(tempEnd) : sDate;
+    if (isValid(sDate) && isValid(eDate)) {
+      return `${format(sDate, 'd/M/yyyy')} - ${format(eDate, 'd/M/yyyy')}`;
+    }
+    return tempStart;
+  }, [tempStart, tempEnd]);
+
+  const weekdays = ['LU', 'MA', 'MI', 'JU', 'VI', 'SA', 'DO'];
+
   return (
-    <div className={`relative inline-block ${className}`} ref={containerRef}>
+    <div className={`relative inline-block ${className}`}>
       {label && (
         <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1.5">
           {label}
         </label>
       )}
 
-      {/* Botón activador */}
+      {/* Botón activador en la casilla de fecha */}
       <button
         type="button"
         disabled={disabled}
-        onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`flex items-center justify-between gap-3 bg-black/40 hover:bg-neutral-900 border border-neutral-800 hover:border-neutral-700 text-white text-sm rounded-xl px-4 py-2.5 transition-all duration-150 focus:outline-none focus:ring-1 focus:ring-indigo-500 shadow-sm ${
-          isOpen ? 'ring-1 ring-indigo-500 border-indigo-500/50 bg-neutral-900' : ''
+        onClick={() => !disabled && setIsOpen(true)}
+        className={`flex items-center justify-between gap-3 bg-black/40 hover:bg-neutral-900 border border-neutral-800 hover:border-neutral-700 text-white text-sm rounded-xl px-4 py-2.5 transition-all duration-150 focus:outline-none focus:ring-1 focus:ring-sky-500 shadow-sm ${
+          isOpen ? 'ring-1 ring-sky-500 border-sky-500/50 bg-neutral-900' : ''
         } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
       >
         <div className="flex items-center gap-2.5 truncate">
-          <CalendarIcon size={16} className="text-indigo-400 shrink-0" />
-          <span className={startDate || endDate ? 'text-white font-medium capitalize' : 'text-neutral-500'}>
+          <CalendarIcon size={16} className="text-sky-400 shrink-0" />
+          <span className={startDate || endDate ? 'text-white font-medium' : 'text-neutral-500'}>
             {triggerLabel}
           </span>
         </div>
@@ -208,195 +256,247 @@ export default function NiteoDateRangePicker({
           )}
           <ChevronDown
             size={14}
-            className={`text-neutral-400 transition-transform duration-200 ${isOpen ? 'rotate-180 text-indigo-400' : ''}`}
+            className={`text-neutral-400 transition-transform duration-200 ${isOpen ? 'rotate-180 text-sky-400' : ''}`}
           />
         </div>
       </button>
 
-      {/* Popover Dropdown */}
+      {/* MODAL DIALOG estilo Aronium: nunca se corta por ningún panel ni overflow */}
       {isOpen && (
-        <div
-          className={`absolute top-full mt-2 ${
-            align === 'right' ? 'right-0' : 'left-0'
-          } bg-neutral-900/95 backdrop-blur-xl border border-neutral-800 p-4 rounded-2xl shadow-2xl z-50 flex flex-col md:flex-row gap-4 w-[320px] md:w-[500px] animate-in fade-in zoom-in-95 duration-150`}
-        >
-          {/* Presets laterales */}
-          <div className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-2 md:pb-0 border-b md:border-b-0 md:border-r border-neutral-800 md:pr-4 md:w-36 shrink-0">
-            <span className="hidden md:block text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-1">
-              Atajos Rápidos
-            </span>
-            <button
-              type="button"
-              onClick={() => handlePreset('today')}
-              className="text-left px-2.5 py-1.5 text-xs text-neutral-300 hover:text-white hover:bg-neutral-800 rounded-lg whitespace-nowrap transition-colors"
-            >
-              Hoy
-            </button>
-            <button
-              type="button"
-              onClick={() => handlePreset('yesterday')}
-              className="text-left px-2.5 py-1.5 text-xs text-neutral-300 hover:text-white hover:bg-neutral-800 rounded-lg whitespace-nowrap transition-colors"
-            >
-              Ayer
-            </button>
-            <button
-              type="button"
-              onClick={() => handlePreset('last7')}
-              className="text-left px-2.5 py-1.5 text-xs text-neutral-300 hover:text-white hover:bg-neutral-800 rounded-lg whitespace-nowrap transition-colors"
-            >
-              Últimos 7 días
-            </button>
-            <button
-              type="button"
-              onClick={() => handlePreset('last30')}
-              className="text-left px-2.5 py-1.5 text-xs text-neutral-300 hover:text-white hover:bg-neutral-800 rounded-lg whitespace-nowrap transition-colors"
-            >
-              Últimos 30 días
-            </button>
-            <button
-              type="button"
-              onClick={() => handlePreset('thisMonth')}
-              className="text-left px-2.5 py-1.5 text-xs text-neutral-300 hover:text-white hover:bg-neutral-800 rounded-lg whitespace-nowrap transition-colors"
-            >
-              Este mes
-            </button>
-            <button
-              type="button"
-              onClick={() => handlePreset('lastMonth')}
-              className="text-left px-2.5 py-1.5 text-xs text-neutral-300 hover:text-white hover:bg-neutral-800 rounded-lg whitespace-nowrap transition-colors"
-            >
-              Mes anterior
-            </button>
-            <button
-              type="button"
-              onClick={() => handlePreset('thisYear')}
-              className="text-left px-2.5 py-1.5 text-xs text-neutral-300 hover:text-white hover:bg-neutral-800 rounded-lg whitespace-nowrap transition-colors"
-            >
-              Este año
-            </button>
-          </div>
-
-          {/* Calendario principal */}
-          <div className="flex-1">
-            {/* Header del mes */}
-            <div className="flex items-center justify-between mb-3 pb-2 border-b border-neutral-800">
-              <button
-                type="button"
-                onClick={() => setViewMonth(subMonths(viewMonth, 1))}
-                className="p-1.5 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition-colors"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <span className="text-sm font-bold text-white capitalize">
-                {format(viewMonth, 'MMMM yyyy', { locale: es })}
-              </span>
-              <button
-                type="button"
-                onClick={() => setViewMonth(addMonths(viewMonth, 1))}
-                className="p-1.5 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition-colors"
-              >
-                <ChevronRight size={16} />
-              </button>
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-xs animate-in fade-in duration-150">
+          <div 
+            className="bg-[#1c1f24] border border-neutral-800/80 rounded-2xl p-5 sm:p-6 shadow-2xl max-w-4xl w-full text-white animate-in zoom-in-95 duration-150 overflow-y-auto max-h-[95vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header: Período y Pill central */}
+            <div className="text-center mb-6">
+              <h2 className="text-lg font-bold text-neutral-200 mb-2">Período</h2>
+              <div className="inline-block bg-sky-500 text-white font-bold text-sm px-6 py-1.5 rounded-lg shadow-md">
+                {pillDisplay}
+              </div>
             </div>
 
-            {/* Días de la semana */}
-            <div className="grid grid-cols-7 mb-1.5">
-              {['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá'].map((d) => (
-                <div
-                  key={d}
-                  className="text-center text-[11px] font-bold text-neutral-500 uppercase py-1"
-                >
-                  {d}
-                </div>
-              ))}
-            </div>
-
-            {/* Días del mes */}
-            <div className="grid grid-cols-7 gap-y-1">
-              {Array.from({ length: firstDayOffset }).map((_, i) => (
-                <div key={`pad-${i}`} className="w-full h-8" />
-              ))}
-              {daysInMonth.map((day) => {
-                const dayStr = format(day, 'yyyy-MM-dd');
-                const isStart = tempStart === dayStr;
-                const isEnd = tempEnd === dayStr;
-                const isSingleSelected = isStart && !tempEnd;
-
-                // Rango efectivo (considerando hover cuando solo está seleccionado el inicio)
-                const effectiveEnd = tempEnd || (tempStart && hoverDate && hoverDate >= tempStart ? hoverDate : null);
-                const isInRange = tempStart && effectiveEnd && dayStr > tempStart && dayStr < effectiveEnd;
-                const isToday = dayStr === todayStr;
-
-                let cellBg = '';
-                if (isStart && isEnd) {
-                  cellBg = 'bg-indigo-600 text-white font-bold rounded-lg shadow-[0_0_10px_rgba(99,102,241,0.5)]';
-                } else if (isStart) {
-                  cellBg = 'bg-indigo-600 text-white font-bold rounded-l-lg shadow-sm';
-                } else if (isEnd) {
-                  cellBg = 'bg-indigo-600 text-white font-bold rounded-r-lg shadow-sm';
-                } else if (isInRange) {
-                  cellBg = 'bg-indigo-600/20 text-indigo-200';
-                } else if (isSingleSelected) {
-                  cellBg = 'bg-indigo-600 text-white font-bold rounded-lg shadow-[0_0_10px_rgba(99,102,241,0.5)]';
-                } else {
-                  cellBg = 'text-neutral-300 hover:bg-neutral-800 hover:text-white rounded-lg';
-                }
-
-                return (
+            {/* Layout principal: 2 Calendarios + Período predefinido */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+              
+              {/* Calendario 1: INICIO */}
+              <div className="md:col-span-4 bg-neutral-900/60 border border-neutral-800 rounded-xl p-3">
+                <h3 className="text-center text-sm font-semibold text-neutral-300 mb-2">Inicio</h3>
+                
+                {/* Header de mes */}
+                <div className="flex items-center justify-between mb-2 px-1">
                   <button
                     type="button"
-                    key={dayStr}
-                    onClick={() => handleDayClick(dayStr)}
-                    onMouseEnter={() => tempStart && !tempEnd && setHoverDate(dayStr)}
-                    className={`relative flex items-center justify-center w-full h-8 text-xs font-medium transition-all ${cellBg}`}
+                    onClick={() => setMonthStart(subMonths(monthStart, 1))}
+                    className="p-1 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded transition-colors"
                   >
-                    <span>{format(day, 'd')}</span>
-                    {isToday && !isStart && !isEnd && (
-                      <span className="absolute bottom-1 w-1 h-1 rounded-full bg-indigo-400" />
-                    )}
+                    <ChevronLeft size={16} />
                   </button>
-                );
-              })}
-            </div>
-
-            {/* Footer con estado y botones */}
-            <div className="mt-4 pt-3 border-t border-neutral-800 flex items-center justify-between gap-2">
-              <div className="text-[11px] text-neutral-400 truncate">
-                {tempStart && tempEnd ? (
-                  <span>
-                    {tempStart} <span className="text-neutral-600">→</span> {tempEnd}
+                  <span className="text-xs font-semibold text-white capitalize">
+                    {format(monthStart, 'MMMM [de] yyyy', { locale: es })}
                   </span>
-                ) : tempStart ? (
-                  <span className="text-indigo-400">Selecciona fecha final...</span>
-                ) : (
-                  <span className="text-neutral-500">Selecciona rango</span>
-                )}
+                  <button
+                    type="button"
+                    onClick={() => setMonthStart(addMonths(monthStart, 1))}
+                    className="p-1 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded transition-colors"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+
+                {/* Días de la semana */}
+                <div className="grid grid-cols-7 text-center text-[10px] font-bold text-neutral-400 mb-1">
+                  {weekdays.map((d) => (
+                    <div key={d} className="py-1">{d}</div>
+                  ))}
+                </div>
+
+                {/* Grilla 42 días */}
+                <div className="grid grid-cols-7 gap-y-1 text-center">
+                  {daysStartGrid.map((day, idx) => {
+                    const dayStr = format(day, 'yyyy-MM-dd');
+                    const inCurrentMonth = isSameMonth(day, monthStart);
+                    const isSelected = tempStart === dayStr;
+                    const isCurDay = isSameDay(day, today);
+
+                    return (
+                      <div key={`start-${dayStr}-${idx}`} className="flex items-center justify-center p-0.5">
+                        <button
+                          type="button"
+                          onClick={() => handleSelectStartDay(day)}
+                          className={`w-7 h-7 text-xs font-medium rounded-full flex items-center justify-center transition-all ${
+                            isSelected
+                              ? 'bg-sky-500 text-white font-bold shadow-md'
+                              : isCurDay
+                              ? 'border border-sky-400 text-sky-300'
+                              : inCurrentMonth
+                              ? 'text-neutral-200 hover:bg-neutral-800'
+                              : 'text-neutral-600 hover:text-neutral-400'
+                          }`}
+                        >
+                          {format(day, 'd')}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTempStart('');
-                    setTempEnd('');
-                    onChange('', '');
-                    setIsOpen(false);
-                  }}
-                  className="px-2.5 py-1 text-xs text-neutral-400 hover:text-rose-400 transition-colors"
-                >
-                  Limpiar
-                </button>
-                <button
-                  type="button"
-                  disabled={!tempStart}
-                  onClick={() => applyRange(tempStart, tempEnd || tempStart)}
-                  className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center gap-1.5"
-                >
-                  <Check size={13} />
-                  Aplicar
-                </button>
+              {/* Calendario 2: FIN */}
+              <div className="md:col-span-4 bg-neutral-900/60 border border-neutral-800 rounded-xl p-3">
+                <h3 className="text-center text-sm font-semibold text-neutral-300 mb-2">Fin</h3>
+                
+                {/* Header de mes */}
+                <div className="flex items-center justify-between mb-2 px-1">
+                  <button
+                    type="button"
+                    onClick={() => setMonthEnd(subMonths(monthEnd, 1))}
+                    className="p-1 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded transition-colors"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <span className="text-xs font-semibold text-white capitalize">
+                    {format(monthEnd, 'MMMM [de] yyyy', { locale: es })}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setMonthEnd(addMonths(monthEnd, 1))}
+                    className="p-1 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded transition-colors"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+
+                {/* Días de la semana */}
+                <div className="grid grid-cols-7 text-center text-[10px] font-bold text-neutral-400 mb-1">
+                  {weekdays.map((d) => (
+                    <div key={d} className="py-1">{d}</div>
+                  ))}
+                </div>
+
+                {/* Grilla 42 días */}
+                <div className="grid grid-cols-7 gap-y-1 text-center">
+                  {daysEndGrid.map((day, idx) => {
+                    const dayStr = format(day, 'yyyy-MM-dd');
+                    const inCurrentMonth = isSameMonth(day, monthEnd);
+                    const isSelected = tempEnd === dayStr;
+                    const isCurDay = isSameDay(day, today);
+
+                    return (
+                      <div key={`end-${dayStr}-${idx}`} className="flex items-center justify-center p-0.5">
+                        <button
+                          type="button"
+                          onClick={() => handleSelectEndDay(day)}
+                          className={`w-7 h-7 text-xs font-medium rounded-full flex items-center justify-center transition-all ${
+                            isSelected
+                              ? 'bg-sky-500 text-white font-bold shadow-md'
+                              : isCurDay
+                              ? 'border border-sky-400 text-sky-300'
+                              : inCurrentMonth
+                              ? 'text-neutral-200 hover:bg-neutral-800'
+                              : 'text-neutral-600 hover:text-neutral-400'
+                          }`}
+                        >
+                          {format(day, 'd')}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
+
+              {/* Columna 3: PERÍODO PREDEFINIDO */}
+              <div className="md:col-span-4 flex flex-col h-full justify-between">
+                <div>
+                  <h3 className="text-center text-sm font-semibold text-neutral-300 mb-3">
+                    Período predefinido
+                  </h3>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => applyPreset('hoy')}
+                      className="bg-neutral-800/80 hover:bg-neutral-700 hover:text-white border border-neutral-700/80 text-neutral-300 text-xs py-2.5 px-3 rounded-lg text-center transition-colors"
+                    >
+                      Hoy
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyPreset('ayer')}
+                      className="bg-neutral-800/80 hover:bg-neutral-700 hover:text-white border border-neutral-700/80 text-neutral-300 text-xs py-2.5 px-3 rounded-lg text-center transition-colors"
+                    >
+                      Ayer
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => applyPreset('estaSemana')}
+                      className="bg-neutral-800/80 hover:bg-neutral-700 hover:text-white border border-neutral-700/80 text-neutral-300 text-xs py-2.5 px-3 rounded-lg text-center transition-colors"
+                    >
+                      Esta semana
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyPreset('ultimaSemana')}
+                      className="bg-neutral-800/80 hover:bg-neutral-700 hover:text-white border border-neutral-700/80 text-neutral-300 text-xs py-2.5 px-3 rounded-lg text-center transition-colors"
+                    >
+                      Última semana
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => applyPreset('esteMes')}
+                      className="bg-neutral-800/80 hover:bg-neutral-700 hover:text-white border border-neutral-700/80 text-neutral-300 text-xs py-2.5 px-3 rounded-lg text-center transition-colors"
+                    >
+                      Este mes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyPreset('ultimoMes')}
+                      className="bg-neutral-800/80 hover:bg-neutral-700 hover:text-white border border-neutral-700/80 text-neutral-300 text-xs py-2.5 px-3 rounded-lg text-center transition-colors"
+                    >
+                      Último mes
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => applyPreset('esteAno')}
+                      className="bg-neutral-800/80 hover:bg-neutral-700 hover:text-white border border-neutral-700/80 text-neutral-300 text-xs py-2.5 px-3 rounded-lg text-center transition-colors"
+                    >
+                      Este año
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyPreset('ultimoAno')}
+                      className="bg-neutral-800/80 hover:bg-neutral-700 hover:text-white border border-neutral-700/80 text-neutral-300 text-xs py-2.5 px-3 rounded-lg text-center transition-colors"
+                    >
+                      Último año
+                    </button>
+                  </div>
+                </div>
+
+                {/* Botones de acción Ok / Cancelar */}
+                <div className="flex items-center gap-3 mt-6 pt-4 border-t border-neutral-800">
+                  <button
+                    type="button"
+                    onClick={handleConfirm}
+                    className="flex-1 bg-sky-600 hover:bg-sky-500 text-white font-bold py-2.5 px-4 rounded-lg text-xs flex items-center justify-center gap-2 transition-colors shadow-sm"
+                  >
+                    <Check size={15} /> Ok
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancel}
+                    className="flex-1 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-neutral-300 hover:text-white text-xs font-medium py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <X size={15} /> Cancelar
+                  </button>
+                </div>
+
+              </div>
+
             </div>
+
           </div>
         </div>
       )}
