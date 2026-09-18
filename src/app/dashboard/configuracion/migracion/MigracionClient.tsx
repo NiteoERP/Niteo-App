@@ -25,7 +25,8 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
     { key: 'nombre', label: 'Nombre del Producto (Requerido)' },
     { key: 'codigo_barras', label: 'Código de Barras' },
     { key: 'precio_venta', label: 'Precio de Venta' },
-    { key: 'costo', label: 'Costo' }
+    { key: 'costo', label: 'Costo' },
+    { key: 'cantidad', label: 'Cantidad en Inventario (Stock Inicial)' }
   ];
 
   const downloadTemplate = () => {
@@ -33,7 +34,8 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
       "Nombre del Producto": "Coca Cola 2L",
       "Código de Barras": "123456789",
       "Precio Venta": 2.50,
-      "Costo": 1.50
+      "Costo": 1.50,
+      "Cantidad / Stock": 20
     }]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Productos");
@@ -59,6 +61,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
            else if (lowH.includes('barras') || lowH.includes('barcode')) autoMap['codigo_barras'] = h;
            else if (lowH.includes('precio') || lowH.includes('price')) autoMap['precio_venta'] = h;
            else if (lowH.includes('cost')) autoMap['costo'] = h;
+           else if (lowH.includes('cant') || lowH.includes('stock') || lowH.includes('existencia') || lowH.includes('inv') || lowH.includes('qty')) autoMap['cantidad'] = h;
         });
         setColumnMapping(autoMap);
       } catch (err) {
@@ -77,6 +80,9 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
         codigo_barras: columnMapping['codigo_barras'] ? row[columnMapping['codigo_barras']] : '',
         precio_venta: columnMapping['precio_venta'] ? parseFloat(row[columnMapping['precio_venta']]) : 0,
         costo: columnMapping['costo'] ? parseFloat(row[columnMapping['costo']]) : 0,
+        cantidad: columnMapping['cantidad'] && row[columnMapping['cantidad']] !== undefined && row[columnMapping['cantidad']] !== ''
+          ? parseFloat(row[columnMapping['cantidad']])
+          : null,
       })).filter(x => x.nombre);
 
       const res = await procesarImportacionUniversal(mapped, selectedSede);

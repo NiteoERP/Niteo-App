@@ -124,24 +124,24 @@ export default function DespachosManager({ empresaId, userSedeId, userRole }: { 
     setSuccessMsg('');
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { procesarDespachoEnServidor } = await import('@/actions/despachos-actions');
       
       const payloadItems = cart.map(c => ({
+        insumo_id: c.insumo_id,
         nombre: c.nombre,
         unidad_medida: c.unidad_medida,
         cantidad: c.cantidad
       }));
 
-      const { data, error } = await supabase.rpc('procesar_despacho', {
-        p_empresa_id: empresaId,
-        p_sede_origen_id: origenId,
-        p_sede_destino_id: destinoId,
-        p_usuario_id: user?.id,
-        p_notas: notas || 'Transferencia entre sucursales',
-        p_items: payloadItems
-      });
+      const res = await procesarDespachoEnServidor(
+        empresaId,
+        origenId,
+        destinoId,
+        notas || 'Transferencia entre sucursales',
+        payloadItems
+      );
 
-      if (error) throw error;
+      if (!res.success) throw new Error(res.error);
 
       setSuccessMsg('¡Despacho procesado con éxito!');
       setCart([]);

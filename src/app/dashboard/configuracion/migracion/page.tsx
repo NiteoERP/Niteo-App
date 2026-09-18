@@ -11,9 +11,10 @@ export default async function MigracionPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return redirect('/login');
-  if (user.app_metadata?.user_role !== 'MASTER') return redirect('/dashboard');
 
-  const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
+  const { data: perfil } = await supabase.from('perfiles').select('empresa_id, rol').eq('id', user.id).single();
+  const userRole = user.app_metadata?.user_role || perfil?.rol || 'CAJERO';
+  if (userRole !== 'MASTER') return redirect('/dashboard');
   
   let sedes: any[] = [];
   if (perfil) {

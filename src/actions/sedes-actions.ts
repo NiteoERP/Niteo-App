@@ -1,4 +1,4 @@
-﻿'use server';
+'use server';
 
 import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
@@ -165,6 +165,8 @@ export async function crearSede(formData: FormData) {
     return { error: 'Ya existe una sede con ese nombre. Por favor elige otro.' };
   }
 
+  const newMasterKey = generatePairingCode();
+
   const { error } = await supabase
     .from('sedes')
     .insert({
@@ -172,6 +174,7 @@ export async function crearSede(formData: FormData) {
       nombre_sede: nombreSede,
       direccion: direccion || null,
       tipo_sede: tipoSede,
+      master_key: newMasterKey,
     });
 
   if (error) {
@@ -213,8 +216,90 @@ export async function getSedeVirtualId(): Promise<string | null> {
   return sede?.id ?? null;
 }
 
+export interface HistorialSedeInfo {
+  ventas: number;
+  pedidos: number;
+  cierres: number;
+  compras: number;
+  gastos: number;
+  insumos: number;
+  productos: number;
+  usuarios: number;
+  puedeEliminarFisicamente: boolean;
+}
+
 /**
- * Elimina una sede. Si tiene datos asociados (llave foránea), la desactiva (soft-delete).
+ * Consulta el historial y dependencias reales de una sede.
+ */
+export async function getHistorialSede(sedeId: string): Promise<HistorialSedeInfo | { error: string }> {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'No autorizado' };
+
+  const { data: perfil } = await supabase
+    .from('perfiles')
+    .select('empresa_id')
+    .eq('id', user.id)
+    .single();
+
+  if (!perfil) return { error: 'Perfil no encontrado' };
+
+  try {
+    const [
+      { count: ventasCount },
+      { count: pedidosCount },
+      { count: cierresCount },
+      { count: comprasCount },
+      { count: gastosCount },
+      { count: insumosCount },
+      { count: productosCount },
+      { count: usuariosCount }
+    ] = await Promise.all([
+      supabase.from('ventas_facturas').select('*', { count: 'exact', head: true }).eq('sede_id', sedeId),
+      supabase.from('pedidos').select('*', { count: 'exact', head: true }).eq('sede_id', sedeId),
+      supabase.from('cierres_caja').select('*', { count: 'exact', head: true }).eq('sede_id', sedeId),
+      supabase.from('compras_facturas').select('*', { count: 'exact', head: true }).eq('sede_id', sedeId),
+      supabase.from('gastos_sede').select('*', { count: 'exact', head: true }).eq('sede_id', sedeId),
+      supabase.from('inventario_insumos').select('*', { count: 'exact', head: true }).eq('sede_id', sedeId),
+      supabase.from('productos').select('*', { count: 'exact', head: true }).eq('sede_id', sedeId),
+      supabase.from('perfiles').select('*', { count: 'exact', head: true }).eq('sede_id', sedeId),
+    ]);
+
+    const ventas = ventasCount || 0;
+    const pedidos = pedidosCount || 0;
+    const cierres = cierresCount || 0;
+    const compras = comprasCount || 0;
+    const gastos = gastosCount || 0;
+    const insumos = insumosCount || 0;
+    const productos = productosCount || 0;
+    const usuarios = usuariosCount || 0;
+
+    // Actividad operativa crítica (ventas, pedidos, cierres, compras, gastos)
+    const totalOperativo = ventas + pedidos + cierres + compras + gastos;
+    const puedeEliminarFisicamente = totalOperativo === 0;
+
+    return {
+      ventas,
+      pedidos,
+      cierres,
+      compras,
+      gastos,
+      insumos,
+      productos,
+      usuarios,
+      puedeEliminarFisicamente,
+    };
+  } catch (err: any) {
+    console.error('Error al obtener historial de sede:', err);
+    return { error: 'No se pudo consultar el historial de la sede.' };
+  }
+}
+
+/**
+ * Elimina una sede.
+ * - Si no tiene historial operativo (0 ventas, 0 pedidos, 0 cierres, 0 compras), desvincula perfiles y la borra físicamente.
+ * - Si tiene historial contable u operativo, la desactiva (soft-delete) para proteger los datos fiscales y trazabilidad.
  */
 export async function eliminarSede(sedeId: string) {
   const supabase = await createClient();
@@ -230,37 +315,91 @@ export async function eliminarSede(sedeId: string) {
 
   if (!perfil) return { error: 'Perfil no encontrado' };
 
-  // Intentamos eliminar la sede físicamente
+  const historial = await getHistorialSede(sedeId);
+  if ('error' in historial) {
+    return { error: historial.error };
+  }
+
   const { createClient: createAdminClient } = await import('@supabase/supabase-js');
-  const supabaseAdmin = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-  const { error } = await supabaseAdmin
+  const supabaseAdmin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  // Si tiene datos contables u operativos, no se puede eliminar físicamente
+  if (!historial.puedeEliminarFisicamente) {
+    const { error: softError } = await supabaseAdmin
+      .from('sedes')
+      .update({ estado_activo: false })
+      .eq('id', sedeId)
+      .eq('empresa_id', perfil.empresa_id);
+
+    if (softError) {
+      return { error: 'No se pudo desactivar la sede.' };
+    }
+    revalidatePath('/dashboard/configuracion/sedes');
+    return {
+      success: true,
+      softDeleted: true,
+      message: `La sede contiene registros operativos (${historial.ventas} ventas, ${historial.cierres} cierres). Por seguridad contable se desactivó y ocultó.`
+    };
+  }
+
+  // Si no tiene historial operativo pero tiene usuarios asignados en perfiles,
+  // reasignamos o liberamos sede_id para evitar la restricción FK
+  if (historial.usuarios > 0) {
+    const { data: otraSede } = await supabase
+      .from('sedes')
+      .select('id')
+      .eq('empresa_id', perfil.empresa_id)
+      .neq('id', sedeId)
+      .eq('estado_activo', true)
+      .limit(1)
+      .maybeSingle();
+
+    const nuevaSedeId = otraSede?.id || null;
+
+    await supabaseAdmin
+      .from('perfiles')
+      .update({ sede_id: nuevaSedeId })
+      .eq('empresa_id', perfil.empresa_id)
+      .eq('sede_id', sedeId);
+  }
+
+  // Si tiene insumos o productos sin ventas, los eliminamos limpiamente
+  if (historial.insumos > 0) {
+    await supabaseAdmin.from('inventario_insumos').delete().eq('sede_id', sedeId);
+  }
+  if (historial.productos > 0) {
+    await supabaseAdmin.from('productos').delete().eq('sede_id', sedeId);
+  }
+
+  // Eliminar sede físicamente
+  const { error: delError } = await supabaseAdmin
     .from('sedes')
     .delete()
     .eq('id', sedeId)
     .eq('empresa_id', perfil.empresa_id);
 
-  if (error) {
-    // Código 23503 = foreign_key_violation
-    if (error.code === '23503') {
-      // Tiene historial, hacemos un soft-delete
-      const { error: softError } = await supabaseAdmin
-        .from('sedes')
-        .update({ estado_activo: false })
-        .eq('id', sedeId)
-        .eq('empresa_id', perfil.empresa_id);
-        
-      if (softError) {
-        return { error: 'No se pudo desactivar la sede.' };
-      }
-      revalidatePath('/dashboard/configuracion/sedes');
-      return { success: true, softDeleted: true, message: 'La sede tiene historial y no se puede borrar por completo, pero ha sido ocultada/desactivada exitosamente.' };
-    }
-    console.error('Error al eliminar sede:', error);
-    return { error: 'Ocurrió un error al intentar eliminar la sede.' };
+  if (delError) {
+    console.error('Error al eliminar sede físicamente:', delError);
+    // Fallback: si aún hay alguna restricción, soft delete
+    await supabaseAdmin
+      .from('sedes')
+      .update({ estado_activo: false })
+      .eq('id', sedeId)
+      .eq('empresa_id', perfil.empresa_id);
+
+    revalidatePath('/dashboard/configuracion/sedes');
+    return {
+      success: true,
+      softDeleted: true,
+      message: 'La sede no se pudo eliminar por completo y ha sido desactivada.'
+    };
   }
 
   revalidatePath('/dashboard/configuracion/sedes');
-  return { success: true, message: 'Sede eliminada exitosamente.' };
+  return { success: true, message: 'Sede eliminada definitivamente de la base de datos.' };
 }
 
 /**

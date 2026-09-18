@@ -1,19 +1,20 @@
 'use client';
 
 import React, { useState, useTransition } from 'react';
-import { Sede, generarMasterKey, crearSede, eliminarSede, activarSede } from '@/actions/sedes-actions';
-import { Key, Plus, MapPin, MonitorSmartphone, CheckCircle2, Clock, AlertCircle, Trash2, Power } from 'lucide-react';
+import { Sede, generarMasterKey, crearSede, eliminarSede, activarSede, getHistorialSede, HistorialSedeInfo } from '@/actions/sedes-actions';
+import { Key, Plus, MapPin, MonitorSmartphone, CheckCircle2, Clock, AlertCircle, Trash2, Power, Eye, X, FileText, Users, ShoppingCart, Package, DollarSign, Store, Edit2, Archive } from 'lucide-react';
 
 export default function SedesClient({ initialSedes }: { initialSedes: Sede[] }) {
   const [isPending, startTransition] = useTransition();
   const [newKeyVisible, setNewKeyVisible] = useState<{ id: string, key: string } | null>(null);
   const [successMsg, setSuccessMsg] = useState('');
+  const [inspectingSede, setInspectingSede] = useState<Sede | null>(null);
+  const [historial, setHistorial] = useState<HistorialSedeInfo | null>(null);
+  const [loadingHistorial, setLoadingHistorial] = useState(false);
   const formRef = React.useRef<HTMLFormElement>(null);
 
   const handleRevealKey = (sedeId: string, key: string) => { setNewKeyVisible({ id: sedeId, key }); };
   const handleGenerateKey = async (sedeId: string) => {
-    
-
     startTransition(async () => {
       const result = await generarMasterKey(sedeId);
       if (result.success && result.key) {
@@ -24,6 +25,20 @@ export default function SedesClient({ initialSedes }: { initialSedes: Sede[] }) 
     });
   };
 
+  const handleInspect = async (sede: Sede) => {
+    setInspectingSede(sede);
+    setLoadingHistorial(true);
+    setHistorial(null);
+    const res = await getHistorialSede(sede.id);
+    if ('error' in res) {
+      alert(res.error);
+      setInspectingSede(null);
+    } else {
+      setHistorial(res);
+    }
+    setLoadingHistorial(false);
+  };
+
   const handleDelete = (sedeId: string, nombreSede: string) => {
     if (confirm(`¿Estás seguro de que deseas eliminar la sede "${nombreSede}"?`)) {
       startTransition(async () => {
@@ -32,6 +47,7 @@ export default function SedesClient({ initialSedes }: { initialSedes: Sede[] }) 
           alert(res.error);
         } else {
           alert(res.message);
+          if (inspectingSede?.id === sedeId) setInspectingSede(null);
         }
       });
     }
@@ -45,6 +61,7 @@ export default function SedesClient({ initialSedes }: { initialSedes: Sede[] }) 
           alert(res.error);
         } else {
           alert(res.message);
+          if (inspectingSede?.id === sedeId) setInspectingSede(null);
         }
       });
     }
@@ -68,6 +85,15 @@ export default function SedesClient({ initialSedes }: { initialSedes: Sede[] }) 
                     <p className="text-sm text-neutral-400 truncate">{sede.direccion || 'Sin dirección registrada'}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
+                    {/* Botón Ojo para inspeccionar historial */}
+                    <button
+                      onClick={() => handleInspect(sede)}
+                      className="p-1.5 text-neutral-400 hover:text-indigo-400 hover:bg-indigo-400/10 rounded-lg transition-colors"
+                      title="Ver historial y registros de la sede"
+                    >
+                      <Eye size={16} />
+                    </button>
+
                     {sede.estado_activo ? (
                       <>
                         <span className="px-2.5 py-1 text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg">
@@ -263,6 +289,165 @@ export default function SedesClient({ initialSedes }: { initialSedes: Sede[] }) 
           </div>
         </form>
       </div>
+
+      {/* Modal Inspector de Historial de Sede */}
+      {inspectingSede && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 text-white relative">
+            
+            {/* Header Modal */}
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                    <FileText size={20} className="text-indigo-400" />
+                    Historial de Sede
+                  </h3>
+                  <span className={`px-2 py-0.5 text-xs font-semibold rounded-md border ${
+                    inspectingSede.estado_activo 
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                      : 'bg-neutral-800 text-neutral-400 border-neutral-700'
+                  }`}>
+                    {inspectingSede.estado_activo ? 'Activa' : 'Inactiva'}
+                  </span>
+                </div>
+                <p className="text-sm text-neutral-400 mt-0.5 font-medium">{inspectingSede.nombre_sede}</p>
+              </div>
+
+              <button 
+                onClick={() => setInspectingSede(null)}
+                className="text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-neutral-800 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Content */}
+            {loadingHistorial ? (
+              <div className="py-12 flex flex-col items-center justify-center gap-3 text-neutral-400">
+                <Clock className="w-8 h-8 animate-spin text-indigo-400" />
+                <p className="text-sm">Consultando registros y dependencias...</p>
+              </div>
+            ) : historial ? (
+              <div className="space-y-4">
+                
+                {/* Diagnóstico / Banner */}
+                {historial.puedeEliminarFisicamente ? (
+                  <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs sm:text-sm space-y-1">
+                    <p className="font-semibold flex items-center gap-1.5 text-emerald-400">
+                      <CheckCircle2 size={16} /> Sede sin actividad operativa
+                    </p>
+                    <p className="text-neutral-300">
+                      Esta sede no tiene ventas ni cierres contables registrados. Puede eliminarse definitivamente de la base de datos sin afectar tu contabilidad.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs sm:text-sm space-y-1">
+                    <p className="font-semibold flex items-center gap-1.5 text-amber-400">
+                      <AlertCircle size={16} /> Contiene registros históricos protegidos
+                    </p>
+                    <p className="text-neutral-300">
+                      Para resguardar los balances fiscales, facturas y auditoría contable, esta sede no se borra físicamente pero puede desactivarse para ocultarla.
+                    </p>
+                  </div>
+                )}
+
+                {/* Grid de Registros */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="bg-neutral-950 p-3 rounded-xl border border-neutral-800">
+                    <p className="text-[11px] uppercase tracking-wider text-neutral-400 font-semibold mb-1 flex items-center gap-1">
+                      <ShoppingCart size={13} className="text-indigo-400" /> Ventas
+                    </p>
+                    <p className="text-2xl font-bold text-white">{historial.ventas}</p>
+                    <p className="text-[10px] text-neutral-500">Facturas emitidas</p>
+                  </div>
+
+                  <div className="bg-neutral-950 p-3 rounded-xl border border-neutral-800">
+                    <p className="text-[11px] uppercase tracking-wider text-neutral-400 font-semibold mb-1 flex items-center gap-1">
+                      <Clock size={13} className="text-emerald-400" /> Cierres
+                    </p>
+                    <p className="text-2xl font-bold text-white">{historial.cierres}</p>
+                    <p className="text-[10px] text-neutral-500">Cierres de caja</p>
+                  </div>
+
+                  <div className="bg-neutral-950 p-3 rounded-xl border border-neutral-800">
+                    <p className="text-[11px] uppercase tracking-wider text-neutral-400 font-semibold mb-1 flex items-center gap-1">
+                      <DollarSign size={13} className="text-rose-400" /> Compras/Gastos
+                    </p>
+                    <p className="text-2xl font-bold text-white">{historial.compras + historial.gastos}</p>
+                    <p className="text-[10px] text-neutral-500">Egresos registrados</p>
+                  </div>
+
+                  <div className="bg-neutral-950 p-3 rounded-xl border border-neutral-800">
+                    <p className="text-[11px] uppercase tracking-wider text-neutral-400 font-semibold mb-1 flex items-center gap-1">
+                      <Package size={13} className="text-amber-400" /> Insumos
+                    </p>
+                    <p className="text-2xl font-bold text-white">{historial.insumos}</p>
+                    <p className="text-[10px] text-neutral-500">En inventario</p>
+                  </div>
+
+                  <div className="bg-neutral-950 p-3 rounded-xl border border-neutral-800">
+                    <p className="text-[11px] uppercase tracking-wider text-neutral-400 font-semibold mb-1 flex items-center gap-1">
+                      <Package size={13} className="text-cyan-400" /> Catálogo
+                    </p>
+                    <p className="text-2xl font-bold text-white">{historial.productos}</p>
+                    <p className="text-[10px] text-neutral-500">Productos vinculados</p>
+                  </div>
+
+                  <div className="bg-neutral-950 p-3 rounded-xl border border-neutral-800">
+                    <p className="text-[11px] uppercase tracking-wider text-neutral-400 font-semibold mb-1 flex items-center gap-1">
+                      <Users size={13} className="text-violet-400" /> Usuarios
+                    </p>
+                    <p className="text-2xl font-bold text-white">{historial.usuarios}</p>
+                    <p className="text-[10px] text-neutral-500">Asignados a la sede</p>
+                  </div>
+                </div>
+
+                {/* Acciones */}
+                <div className="pt-2 flex items-center justify-end gap-3">
+                  <button
+                    onClick={() => setInspectingSede(null)}
+                    className="px-4 py-2 text-sm text-neutral-400 hover:text-white rounded-xl transition-colors"
+                  >
+                    Cerrar
+                  </button>
+
+                  {historial.puedeEliminarFisicamente ? (
+                    <button
+                      onClick={() => handleDelete(inspectingSede.id, inspectingSede.nombre_sede)}
+                      disabled={isPending}
+                      className="px-4 py-2 text-sm font-medium bg-red-600 hover:bg-red-500 text-white rounded-xl transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                    >
+                      <Trash2 size={15} />
+                      Eliminar definitivamente
+                    </button>
+                  ) : inspectingSede.estado_activo ? (
+                    <button
+                      onClick={() => handleDelete(inspectingSede.id, inspectingSede.nombre_sede)}
+                      disabled={isPending}
+                      className="px-4 py-2 text-sm font-medium bg-neutral-800 hover:bg-neutral-700 text-amber-300 rounded-xl transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                    >
+                      <Power size={15} />
+                      Desactivar Sede
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleActivar(inspectingSede.id, inspectingSede.nombre_sede)}
+                      disabled={isPending}
+                      className="px-4 py-2 text-sm font-medium bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                    >
+                      <Power size={15} />
+                      Reactivar Sede
+                    </button>
+                  )}
+                </div>
+
+              </div>
+            ) : null}
+
+          </div>
+        </div>
+      )}
 
     </div>
   );
