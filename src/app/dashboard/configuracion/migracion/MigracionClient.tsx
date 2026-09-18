@@ -1,9 +1,9 @@
 "use client";
 import React, { useState } from 'react';
-import { Download, Upload, FileSpreadsheet, Loader2, Database } from 'lucide-react';
+import { Download, Upload, FileSpreadsheet, Loader2, Database, AlertTriangle, Sparkles, RefreshCw, X } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { createClient } from '@/utils/supabase/client';
-import { procesarImportacionUniversal } from '@/actions/migracion-actions';
+import { procesarImportacionUniversal, analizarImportacionProductos, limpiarProductosDuplicados, ModoDuplicados } from '@/actions/migracion-actions';
 
 type TabType = 'excel' | 'db';
 
@@ -18,6 +18,19 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
   const [excelData, setExcelData] = useState<any[]>([]);
   const [columnMapping, setColumnMapping] = useState<Record<string, string>>({});
   const [importingExcel, setImportingExcel] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [cleaningDuplicates, setCleaningDuplicates] = useState(false);
+
+  // --- DUPLICATE RESOLUTION MODAL STATES ---
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [analysisData, setAnalysisData] = useState<{
+    total: number;
+    existentesCount: number;
+    nuevosCount: number;
+    ejemplosExistentes: string[];
+  } | null>(null);
+  const [duplicateMode, setDuplicateMode] = useState<ModoDuplicados>('actualizar');
+  const [pendingMappedData, setPendingMappedData] = useState<any[]>([]);
 
   const supabase = createClient();
 
@@ -77,39 +90,103 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
     reader.readAsBinaryString(file);
   };
 
-  const executeExcelImport = async () => {
+  const getMappedRows = () => {
+    return excelData.map(row => {
+      const rawName = row[columnMapping['nombre']];
+      const rawCat = columnMapping['categoria'] && row[columnMapping['categoria']] !== undefined ? String(row[columnMapping['categoria']]).trim() : '';
+      const rawDesc = columnMapping['descripcion'] && row[columnMapping['descripcion']] !== undefined ? String(row[columnMapping['descripcion']]).trim() : '';
+      const rawBarcode = columnMapping['codigo_barras'] && row[columnMapping['codigo_barras']] !== undefined ? String(row[columnMapping['codigo_barras']]).trim() : '';
+      const rawStock = columnMapping['cantidad'] && row[columnMapping['cantidad']] !== undefined && String(row[columnMapping['cantidad']]).trim() !== ''
+        ? parseFloat(row[columnMapping['cantidad']])
+        : null;
+
+      return {
+        nombre: rawName ? String(rawName).trim() : '',
+        categoria: rawCat || '',
+        descripcion: rawDesc || null,
+        codigo_barras: rawBarcode || null,
+        precio_venta: columnMapping['precio_venta'] && row[columnMapping['precio_venta']] !== undefined ? (parseFloat(row[columnMapping['precio_venta']]) || 0) : 0,
+        costo: columnMapping['costo'] && row[columnMapping['costo']] !== undefined ? (parseFloat(row[columnMapping['costo']]) || 0) : 0,
+        cantidad: (rawStock !== null && !isNaN(rawStock)) ? rawStock : null,
+      };
+    }).filter(x => x.nombre);
+  };
+
+  const handleStartImport = async () => {
     if (!columnMapping['nombre']) return setMessage({ type: 'error', text: 'Mapea el nombre obligatoriamente.' });
-    setImportingExcel(true);
+    const mapped = getMappedRows();
+    if (mapped.length === 0) return setMessage({ type: 'error', text: 'No se encontraron productos con nombre válido.' });
+
+    setAnalyzing(true);
+    setMessage(null);
     try {
-      const mapped = excelData.map(row => {
-        const rawName = row[columnMapping['nombre']];
-        const rawCat = columnMapping['categoria'] && row[columnMapping['categoria']] !== undefined ? String(row[columnMapping['categoria']]).trim() : '';
-        const rawDesc = columnMapping['descripcion'] && row[columnMapping['descripcion']] !== undefined ? String(row[columnMapping['descripcion']]).trim() : '';
-        const rawBarcode = columnMapping['codigo_barras'] && row[columnMapping['codigo_barras']] !== undefined ? String(row[columnMapping['codigo_barras']]).trim() : '';
-        const rawStock = columnMapping['cantidad'] && row[columnMapping['cantidad']] !== undefined && String(row[columnMapping['cantidad']]).trim() !== ''
-          ? parseFloat(row[columnMapping['cantidad']])
-          : null;
+      const analysis = await analizarImportacionProductos(mapped);
+      setAnalyzing(false);
 
-        return {
-          nombre: rawName ? String(rawName).trim() : '',
-          categoria: rawCat || '',
-          descripcion: rawDesc || null,
-          codigo_barras: rawBarcode || null,
-          precio_venta: columnMapping['precio_venta'] && row[columnMapping['precio_venta']] !== undefined ? (parseFloat(row[columnMapping['precio_venta']]) || 0) : 0,
-          costo: columnMapping['costo'] && row[columnMapping['costo']] !== undefined ? (parseFloat(row[columnMapping['costo']]) || 0) : 0,
-          cantidad: (rawStock !== null && !isNaN(rawStock)) ? rawStock : null,
-        };
-      }).filter(x => x.nombre);
+      if (analysis.success && (analysis.existentesCount || 0) > 0) {
+        setAnalysisData({
+          total: analysis.total || 0,
+          existentesCount: analysis.existentesCount || 0,
+          nuevosCount: analysis.nuevosCount || 0,
+          ejemplosExistentes: analysis.ejemplosExistentes || []
+        });
+        setPendingMappedData(mapped);
+        setShowDuplicateModal(true);
+        return;
+      }
 
-      const res = await procesarImportacionUniversal(mapped, selectedSede);
+      // Si ningún producto existe, proceder de inmediato
+      await executeImportWithMode(mapped, 'actualizar');
+    } catch (err: any) {
+      setAnalyzing(false);
+      setMessage({ type: 'error', text: err.message || 'Error al analizar duplicados' });
+    }
+  };
+
+  const executeImportWithMode = async (mapped: any[], mode: ModoDuplicados) => {
+    setShowDuplicateModal(false);
+    setImportingExcel(true);
+    setMessage(null);
+    try {
+      const res = await procesarImportacionUniversal(mapped, selectedSede, mode);
       if (res.success) {
-        setMessage({ type: 'success', text: `¡Se importaron ${res.count} productos exitosamente!` });
+        let msg = `¡Proceso completado exitosamente! `;
+        if (res.createdCount) msg += `Nuevos creados: ${res.createdCount}. `;
+        if (res.updatedCount) msg += `Existentes actualizados: ${res.updatedCount}. `;
+        if (res.omittedCount) msg += `Omitidos (ya existían): ${res.omittedCount}.`;
+        setMessage({ type: 'success', text: msg });
         setExcelFile(null);
-      } else setMessage({ type: 'error', text: res.error || 'Error en la importación' });
+      } else {
+        setMessage({ type: 'error', text: res.error || 'Error en la importación' });
+      }
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message });
     } finally {
       setImportingExcel(false);
+    }
+  };
+
+  const handleCleanDuplicates = async () => {
+    if (!confirm('¿Deseas buscar y eliminar automáticamente los productos duplicados con el mismo nombre en tu catálogo? Se conservará la versión principal de cada producto.')) {
+      return;
+    }
+    setCleaningDuplicates(true);
+    setMessage(null);
+    try {
+      const res = await limpiarProductosDuplicados();
+      if (res.success) {
+        if ((res.count || 0) > 0) {
+          setMessage({ type: 'success', text: `¡Se eliminaron ${res.count} productos duplicados del catálogo con éxito!` });
+        } else {
+          setMessage({ type: 'success', text: 'Tu catálogo está limpio: no se encontraron productos duplicados con el mismo nombre.' });
+        }
+      } else {
+        setMessage({ type: 'error', text: res.error || 'Error limpiando duplicados' });
+      }
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message });
+    } finally {
+      setCleaningDuplicates(false);
     }
   };
 
@@ -123,11 +200,23 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
             <p className="text-sm text-neutral-500">Módulo de Importación y Migración Histórica</p>
           </div>
           
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Sede Destino:</span>
-            <select value={selectedSede} onChange={e => setSelectedSede(e.target.value)} className="bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg px-3 py-2 text-sm outline-none">
-              {sedes.map(s => <option key={s.id} value={s.id}>{s.nombre_sede}</option>)}
-            </select>
+          <div className="flex flex-wrap items-center gap-3">
+            <button 
+              onClick={handleCleanDuplicates}
+              disabled={cleaningDuplicates}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+              title="Detecta productos que tengan el mismo nombre en la empresa y deja una sola versión principal"
+            >
+              {cleaningDuplicates ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+              {cleaningDuplicates ? 'Limpiando...' : 'Desduplicar Catálogo'}
+            </button>
+
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Sede Destino:</span>
+              <select value={selectedSede} onChange={e => setSelectedSede(e.target.value)} className="bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg px-3 py-2 text-sm outline-none">
+                {sedes.map(s => <option key={s.id} value={s.id}>{s.nombre_sede}</option>)}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -240,7 +329,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
                    </div>
                  </div>
 
-                 <button onClick={executeExcelImport} disabled={importingExcel} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold flex justify-center items-center gap-2 transition-all">
+                  <button onClick={handleStartImport} disabled={importingExcel} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold flex justify-center items-center gap-2 transition-all">
                    {importingExcel ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
                    {importingExcel ? 'Procesando...' : `Importar ${excelData.length} Productos`}
                  </button>

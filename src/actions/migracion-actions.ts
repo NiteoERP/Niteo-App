@@ -35,7 +35,114 @@ export async function exportarCatalogo() {
   return { success: true, data: productos };
 }
 
-export async function procesarImportacionUniversal(productos: any[], sedeId: string) {
+export type ModoDuplicados = 'actualizar' | 'omitir' | 'duplicar';
+
+export async function analizarImportacionProductos(productos: any[]) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autorizado' };
+  const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
+  if (!perfil) return { success: false, error: 'Perfil no encontrado' };
+
+  const { data: existingProds } = await supabase
+    .from('productos')
+    .select('id, nombre, codigo_barras')
+    .eq('empresa_id', perfil.empresa_id);
+
+  const existingByName = new Set<string>(
+    (existingProds || []).map((p: any) => (p.nombre ? p.nombre.trim().toLowerCase() : ''))
+  );
+  const existingByBarcode = new Set<string>(
+    (existingProds || [])
+      .filter((p: any) => p.codigo_barras && String(p.codigo_barras).trim().length > 0)
+      .map((p: any) => String(p.codigo_barras).trim())
+  );
+
+  const duplicados: string[] = [];
+  let nuevosCount = 0;
+
+  for (const p of productos) {
+    const rawName = p.nombre ? String(p.nombre).trim().toLowerCase() : '';
+    const rawBarcode = p.codigo_barras ? String(p.codigo_barras).trim() : '';
+
+    const isMatch = (rawName && existingByName.has(rawName)) || (rawBarcode && existingByBarcode.has(rawBarcode));
+    if (isMatch) {
+      if (p.nombre && !duplicados.includes(p.nombre.trim())) {
+        duplicados.push(p.nombre.trim());
+      }
+    } else {
+      nuevosCount++;
+    }
+  }
+
+  return {
+    success: true,
+    total: productos.length,
+    existentesCount: duplicados.length,
+    nuevosCount,
+    ejemplosExistentes: duplicados.slice(0, 5)
+  };
+}
+
+export async function limpiarProductosDuplicados() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autorizado' };
+  const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
+  if (!perfil) return { success: false, error: 'Perfil no encontrado' };
+
+  // Obtener todos los productos ordenados cronológicamente
+  const { data: allProds, error } = await supabase
+    .from('productos')
+    .select('id, nombre, codigo_barras, id_insumo_vinculado, created_at')
+    .eq('empresa_id', perfil.empresa_id)
+    .order('created_at', { ascending: true });
+
+  if (error || !allProds) return { success: false, error: 'Error consultando catálogo' };
+
+  const groups = new Map<string, any[]>();
+  for (const p of allProds) {
+    const key = p.nombre ? p.nombre.trim().toLowerCase() : '';
+    if (!key) continue;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(p);
+  }
+
+  let deletedCount = 0;
+  for (const [_, prods] of groups) {
+    if (prods.length > 1) {
+      // Priorizar el producto que tenga insumo vinculado o código de barras
+      const sorted = [...prods].sort((a, b) => {
+        if (a.id_insumo_vinculado && !b.id_insumo_vinculado) return -1;
+        if (!a.id_insumo_vinculado && b.id_insumo_vinculado) return 1;
+        if (a.codigo_barras && !b.codigo_barras) return -1;
+        if (!a.codigo_barras && b.codigo_barras) return 1;
+        return 0;
+      });
+
+      const [_, ...duplicates] = sorted;
+      const idsToDelete = duplicates.map(d => d.id);
+
+      // Eliminar recetas de los duplicados para evitar error de FK
+      await supabase.from('recetas').delete().in('producto_id', idsToDelete);
+      
+      const { error: delErr } = await supabase.from('productos').delete().in('id', idsToDelete);
+      if (!delErr) {
+        deletedCount += idsToDelete.length;
+      }
+    }
+  }
+
+  revalidatePath('/dashboard/catalogo');
+  revalidatePath('/dashboard/inventario');
+  return { success: true, count: deletedCount };
+}
+
+export async function procesarImportacionUniversal(
+  productos: any[],
+  sedeId: string,
+  modoDuplicados: ModoDuplicados = 'actualizar'
+) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'No autorizado' };
@@ -107,25 +214,163 @@ export async function procesarImportacionUniversal(productos: any[], sedeId: str
     }
   }
 
-  // 3. Consultar códigos de barra existentes en la empresa para evitar colisiones
-  const { data: existingCodes } = await supabase
+  // 3. Consultar productos existentes en la empresa para resolver duplicados
+  const { data: existingProductsDB } = await supabase
     .from('productos')
-    .select('codigo_barras')
-    .eq('empresa_id', perfil.empresa_id)
-    .not('codigo_barras', 'is', null);
+    .select('id, nombre, codigo_barras, costo, precio_venta, categoria_id, descripcion, id_insumo_vinculado')
+    .eq('empresa_id', perfil.empresa_id);
 
-  const usedBarcodes = new Set<string>(
-    (existingCodes || [])
-      .map((c: any) => c.codigo_barras ? String(c.codigo_barras).trim() : '')
-      .filter((b: string) => b.length > 0)
+  const existingByName = new Map<string, any>(
+    (existingProductsDB || []).map((p: any) => [(p.nombre || '').trim().toLowerCase(), p])
+  );
+  const existingByBarcode = new Map<string, any>(
+    (existingProductsDB || [])
+      .filter((p: any) => p.codigo_barras && String(p.codigo_barras).trim().length > 0)
+      .map((p: any) => [String(p.codigo_barras).trim(), p])
   );
 
-  let successCount = 0;
+  const usedBarcodes = new Set<string>(
+    (existingProductsDB || [])
+      .filter((p: any) => p.codigo_barras && String(p.codigo_barras).trim().length > 0)
+      .map((p: any) => String(p.codigo_barras).trim())
+  );
 
-  // Procesamos en bloques
+  let createdCount = 0;
+  let updatedCount = 0;
+  let omittedCount = 0;
+
+  const toInsert: any[] = [];
+  const toUpdate: { existing: any; item: any }[] = [];
+
+  for (const p of productos) {
+    const rawBarcode = p.codigo_barras ? String(p.codigo_barras).trim() : '';
+    const rawName = p.nombre ? String(p.nombre).trim().toLowerCase() : '';
+    const existing = (rawBarcode ? existingByBarcode.get(rawBarcode) : null) || (rawName ? existingByName.get(rawName) : null);
+
+    if (existing && modoDuplicados !== 'duplicar') {
+      if (modoDuplicados === 'omitir') {
+        omittedCount++;
+        continue;
+      } else if (modoDuplicados === 'actualizar') {
+        toUpdate.push({ existing, item: p });
+        continue;
+      }
+    }
+
+    toInsert.push(p);
+  }
+
+  // A. Procesar Actualizaciones de productos existentes
+  for (const { existing, item } of toUpdate) {
+    const catKey = item.categoria ? item.categoria.toString().trim().toLowerCase() : '';
+    const catId = catKey ? (categoriasMap.get(catKey) || null) : null;
+    const rawDesc = item.descripcion ? String(item.descripcion).trim() : '';
+
+    let barcodeVal: string | null = null;
+    if (item.codigo_barras) {
+      const rawCode = String(item.codigo_barras).trim();
+      if (rawCode.length > 0) {
+        if (!usedBarcodes.has(rawCode) || existing.codigo_barras === rawCode) {
+          barcodeVal = rawCode;
+          usedBarcodes.add(rawCode);
+        }
+      }
+    }
+
+    const updates: any = {};
+    if (item.precio_venta !== undefined && item.precio_venta !== null && !isNaN(item.precio_venta) && item.precio_venta > 0) {
+      updates.precio_venta = parseFloat(item.precio_venta);
+    }
+    if (item.costo !== undefined && item.costo !== null && !isNaN(item.costo) && item.costo > 0) {
+      updates.costo = parseFloat(item.costo);
+    }
+    if (catId) updates.categoria_id = catId;
+    if (rawDesc) updates.descripcion = rawDesc;
+    if (barcodeVal) updates.codigo_barras = barcodeVal;
+
+    if (Object.keys(updates).length > 0) {
+      await supabase.from('productos').update(updates).eq('id', existing.id);
+    }
+
+    // Gestionar Stock del producto actualizado
+    const tieneCantidad = item.cantidad !== null && item.cantidad !== undefined && !isNaN(Number(item.cantidad));
+    if (tieneCantidad) {
+      const stockEntrante = Math.max(0, Number(item.cantidad));
+      const keyNombre = (existing.nombre || '').trim().toLowerCase();
+      let existingIns = insumosMap.get(keyNombre);
+
+      if (existingIns) {
+        const nuevaCant = Number(existingIns.cantidad_actual || 0) + stockEntrante;
+        await supabase
+          .from('inventario_insumos')
+          .update({
+            cantidad_actual: nuevaCant,
+            costo_promedio: updates.costo || existingIns.costo_promedio
+          })
+          .eq('id', existingIns.id);
+        existingIns.cantidad_actual = nuevaCant;
+
+        if (stockEntrante > 0) {
+          await supabase.from('movimientos_inventario').insert({
+            empresa_id: perfil.empresa_id,
+            insumo_id: existingIns.id,
+            usuario_id: user.id,
+            tipo_movimiento: 'ENTRADA',
+            cantidad: stockEntrante,
+            costo_perdido: 0,
+            motivo: 'Actualización de stock desde migración Excel',
+            fecha_movimiento: new Date().toISOString(),
+          });
+        }
+      } else {
+        const { data: newIns } = await supabase
+          .from('inventario_insumos')
+          .insert({
+            empresa_id: perfil.empresa_id,
+            sede_id: sedeId,
+            nombre: existing.nombre,
+            unidad_medida: normalizarUnidad(item.unidad_medida),
+            costo_promedio: updates.costo || existing.costo || 0,
+            cantidad_actual: stockEntrante,
+          })
+          .select('id, nombre, cantidad_actual, costo_promedio')
+          .single();
+
+        if (newIns) {
+          insumosMap.set(keyNombre, newIns);
+          await Promise.all([
+            supabase.from('productos').update({ id_insumo_vinculado: newIns.id }).eq('id', existing.id),
+            supabase.from('recetas').insert({
+              empresa_id: perfil.empresa_id,
+              producto_id: existing.id,
+              insumo_id: newIns.id,
+              cantidad_necesaria: 1,
+            })
+          ]);
+
+          if (stockEntrante > 0) {
+            await supabase.from('movimientos_inventario').insert({
+              empresa_id: perfil.empresa_id,
+              insumo_id: newIns.id,
+              usuario_id: user.id,
+              tipo_movimiento: 'ENTRADA',
+              cantidad: stockEntrante,
+              costo_perdido: 0,
+              motivo: 'Actualización de stock desde migración Excel',
+              fecha_movimiento: new Date().toISOString(),
+            });
+          }
+        }
+      }
+    }
+
+    updatedCount++;
+  }
+
+  // B. Procesar Inserciones en Lotes para nuevos productos
   const chunkSize = 50;
-  for (let i = 0; i < productos.length; i += chunkSize) {
-    const chunk = productos.slice(i, i + chunkSize);
+  for (let i = 0; i < toInsert.length; i += chunkSize) {
+    const chunk = toInsert.slice(i, i + chunkSize);
 
     const prodsToInsert = chunk.map((p: any) => {
       const catKey = p.categoria ? p.categoria.toString().trim().toLowerCase() : '';
@@ -138,10 +383,6 @@ export async function procesarImportacionUniversal(productos: any[], sedeId: str
           if (!usedBarcodes.has(rawCode)) {
             barcodeVal = rawCode;
             usedBarcodes.add(rawCode);
-          } else {
-            // Código repetido en el archivo o ya existente en la base de datos:
-            // se deja en null para no romper la importación del resto del catálogo
-            barcodeVal = null;
           }
         }
       }
@@ -174,7 +415,6 @@ export async function procesarImportacionUniversal(productos: any[], sedeId: str
       return { success: false, error: 'Hubo un error importando los productos: ' + (prodErr?.message || '') };
     }
 
-    // Para cada producto insertado, gestionar insumo, receta y movimiento
     for (let idx = 0; idx < insertedProds.length; idx++) {
       const prodCreated = insertedProds[idx];
       const origItem = chunk[idx];
@@ -218,7 +458,6 @@ export async function procesarImportacionUniversal(productos: any[], sedeId: str
         }
       }
 
-      // Enlazar insumo y receta al producto
       if (insumoId) {
         await Promise.all([
           supabase.from('productos').update({ id_insumo_vinculado: insumoId }).eq('id', prodCreated.id),
@@ -230,7 +469,6 @@ export async function procesarImportacionUniversal(productos: any[], sedeId: str
           })
         ]);
 
-        // Registrar movimiento de inventario si hubo stock inicial
         if (stockInicial > 0) {
           await supabase.from('movimientos_inventario').insert({
             empresa_id: perfil.empresa_id,
@@ -245,13 +483,19 @@ export async function procesarImportacionUniversal(productos: any[], sedeId: str
         }
       }
 
-      successCount++;
+      createdCount++;
     }
   }
 
   revalidatePath('/dashboard/inventario');
   revalidatePath('/dashboard/catalogo');
-  return { success: true, count: successCount };
+  return {
+    success: true,
+    count: createdCount + updatedCount,
+    createdCount,
+    updatedCount,
+    omittedCount
+  };
 }
 
 /**
