@@ -220,7 +220,7 @@ export default function InformesPage() {
     if (selectedReport && sheetStartDate && sheetEndDate) {
       handleGenerate(selectedReport.id, sheetStartDate, sheetEndDate);
     }
-  }, [selectedReport, sheetStartDate, sheetEndDate, categoriaFilter, cajeroFilter, clienteFilter]);
+  }, [selectedReport, sheetStartDate, sheetEndDate, categoriaFilter, cajeroFilter, clienteFilter, sedeId]);
 
 
   const handleGenerate = async (reportId: string, s: Date, e: Date) => {
@@ -1065,8 +1065,17 @@ function ResultCards({ data }: { data: any[] }) {
 }
 
 function ResultTable({ data }: { data: any[] }) {
+  const [page, setPage] = useState(1);
+  const pageSize = 50;
+
+  useEffect(() => {
+    setPage(1);
+  }, [data]);
+
   if (!data || data.length === 0) return null;
   const keys = Object.keys(data[0]);
+  const totalPages = Math.ceil(data.length / pageSize);
+  const paginatedData = data.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden shadow-2xl relative w-full">
@@ -1082,7 +1091,7 @@ function ResultTable({ data }: { data: any[] }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-800/50">
-            {data.map((row, idx) => (
+            {paginatedData.map((row, idx) => (
               <tr key={idx} className="hover:bg-neutral-800/30 transition-colors">
                 {keys.map((key, i) => {
                   const val = row[key];
@@ -1098,6 +1107,35 @@ function ResultTable({ data }: { data: any[] }) {
           </tbody>
         </table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-6 py-3 border-t border-neutral-800 bg-neutral-950/50 text-xs text-neutral-400">
+          <div>
+            Mostrando {((page - 1) * pageSize) + 1} - {Math.min(page * pageSize, data.length)} de {data.length} registros
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={page <= 1}
+              onClick={() => setPage(p => Math.max(p - 1, 1))}
+              className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+            >
+              Anterior
+            </button>
+            <span className="text-neutral-300 font-medium px-2">
+              Pág. {page} de {totalPages}
+            </span>
+            <button
+              type="button"
+              disabled={page >= totalPages}
+              onClick={() => setPage(p => Math.min(p + 1, totalPages))}
+              className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+            >
+              Siguiente
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

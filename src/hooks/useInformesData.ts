@@ -89,8 +89,8 @@ export function useGenerateReport(empresaId: string) {
 
       const p_empresa_id = empresaId;
       const p_sede_id = sedeId === 'ALL' ? null : sedeId;
-      const p_fecha_inicio = format(startOfDay(startDate), "yyyy-MM-dd'T'HH:mm:ssXXX");
-      const p_fecha_fin = format(endOfDay(endDate), "yyyy-MM-dd'T'HH:mm:ssXXX");
+      const p_fecha_inicio = `${format(startDate, 'yyyy-MM-dd')}T00:00:00+00:00`;
+      const p_fecha_fin = `${format(endDate, 'yyyy-MM-dd')}T23:59:59.999+00:00`;
       const p_categoria = extra.categoriaFilter || null;
       const p_cajero_id = extra.cajeroId || null;
       const p_cliente_id = extra.clienteId || null;

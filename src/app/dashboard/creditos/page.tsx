@@ -1,13 +1,12 @@
+﻿"use client";
 
-"use client";
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { getSedes } from "@/actions/dashboard-actions";
-import { getClientesConDeuda, getDetalleDeudaCliente, registrarAbono, getMetodosPago, registrarAbonoGlobal, getHistorialAbonosCliente } from "@/actions/creditos-actions";
-import { format, startOfYear, startOfDay, endOfDay } from "date-fns";
+import { getClientesConDeuda, getDetalleDeudaCliente, registrarAbono, getMetodosPago, registrarAbonoGlobal, getHistorialAbonosCliente, getTasaBCVActual } from "@/actions/creditos-actions";
+import { format, startOfDay, endOfDay } from "date-fns";
 import { useEmpresa } from "@/components/providers/EmpresaProvider";
 import CreatableSelect from "react-select/creatable";
-import { Calendar as CalendarIcon, Store, Wallet, Search, Check, FileText, ShoppingCart, User, Users, PlusCircle, X, Download, Hash, History } from "lucide-react";
+import { Store, Wallet, Search, FileText, ShoppingCart, Users, PlusCircle, X, Download, Hash, History } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -16,20 +15,20 @@ export default function CreditosPage() {
   const [sedes, setSedes] = useState<any[]>([]);
   const [metodosDisponibles, setMetodosDisponibles] = useState<string[]>(["Efectivo"]);
   const [sedeId, setSedeId] = useState("ALL");
-  
+
   const [startDate, setStartDate] = useState<Date>(new Date('2000-01-01'));
   const [endDate, setEndDate] = useState<Date>(new Date('2100-01-01'));
-  
+
   const [clientes, setClientes] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  
-  // Paginación
+
+  // Paginacion
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [isLoadingClientes, setIsLoadingClientes] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  
+
   const [selectedClienteId, setSelectedClienteId] = useState<string | null>(null);
   const [detalle, setDetalle] = useState<any[]>([]);
   const [isLoadingDetalle, setIsLoadingDetalle] = useState(false);
@@ -49,14 +48,31 @@ export default function CreditosPage() {
   const [isLoadingHistorial, setIsLoadingHistorial] = useState(false);
   const [montoAbonarGlobal, setMontoAbonarGlobal] = useState("");
 
+  // F9: Estados de tasa BCV, moneda de entrada e idempotency key
+  const [tasaBCV, setTasaBCV] = useState<number>(1);
+  const [monedaEntrada, setMonedaEntrada] = useState<'USD' | 'Bs'>('USD');
+  const [idempotencyKey, setIdempotencyKey] = useState('');
+
+  // F9: Equivalente en tiempo real (USD vs Bs)
+  const montoEquivalente = useMemo(() => {
+    const n = parseFloat(montoAbonar) || 0;
+    if (monedaEntrada === 'Bs') {
+      return { usd: tasaBCV > 0 ? parseFloat((n / tasaBCV).toFixed(2)) : 0, bs: n };
+    }
+    return { usd: n, bs: parseFloat((n * tasaBCV).toFixed(2)) };
+  }, [montoAbonar, monedaEntrada, tasaBCV]);
+
   useEffect(() => {
     getSedes().then(s => setSedes(s));
-    getMetodosPago().then(m => {
-      if (m.success && m.data && m.data.length > 0) {
-        setMetodosDisponibles(m.data.map((x:any) => x.nombre));
-        setMetodoPago(m.data[0].nombre);
+    // F9: Consumir getMetodosPago con su nuevo tipo { success, data: string[] }
+    getMetodosPago().then(res => {
+      if (res.success && res.data && res.data.length > 0) {
+        setMetodosDisponibles(res.data);
+        setMetodoPago(res.data[0]);
       }
     });
+    // F9: Cargar tasa BCV al inicio
+    getTasaBCVActual().then(tasa => setTasaBCV(tasa));
   }, []);
 
   // Debounce search
@@ -76,7 +92,7 @@ export default function CreditosPage() {
       if (res.success) {
         setClientes(res.data || []);
         setTotalCount(res.totalCount || 0);
-        // Si el cliente seleccionado ya no está, limpiar detalle
+        // Si el cliente seleccionado ya no esta, limpiar detalle
         if (selectedClienteId && !res.data?.find((c:any) => c.id_cliente === selectedClienteId)) {
           setSelectedClienteId(null);
           setDetalle([]);
@@ -136,7 +152,7 @@ export default function CreditosPage() {
         setTotalCount(resCli.totalCount || 0);
       }
       setMontoAbonarGlobal("");
-      alert(`Abono de ${montoAbonarGlobal} USD registrado correctamente. Facturas afectadas: ${res.facturasPagadas}`);
+      alert("Abono de " + montoAbonarGlobal + " USD registrado correctamente. Facturas afectadas: " + res.facturasPagadas);
     } else {
       alert("Error: " + res.error);
     }
@@ -146,7 +162,18 @@ export default function CreditosPage() {
   const handlePagar = async () => {
     if (!facturaPagar || !montoAbonar) return;
     setIsPagarLoading(true);
-    const res = await registrarAbono(facturaPagar.id_factura, Number(montoAbonar), metodoPago, fechaPago ? new Date(fechaPago).toISOString() : undefined, referencia);
+    // F9: Llamada con todos los nuevos parametros de registrarAbono
+    const res = await registrarAbono(
+      facturaPagar.id_factura,
+      montoEquivalente.usd,
+      metodoPago,
+      monedaEntrada,
+      parseFloat(montoAbonar) || 0,
+      tasaBCV,
+      idempotencyKey,
+      fechaPago ? new Date(fechaPago).toISOString() : undefined,
+      referencia
+    );
     if (res.success) {
       setShowPagoModal(false);
       // Recargar detalle y lista actual sin resetear
@@ -164,11 +191,10 @@ export default function CreditosPage() {
 
   const clienteSeleccionado = clientes.find(c => c.id_cliente === selectedClienteId);
 
-  
   const filteredDetalle = detalle
     .filter(fac => {
       if (!searchProducto.trim()) return true;
-      return fac.productos_detalle?.some((p: any) => 
+      return fac.productos_detalle?.some((p: any) =>
         p.producto?.toLowerCase().includes(searchProducto.toLowerCase().trim())
       );
     })
@@ -182,10 +208,10 @@ export default function CreditosPage() {
     if (!clienteSeleccionado) return;
     const doc = new jsPDF();
     doc.setFontSize(16);
-    doc.text(`Estado de Cuenta: ${clienteSeleccionado.nombre_cliente}`, 14, 20);
+    doc.text("Estado de Cuenta: " + clienteSeleccionado.nombre_cliente, 14, 20);
     doc.setFontSize(12);
-    doc.text(`Deuda Total: ${formatCurrency(clienteSeleccionado.monto_adeudado)}`, 14, 30);
-    doc.text(`Fecha del Reporte: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 14, 38);
+    doc.text("Deuda Total: " + formatCurrency(clienteSeleccionado.monto_adeudado), 14, 30);
+    doc.text("Fecha del Reporte: " + format(new Date(), "dd/MM/yyyy HH:mm"), 14, 38);
 
     const tableData = filteredDetalle.map(fac => [
       fac.numero_documento,
@@ -199,12 +225,12 @@ export default function CreditosPage() {
       head: [["Factura", "Fecha", "Total", "Deuda"]],
       body: tableData,
     });
-    doc.save(`Estado_Cuenta_${clienteSeleccionado.nombre_cliente.replace(/\s+/g, "_")}.pdf`);
+    doc.save("Estado_Cuenta_" + clienteSeleccionado.nombre_cliente.replace(/\s+/g, "_") + ".pdf");
   };
 
   return (
     <div className="flex flex-col lg:flex-row h-[calc(100vh-64px)] overflow-hidden">
-      
+
       {/* SIDEBAR CLIENTES */}
       <div className="w-full lg:w-[400px] flex flex-col bg-neutral-950 border-r border-neutral-800">
         <div className="p-4 border-b border-neutral-800 space-y-4">
@@ -213,13 +239,13 @@ export default function CreditosPage() {
               <Users className="text-emerald-500" /> Cuentas por Cobrar
             </h1>
           </div>
-          
+
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Store size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
-              <select 
-                value={sedeId} 
-                onChange={e => setSedeId(e.target.value)} 
+              <select
+                value={sedeId}
+                onChange={e => setSedeId(e.target.value)}
                 className="w-full bg-neutral-900 border border-neutral-800 text-neutral-300 text-sm py-2 pl-9 pr-3 rounded-lg appearance-none outline-none focus:border-emerald-500 transition-colors"
               >
                 <option value="ALL">Todas las sedes</option>
@@ -227,12 +253,12 @@ export default function CreditosPage() {
               </select>
             </div>
           </div>
-          
+
           <div className="relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
-            <input 
-              type="text" 
-              placeholder="Buscar cliente..." 
+            <input
+              type="text"
+              placeholder="Buscar cliente..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="w-full bg-neutral-900 border border-neutral-800 text-white text-sm py-2 pl-10 pr-4 rounded-xl outline-none focus:border-emerald-500 transition-colors placeholder-neutral-600"
@@ -247,7 +273,6 @@ export default function CreditosPage() {
           }
         }}>
           {isLoadingClientes ? (
-            // Skeleton Loader
             [1,2,3,4,5,6].map((i) => (
               <div key={i} className="w-full p-4 rounded-xl border border-neutral-800 bg-neutral-900/30 animate-pulse h-24"></div>
             ))
@@ -258,26 +283,26 @@ export default function CreditosPage() {
               <button
                 key={cli.id_cliente}
                 onClick={() => fetchDetalle(cli.id_cliente)}
-                className={`w-full text-left p-4 rounded-xl border transition-all ${
-                  selectedClienteId === cli.id_cliente 
-                    ? "bg-emerald-900/20 border-emerald-500/50 shadow-lg" 
+                className={"w-full text-left p-4 rounded-xl border transition-all " + (
+                  selectedClienteId === cli.id_cliente
+                    ? "bg-emerald-900/20 border-emerald-500/50 shadow-lg"
                     : "bg-neutral-900/50 border-neutral-800 hover:bg-neutral-900"
-                }`}
+                )}
               >
                 <div className="flex justify-between items-start mb-1">
                   <div>
-                    <h3 className={`font-black uppercase truncate pr-2 ${selectedClienteId === cli.id_cliente ? "text-emerald-400" : "text-white"}`}>{cli.nombre_cliente}</h3>
+                    <h3 className={"font-black uppercase truncate pr-2 " + (selectedClienteId === cli.id_cliente ? "text-emerald-400" : "text-white")}>{cli.nombre_cliente}</h3>
                     {cli.sedes_involucradas && <p className="text-xs text-neutral-500 font-medium">{cli.sedes_involucradas}</p>}
                   </div>
-                  <span className={`font-bold ${selectedClienteId === cli.id_cliente ? "text-rose-400" : "text-rose-500"}`}>{formatCurrency(cli.monto_adeudado)}</span>
+                  <span className={"font-bold " + (selectedClienteId === cli.id_cliente ? "text-rose-400" : "text-rose-500")}>{formatCurrency(cli.monto_adeudado)}</span>
                 </div>
                 <p className="text-xs text-neutral-500">
-                  Última compra: {cli.ultima_compra ? format(new Date(cli.ultima_compra), "dd/MM/yyyy") : "-"}
+                  Ultima compra: {cli.ultima_compra ? format(new Date(cli.ultima_compra), "dd/MM/yyyy") : "-"}
                 </p>
               </button>
             ))
           )}
-          
+
           {!isLoadingClientes && isLoadingMore && (
             <div className="w-full p-4 rounded-xl border border-neutral-800 bg-neutral-900/30 animate-pulse h-24"></div>
           )}
@@ -300,27 +325,33 @@ export default function CreditosPage() {
                 <p className="text-rose-400 font-bold mt-1">Deuda Total: {formatCurrency(clienteSeleccionado?.monto_adeudado || 0)}</p>
               </div>
               <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => { setMontoAbonarGlobal(clienteSeleccionado?.monto_adeudado?.toString() || "0"); setFechaPago(format(new Date(), "yyyy-MM-dd'T'HH:mm")); setReferencia(""); setShowPagoGlobalModal(true); }}
-                    className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold transition-colors text-sm"
-                  >
-                    <Wallet size={16} /> Saldar Deuda
-                  </button>
-                  <button
-                    onClick={handleOpenHistorial}
-                    className="flex items-center gap-2 bg-neutral-800 hover:bg-neutral-700 text-white px-4 py-2 rounded-lg font-bold transition-colors text-sm border border-neutral-700"
-                  >
-                    <History size={16} /> Historial Abonos
-                  </button>
-                  <button
-                    onClick={generatePDF}
+                <button
+                  onClick={() => {
+                    setMontoAbonarGlobal(clienteSeleccionado?.monto_adeudado?.toString() || "0");
+                    setFechaPago(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
+                    setReferencia("");
+                    setIdempotencyKey(crypto.randomUUID());
+                    setShowPagoGlobalModal(true);
+                  }}
+                  className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold transition-colors text-sm"
+                >
+                  <Wallet size={16} /> Saldar Deuda
+                </button>
+                <button
+                  onClick={handleOpenHistorial}
+                  className="flex items-center gap-2 bg-neutral-800 hover:bg-neutral-700 text-white px-4 py-2 rounded-lg font-bold transition-colors text-sm border border-neutral-700"
+                >
+                  <History size={16} /> Historial Abonos
+                </button>
+                <button
+                  onClick={generatePDF}
                   className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
                 >
                   <Download size={16} /> Exportar PDF
                 </button>
               </div>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {isLoadingDetalle ? (
                 <div className="space-y-6">
@@ -339,7 +370,7 @@ export default function CreditosPage() {
                         </div>
                         <p className="text-xs text-neutral-500">{format(new Date(fac.fecha_venta), "dd/MM/yyyy HH:mm")}</p>
                       </div>
-                      
+
                       <div className="flex items-center gap-6">
                         <div className="text-right">
                           <p className="text-xs font-bold text-neutral-400 uppercase">Total Factura</p>
@@ -349,19 +380,28 @@ export default function CreditosPage() {
                           <p className="text-xs font-bold text-rose-500 uppercase">Falta por Pagar</p>
                           <p className="font-black text-rose-400 text-lg">{formatCurrency(fac.saldo_pendiente || 0)}</p>
                         </div>
-                        <button 
-                          onClick={() => { setFacturaPagar(fac); setMontoAbonar(fac.saldo_pendiente); setFechaPago(format(new Date(), "yyyy-MM-dd'T'HH:mm")); setReferencia(""); setShowPagoModal(true); }}
+                        <button
+                          onClick={() => {
+                            setFacturaPagar(fac);
+                            setMontoAbonar(fac.saldo_pendiente);
+                            setFechaPago(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
+                            setReferencia("");
+                            // F9: Idempotency key + reset moneda al abrir modal individual
+                            setIdempotencyKey(crypto.randomUUID());
+                            setMonedaEntrada('USD');
+                            setShowPagoModal(true);
+                          }}
                           className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-lg flex items-center gap-2 transition-colors"
                         >
                           <PlusCircle size={16} /> Abonar
                         </button>
                       </div>
                     </div>
-                    
+
                     <div className="p-4 bg-neutral-950">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div>
-                          <p className="text-xs font-bold text-neutral-500 uppercase mb-3 flex items-center gap-2"><ShoppingCart size={14} /> Qué Llevó</p>
+                          <p className="text-xs font-bold text-neutral-500 uppercase mb-3 flex items-center gap-2"><ShoppingCart size={14} /> Que Llevo</p>
                           <div className="space-y-2">
                             {fac.productos_detalle?.map((p:any, j:number) => (
                               <div key={j} className="flex justify-between items-center p-2 rounded bg-neutral-900/50 border border-neutral-800/50">
@@ -371,7 +411,7 @@ export default function CreditosPage() {
                             ))}
                           </div>
                         </div>
-                        
+
                         <div>
                           <p className="text-xs font-bold text-neutral-500 uppercase mb-3 flex items-center gap-2"><Wallet size={14} /> Historial de Abonos</p>
                           <div className="space-y-2">
@@ -383,7 +423,7 @@ export default function CreditosPage() {
                                   <div>
                                     <span className="text-sm font-medium text-emerald-400 block">{formatCurrency(a.monto)}</span>
                                       <span className="text-xs text-neutral-500">
-                                        {a.metodo} 
+                                        {a.metodo}
                                         {a.fecha ? ' - ' + new Date(a.fecha).toLocaleDateString() : ''}
                                       </span>
                                   </div>
@@ -403,7 +443,7 @@ export default function CreditosPage() {
         )}
       </div>
 
-      
+      {/* MODAL HISTORIAL GLOBAL */}
       {showHistorialModal && clienteSeleccionado && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex justify-center items-center p-4">
           <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 w-full max-w-2xl shadow-2xl relative max-h-[80vh] flex flex-col">
@@ -411,7 +451,7 @@ export default function CreditosPage() {
               <X size={20} />
             </button>
             <h2 className="text-xl font-black text-white mb-6 flex items-center gap-2"><History className="text-emerald-400" /> Historial de Abonos Global</h2>
-            
+
             <div className="flex-1 overflow-y-auto pr-2 space-y-3">
               {isLoadingHistorial ? (
                 <div className="text-center p-8 text-neutral-400">Cargando historial...</div>
@@ -441,6 +481,7 @@ export default function CreditosPage() {
         </div>
       )}
 
+      {/* MODAL PAGO GLOBAL */}
       {showPagoGlobalModal && clienteSeleccionado && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex justify-center items-center p-4">
           <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
@@ -448,21 +489,21 @@ export default function CreditosPage() {
               <X size={20} />
             </button>
             <h2 className="text-xl font-black text-white mb-6 flex items-center gap-2"><Wallet className="text-emerald-400" /> Abonar a Deuda</h2>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Monto a Abonar ($)</label>
-                <input 
-                  type="number" 
-                  value={montoAbonarGlobal} 
-                  onChange={(e) => setMontoAbonarGlobal(e.target.value)} 
+                <input
+                  type="number"
+                  value={montoAbonarGlobal}
+                  onChange={(e) => setMontoAbonarGlobal(e.target.value)}
                   max={clienteSeleccionado.monto_adeudado}
                   className="w-full bg-neutral-950 border border-emerald-500/30 focus:border-emerald-500 text-emerald-400 font-black text-xl py-3 px-4 rounded-xl outline-none transition-colors"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Método de Pago</label>
+                <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Metodo de Pago</label>
                 <CreatableSelect
                   options={metodosDisponibles.map((m) => ({ value: m, label: m }))}
                   value={{ value: metodoPago, label: metodoPago }}
@@ -478,10 +519,11 @@ export default function CreditosPage() {
                 />
               </div>
 
-              <button 
+              {/* F9: Boton deshabilitado durante carga para prevenir doble-submit */}
+              <button
                 onClick={handlePagarGlobal}
                 disabled={isPagarLoading}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold py-3.5 rounded-xl shadow-lg mt-4 transition-colors"
+                className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl shadow-lg mt-4 transition-colors"
               >
                 {isPagarLoading ? "Procesando..." : "Confirmar Abono Global"}
               </button>
@@ -490,6 +532,7 @@ export default function CreditosPage() {
         </div>
       )}
 
+      {/* MODAL PAGO INDIVIDUAL */}
       {showPagoModal && facturaPagar && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex justify-center items-center p-4">
           <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
@@ -497,22 +540,63 @@ export default function CreditosPage() {
               <X size={20} />
             </button>
             <h2 className="text-xl font-black text-white mb-6 flex items-center gap-2"><Wallet className="text-emerald-400" /> Registrar Abono</h2>
-            
+
             <div className="space-y-4">
-              <div>
-                <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Monto a Abonar ($)</label>
-                <input 
-                  type="number" 
-                  value={montoAbonar} 
-                  onChange={(e) => setMontoAbonar(e.target.value)} 
-                  max={facturaPagar.saldo_pendiente}
-                  className="w-full bg-neutral-950 border border-emerald-500/30 focus:border-emerald-500 text-emerald-400 font-black text-xl py-3 px-4 rounded-xl outline-none transition-colors"
-                />
-                <p className="text-xs text-neutral-500 mt-1">Saldo pendiente máximo: ${facturaPagar.saldo_pendiente}</p>
+              {/* F9: Selector de moneda USD / Bs */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setMonedaEntrada('USD')}
+                  className={"flex-1 py-2 rounded-lg text-sm font-bold transition-colors " + (
+                    monedaEntrada === 'USD'
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'
+                  )}
+                >
+                  USD
+                </button>
+                <button
+                  onClick={() => setMonedaEntrada('Bs')}
+                  className={"flex-1 py-2 rounded-lg text-sm font-bold transition-colors " + (
+                    monedaEntrada === 'Bs'
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'
+                  )}
+                >
+                  Bs
+                </button>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Método de Pago</label>
+                <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">
+                  Monto a Abonar ({monedaEntrada})
+                </label>
+                <input
+                  type="number"
+                  value={montoAbonar}
+                  onChange={(e) => setMontoAbonar(e.target.value)}
+                  max={facturaPagar.saldo_pendiente}
+                  className="w-full bg-neutral-950 border border-emerald-500/30 focus:border-emerald-500 text-emerald-400 font-black text-xl py-3 px-4 rounded-xl outline-none transition-colors"
+                />
+                <p className="text-xs text-neutral-500 mt-1">Saldo pendiente maximo: ${facturaPagar.saldo_pendiente}</p>
+
+                {/* F9: Equivalente en tiempo real */}
+                {tasaBCV > 1 && parseFloat(montoAbonar) > 0 && (
+                  <div className="mt-2 p-3 bg-neutral-950 rounded-xl border border-neutral-800">
+                    <p className="text-xs text-neutral-500 mb-1">Tasa BCV: {tasaBCV.toFixed(2)} Bs/$</p>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-neutral-400">USD:</span>
+                      <span className="text-white font-bold">${montoEquivalente.usd.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-neutral-400">Bs:</span>
+                      <span className="text-white font-bold">{montoEquivalente.bs.toFixed(2)} Bs</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-neutral-400 uppercase block mb-1">Metodo de Pago</label>
                 <CreatableSelect
                   options={metodosDisponibles.map((m) => ({ value: m, label: m }))}
                   value={{ value: metodoPago, label: metodoPago }}
@@ -528,10 +612,11 @@ export default function CreditosPage() {
                 />
               </div>
 
-              <button 
+              {/* F9: Boton deshabilitado durante carga para prevenir doble-submit */}
+              <button
                 onClick={handlePagar}
                 disabled={isPagarLoading}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold py-3.5 rounded-xl shadow-lg mt-4 transition-colors"
+                className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl shadow-lg mt-4 transition-colors"
               >
                 {isPagarLoading ? "Procesando..." : "Confirmar Pago"}
               </button>
@@ -543,5 +628,3 @@ export default function CreditosPage() {
     </div>
   );
 }
-
-

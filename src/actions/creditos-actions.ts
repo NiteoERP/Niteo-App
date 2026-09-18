@@ -43,19 +43,20 @@ export async function getClientesConDeuda(sedeId: string, startDate: string | Da
   return { success: true, data: mappedData, totalCount: count || 0 };
 }
 
-export async function getMetodosPago() {
+export async function getMetodosPago(): Promise<{ success: boolean; data: string[]; error?: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
+  if (!user) return { success: false, data: ['Efectivo', 'Transferencia', 'Pago Móvil'] };
 
   const { data: profile } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
-  if (!profile) return [];
+  if (!profile) return { success: false, data: ['Efectivo', 'Transferencia', 'Pago Móvil'] };
 
   // Obtener los metodos de pago únicos usados históricamente (excluyendo créditos)
   const { data, error } = await supabase.rpc('get_metodos_pago_distinct', { p_empresa_id: profile.empresa_id });
-  
-  if (error || !data) return ['Transferencia', 'Pago Movil', 'Efectivo', 'Zelle', 'Punto'];
-  return data.map((d: any) => d.tipo_pago);
+  if (error || !data || data.length === 0) {
+    return { success: true, data: ['Efectivo', 'Transferencia', 'Pago Móvil', 'Zelle', 'Punto de Venta'] };
+  }
+  return { success: true, data: data.map((d: any) => d.tipo_pago as string) };
 }
 
 export async function getDetalleDeudaCliente(clienteId: string | null, sedeId: string) {
@@ -79,55 +80,63 @@ export async function getDetalleDeudaCliente(clienteId: string | null, sedeId: s
 }
 
 
-export async function registrarAbono(facturaId: string, montoAbonado: number, metodoPago: string, fechaPago?: string, referencia?: string) {
+export async function registrarAbono(
+  facturaId: string,
+  montoUSD: number,
+  metodoPago: string,
+  monedaEntrada: 'USD' | 'Bs',
+  montoEntrada: number,
+  tasaCambio: number,
+  idempotencyKey: string,
+  fechaPago?: string,
+  referencia?: string
+) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "No autenticado" };
+  if (!user) return { success: false, error: 'No autenticado' };
 
   const { data: profile } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
-  if (!profile) return { success: false, error: "Perfil no encontrado" };
+  if (!profile) return { success: false, error: 'Perfil no encontrado' };
 
-  const { data: factura, error: errFac } = await supabase.from('ventas_facturas').select('saldo_pendiente').eq('id', facturaId).eq('empresa_id', profile.empresa_id).single();
-  if (errFac || !factura) return { success: false, error: "Factura no encontrada" };
-
-  const nuevo_saldo = Math.max(0, factura.saldo_pendiente - montoAbonado);
-  const estado_pago = nuevo_saldo > 0 ? 2 : 1;
-
-  const { error: errUpd } = await supabase.from('ventas_facturas').update({ saldo_pendiente: nuevo_saldo, estado_pago }).eq('id', facturaId);
-  if (errUpd) return { success: false, error: errUpd.message };
-
-  const { error: errIns } = await supabase.from('ventas_pagos').insert({
-    empresa_id: profile.empresa_id,
-    factura_id: facturaId,
-    id_pos: 'WEB_' + crypto.randomUUID(),
-    tipo_pago: metodoPago,
-    monto: montoAbonado,
-    fecha_pago: fechaPago || new Date().toISOString()
+  const { data, error } = await supabase.rpc('registrar_abono_seguro', {
+    p_empresa_id:      profile.empresa_id,
+    p_factura_id:      facturaId,
+    p_monto_usd:       montoUSD,
+    p_metodo_pago:     metodoPago,
+    p_moneda_entrada:  monedaEntrada,
+    p_monto_entrada:   montoEntrada,
+    p_tasa_cambio:     tasaCambio,
+    p_idempotency_key: idempotencyKey,
+    p_fecha_pago:      fechaPago || new Date().toISOString(),
+    p_referencia:      referencia || null,
   });
 
-  if (errIns) return { success: false, error: errIns.message };
+  if (error) return { success: false, error: error.message };
+  if (!data?.ok) return { success: false, error: data?.error || 'Error en el servidor' };
 
+  // Registrar asiento contable (no falla la transacción si falla el asiento)
   try {
-    const isTransferencia = metodoPago.toLowerCase().includes('transferencia') || metodoPago.toLowerCase().includes('zelle');
+    const isTransferencia = metodoPago.toLowerCase().includes('transferencia') ||
+                            metodoPago.toLowerCase().includes('zelle');
     const cuentaPago = isTransferencia ? '1.1.02' : '1.1.01'; // Bancos o Caja
 
     await registrarAsiento(
       profile.empresa_id,
       fechaPago || new Date().toISOString(),
-      `Abono de factura ${facturaId} - Método: ${metodoPago}`,
+      `Abono de factura ${facturaId} - ${metodoPago}`,
       'abono_credito',
       facturaId,
       user.id,
       [
-        { codigo_cuenta: cuentaPago, debe: montoAbonado, haber: 0 }, // Entra dinero
-        { codigo_cuenta: '1.1.03', debe: 0, haber: montoAbonado } // Disminuye CXC
+        { codigo_cuenta: cuentaPago, debe: montoUSD, haber: 0 },
+        { codigo_cuenta: '1.1.03', debe: 0, haber: montoUSD },
       ]
     );
   } catch (err) {
-    console.error("Error contable en abono:", err);
+    console.error('[Contabilidad] Error en asiento de abono:', err);
   }
 
-  return { success: true };
+  return { success: true, nuevo_saldo: data.nuevo_saldo };
 }
 
 export async function registrarAbonoGlobal(clienteId: string, sedeId: string, monto: number, metodoPago: string, fechaPago?: string, referencia?: string) {
@@ -231,3 +240,13 @@ export async function getHistorialAbonosCliente(clienteId: string) {
 }
 
 
+export async function getTasaBCVActual(): Promise<number> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('tasa_cambiaria')
+    .select('tasa_bcv')
+    .order('fecha', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data?.tasa_bcv ?? 1;
+}

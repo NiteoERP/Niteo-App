@@ -263,9 +263,12 @@ export default function NiteoDateRangePicker({
 
       {/* MODAL DIALOG estilo Aronium con temática Niteo */}
       {isOpen && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
+        <div 
+          onClick={() => setIsOpen(false)}
+          className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150 cursor-pointer"
+        >
           <div 
-            className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 sm:p-6 shadow-2xl max-w-4xl w-full text-white animate-in zoom-in-95 duration-150 overflow-y-auto max-h-[95vh]"
+            className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 sm:p-6 shadow-2xl max-w-4xl w-full text-white animate-in zoom-in-95 duration-150 overflow-y-auto max-h-[95vh] cursor-default"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header: Período y Pill central */}
