@@ -24,6 +24,7 @@ export async function createProducto(data: any) {
       empresa_id: perfil.empresa_id,
       categoria_id: data.categoria_id || null,
       nombre: data.nombre,
+      descripcion: data.descripcion ? data.descripcion.trim() : null,
       codigo_barras: data.codigo_barras || '',
       precio_venta: parseFloat(data.precio_venta) || 0,
       costo: parseFloat(data.costo) || 0,
@@ -113,6 +114,7 @@ export async function updateProducto(id: string, data: any) {
   const { error } = await supabase.from('productos').update({
       categoria_id: data.categoria_id || null,
       nombre: data.nombre,
+      descripcion: data.descripcion ? data.descripcion.trim() : null,
       codigo_barras: data.codigo_barras || '',
       precio_venta: parseFloat(data.precio_venta) || 0,
       costo: parseFloat(data.costo) || 0,

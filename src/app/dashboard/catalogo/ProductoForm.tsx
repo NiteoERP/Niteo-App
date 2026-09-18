@@ -50,6 +50,7 @@ export default function ProductoForm({
   const [formData, setFormData] = useState({
     nombre: initialData?.nombre || '',
     categoria_id: initialData?.categoria_id || '',
+    descripcion: initialData?.descripcion || '',
     codigo_barras: initialData?.codigo_barras || '',
     precio_venta: initialData?.precio_venta || 0,
     costo: initialData?.costo || 0,
@@ -258,6 +259,17 @@ export default function ProductoForm({
                   </select>
                 )}
               </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-neutral-400 block mb-1.5">Descripción (Opcional)</label>
+              <textarea 
+                rows={2}
+                placeholder="Detalles del producto, ingredientes principales, notas para el cajero..."
+                className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 text-white focus:border-indigo-500 transition-colors resize-none text-sm placeholder:text-neutral-600"
+                value={formData.descripcion}
+                onChange={e => setFormData({...formData, descripcion: e.target.value})}
+              />
             </div>
 
             <div className="grid grid-cols-3 gap-4">

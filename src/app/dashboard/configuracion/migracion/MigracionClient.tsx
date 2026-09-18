@@ -24,6 +24,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
   const excelTargetFields = [
     { key: 'nombre', label: 'Nombre del Producto (Requerido)' },
     { key: 'categoria', label: 'Categoría (Opcional)' },
+    { key: 'descripcion', label: 'Descripción (Opcional)' },
     { key: 'codigo_barras', label: 'Código de Barras' },
     { key: 'precio_venta', label: 'Precio de Venta' },
     { key: 'costo', label: 'Costo' },
@@ -34,6 +35,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
     const ws = XLSX.utils.json_to_sheet([{
       "Nombre del Producto": "Coca Cola 2L",
       "Categoría": "Bebidas",
+      "Descripción": "Refresco original 2 litros",
       "Código de Barras": "123456789",
       "Precio Venta": 2.50,
       "Costo": 1.50,
@@ -61,6 +63,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
            const lowH = h.toLowerCase();
            if (lowH.includes('nombre')) autoMap['nombre'] = h;
            else if (lowH.includes('cat') || lowH.includes('rubro') || lowH.includes('departamento') || lowH.includes('grupo')) autoMap['categoria'] = h;
+           else if (lowH.includes('desc') || lowH.includes('detalle') || lowH.includes('nota')) autoMap['descripcion'] = h;
            else if (lowH.includes('barras') || lowH.includes('barcode')) autoMap['codigo_barras'] = h;
            else if (lowH.includes('precio') || lowH.includes('price')) autoMap['precio_venta'] = h;
            else if (lowH.includes('cost')) autoMap['costo'] = h;
@@ -81,6 +84,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
       const mapped = excelData.map(row => ({
         nombre: row[columnMapping['nombre']],
         categoria: columnMapping['categoria'] && row[columnMapping['categoria']] !== undefined ? String(row[columnMapping['categoria']]).trim() : '',
+        descripcion: columnMapping['descripcion'] && row[columnMapping['descripcion']] !== undefined ? String(row[columnMapping['descripcion']]).trim() : '',
         codigo_barras: columnMapping['codigo_barras'] ? row[columnMapping['codigo_barras']] : '',
         precio_venta: columnMapping['precio_venta'] ? parseFloat(row[columnMapping['precio_venta']]) : 0,
         costo: columnMapping['costo'] ? parseFloat(row[columnMapping['costo']]) : 0,

@@ -7,6 +7,7 @@ export async function importarProductos(productosImport: any[], sedeId: string) 
   return procesarImportacionUniversal(productosImport.map(p => ({
     nombre: p.Nombre,
     categoria: p['Categoría'] || p['Categoria'] || p['Rubro'] || p['Grupo'] || '',
+    descripcion: p['Descripción'] || p['Descripcion'] || p['Detalle'] || '',
     codigo_barras: p['Código de Barras']?.toString() || '',
     precio_venta: parseFloat(p['Precio de Venta']) || 0,
     costo: parseFloat(p['Costo']) || 0,
@@ -27,7 +28,7 @@ export async function exportarCatalogo() {
 
   const { data: productos, error } = await supabase
     .from('productos')
-    .select('nombre, codigo_barras, precio_venta, costo, precio_modificable')
+    .select('nombre, descripcion, codigo_barras, precio_venta, costo, precio_modificable')
     .eq('empresa_id', perfil.empresa_id)
     .order('nombre');
   if (error) return { success: false, error: 'Error obteniendo catálogo' };
@@ -122,6 +123,7 @@ export async function procesarImportacionUniversal(productos: any[], sedeId: str
         sede_id: sedeId,
         categoria_id: catId,
         nombre: p.nombre,
+        descripcion: p.descripcion ? p.descripcion.toString().trim() : null,
         codigo_barras: p.codigo_barras || '',
         precio_venta: parseFloat(p.precio_venta) || 0,
         costo: parseFloat(p.costo) || 0,

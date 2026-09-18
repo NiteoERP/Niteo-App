@@ -28,7 +28,8 @@ export default function CatalogoClient({
 
   const filtered = productos.filter(p => {
     const matchesSearch = (p.nombre?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      (p.codigo_barras?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+      (p.codigo_barras?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (p.descripcion?.toLowerCase() || '').includes(searchTerm.toLowerCase());
     const matchesCat = !selectedCategoria || p.categoria_id === selectedCategoria;
     return matchesSearch && matchesCat;
   });
@@ -109,7 +110,10 @@ export default function CatalogoClient({
                       {p.es_compuesto ? <PackageSearch className="text-emerald-400 w-5 h-5" /> : <Box className="text-blue-400 w-5 h-5" />}
                       <div>
                         <p className="font-medium text-white">{p.nombre}</p>
-                        <p className="text-xs text-neutral-500">{p.codigo_barras || 'Sin código'}</p>
+                        {p.descripcion && (
+                          <p className="text-xs text-neutral-400 max-w-xs line-clamp-1">{p.descripcion}</p>
+                        )}
+                        <p className="text-[11px] text-neutral-500">{p.codigo_barras || 'Sin código'}</p>
                       </div>
                     </div>
                   </td>
