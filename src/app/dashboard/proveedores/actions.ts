@@ -37,7 +37,7 @@ export async function getFacturasProveedor(proveedorId: string, sedeId: string) 
   if (!user) return { success: false, error: 'No autenticado' };
 
   let query = supabase.from('compras_facturas')
-    .select('id, numero_factura, concepto, total, saldo_pendiente, fecha_emision, fecha_vencimiento, pagos:compras_pagos(id, monto, metodo_pago, referencia, banco_origen, fecha_pago)')
+    .select('id, numero_factura, concepto, total, saldo_pendiente, fecha_emision, fecha_vencimiento, modificado, usuario_modificacion_id, pagos:compras_pagos(id, monto, metodo_pago, referencia, banco_origen, fecha_pago)')
     .eq('proveedor_id', proveedorId)
     .order('fecha_emision', { ascending: false });
     
@@ -47,7 +47,22 @@ export async function getFacturasProveedor(proveedorId: string, sedeId: string) 
 
   const { data, error } = await query;
   if (error) return { success: false, error: error.message };
-  return { success: true, data };
+
+  const { data: profile } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
+  let userMap: Record<string, string> = {};
+  if (profile) {
+    const { data: perfiles } = await supabase.from('perfiles').select('id, nombre_completo').eq('empresa_id', profile.empresa_id);
+    if (perfiles) {
+      perfiles.forEach(p => { userMap[p.id] = p.nombre_completo; });
+    }
+  }
+
+  const mappedData = data?.map(d => ({
+    ...d,
+    modificado_por: d.modificado ? (userMap[d.usuario_modificacion_id] || 'Usuario Desconocido') : null
+  })) || [];
+
+  return { success: true, data: mappedData };
 }
 
 export async function registrarPagoProveedor(facturaId: string, monto: number, metodoPago: string, referencia: string, bancoOrigen: string, fechaPago?: string) {
@@ -319,6 +334,7 @@ export async function crearFacturaProveedorConInsumos(
   const res = await registrarFacturaInsumos({
     proveedor: prov?.nombre_comercial || 'Proveedor',
     proveedor_id: proveedorId,
+    sede_id: sedeId,
     moneda,
     tasa: tasaFinal,
     metodo_pago: metodoPago,
@@ -354,7 +370,7 @@ export async function getFacturaDetallesItems(facturaId: string) {
   const maxDate = new Date(baseDate.getTime() + 60000); // 1 minute after
 
   const { data: punts } = await supabase.from('compras_puntuales')
-    .select('detalles, proveedor')
+    .select('id, detalles, proveedor')
     .eq('monto_divisas', fac.total)
     .gte('fecha_registro', minDate.toISOString())
     .lte('fecha_registro', maxDate.toISOString());
@@ -377,7 +393,7 @@ export async function getFacturaDetallesItems(facturaId: string) {
   }
 
   if (parsed && parsed.is_insumos && parsed.items) {
-    return { success: true, data: parsed };
+    return { success: true, data: parsed, compra_puntual_id: match.id };
   }
 
   return { success: false, error: 'El detalle no contiene items de insumo.' };
@@ -414,7 +430,10 @@ export async function editarFacturaProveedor(
     total: payload.total,
     saldo_pendiente: nuevoSaldo,
     fecha_emision: payload.fecha_emision,
-    fecha_vencimiento: payload.fecha_vencimiento || null
+    fecha_vencimiento: payload.fecha_vencimiento || null,
+    modificado: true,
+    usuario_modificacion_id: user.id,
+    fecha_modificacion: new Date().toISOString()
   }).eq('id', facturaId);
 
   if (error) return { success: false, error: error.message };
@@ -435,7 +454,10 @@ export async function editarFacturaProveedor(
     const newBs = payload.total * Number(matchPunt.tasa_cambio);
     await supabase.from('compras_puntuales').update({
       monto_divisas: payload.total,
-      monto_bs: newBs
+      monto_bs: newBs,
+      modificado: true,
+      usuario_modificacion_id: user.id,
+      fecha_modificacion: new Date().toISOString()
     }).eq('id', matchPunt.id);
   }
 

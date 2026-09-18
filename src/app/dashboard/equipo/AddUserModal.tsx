@@ -63,8 +63,9 @@ export default function AddUserModal({ onUserCreated }: { onUserCreated?: (membe
     const nombre = (formData.get('nombre') as string).trim();
     const email = (formData.get('email') as string).trim();
     const password = (formData.get('password') as string).trim();
+    const pinSeguridad = (formData.get('pin_seguridad') as string)?.trim() || '';
 
-    const res = await createUser(email, password, nombre, selectedModules, selectedSede, selectedRol);
+    const res = await createUser(email, password, nombre, selectedModules, selectedSede, selectedRol, pinSeguridad);
     if (!res.success) {
       setError(res.error || 'Error al crear usuario');
       setLoading(false);
@@ -137,6 +138,10 @@ export default function AddUserModal({ onUserCreated }: { onUserCreated?: (membe
                   <div>
                     <label className="block text-xs font-semibold text-neutral-300 mb-1.5">Contraseña Temporal</label>
                     <input required name="password" type="password" minLength={6} className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors" placeholder="Mínimo 6 caracteres" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-300 mb-1.5">PIN de Operaciones (Opcional)</label>
+                    <input name="pin_seguridad" type="password" maxLength={6} pattern="[0-9]*" className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors" placeholder="Ej: 1234 (Solo números)" />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-neutral-300 mb-1.5">Rol Predeterminado</label>

@@ -17,6 +17,7 @@ interface MemberToEdit {
   rol: string;
   permisos?: string[];
   sede_id?: string | null;
+  pin_seguridad?: string;
 }
 
 interface EditUserModalProps {
@@ -35,12 +36,14 @@ export default function EditUserModal({ member, sedes, isOpen, onClose, onUpdate
   const [rol, setRol] = useState(member.rol || 'CAJERO');
   const [selectedSede, setSelectedSede] = useState<string>(member.sede_id || 'ALL');
   const [selectedModules, setSelectedModules] = useState<string[]>(member.permisos || []);
+  const [pinSeguridad, setPinSeguridad] = useState<string>(member.pin_seguridad || '');
 
   useEffect(() => {
     setNombre(member.nombre_completo || '');
     setRol(member.rol || 'CAJERO');
     setSelectedSede(member.sede_id || 'ALL');
     setSelectedModules(member.permisos || []);
+    setPinSeguridad(member.pin_seguridad || '');
     setError(null);
   }, [member, isOpen]);
 
@@ -86,6 +89,7 @@ export default function EditUserModal({ member, sedes, isOpen, onClose, onUpdate
       rol,
       permisos: selectedModules,
       sede_id: selectedSede === 'ALL' ? null : selectedSede,
+      pin_seguridad: pinSeguridad.trim() || undefined,
     });
 
     if (!res.success) {
@@ -163,11 +167,26 @@ export default function EditUserModal({ member, sedes, isOpen, onClose, onUpdate
                   onChange={(e) => applyRolePreset(e.target.value)}
                   className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors"
                 >
-                  <option value="CAJERO">Cajero — POS y Cierre de Caja</option>
-                  <option value="GERENTE">Gerente — Operación completa</option>
-                  <option value="COMPRADOR">Comprador — Compras e inventario</option>
-                  <option value="MASTER">Master — Administrador total</option>
+                  <option value="CAJERO">Cajero - POS y Cierre de Caja</option>
+                  <option value="GERENTE">Gerente - Operaciones de Sede</option>
+                  <option value="COMPRADOR">Comprador - Inventario y Proveedores</option>
+                  <option value="MASTER">Master - Acceso Total</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-neutral-300 mb-1.5">
+                  PIN de Operaciones (Opcional)
+                </label>
+                <input
+                  type="password"
+                  maxLength={6}
+                  pattern="[0-9]*"
+                  value={pinSeguridad}
+                  onChange={(e) => setPinSeguridad(e.target.value)}
+                  placeholder="Ej: 1234 (Solo números)"
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                />
               </div>
             </div>
 

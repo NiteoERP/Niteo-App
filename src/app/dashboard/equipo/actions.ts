@@ -5,15 +5,21 @@ import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 import { translateAuthError } from '@/utils/errors';
 
-export async function updateMemberAccess(memberId: string, permisos: string[], sede_id: string | null) {
+export async function updateMemberAccess(memberId: string, permisos: string[], sede_id: string | null, pin_seguridad?: string) {
   const supabase = await createClient();
   
+  const payload: any = {
+    permisos,
+    sede_id: sede_id === 'ALL' ? null : sede_id
+  };
+  
+  if (pin_seguridad !== undefined) {
+    payload.pin_seguridad = pin_seguridad || null;
+  }
+
   const { error } = await supabase
     .from('perfiles')
-    .update({ 
-      permisos,
-      sede_id: sede_id === 'ALL' ? null : sede_id
-    })
+    .update(payload)
     .eq('id', memberId);
 
   if (error) {
@@ -24,7 +30,7 @@ export async function updateMemberAccess(memberId: string, permisos: string[], s
   return { success: true };
 }
 
-export async function createUser(email: string, password: string, nombreCompleto: string, permisos: string[], sede_id: string | null, rol: string = 'CAJERO') {
+export async function createUser(email: string, password: string, nombreCompleto: string, permisos: string[], sede_id: string | null, rol: string = 'CAJERO', pinSeguridad: string = '') {
   const cleanEmail = email.trim().toLowerCase();
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -95,6 +101,7 @@ export async function createUser(email: string, password: string, nombreCompleto
     permisos,
     sede_id: sede_id === 'ALL' ? null : sede_id,
     estado_activo: true,
+    pin_seguridad: pinSeguridad || null,
   }, { onConflict: 'id' });
 
   if (profileErr) {
@@ -179,6 +186,7 @@ export async function updateMemberDetails(
     rol?: string;
     permisos: string[];
     sede_id: string | null;
+    pin_seguridad?: string;
   }
 ) {
   const supabase = await createClient();
@@ -188,14 +196,20 @@ export async function updateMemberDetails(
     return { success: false, error: 'No autorizado. Solo el usuario Master puede modificar permisos.' };
   }
 
+  const payload: any = {
+    ...(data.nombre_completo ? { nombre_completo: data.nombre_completo } : {}),
+    ...(data.rol ? { rol: data.rol } : {}),
+    permisos: data.permisos,
+    sede_id: data.sede_id === 'ALL' ? null : data.sede_id,
+  };
+  
+  if (data.pin_seguridad !== undefined) {
+    payload.pin_seguridad = data.pin_seguridad || null;
+  }
+
   const { error } = await supabase
     .from('perfiles')
-    .update({ 
-      ...(data.nombre_completo ? { nombre_completo: data.nombre_completo } : {}),
-      ...(data.rol ? { rol: data.rol } : {}),
-      permisos: data.permisos,
-      sede_id: data.sede_id === 'ALL' ? null : data.sede_id
-    })
+    .update(payload)
     .eq('id', memberId);
 
   if (error) {

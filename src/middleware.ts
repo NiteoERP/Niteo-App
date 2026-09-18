@@ -62,20 +62,29 @@ export async function middleware(request: NextRequest) {
       return supabaseResponse;
     }
 
-    // 4. LEER PERFIL DIRECTAMENTE DEL JWT (Cero latencia, cero bases de datos)
+    // 4. LEER PERFIL DIRECTAMENTE DEL JWT (Cero latencia para claims presentes)
     try {
       let empresa_id = user.app_metadata?.empresa_id;
-      let rol = user.app_metadata?.user_role;
-      
+      let rol = user.app_metadata?.user_role as string | undefined;
+      // permisos no están en el JWT — se leen de DB una sola vez junto con rol
+      let permisos: string[] = user.app_metadata?.permisos ?? [];
+
       if (!empresa_id) {
-        const { data: pDb } = await supabase.from('perfiles').select('empresa_id, rol').eq('id', user.id).maybeSingle();
+        // F16: Una sola query a perfiles que lee empresa_id + rol + permisos
+        // (antes había 2 queries separadas: L71 y L126)
+        const { data: pDb } = await supabase
+          .from('perfiles')
+          .select('empresa_id, rol, permisos')
+          .eq('id', user.id)
+          .maybeSingle();
         if (pDb?.empresa_id) {
           empresa_id = pDb.empresa_id;
-          rol = rol || pDb.rol;
+          rol        = rol || pDb.rol;
+          permisos   = pDb.permisos ?? [];
         }
       }
 
-      const profile = empresa_id ? { empresa_id, rol: rol || 'CAJERO' } : null;
+      const profile = empresa_id ? { empresa_id, rol: rol || 'CAJERO', permisos } : null;
 
       // Si el perfil no existe, forzarlos al Onboarding principal
       if (!profile) {
@@ -84,7 +93,7 @@ export async function middleware(request: NextRequest) {
           url.pathname = '/onboarding';
           return NextResponse.redirect(url);
         }
-        return supabaseResponse; 
+        return supabaseResponse;
       }
 
       // Evitar loop infinito en onboarding si ya tienen perfil
@@ -95,54 +104,54 @@ export async function middleware(request: NextRequest) {
       }
 
       if (profile) {
-        // 3. Validación de Suscripción (Ahora leemos DB para LIFETIME bypass)
-        const { data: sub } = await supabase.from('suscripciones_empresas').select('plan, estado').eq('empresa_id', profile.empresa_id).maybeSingle();
-        const plan = (sub?.plan || '').toUpperCase();
+        // 5. Validación de Suscripción
+        const { data: sub } = await supabase
+          .from('suscripciones_empresas')
+          .select('plan, estado')
+          .eq('empresa_id', profile.empresa_id)
+          .maybeSingle();
+        const plan   = (sub?.plan  || '').toUpperCase();
         const estado = (sub?.estado || 'ACTIVA').toUpperCase();
 
         const isLifetime = plan === 'LIFETIME';
-        const isActiva = !sub || estado === 'ACTIVA' || estado === 'TRIAL' || estado === 'ACTIVO';
+        const isActiva   = !sub || estado === 'ACTIVA' || estado === 'TRIAL' || estado === 'ACTIVO';
 
-        // Si NO es LIFETIME y tampoco esta ACTIVA/TRIAL, lo bloqueamos al billing
+        // Si NO es LIFETIME y tampoco está ACTIVA/TRIAL, lo bloqueamos al billing
         if (!isLifetime && !isActiva) {
           const url = request.nextUrl.clone();
           url.pathname = '/dashboard/billing';
           return NextResponse.redirect(url);
         }
 
-        // 4. HARDENING DE ROLES EN FRONTEND
+        // 6. HARDENING DE ROLES EN FRONTEND
         const protectedAdminRoutes = ['/dashboard/gastos', '/dashboard/finanzas', '/dashboard/cierre'];
-        const isTryingToAccessAdminRoute = protectedAdminRoutes.some(route => request.nextUrl.pathname.startsWith(route));
-        
+        const isTryingToAccessAdminRoute = protectedAdminRoutes.some(route =>
+          request.nextUrl.pathname.startsWith(route)
+        );
+
         // La jerarquía exige MASTER o GERENTE
         if (isTryingToAccessAdminRoute && (profile.rol === 'CAJERO' || profile.rol === 'COMPRADOR')) {
           const url = request.nextUrl.clone();
-          url.pathname = '/dashboard'; // Devolverlos al home permitido
+          url.pathname = '/dashboard';
           return NextResponse.redirect(url);
         }
 
-        // 5. Redireccionar desde /dashboard a la página por defecto del usuario
+        // 7. Redireccionar desde /dashboard a la página por defecto del rol
+        // F16: Ya no hace una segunda query — usa `permisos` leído en el paso 4
         if (request.nextUrl.pathname === '/dashboard' && profile.rol !== 'MASTER' && profile.rol !== 'SUPERADMIN') {
-          const { data: profileDb } = await supabase.from('perfiles').select('permisos, rol').eq('id', user.id).maybeSingle();
-          const effectiveRole = profileDb?.rol || profile.rol;
+          const effectiveRole = profile.rol;
           if (effectiveRole !== 'MASTER' && effectiveRole !== 'SUPERADMIN') {
-            const permisos = profileDb?.permisos || [];
-            
-            if (!permisos.includes('dashboard')) {
+            if (!profile.permisos.includes('dashboard')) {
               const url = request.nextUrl.clone();
-              if (permisos.includes('pos')) url.pathname = '/dashboard/ventas';
-              else if (permisos.includes('caja') || permisos.includes('finanzas')) url.pathname = '/dashboard/caja';
-              else if (permisos.includes('inventario')) url.pathname = '/dashboard/inventario';
-              else if (permisos.includes('compras')) url.pathname = '/dashboard/compras';
-              else if (permisos.includes('reportes')) url.pathname = '/dashboard/informes';
-              else if (permisos.includes('clientes')) url.pathname = '/dashboard/clientes';
-              else if (permisos.includes('creditos')) url.pathname = '/dashboard/creditos';
-              else if (permisos.includes('equipo') || permisos.includes('usuarios')) url.pathname = '/dashboard/equipo';
-              else {
-                // Si no tiene ningún módulo directo para redirigir, se queda en /dashboard
-                // donde el Panel de Operaciones maneja la vista amigablemente sin arrojar 404
-                url.pathname = '/dashboard';
-              }
+              if (profile.permisos.includes('pos'))                                    url.pathname = '/dashboard/ventas';
+              else if (profile.permisos.includes('caja') || profile.permisos.includes('finanzas')) url.pathname = '/dashboard/caja';
+              else if (profile.permisos.includes('inventario'))                        url.pathname = '/dashboard/inventario';
+              else if (profile.permisos.includes('compras'))                           url.pathname = '/dashboard/compras';
+              else if (profile.permisos.includes('reportes'))                          url.pathname = '/dashboard/informes';
+              else if (profile.permisos.includes('clientes'))                          url.pathname = '/dashboard/clientes';
+              else if (profile.permisos.includes('creditos'))                          url.pathname = '/dashboard/creditos';
+              else if (profile.permisos.includes('equipo') || profile.permisos.includes('usuarios')) url.pathname = '/dashboard/equipo';
+              else                                                                      url.pathname = '/dashboard';
 
               if (url.pathname !== '/dashboard') {
                 return NextResponse.redirect(url);

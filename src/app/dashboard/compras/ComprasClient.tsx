@@ -52,6 +52,26 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
     if (prov) {
       setFactura(f => ({...f, proveedor: prov}));
     }
+    const editId = params.get('edit');
+    if (editId && tab === 'historial') {
+      // Small timeout to allow historial to load
+      setTimeout(() => {
+        getHistorialCompras().then(res => {
+          if (res.success && res.compras) {
+            const target = res.compras.find(c => c.id === editId);
+            if (target) {
+              let parsed = null;
+              let txt = target.raw_detalles || target.detalles || '';
+              if (txt.startsWith('{')) {
+                try { parsed = JSON.parse(txt); if(parsed.is_insumos) txt = parsed.texto; }catch(e){}
+              }
+              setEditingRow({...target, parsed_detalles: parsed, edit_items: parsed?.items ? JSON.parse(JSON.stringify(parsed.items)) : []}); 
+              setIsEditModalOpen(true);
+            }
+          }
+        });
+      }, 500);
+    }
   }, []);
   const [isLoadingDatos, setIsLoadingDatos] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -695,7 +715,14 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
                   {historialCompleto.map(compra => (
                     <tr key={compra.id} className="hover:bg-white/5 transition-colors text-neutral-300">
                       <td className="py-4 px-6 whitespace-nowrap">{new Date(compra.fecha_registro || compra.fecha).toLocaleString('es-VE')}</td>
-                      <td className="py-4 px-6 font-medium text-neutral-200">{compra.proveedor}</td>
+                      <td className="py-4 px-6 font-medium text-neutral-200">
+                        {compra.proveedor}
+                        {compra.modificado && (
+                          <span className="ml-2 px-1.5 py-0.5 text-[10px] font-medium bg-amber-500/10 text-amber-500 rounded border border-amber-500/20" title={`Modificada por: ${compra.modificado_por || 'Usuario'}`}>
+                            Modificada
+                          </span>
+                        )}
+                      </td>
                       <td className="py-4 px-6 text-neutral-400 truncate max-w-xs">{compra.detalles || '-'}</td>
                       <td className="py-4 px-6 text-neutral-400 font-medium">
                         <div className="flex items-center gap-2">
@@ -743,7 +770,14 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
                   <div key={compra.id} className="p-4 flex flex-col gap-3">
                     <div className="flex justify-between items-start">
                       <div>
-                        <p className="font-bold text-neutral-200">{compra.proveedor}</p>
+                        <p className="font-bold text-neutral-200">
+                          {compra.proveedor}
+                          {compra.modificado && (
+                            <span className="ml-2 inline-block px-1.5 py-0.5 text-[10px] font-medium bg-amber-500/10 text-amber-500 rounded border border-amber-500/20" title={`Modificada por: ${compra.modificado_por || 'Usuario'}`}>
+                              Mod.
+                            </span>
+                          )}
+                        </p>
                         <p className="text-xs text-neutral-500">{new Date(compra.fecha_registro || compra.fecha).toLocaleString('es-VE')}</p>
                       </div>
                       <div className="flex flex-col items-end">

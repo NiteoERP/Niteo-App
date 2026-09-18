@@ -42,10 +42,10 @@ export default function ChangePasswordModal({ memberId, nombreCompleto }: { memb
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="p-1.5 text-neutral-600 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors"
+        className="p-2.5 text-neutral-400 bg-neutral-900 border border-neutral-800 hover:text-indigo-400 hover:bg-indigo-500/10 hover:border-indigo-500/30 rounded-xl transition-all"
         title="Cambiar contraseña"
       >
-        <KeyRound size={16} />
+        <KeyRound size={18} />
       </button>
 
       {isOpen && (

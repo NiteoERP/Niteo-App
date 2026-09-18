@@ -50,7 +50,7 @@ export default function MobileCompraForm() {
   const [selectedInsumo, setSelectedInsumo] = useState<Insumo | null>(null);
   const [isNewInsumo, setIsNewInsumo] = useState(false);
   const [newInsumoName, setNewInsumoName] = useState('');
-  const [newInsumoUnit, setNewInsumoUnit] = useState('KG');
+  const [newInsumoUnit, setNewInsumoUnit] = useState('Kg');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [cantidad, setCantidad] = useState('');
   const [costoUnitario, setCostoUnitario] = useState('');
@@ -389,10 +389,13 @@ export default function MobileCompraForm() {
                       onChange={e => setNewInsumoUnit(e.target.value)}
                       className="w-full bg-neutral-900 border border-neutral-800 text-white rounded-lg px-3 py-2 text-sm"
                     >
-                      <option value="KG">Kilogramos (KG)</option>
-                      <option value="LT">Litros (LT)</option>
-                      <option value="UND">Unidades (UND)</option>
-                      <option value="GR">Gramos (GR)</option>
+                      <option value="Kg">Kilogramos (Kg)</option>
+                      <option value="Gr">Gramos (Gr)</option>
+                      <option value="Lt">Litros (Lt)</option>
+                      <option value="Ml">Mililitros (Ml)</option>
+                      <option value="Und">Unidades (Und)</option>
+                      <option value="Paquetes">Paquetes</option>
+                      <option value="Cajas">Cajas</option>
                     </select>
                   </div>
                 </div>

@@ -6,6 +6,27 @@ import { revalidatePath } from 'next/cache';
 
 import { registrarAsiento } from './contabilidad-actions';  
 
+function normalizeUnidadMedida(u: string): string {
+  const clean = (u || '').trim().toLowerCase();
+  if (clean === 'kg' || clean === 'kilo' || clean === 'kilogramos' || clean === 'kilogramo') return 'Kg';
+  if (clean === 'gr' || clean === 'g' || clean === 'gramos' || clean === 'gramo') return 'Gr';
+  if (clean === 'lt' || clean === 'l' || clean === 'litros' || clean === 'litro') return 'Lt';
+  if (clean === 'ml' || clean === 'mililitros' || clean === 'mililitro') return 'Ml';
+  if (clean === 'und' || clean === 'unid' || clean === 'unidad' || clean === 'unidades' || clean === 'uds' || clean === 'ud') return 'Und';
+  if (clean === 'cajas' || clean === 'caja' || clean === 'cj' || clean === 'cjs') return 'Cajas';
+  if (clean === 'paquetes' || clean === 'paquete' || clean === 'paq' || clean === 'paqs') return 'Paquetes';
+  const exact = (u || '').trim();
+  if (['Kg', 'KG', 'Gr', 'GR', 'Lt', 'LT', 'Ml', 'ML', 'Und', 'UND', 'Cajas', 'Paquetes'].includes(exact)) {
+    if (exact.toUpperCase() === 'KG') return 'Kg';
+    if (exact.toUpperCase() === 'GR') return 'Gr';
+    if (exact.toUpperCase() === 'LT') return 'Lt';
+    if (exact.toUpperCase() === 'ML') return 'Ml';
+    if (exact.toUpperCase() === 'UND') return 'Und';
+    return exact;
+  }
+  return 'Und';
+}
+
 export async function registrarCompra(formData: FormData) {   
   // 1. Instanciar Supabase Server Client   
   const supabase = await createClient();    
@@ -49,24 +70,37 @@ export async function registrarCompra(formData: FormData) {
   // Si es un insumo nuevo, lo creamos primero   
   if (nombre_nuevo_insumo) {     
     if (!unidad_medida_nueva) return { error: 'Selecciona la unidad de medida para el nuevo insumo.' };          
-    // Insertar el nuevo insumo (la cantidad empieza en 0, el RPC luego le suma la cantidad de la compra)     
-    const { data: newInsumo, error: insertError } = await supabase       
-      .from('inventario_insumos')       
-      .insert({         
-        empresa_id: profile.empresa_id,         
-        sede_id: activeSedeId,         
-        nombre: nombre_nuevo_insumo,         
-        unidad_medida: unidad_medida_nueva,         
-        cantidad_actual: 0,         
-        costo_promedio: 0       
-      })       
-      .select('id')       
-      .single();      
-    if (insertError) {       
-      console.error('Error al crear insumo:', insertError);       
-      return { error: 'Error al crear el nuevo insumo en la base de datos.' };     
-    }          
-    insumo_id = newInsumo.id;   
+    
+    const unitNormalized = normalizeUnidadMedida(unidad_medida_nueva);
+    const { data: existIns } = await supabase
+      .from('inventario_insumos')
+      .select('id')
+      .eq('empresa_id', profile.empresa_id)
+      .eq('sede_id', activeSedeId)
+      .ilike('nombre', nombre_nuevo_insumo.trim())
+      .maybeSingle();
+
+    if (existIns?.id) {
+      insumo_id = existIns.id;
+    } else {
+      const { data: newInsumo, error: insertError } = await supabase       
+        .from('inventario_insumos')       
+        .insert({         
+          empresa_id: profile.empresa_id,         
+          sede_id: activeSedeId,         
+          nombre: nombre_nuevo_insumo.trim(),         
+          unidad_medida: unitNormalized,         
+          cantidad_actual: 0,         
+          costo_promedio: 0       
+        })       
+        .select('id')       
+        .single();      
+      if (insertError) {       
+        console.error('Error al crear insumo:', insertError);       
+        return { error: 'Error al crear el nuevo insumo en la base de datos: ' + insertError.message };     
+      }          
+      if (newInsumo) insumo_id = newInsumo.id;   
+    }
   }    
   if (!insumo_id) {     
     return { error: 'Debes seleccionar un insumo válido o crear uno nuevo.' };   
@@ -131,6 +165,7 @@ export async function registrarFacturaInsumos(factura: {
   numero_factura?: string;
   fecha_emision?: string;
   fecha_vencimiento?: string;
+  sede_id?: string;
   items: Array<{     
     insumo_id: string | null;     
     is_new: boolean;     
@@ -148,8 +183,8 @@ export async function registrarFacturaInsumos(factura: {
 
   const cookieStore = await cookies();
     const activeSedeCookie = cookieStore.get('active_sede')?.value;
-    let activeSedeId = profile.sede_id;
-    if (profile.rol === 'MASTER' && activeSedeCookie) {
+    let activeSedeId = factura.sede_id || profile.sede_id;
+    if (profile.rol === 'MASTER' && activeSedeCookie && !factura.sede_id) {
       activeSedeId = activeSedeCookie;
     }
     if (!activeSedeId) {
@@ -252,21 +287,45 @@ export async function registrarFacturaInsumos(factura: {
   for (const item of factura.items) {     
     let idInsumo = item.insumo_id;     
     if (item.is_new && item.nombre_nuevo) {       
-      const { data: newIns } = await supabase.from('inventario_insumos').insert({         
-        empresa_id: profile.empresa_id,         
-        sede_id: activeSedeId,         
-        nombre: item.nombre_nuevo,         
-        unidad_medida: item.unidad_nueva,         
-        cantidad_actual: 0,         
-        costo_promedio: 0       
-      }).select('id').single();       
-      if (newIns) idInsumo = newIns.id;     
+      const unitNorm = normalizeUnidadMedida(item.unidad_nueva);
+      const { data: existIns } = await supabase
+         .from('inventario_insumos')
+         .select('id')
+         .eq('empresa_id', profile.empresa_id)
+         .eq('sede_id', activeSedeId)
+         .ilike('nombre', item.nombre_nuevo.trim())
+         .maybeSingle();
+
+      if (existIns?.id) {
+        idInsumo = existIns.id;
+      } else {
+        const { data: newIns, error: insErr } = await supabase.from('inventario_insumos').insert({         
+          empresa_id: profile.empresa_id,         
+          sede_id: activeSedeId,         
+          nombre: item.nombre_nuevo.trim(),         
+          unidad_medida: unitNorm,         
+          cantidad_actual: 0,         
+          costo_promedio: 0       
+        }).select('id').single();       
+        if (insErr) {
+          console.error("Error al crear insumo:", insErr);
+          return { error: 'Error creando insumo ' + item.nombre_nuevo + ': ' + insErr.message };
+        }
+        if (newIns) idInsumo = newIns.id;     
+      }
     }      
     if (idInsumo) {       
+      item.insumo_id = idInsumo; // Update back reference
       let usd = item.costoTotal;       
       if (factura.moneda === 'VES') usd = usd / tasaEfectiva;        
-      const { error: rpcErr } = await registrarCompraInsumoJS(supabase, idInsumo, user.id, item.cantidad, usd); if (rpcErr) { console.error(rpcErr); return { error: rpcErr.message }; }     
-    }   
+      const { error: rpcErr } = await registrarCompraInsumoJS(supabase, idInsumo, user.id, item.cantidad, usd); 
+      if (rpcErr) { 
+        console.error("Error al registrar entrada en inventario:", rpcErr); 
+        return { error: rpcErr.message || String(rpcErr) }; 
+      }     
+    } else {
+       console.error("No se pudo vincular el insumo:", item);
+    }
   }    
   // REGISTRO CONTABLE AUTOM�TICO
   try {
@@ -364,20 +423,43 @@ export async function editarFacturaInsumos(
 
     let idInsumo = item.insumo_id;
     if (item.is_new && item.nombre_nuevo) {
-      const { data: newIns } = await supabase.from('inventario_insumos').insert({
-        empresa_id: profile.empresa_id,
-        sede_id: activeSedeId,
-        nombre: item.nombre_nuevo,
-        unidad_medida: item.unidad_nueva,
-        cantidad_actual: 0,
-        costo_promedio: 0
-      }).select('id').single();
-      if (newIns) idInsumo = newIns.id;
+      const unitNorm = normalizeUnidadMedida(item.unidad_nueva);
+      const { data: existIns } = await supabase
+         .from('inventario_insumos')
+         .select('id')
+         .eq('empresa_id', profile.empresa_id)
+         .eq('sede_id', activeSedeId)
+         .ilike('nombre', item.nombre_nuevo.trim())
+         .maybeSingle();
+
+      if (existIns?.id) {
+        idInsumo = existIns.id;
+      } else {
+        const { data: newIns, error: insErr } = await supabase.from('inventario_insumos').insert({
+          empresa_id: profile.empresa_id,
+          sede_id: activeSedeId,
+          nombre: item.nombre_nuevo.trim(),
+          unidad_medida: unitNorm,
+          cantidad_actual: 0,
+          costo_promedio: 0
+        }).select('id').single();
+        if (insErr) {
+          console.error("Error al crear insumo:", insErr);
+          return { error: 'Error creando insumo ' + item.nombre_nuevo + ': ' + insErr.message };
+        }
+        if (newIns) idInsumo = newIns.id;
+      }
     }
 
     if (idInsumo) {
       item.insumo_id = idInsumo; // Actualizar para guardar en el JSON final
-      const { error: rpcErr } = await registrarCompraInsumoJS(supabase, idInsumo, user.id, item.cantidad, costoUSD); if (rpcErr) { console.error(rpcErr); return { error: rpcErr.message }; }
+      const { error: rpcErr } = await registrarCompraInsumoJS(supabase, idInsumo, user.id, item.cantidad, costoUSD); 
+      if (rpcErr) { 
+        console.error("Error al registrar entrada en inventario:", rpcErr); 
+        return { error: rpcErr.message || String(rpcErr) }; 
+      }
+    } else {
+       console.error("No se pudo vincular el insumo:", item);
     }
   }
 
@@ -393,7 +475,10 @@ export async function editarFacturaInsumos(
     monto_bs: montoTotalBs,
     tasa_cambio: factura.tasa,
     detalles: JSON.stringify({ texto: factura.descripcion?.trim() ? factura.descripcion : `Compra Insumos - ${factura.items_nuevos.length} items`, is_insumos: true, items: factura.items_nuevos }),
-    metodo_pago: factura.metodo_pago
+    metodo_pago: factura.metodo_pago,
+    modificado: true,
+    usuario_modificacion_id: user.id,
+    fecha_modificacion: new Date().toISOString()
   }).eq('id', id_compra);
 
   if (headErr) return { error: 'Error actualizando compra: ' + headErr.message };
@@ -417,7 +502,10 @@ export async function editarFacturaInsumos(
 
       await supabase.from('compras_facturas').update({
         total: Number(montoTotalDivisas.toFixed(2)),
-        saldo_pendiente: Number(nuevoSaldo.toFixed(2))
+        saldo_pendiente: Number(nuevoSaldo.toFixed(2)),
+        modificado: true,
+        usuario_modificacion_id: user.id,
+        fecha_modificacion: new Date().toISOString()
       }).eq('id', matchFac.id);
     }
   }
@@ -516,6 +604,21 @@ async function registrarCompraInsumoJS(supabase: any, p_insumo_id: string, p_usu
   }).eq('id', p_insumo_id);
 
   if (updErr) return { error: updErr.message };
+
+  // Sync Reventa products
+  const { data: recetasLink } = await supabase.from('recetas').select('producto_id').eq('insumo_id', p_insumo_id);
+  if (recetasLink && recetasLink.length > 0) {
+    for (const link of recetasLink) {
+      const { data: prod } = await supabase.from('productos').select('precio_venta, es_reventa').eq('id', link.producto_id).single();
+      if (prod && prod.es_reventa) {
+        const nuevoPorcentaje = v_nuevo_costo > 0 ? ((prod.precio_venta - v_nuevo_costo) / v_nuevo_costo) * 100 : 0;
+        await supabase.from('productos').update({
+          costo: Number(v_nuevo_costo.toFixed(4)),
+          porcentaje_ganancia: Number(nuevoPorcentaje.toFixed(2))
+        }).eq('id', link.producto_id);
+      }
+    }
+  }
 
   return { success: true };
 }

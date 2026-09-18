@@ -3,11 +3,13 @@
 import React, { useState, useTransition } from 'react';
 import { Plus, Search, Edit2, Trash2, PackageSearch, Box } from 'lucide-react';
 import ProductoForm from './ProductoForm';
+import BulkRecetaModal from './BulkRecetaModal';
 import { deleteProducto } from '@/actions/catalogo-actions';
 
-export default function CatalogoClient({ productos, sedes }: { productos: any[], sedes: any[] }) {
+export default function CatalogoClient({ productos, sedes, insumos, recetas }: { productos: any[], sedes: any[], insumos: any[], recetas: any[] }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isBulkOpen, setIsBulkOpen] = useState(false);
   const [editingProd, setEditingProd] = useState<any>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -41,12 +43,20 @@ export default function CatalogoClient({ productos, sedes }: { productos: any[],
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <button 
-          onClick={() => { setEditingProd(null); setIsFormOpen(true); }}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-colors text-sm"
-        >
-          <Plus size={16} /> Crear Producto
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => setIsBulkOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-white rounded-lg font-medium transition-colors text-sm"
+          >
+            <Box size={16} /> Receta Masiva
+          </button>
+          <button 
+            onClick={() => { setEditingProd(null); setIsFormOpen(true); }}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-colors text-sm"
+          >
+            <Plus size={16} /> Crear Producto
+          </button>
+        </div>
       </div>
 
       <div className="bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden">
@@ -112,7 +122,18 @@ export default function CatalogoClient({ productos, sedes }: { productos: any[],
         <ProductoForm 
           initialData={editingProd} 
           sedes={sedes}
+          insumos={insumos}
+          productos={productos}
+          recetas={recetas}
           onClose={() => setIsFormOpen(false)} 
+        />
+      )}
+
+      {isBulkOpen && (
+        <BulkRecetaModal
+          productos={productos}
+          insumos={insumos}
+          onClose={() => setIsBulkOpen(false)}
         />
       )}
     </div>

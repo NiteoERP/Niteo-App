@@ -49,11 +49,16 @@ async function getAuthContext() {
 
 export async function getProveedoresYProductos() {
   try {
-    const { supabase, idEmpresa } = await getAuthContext();
+    const { supabase, idEmpresa, idSede } = await getAuthContext();
+
+    let queryInsumos = supabase.from('inventario_insumos').select('id, nombre, costo:costo_promedio').eq('empresa_id', idEmpresa).order('nombre');
+    if (idSede) {
+      queryInsumos = queryInsumos.eq('sede_id', idSede);
+    }
 
     const [provRes, prodRes] = await Promise.all([
       supabase.from('proveedores').select('id, nombre:nombre_comercial').eq('empresa_id', idEmpresa).order('nombre_comercial'),
-      supabase.from('inventario_insumos').select('id, nombre, costo:costo_promedio').eq('empresa_id', idEmpresa).order('nombre')
+      queryInsumos
     ]);
 
     return { 
@@ -73,7 +78,7 @@ export async function crearProductoBase(nombre: string) {
       empresa_id: idEmpresa,
       sede_id: idSede || null,
       nombre: nombre,
-      unidad_medida: 'Unidades',
+      unidad_medida: 'Und',
       costo_promedio: 0,
       cantidad_actual: 0
     }).select('id, nombre, costo:costo_promedio').single();
@@ -101,14 +106,20 @@ export async function crearProveedor(nombre: string, rif: string = '') {
 
 export async function getUltimasCompras() {
   try {
-    const { supabase, idEmpresa } = await getAuthContext();
+    const { supabase, idEmpresa, idSede } = await getAuthContext();
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('compras_puntuales')
-      .select('id, fecha_registro, proveedor, detalles, monto_divisas, monto_bs')
+      .select('id, fecha_registro, proveedor, detalles, monto_divisas, monto_bs, modificado, usuario_modificacion_id, fecha_modificacion')
       .eq('id_empresa', idEmpresa)
       .order('fecha_registro', { ascending: false })
       .limit(5);
+
+    if (idSede) {
+      query = query.eq('id_sede', idSede);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
     return { success: true, compras: data || [] };
@@ -151,18 +162,22 @@ export async function getUltimasCompras() {
 
 export async function getHistorialCompras(busqueda?: string, fechaInicio?: string, fechaFin?: string) {
   try {
-    const { supabase, idEmpresa, user, userRole, permisos } = await getAuthContext();
+    const { supabase, idEmpresa, idSede, user, userRole, permisos } = await getAuthContext();
 
     const canViewAll = userRole === 'MASTER' || permisos.includes('ver_todas_compras');
 
     let query = supabase
       .from('compras_puntuales')
-      .select('id, fecha_registro, proveedor, detalles, monto_divisas, tasa_cambio, monto_bs, metodo_pago, usuario_id')
+      .select('id, fecha_registro, proveedor, detalles, monto_divisas, tasa_cambio, monto_bs, metodo_pago, usuario_id, modificado, usuario_modificacion_id, fecha_modificacion')
       .eq('id_empresa', idEmpresa)
       .order('fecha_registro', { ascending: false });
 
     if (!canViewAll) {
       query = query.eq('usuario_id', user.id);
+    }
+
+    if (idSede) {
+      query = query.eq('id_sede', idSede);
     }
 
     if (busqueda) {
@@ -203,6 +218,7 @@ export async function getHistorialCompras(busqueda?: string, fechaInicio?: strin
         raw_detalles: c.detalles, // Preserve original for parsing in client
         detalles: concepto,
         operador: (c as any).perfiles?.nombre_completo || userMap[c.usuario_id] || 'Desconocido',
+        modificado_por: c.modificado ? (userMap[c.usuario_modificacion_id] || 'Usuario Desconocido') : null
       };
     }) || [];
 

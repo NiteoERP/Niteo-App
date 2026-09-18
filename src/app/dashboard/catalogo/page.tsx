@@ -42,6 +42,17 @@ export default async function CatalogoPage() {
     .eq('empresa_id', empresaId)
     .order('nombre');
 
+  const { data: insumos } = await supabase
+    .from('inventario_insumos')
+    .select('id, nombre, unidad_medida, costo_promedio, cantidad_actual, sede_id')
+    .eq('empresa_id', empresaId)
+    .order('nombre');
+
+  const { data: recetas } = await supabase
+    .from('recetas')
+    .select('*')
+    .eq('empresa_id', empresaId);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-800/50 pb-4">
@@ -53,7 +64,7 @@ export default async function CatalogoPage() {
           </p>
         </div>
       </div>
-      <CatalogoClient productos={productos || []} sedes={sedes || []} />
+      <CatalogoClient productos={productos || []} sedes={sedes || []} insumos={insumos || []} recetas={recetas || []} />
     </div>
   );
 }

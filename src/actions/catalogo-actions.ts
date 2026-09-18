@@ -30,6 +30,8 @@ export async function createProducto(data: any) {
       estado_activo: true,
       canal_venta: 'AMBOS',
       es_compuesto: data.tipo === 'ELABORADO', // Si es elaborado requiere receta
+      es_reventa: data.tipo === 'REVENTA',
+      porcentaje_ganancia: parseFloat(data.porcentaje_ganancia) || 0
     })
     .select()
     .single();
@@ -39,11 +41,10 @@ export async function createProducto(data: any) {
     return { success: false, error: 'Error al crear producto: ' + prodErr.message };
   }
 
-  // 2. Si el producto es de tipo "REVENTA" (Insumo Directo), creamos su espejo en el inventario
+  // 2. Manejo de RECETAS
   if (data.tipo === 'REVENTA') {
     // Buscamos la sede principal (o podríamos forzarlo a global, pero inventario_insumos pide sede_id)
     const { data: sede } = await supabase.from('sedes').select('id').eq('empresa_id', perfil.empresa_id).limit(1).single();
-    
     const sedeId = data.sede_id || sede?.id;
 
     if (sedeId) {
@@ -54,7 +55,7 @@ export async function createProducto(data: any) {
           empresa_id: perfil.empresa_id,
           sede_id: sedeId,
           nombre: data.nombre + ' (Reventa)',
-          unidad_medida: data.unidad_medida || 'unidades',
+          unidad_medida: 'Unidades',
           costo_promedio: parseFloat(data.costo) || 0,
           cantidad_actual: 0
         })
@@ -73,6 +74,18 @@ export async function createProducto(data: any) {
           });
       }
     }
+  } else if (data.tipo === 'ELABORADO' && Array.isArray(data.receta_items)) {
+    // Guardar los insumos de la receta que se armó en el modal
+    const inserts = data.receta_items.map((item: any) => ({
+      empresa_id: perfil.empresa_id,
+      producto_id: nuevoProd.id,
+      insumo_id: item.tipo === 'insumo' ? item.id : null,
+      subproducto_id: item.tipo === 'producto' ? item.id : null,
+      cantidad_necesaria: item.cantidad
+    }));
+    if (inserts.length > 0) {
+      await supabase.from('recetas').insert(inserts);
+    }
   }
 
   revalidatePath('/dashboard/catalogo');
@@ -90,6 +103,12 @@ export async function deleteProducto(id: string) {
 
 export async function updateProducto(id: string, data: any) {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autorizado' };
+
+  const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
+  if (!perfil) return { success: false, error: 'Perfil no encontrado' };
+
   const { error } = await supabase.from('productos').update({
       nombre: data.nombre,
       codigo_barras: data.codigo_barras || '',
@@ -97,9 +116,27 @@ export async function updateProducto(id: string, data: any) {
       costo: parseFloat(data.costo) || 0,
       precio_modificable: !!data.precio_modificable,
       es_compuesto: data.tipo === 'ELABORADO',
+      es_reventa: data.tipo === 'REVENTA',
+      porcentaje_ganancia: parseFloat(data.porcentaje_ganancia) || 0
   }).eq('id', id);
   
   if (error) return { success: false, error: error.message };
+
+  if (data.tipo === 'ELABORADO' && Array.isArray(data.receta_items)) {
+    // Para simplificar, borramos las recetas previas y reinsertamos
+    await supabase.from('recetas').delete().eq('producto_id', id);
+    const inserts = data.receta_items.map((item: any) => ({
+      empresa_id: perfil.empresa_id,
+      producto_id: id,
+      insumo_id: item.tipo === 'insumo' ? item.id : null,
+      subproducto_id: item.tipo === 'producto' ? item.id : null,
+      cantidad_necesaria: item.cantidad
+    }));
+    if (inserts.length > 0) {
+      await supabase.from('recetas').insert(inserts);
+    }
+  }
+
   revalidatePath('/dashboard/catalogo');
   return { success: true };
 }

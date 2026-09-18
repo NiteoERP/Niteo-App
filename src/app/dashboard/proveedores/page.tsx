@@ -13,7 +13,7 @@ import { useEmpresa } from "@/components/providers/EmpresaProvider";
 import {
   Store, Wallet, Search, Check, FileText, ChevronDown, ChevronUp,
   Clock, PlusCircle, X, Plus, User, Phone, MapPin, Hash,
-  CreditCard, Building2, AlertCircle, History, DollarSign, Package, CheckCircle2, Pencil, Info
+  CreditCard, Building2, AlertCircle, History, DollarSign, Package, CheckCircle2, Pencil, Info, Edit2
 } from "lucide-react";
 import { format } from "date-fns";
 import MobileCompraForm from "@/components/compras/MobileCompraForm";
@@ -97,7 +97,7 @@ export default function ProveedoresPage() {
   const [insumoMoneda, setInsumoMoneda] = useState<'USD'|'VES'>('USD');
   const [crearInsumoNuevo, setCrearInsumoNuevo] = useState(false);
   const [nombreInsumoNuevo, setNombreInsumoNuevo] = useState('');
-  const [unidadInsumoNueva, setUnidadInsumoNueva] = useState('unid');
+  const [unidadInsumoNueva, setUnidadInsumoNueva] = useState('Kg');
 
   // ── Modal: Pago ───────────────────────────────────────────
   const [showPagoModal, setShowPagoModal] = useState(false);
@@ -140,7 +140,7 @@ export default function ProveedoresPage() {
     const { getFacturaDetallesItems } = await import('./actions');
     const res = await getFacturaDetallesItems(fac.id);
     if (res.success) {
-      setDetallesModalData({ isLoading: false, factura: fac, detalles: res.data });
+      setDetallesModalData({ isLoading: false, factura: fac, detalles: res.data, compraPuntualId: res.compra_puntual_id });
     } else {
       setDetallesModalData({ isLoading: false, factura: fac, error: res.error });
     }
@@ -517,6 +517,11 @@ export default function ProveedoresPage() {
                               <div className="flex items-center gap-2 mb-1 flex-wrap">
                                 <h5 className="font-bold text-white">{fac.concepto || 'Factura / Deuda'}</h5>
                                 {fac.numero_factura && <span className="text-xs bg-neutral-800 text-neutral-300 px-2 py-0.5 rounded">Nº {fac.numero_factura}</span>}
+                                {fac.modificado && (
+                                  <span className="text-[10px] font-medium bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded border border-amber-500/20" title={`Modificada por: ${fac.modificado_por || 'Usuario'}`}>
+                                    Modificada
+                                  </span>
+                                )}
                                 {saldado && <Badge label="Saldada" color="emerald" />}
                                 {!saldado && fac.fecha_vencimiento && (() => {
                                   const now = new Date();
@@ -937,12 +942,13 @@ export default function ProveedoresPage() {
                           onChange={e => setUnidadInsumoNueva(e.target.value)}
                           className="bg-black/50 border border-neutral-800 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"
                         >
-                          <option value="kg">kg (Kilogramos)</option>
-                          <option value="g">g (Gramos)</option>
-                          <option value="l">l (Litros)</option>
-                          <option value="ml">ml (Mililitros)</option>
-                          <option value="unid">unid (Unidades)</option>
-                          <option value="paq">paq (Paquetes)</option>
+                          <option value="Kg">Kg (Kilogramos)</option>
+                          <option value="Gr">Gr (Gramos)</option>
+                          <option value="Lt">Lt (Litros)</option>
+                          <option value="Ml">Ml (Mililitros)</option>
+                          <option value="Und">Und (Unidades)</option>
+                          <option value="Paquetes">Paquetes</option>
+                          <option value="Cajas">Cajas</option>
                         </select>
                       </div>
                     ) : (
@@ -1094,7 +1100,7 @@ export default function ProveedoresPage() {
                               insumo_id: insumoSearch,
                               is_new: false,
                               nombre_nuevo: ins?.nombre || 'Insumo',
-                              unidad_nueva: ins?.unidad_medida || 'unid',
+                              unidad_nueva: ins?.unidad_medida || 'Und',
                               cantidad: qty,
                               precioUnitario: finalUnitPrice,
                               costoTotal: cost,
@@ -1542,7 +1548,16 @@ export default function ProveedoresPage() {
               )}
             </div>
             
-            <div className="p-6 border-t border-neutral-800 flex justify-end bg-neutral-900 shrink-0">
+            <div className="p-6 border-t border-neutral-800 flex justify-end gap-3 bg-neutral-900 shrink-0">
+              {detallesModalData?.compraPuntualId && (
+                <Link 
+                  href={`/dashboard/compras?tab=historial&edit=${detallesModalData.compraPuntualId}`}
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-xl transition-colors text-sm font-medium flex items-center gap-2"
+                >
+                  <Edit2 size={16} />
+                  Modificar Ítems
+                </Link>
+              )}
               <button 
                 onClick={() => setDetallesModalData(null)}
                 className="bg-neutral-800 hover:bg-neutral-700 text-white px-6 py-2 rounded-xl transition-colors text-sm font-medium"

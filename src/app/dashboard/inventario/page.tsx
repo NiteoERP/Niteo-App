@@ -2,9 +2,7 @@ import React from 'react';
 import { createClient } from '@/utils/supabase/server';
 import InsumosManager from './InsumosManager';
 import TransformacionesManager from './TransformacionesManager';
-import { ArrowRightLeft } from 'lucide-react';
-import ProductosEnriquecidos from './ProductosEnriquecidos';
-import { Package, FileBox, Store, AlertTriangle } from 'lucide-react';
+import { ArrowRightLeft, Package, FileBox, Store, AlertTriangle } from 'lucide-react';
 import SedeSelector from '@/components/inventario/SedeSelector';
 import { getMovimientosInventario } from './actions';
 import Link from 'next/link';
@@ -32,9 +30,15 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
   // Ver costos y movimientos: solo MASTER o quien tenga el permiso 'finanzas'
   const canSeeCosts = profile?.rol === 'MASTER' || (profile?.permisos || []).includes('finanzas');
 
+  const { cookies } = await import('next/headers');
+  const cookieStore = await cookies();
+  const activeSedeCookie = cookieStore.get('active_sede')?.value;
+
   let activeSedeId = profile?.sede_id;
   if ((profile?.rol === 'MASTER' || !profile?.sede_id) && params.sede) {
     activeSedeId = params.sede;
+  } else if ((profile?.rol === 'MASTER' || !profile?.sede_id) && activeSedeCookie) {
+    activeSedeId = activeSedeCookie;
   } else if (!activeSedeId && sedes.length > 0) {
     activeSedeId = sedes[0].id;
   }
@@ -64,29 +68,6 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
     if (currentTab === 'insumos' && canSeeCosts) {
       movimientos = await getMovimientosInventario(empresaId, activeSedeId || undefined);
     }
-  } else if (currentTab === 'productos') {
-    let queryInsumos = supabase
-      .from('inventario_insumos')
-      .select('*')
-      .eq('empresa_id', empresaId)
-      .order('nombre');
-
-    if (activeSedeId) {
-      queryInsumos = queryInsumos.eq('sede_id', activeSedeId);
-    }
-
-    const [resProds, resInsumos, resRecetas] = await Promise.all([
-      supabase
-        .from('productos')
-        .select('id, nombre, codigo_barras, precio_venta, descripcion, es_compuesto, costo, estado_activo')
-        .eq('empresa_id', empresaId)
-        .order('nombre'),
-      queryInsumos,
-      supabase.from('recetas').select('*').eq('empresa_id', empresaId),
-    ]);
-    productos = resProds.data || [];
-    insumos = resInsumos.data || [];
-    recetas = resRecetas.data || [];
   }
 
   if (sedes.length === 0) {
@@ -142,10 +123,6 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${currentTab === 'insumos' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:border-neutral-700'}`}>
           <FileBox size={16} /> Almacén (Insumos)
         </a>
-        <a href={`?tab=productos${activeSedeId ? `&sede=${activeSedeId}` : ''}`}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${currentTab === 'productos' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:border-neutral-700'}`}>
-          <Package size={16} /> Productos de Venta
-        </a>
         <a href={`?tab=transformaciones${activeSedeId ? `&sede=${activeSedeId}` : ''}`}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${currentTab === 'transformaciones' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:border-neutral-700'}`}>
           <ArrowRightLeft size={16} /> Transformaciones
@@ -162,9 +139,6 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
             initialMovimientos={movimientos}
             canSeeCosts={canSeeCosts}
           />
-        )}
-        {currentTab === 'productos' && (
-          <ProductosEnriquecidos productos={productos} insumos={insumos} recetas={recetas} empresaId={empresaId} />
         )}
         {currentTab === 'transformaciones' && (
           <TransformacionesManager insumos={insumos} activeSedeId={activeSedeId || ''} />

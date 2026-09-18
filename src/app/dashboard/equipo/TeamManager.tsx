@@ -2,7 +2,7 @@
 
 import React, { useState, useTransition } from 'react';
 import { updateMemberRole, deleteUser } from './actions';
-import { UserCircle, Shield, ShieldAlert, Loader2, CheckCircle2, Trash2, Settings2, Building2, Layers } from 'lucide-react';
+import { UserCircle, ShieldAlert, Loader2, CheckCircle2, Trash2, Settings2, Building2, Layers, KeyRound, Shield, Zap } from 'lucide-react';
 import AddUserModal from './AddUserModal';
 import EditUserModal from './EditUserModal';
 import ChangePasswordModal from './ChangePasswordModal';
@@ -14,6 +14,7 @@ export type Member = {
   rol: string;
   permisos?: string[];
   sede_id?: string | null;
+  pin_seguridad?: string;
 };
 
 interface SedeOption {
@@ -29,66 +30,52 @@ export default function TeamManager({
 }: { 
   initialMembers: Member[]; 
   currentUserId: string;
-  sedes?: SedeOption[];
+  sedes: SedeOption[];
 }) {
-  const [isPending, startTransition] = useTransition();
-  const [feedback, setFeedback] = useState<{ id: string; msg: string; type: 'error' | 'success' } | null>(null);
-
   const [members, setMembers] = useState<Member[]>(initialMembers);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
   const [editingMember, setEditingMember] = useState<Member | null>(null);
-
-  const handleUserCreated = (newMember: Member) => {
-    setMembers(prev => [...prev, newMember]);
-  };
-
-  const handleMemberUpdated = (updated: Member) => {
-    setMembers(prev => prev.map(m => m.id === updated.id ? { ...m, ...updated } : m));
-    setFeedback({ id: updated.id, msg: 'Permisos actualizados', type: 'success' });
-    setTimeout(() => setFeedback(null), 3000);
-  };
-
-  const handleRoleChange = async (memberId: string, newRole: string) => {
-    setFeedback(null);
-    setMembers(prev => prev.map(m => m.id === memberId ? { ...m, rol: newRole } : m));
-
-    startTransition(async () => {
-      const res = await updateMemberRole(memberId, newRole);
-      if (!res.success) {
-        setFeedback({ id: memberId, msg: 'Error: ' + res.error, type: 'error' });
-        setMembers(prev => prev.map(m => m.id === memberId ? { ...m, rol: members.find(x => x.id === memberId)?.rol ?? newRole } : m));
-      } else {
-        setFeedback({ id: memberId, msg: 'Rol actualizado', type: 'success' });
-        setTimeout(() => setFeedback(null), 2000);
-      }
-    });
-  };
-
-  const handleDelete = async (memberId: string, nombre: string) => {
-    if (!confirm(`¿Eliminar a ${nombre} del equipo? Esta acción no se puede deshacer.`)) return;
-    setDeletingId(memberId);
-    const res = await deleteUser(memberId);
-    if (res.success) {
-      setMembers(prev => prev.filter(m => m.id !== memberId));
-    } else {
-      alert('Error al eliminar: ' + res.error);
-    }
-    setDeletingId(null);
-  };
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{ id: string, msg: string, type: 'success' | 'error' } | null>(null);
 
   const getRoleBadge = (rol: string) => {
     switch (rol) {
       case 'MASTER': return 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20';
       case 'GERENTE': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
       case 'COMPRADOR': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-      case 'CAJERO': return 'bg-sky-500/10 text-sky-400 border-sky-500/20';
-      default: return 'bg-neutral-800 text-neutral-400 border-neutral-700';
+      default: return 'bg-sky-500/10 text-sky-400 border-sky-500/20';
     }
   };
 
-  const getSedeName = (sedeId?: string | null) => {
-    if (!sedeId || sedeId === 'ALL') return 'Todas las sedes';
-    const found = sedes.find(s => s.id === sedeId);
+  const showFeedback = (id: string, msg: string, type: 'success' | 'error') => {
+    setFeedback({ id, msg, type });
+    setTimeout(() => setFeedback(null), 3000);
+  };
+
+  const handleUserCreated = (newMember: Member) => {
+    setMembers(prev => [newMember, ...prev]);
+  };
+
+  const handleMemberUpdated = (updated: Member) => {
+    setMembers(prev => prev.map(m => m.id === updated.id ? { ...m, ...updated } : m));
+    showFeedback(updated.id, 'Actualizado correctamente', 'success');
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`¿Estás seguro de eliminar a ${name}?`)) return;
+    setDeletingId(id);
+    const res = await deleteUser(id);
+    if (res.success) {
+      setMembers(prev => prev.filter(m => m.id !== id));
+    } else {
+      showFeedback(id, res.error || 'Error al eliminar', 'error');
+    }
+    setDeletingId(null);
+  };
+
+  const getSedeName = (id?: string | null) => {
+    if (!id || id === 'ALL') return 'Todas las sedes';
+    const found = sedes.find(s => s.id === id);
     return found?.nombre_sede || found?.nombre || 'Sede asignada';
   };
 
@@ -101,234 +88,166 @@ export default function TeamManager({
 
   return (
     <>
-      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl shadow-xl overflow-hidden">
-        <div className="p-4 sm:p-5 border-b border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h2 className="font-bold text-white flex items-center gap-3 text-lg sm:text-base">
-              Miembros del equipo ({members.length})
+      <div className="bg-neutral-900 border border-neutral-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+        {/* Header Superior */}
+        <div className="p-6 md:p-8 bg-neutral-950/40 flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-neutral-800">
+          <div className="space-y-1.5">
+            <h2 className="font-black text-white flex items-center gap-3 text-xl md:text-2xl tracking-tight">
+              Miembros del equipo 
+              <span className="bg-indigo-600 text-white text-sm px-3 py-1 rounded-full font-bold shadow-lg shadow-indigo-500/20">
+                {members.length}
+              </span>
             </h2>
-            <p className="text-xs text-neutral-500 mt-0.5">
-              Haz clic en "Módulos" para configurar con exactitud qué partes del sistema puede ver y usar cada integrante.
+            <p className="text-sm text-neutral-400">
+              Administra accesos, roles y permisos detallados para cada integrante.
             </p>
           </div>
-          <div className="flex items-center gap-4 w-full sm:w-auto">
+          <div className="flex items-center gap-4 w-full md:w-auto">
             {isPending && (
-              <span className="text-xs text-indigo-400 flex items-center gap-1 animate-pulse">
-                <Loader2 size={12} className="animate-spin" /> Guardando...
+              <span className="text-xs text-indigo-400 flex items-center gap-2 font-medium bg-indigo-500/10 px-3 py-1.5 rounded-full">
+                <Loader2 size={14} className="animate-spin" /> Guardando...
               </span>
             )}
-            <div className="flex-1 sm:flex-none">
+            <div className="flex-1 md:flex-none">
               <AddUserModal onUserCreated={handleUserCreated} />
             </div>
           </div>
         </div>
 
-        {/* Desktop Table View */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-neutral-950/50 text-neutral-500 font-medium border-b border-neutral-800">
-              <tr>
-                <th className="px-6 py-4">Usuario</th>
-                <th className="px-6 py-4">Rol de Acceso</th>
-                <th className="px-6 py-4">Sede Asignada</th>
-                <th className="px-6 py-4">Módulos Habilitados</th>
-                <th className="px-6 py-4 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-800/50">
-              {members.map((member) => {
-                const isMaster = member.rol === 'MASTER';
-                const permisosCount = member.permisos?.length || 0;
+        {/* CONTENEDOR VISTA PREMIUM */}
+        <div className="p-4 md:p-6 bg-neutral-900/50 flex-1">
+          
+          {/* Títulos de Columnas (Desktop) */}
+          <div className="hidden md:grid grid-cols-[2fr_1.5fr_1.5fr_2fr_1fr] gap-4 px-6 pb-4 text-xs font-bold text-neutral-500 uppercase tracking-widest border-b border-neutral-800/60 mb-4">
+            <div className="text-left">Usuario</div>
+            <div className="text-center">Rol de Acceso</div>
+            <div className="text-center">Sede Asignada</div>
+            <div className="text-center">Módulos Habilitados</div>
+            <div className="text-right">Acciones</div>
+          </div>
 
-                return (
-                  <tr key={member.id} className="hover:bg-white/[0.02] transition-colors">
-                    {/* Usuario */}
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0">
-                          <UserCircle size={22} />
-                        </div>
-                        <div>
-                          <p className="text-white font-medium">
-                            {member.nombre_completo || 'Usuario'}
-                            {member.id === currentUserId && (
-                              <span className="ml-2 text-xs text-neutral-500 font-normal">(Tú)</span>
-                            )}
-                          </p>
-                          <p className="text-xs text-neutral-500 font-mono">{member.id.substring(0, 8)}...</p>
-                        </div>
+          <div className="flex flex-col gap-3 md:gap-4">
+            {members.map((member) => {
+              const isMaster = member.rol === 'MASTER';
+              const permisosCount = member.permisos?.length || 0;
+
+              return (
+                <div 
+                  key={member.id} 
+                  className="group relative bg-neutral-950/60 hover:bg-neutral-800/40 border border-neutral-800/80 hover:border-neutral-700 rounded-2xl p-4 md:p-5 transition-all duration-300 shadow-sm hover:shadow-xl"
+                >
+                  <div className="flex flex-col md:grid md:grid-cols-[2fr_1.5fr_1.5fr_2fr_1fr] items-center gap-4 md:gap-4">
+                    
+                    {/* 1. Usuario */}
+                    <div className="flex items-center gap-4 w-full justify-start md:justify-start">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 text-indigo-400 flex items-center justify-center shrink-0 shadow-inner">
+                        <UserCircle size={26} strokeWidth={1.5} />
                       </div>
-                    </td>
+                      <div className="flex flex-col">
+                        <p className="text-white font-bold text-base md:text-[15px] flex items-center gap-2">
+                          {member.nombre_completo || 'Usuario'}
+                          {member.id === currentUserId && (
+                            <span className="text-[10px] uppercase tracking-wider text-indigo-300 font-bold bg-indigo-500/20 px-2 py-0.5 rounded-full">(Tú)</span>
+                          )}
+                        </p>
+                        <p className="text-xs text-neutral-500 font-mono mt-0.5 opacity-80">{member.id.substring(0, 8)}...</p>
+                      </div>
+                    </div>
 
-                    {/* Rol */}
-                    <td className="px-6 py-4">
+                    {/* 2. Rol */}
+                    <div className="flex w-full md:w-auto justify-between md:justify-center items-center py-2 md:py-0 border-t border-neutral-800/50 md:border-0 mt-2 md:mt-0">
+                      <span className="text-xs text-neutral-500 font-medium md:hidden">Rol:</span>
                       {member.id === currentUserId ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-neutral-800 text-neutral-300 text-xs font-medium cursor-not-allowed">
-                          <ShieldAlert size={14} /> Master (Propietario)
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-300 text-xs font-bold shadow-sm">
+                          <ShieldAlert size={14} className="text-amber-500" /> Propietario
                         </span>
                       ) : (
-                        <div className="flex items-center gap-2">
-                          <span className={`text-xs border px-2.5 py-1 rounded-full font-bold ${getRoleBadge(member.rol)}`}>
-                            {member.rol}
-                          </span>
-                        </div>
+                        <span className={`text-[11px] uppercase tracking-widest border px-3 py-1.5 rounded-xl font-bold shadow-sm ${getRoleBadge(member.rol)}`}>
+                          {member.rol}
+                        </span>
                       )}
-                    </td>
+                    </div>
 
-                    {/* Sede */}
-                    <td className="px-6 py-4">
-                      <span className="text-xs text-neutral-400 flex items-center gap-1.5">
-                        <Building2 size={13} className="text-neutral-500" />
+                    {/* 3. Sede */}
+                    <div className="flex w-full md:w-auto justify-between md:justify-center items-center py-2 md:py-0 border-b border-neutral-800/50 md:border-0 mb-2 md:mb-0">
+                      <span className="text-xs text-neutral-500 font-medium md:hidden">Sede:</span>
+                      <span className="text-sm font-medium text-neutral-300 flex items-center gap-2 bg-neutral-900/50 px-3 py-1.5 rounded-xl border border-neutral-800/50">
+                        <Building2 size={14} className="text-neutral-500" />
                         {getSedeName(member.sede_id)}
                       </span>
-                    </td>
+                    </div>
 
-                    {/* Módulos */}
-                    <td className="px-6 py-4">
+                    {/* 4. Módulos */}
+                    <div className="flex flex-col w-full md:w-auto justify-center md:items-center gap-1.5">
                       {isMaster ? (
-                        <span className="text-xs text-indigo-400 font-medium bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-lg">
-                          Todos los módulos (Acceso total)
-                        </span>
+                        <div className="flex items-center justify-center gap-2 text-xs font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-xl">
+                          <Zap size={14} className="animate-pulse" /> Acceso Total
+                        </div>
                       ) : (
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-neutral-300 bg-neutral-800 px-2 py-0.5 rounded-md font-mono">
-                            {permisosCount} {permisosCount === 1 ? 'módulo' : 'módulos'}
-                          </span>
-                          <span className="text-xs text-neutral-500 truncate max-w-[200px]" title={getModuleNames(member.permisos)}>
+                        <div className="flex flex-col items-start md:items-center w-full">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] font-bold text-neutral-300 bg-neutral-800 px-2 py-0.5 rounded-md flex items-center gap-1.5">
+                              <Layers size={12} className="text-neutral-400" />
+                              {permisosCount} {permisosCount === 1 ? 'Módulo' : 'Módulos'}
+                            </span>
+                          </div>
+                          <span className="text-xs text-neutral-500 mt-1 truncate max-w-[220px] md:text-center text-left w-full" title={getModuleNames(member.permisos)}>
                             {getModuleNames(member.permisos)}
                           </span>
                         </div>
                       )}
+
                       {feedback?.id === member.id && (
-                        <span className={`text-xs font-medium flex items-center gap-1 mt-1 ${feedback.type === 'error' ? 'text-rose-400' : 'text-emerald-400'}`}>
-                          {feedback.type === 'success' && <CheckCircle2 size={12} />}
+                        <span className={`text-xs font-bold flex items-center justify-center gap-1.5 mt-2 px-2 py-1 rounded-lg ${feedback.type === 'error' ? 'bg-rose-500/10 text-rose-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
+                          {feedback.type === 'success' && <CheckCircle2 size={14} />}
                           {feedback.msg}
                         </span>
                       )}
-                    </td>
+                    </div>
 
-                    {/* Acciones */}
-                    <td className="px-6 py-4 text-right">
+                    {/* 5. Acciones */}
+                    <div className="flex items-center justify-end md:justify-end gap-2 w-full mt-3 md:mt-0">
+                      <button
+                        onClick={() => setEditingMember(member)}
+                        className="flex-1 md:flex-none px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-500 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-600/20"
+                        title="Editar perfil y PIN"
+                      >
+                        <Settings2 size={16} /> <span className="md:hidden lg:inline">Ajustar</span>
+                      </button>
+                      
+                      <ChangePasswordModal 
+                        memberId={member.id} 
+                        nombreCompleto={member.nombre_completo || 'Usuario'} 
+                      />
+
                       {member.id !== currentUserId && (
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => setEditingMember(member)}
-                            className="px-3 py-1.5 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 hover:text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
-                            title="Editar permisos y módulos"
-                          >
-                            <Settings2 size={14} /> Módulos
-                          </button>
-                          
-                          <ChangePasswordModal 
-                            memberId={member.id} 
-                            nombreCompleto={member.nombre_completo || 'Usuario'} 
-                          />
-
-                          <button
-                            onClick={() => handleDelete(member.id, member.nombre_completo)}
-                            disabled={deletingId === member.id}
-                            className="p-1.5 text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors disabled:opacity-40"
-                            title="Eliminar usuario"
-                          >
-                            {deletingId === member.id ? (
-                              <Loader2 size={16} className="animate-spin" />
-                            ) : (
-                              <Trash2 size={16} />
-                            )}
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => handleDelete(member.id, member.nombre_completo)}
+                          disabled={deletingId === member.id}
+                          className="p-2.5 text-neutral-400 bg-neutral-900 border border-neutral-800 hover:text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/30 rounded-xl transition-all disabled:opacity-40"
+                          title="Eliminar usuario"
+                        >
+                          {deletingId === member.id ? (
+                            <Loader2 size={18} className="animate-spin" />
+                          ) : (
+                            <Trash2 size={18} />
+                          )}
+                        </button>
                       )}
-                    </td>
-                  </tr>
-                );
-              })}
-              {members.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-neutral-500">
-                    No hay miembros en el equipo.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile Card View */}
-        <div className="md:hidden flex flex-col divide-y divide-neutral-800/50">
-          {members.map((member) => {
-            const isMaster = member.rol === 'MASTER';
-            const permisosCount = member.permisos?.length || 0;
-
-            return (
-              <div key={member.id} className="p-4 flex flex-col gap-3 hover:bg-white/[0.02] transition-colors">
-                <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0">
-                      <UserCircle size={20} />
                     </div>
-                    <div>
-                      <p className="text-white font-medium text-sm">
-                        {member.nombre_completo || 'Usuario'}
-                        {member.id === currentUserId && (
-                          <span className="ml-2 text-xs text-neutral-500 font-normal">(Tú)</span>
-                        )}
-                      </p>
-                      <p className="text-xs text-neutral-500 font-mono">{member.id.substring(0, 8)}...</p>
-                    </div>
+
                   </div>
-                  <span className={`text-xs border px-2 py-0.5 rounded-full font-bold ${getRoleBadge(member.rol)}`}>
-                    {member.rol}
-                  </span>
                 </div>
+              );
+            })}
 
-                <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-400">
-                  <span className="flex items-center gap-1">
-                    <Building2 size={12} className="text-neutral-500" />
-                    {getSedeName(member.sede_id)}
-                  </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <Layers size={12} className="text-neutral-500" />
-                    {isMaster ? 'Acceso Total' : `${permisosCount} módulos`}
-                  </span>
-                </div>
-
-                {feedback?.id === member.id && (
-                  <span className={`text-xs font-medium flex items-center gap-1 ${feedback.type === 'error' ? 'text-rose-400' : 'text-emerald-400'}`}>
-                    {feedback.type === 'success' && <CheckCircle2 size={12} />}
-                    {feedback.msg}
-                  </span>
-                )}
-
-                {member.id !== currentUserId && (
-                  <div className="pt-2 border-t border-neutral-800/60 flex items-center justify-between gap-2">
-                    <button
-                      onClick={() => setEditingMember(member)}
-                      className="flex-1 py-2 px-3 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
-                    >
-                      <Settings2 size={14} /> Editar Módulos
-                    </button>
-                    <ChangePasswordModal 
-                      memberId={member.id} 
-                      nombreCompleto={member.nombre_completo || 'Usuario'} 
-                    />
-                    <button
-                      onClick={() => handleDelete(member.id, member.nombre_completo)}
-                      disabled={deletingId === member.id}
-                      className="p-2 text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-colors disabled:opacity-40"
-                    >
-                      {deletingId === member.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
-                    </button>
-                  </div>
-                )}
+            {members.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-16 text-neutral-500 bg-neutral-950/40 rounded-3xl border border-neutral-800/60 border-dashed">
+                <UserCircle size={48} className="text-neutral-700 mb-4" />
+                <p className="text-sm font-medium">No hay miembros en el equipo aún.</p>
               </div>
-            );
-          })}
-          {members.length === 0 && (
-            <div className="p-8 text-center text-neutral-500">
-              No hay miembros en el equipo.
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
