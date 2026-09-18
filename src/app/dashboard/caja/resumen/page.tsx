@@ -7,6 +7,7 @@ import { getSedesCaja } from '@/actions/sedes-actions';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import NiteoDateRangePicker from '@/components/ui/NiteoDateRangePicker';
 
 export default function ResumenPagosPage() {
   const [loading, setLoading] = useState(true);
@@ -166,25 +167,17 @@ export default function ResumenPagosPage() {
       <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 flex flex-col sm:flex-row flex-wrap gap-6 items-end">
         <div className="space-y-2 w-full sm:w-auto">
           <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider flex items-center gap-2">
-            <Calendar size={14} /> Desde
+            <Calendar size={14} /> Período
           </label>
-          <input 
-            type="date" 
-            value={fechaInicio} 
-            onChange={e => setFechaInicio(e.target.value)}
-            className="w-full bg-black/50 border border-neutral-800 text-white text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 [color-scheme:dark]"
-          />
-        </div>
-        
-        <div className="space-y-2 w-full sm:w-auto">
-          <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider flex items-center gap-2">
-            <Calendar size={14} /> Hasta
-          </label>
-          <input 
-            type="date" 
-            value={fechaFin} 
-            onChange={e => setFechaFin(e.target.value)}
-            className="w-full bg-black/50 border border-neutral-800 text-white text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 [color-scheme:dark]"
+          <NiteoDateRangePicker
+            startDate={fechaInicio}
+            endDate={fechaFin}
+            onChange={(s, e) => {
+              setFechaInicio(s);
+              setFechaFin(e);
+            }}
+            align="left"
+            className="w-full sm:w-auto"
           />
         </div>
 

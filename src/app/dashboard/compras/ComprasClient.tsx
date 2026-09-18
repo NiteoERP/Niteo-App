@@ -8,6 +8,8 @@ import { editarFacturaInsumos, getComprasMetodosPago, addCompraMetodoPago } from
 import { useEmpresa } from '@/components/providers/EmpresaProvider';
 import CreatableSelect from 'react-select/creatable';
 import { useLiveTable } from '@/hooks/useLiveTable';
+import NiteoDatePicker from '@/components/ui/NiteoDatePicker';
+import NiteoDateRangePicker from '@/components/ui/NiteoDateRangePicker';
 
 import SedeSelector from "@/components/inventario/SedeSelector";
 export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes: any[], activeSedeId: string, profile: any }) {
@@ -460,7 +462,7 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
 
             <div className="lg:col-span-1">
               <label className="block text-sm font-medium text-neutral-300 mb-1.5">Fecha *</label>
-              <input type="date" value={gasto.fechaRegistro} onChange={e => setGasto({...gasto, fechaRegistro: e.target.value})} className="w-full h-14 bg-black/50 border border-neutral-800 text-white text-base rounded-xl px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 [color-scheme:dark]" />
+              <NiteoDatePicker value={gasto.fechaRegistro} onChange={val => setGasto({...gasto, fechaRegistro: val})} className="w-full" />
             </div>
 
             <div className="lg:col-span-1">
@@ -598,7 +600,7 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-300 mb-1.5">Fecha *</label>
-                <input type="date" value={factura.fechaRegistro} onChange={e => setFactura({...factura, fechaRegistro: e.target.value})} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                <NiteoDatePicker value={factura.fechaRegistro} onChange={val => setFactura({...factura, fechaRegistro: val})} className="w-full" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-300 mb-1.5">Número de Factura Física</label>
@@ -660,12 +662,14 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
               </div>
             </div>
             <div className="w-full md:w-auto">
-              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Fecha Inicio</label>
-              <input type="date" value={filtros.fechaInicio} onChange={e => setFiltros({...filtros, fechaInicio: e.target.value})} className="w-full h-14 bg-black/50 border border-neutral-800 text-white rounded-xl px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 [color-scheme:dark]" />
-            </div>
-            <div className="w-full md:w-auto">
-              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Fecha Fin</label>
-              <input type="date" value={filtros.fechaFin} onChange={e => setFiltros({...filtros, fechaFin: e.target.value})} className="w-full h-14 bg-black/50 border border-neutral-800 text-white rounded-xl px-4 focus:outline-none focus:ring-1 focus:ring-indigo-500 [color-scheme:dark]" />
+              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Rango de Fechas</label>
+              <NiteoDateRangePicker
+                startDate={filtros.fechaInicio}
+                endDate={filtros.fechaFin}
+                onChange={(s, e) => setFiltros({ ...filtros, fechaInicio: s, fechaFin: e })}
+                align="right"
+                className="w-full md:w-auto"
+              />
             </div>
             <button onClick={cargarHistorialCompleto} disabled={isSearching} className="w-full h-14 md:w-auto bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-6 rounded-xl flex items-center justify-center gap-2">
               {isSearching ? <Loader2 className="animate-spin" size={16} /> : <Search size={16} />} Filtrar

@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, DollarSign, Calendar, Loader2, AlertCircle } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Calendar, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { getReporteFinanciero } from '@/actions/finanzas-actions';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+import NiteoDateRangePicker from '@/components/ui/NiteoDateRangePicker';
 
 export default function FinanzasPage() {
   const [loading, setLoading] = useState(true);
@@ -24,10 +25,10 @@ export default function FinanzasPage() {
     return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0];
   });
 
-  const loadData = async () => {
+  const loadData = async (start = fechaInicio, end = fechaFin) => {
     setLoading(true);
     setErrorMsg('');
-    const res = await getReporteFinanciero(fechaInicio, fechaFin);
+    const res = await getReporteFinanciero(start, end);
     if (res.success) {
       setData(res.data);
     } else {
@@ -75,26 +76,28 @@ export default function FinanzasPage() {
           <p className="text-neutral-400 mt-1">Estado de Resultados y Rentabilidad</p>
         </div>
         
-        <div className="flex items-center gap-3 bg-neutral-900/50 p-2 rounded-xl border border-neutral-800">
-          <Calendar className="text-neutral-500 ml-2" size={18} />
-          <input 
-            type="date" 
-            value={fechaInicio} 
-            onChange={(e) => setFechaInicio(e.target.value)}
-            className="bg-transparent text-white text-sm focus:outline-none"
-          />
-          <span className="text-neutral-500">-</span>
-          <input 
-            type="date" 
-            value={fechaFin} 
-            onChange={(e) => setFechaFin(e.target.value)}
-            className="bg-transparent text-white text-sm focus:outline-none"
+        <div className="flex items-center gap-3">
+          <NiteoDateRangePicker
+            startDate={fechaInicio}
+            endDate={fechaFin}
+            onChange={(s, e) => {
+              setFechaInicio(s);
+              setFechaFin(e);
+              if (s && e) {
+                loadData(s, e);
+              }
+            }}
+            align="right"
           />
           <button 
-            onClick={loadData}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors"
+            type="button"
+            onClick={() => loadData(fechaInicio, fechaFin)}
+            disabled={loading}
+            className="flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors"
+            title="Recargar datos"
           >
-            Filtrar
+            <RefreshCw size={15} className={loading ? 'animate-spin text-indigo-400' : 'text-neutral-400'} />
+            <span className="hidden sm:inline">Actualizar</span>
           </button>
         </div>
       </div>

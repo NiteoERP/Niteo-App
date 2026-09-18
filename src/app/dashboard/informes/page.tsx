@@ -16,6 +16,7 @@ import { format, subDays, startOfWeek, endOfWeek, startOfDay, endOfDay,
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import NiteoDateRangePicker from '@/components/ui/NiteoDateRangePicker';
 
 
 // ─── Tipos ──────────────────────────────────────────────────────────────────
@@ -903,13 +904,23 @@ function DesktopReportPanel({
               </button>
             </div>
             {showCustomDates && (
-              <div className="space-y-2 pt-1">
-                <input type="date" value={format(sheetStartDate, 'yyyy-MM-dd')}
-                  onChange={e => { const d = new Date(e.target.value + 'T00:00:00'); if (!isNaN(d.getTime())) setSheetStartDate(d); }}
-                  className="w-full h-10 bg-neutral-900 border border-neutral-800 text-white text-sm px-3 rounded-xl focus:outline-none focus:border-indigo-500 [color-scheme:dark]" />
-                <input type="date" value={format(sheetEndDate, 'yyyy-MM-dd')}
-                  onChange={e => { const d = new Date(e.target.value + 'T00:00:00'); if (!isNaN(d.getTime())) setSheetEndDate(d); }}
-                  className="w-full h-10 bg-neutral-900 border border-neutral-800 text-white text-sm px-3 rounded-xl focus:outline-none focus:border-indigo-500 [color-scheme:dark]" />
+              <div className="pt-2">
+                <NiteoDateRangePicker
+                  startDate={format(sheetStartDate, 'yyyy-MM-dd')}
+                  endDate={format(sheetEndDate, 'yyyy-MM-dd')}
+                  onChange={(s, e) => {
+                    if (s) {
+                      const d1 = new Date(s + 'T00:00:00');
+                      if (!isNaN(d1.getTime())) setSheetStartDate(d1);
+                    }
+                    if (e) {
+                      const d2 = new Date(e + 'T23:59:59');
+                      if (!isNaN(d2.getTime())) setSheetEndDate(d2);
+                    }
+                  }}
+                  align="left"
+                  className="w-full"
+                />
               </div>
             )}
             <p className="text-xs text-neutral-600">{format(sheetStartDate,'dd/MM/yy')} → {format(sheetEndDate,'dd/MM/yy')}</p>
