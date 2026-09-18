@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 export async function importarProductos(productosImport: any[], sedeId: string) {
   return procesarImportacionUniversal(productosImport.map(p => ({
     nombre: p.Nombre,
+    categoria: p['Categoría'] || p['Categoria'] || p['Rubro'] || p['Grupo'] || '',
     codigo_barras: p['Código de Barras']?.toString() || '',
     precio_venta: parseFloat(p['Precio de Venta']) || 0,
     costo: parseFloat(p['Costo']) || 0,
@@ -66,6 +67,45 @@ export async function procesarImportacionUniversal(productos: any[], sedeId: str
     (existingInsumos || []).map((ins: any) => [ins.nombre.trim().toLowerCase(), ins])
   );
 
+  // 2. Obtener y auto-crear categorías para la empresa
+  const { data: existingCategorias } = await supabase
+    .from('categorias')
+    .select('id, nombre')
+    .eq('empresa_id', perfil.empresa_id);
+
+  const categoriasMap = new Map<string, string>(
+    (existingCategorias || []).map((c: any) => [c.nombre.trim().toLowerCase(), c.id])
+  );
+
+  const catNamesToCreate = new Set<string>();
+  for (const p of productos) {
+    if (p.categoria && typeof p.categoria === 'string' && p.categoria.trim()) {
+      const key = p.categoria.trim().toLowerCase();
+      if (!categoriasMap.has(key)) {
+        catNamesToCreate.add(p.categoria.trim());
+      }
+    }
+  }
+
+  for (const catName of catNamesToCreate) {
+    const idPos = 'CAT-' + Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 6);
+    const { data: newCat, error: errCat } = await supabase
+      .from('categorias')
+      .insert({
+        empresa_id: perfil.empresa_id,
+        nombre: catName,
+        id_pos: idPos,
+        estado_activo: true,
+        sede_id: sedeId || null
+      })
+      .select('id, nombre')
+      .single();
+
+    if (!errCat && newCat) {
+      categoriasMap.set(catName.toLowerCase().trim(), newCat.id);
+    }
+  }
+
   let successCount = 0;
 
   // Procesamos en bloques
@@ -73,18 +113,24 @@ export async function procesarImportacionUniversal(productos: any[], sedeId: str
   for (let i = 0; i < productos.length; i += chunkSize) {
     const chunk = productos.slice(i, i + chunkSize);
 
-    const prodsToInsert = chunk.map((p: any) => ({
-      empresa_id: perfil.empresa_id,
-      sede_id: sedeId,
-      nombre: p.nombre,
-      codigo_barras: p.codigo_barras || '',
-      precio_venta: parseFloat(p.precio_venta) || 0,
-      costo: parseFloat(p.costo) || 0,
-      precio_modificable: Boolean(p.precio_modificable),
-      estado_activo: true,
-      canal_venta: 'AMBOS',
-      es_reventa: true,
-    }));
+    const prodsToInsert = chunk.map((p: any) => {
+      const catKey = p.categoria ? p.categoria.toString().trim().toLowerCase() : '';
+      const catId = catKey ? (categoriasMap.get(catKey) || null) : null;
+
+      return {
+        empresa_id: perfil.empresa_id,
+        sede_id: sedeId,
+        categoria_id: catId,
+        nombre: p.nombre,
+        codigo_barras: p.codigo_barras || '',
+        precio_venta: parseFloat(p.precio_venta) || 0,
+        costo: parseFloat(p.costo) || 0,
+        precio_modificable: Boolean(p.precio_modificable),
+        estado_activo: true,
+        canal_venta: 'AMBOS',
+        es_reventa: true,
+      };
+    });
 
     const { data: insertedProds, error: prodErr } = await supabase
       .from('productos')

@@ -7,6 +7,7 @@ import { createProducto, updateProducto } from '@/actions/catalogo-actions';
 export default function ProductoForm({ 
   initialData, 
   sedes, 
+  categorias = [],
   insumos = [], 
   productos = [], 
   recetas = [], 
@@ -14,6 +15,7 @@ export default function ProductoForm({
 }: { 
   initialData: any, 
   sedes: any[], 
+  categorias?: any[],
   insumos?: any[], 
   productos?: any[], 
   recetas?: any[], 
@@ -22,6 +24,10 @@ export default function ProductoForm({
   const isEditing = !!initialData;
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState('');
+  const [catsList, setCatsList] = useState<any[]>(categorias);
+  const [creatingCat, setCreatingCat] = useState(false);
+  const [newCatName, setNewCatName] = useState('');
+  const [loadingNewCat, setLoadingNewCat] = useState(false);
 
   // Extract existing recipes for this product if editing
   const existingRecipes = isEditing 
@@ -43,6 +49,7 @@ export default function ProductoForm({
 
   const [formData, setFormData] = useState({
     nombre: initialData?.nombre || '',
+    categoria_id: initialData?.categoria_id || '',
     codigo_barras: initialData?.codigo_barras || '',
     precio_venta: initialData?.precio_venta || 0,
     costo: initialData?.costo || 0,
@@ -52,6 +59,25 @@ export default function ProductoForm({
     sede_id: sedes[0]?.id || '',
     receta_items: existingRecipes
   });
+
+  const handleSaveNewCategory = async () => {
+    if (!newCatName.trim()) return;
+    setLoadingNewCat(true);
+    const { createCategoria } = await import('@/actions/catalogo-actions');
+    const res = await createCategoria(newCatName.trim());
+    if (res.success && res.data) {
+      setCatsList(prev => {
+        const filtered = prev.filter(c => c.id !== res.data.id);
+        return [...filtered, res.data];
+      });
+      setFormData(prev => ({ ...prev, categoria_id: res.data.id }));
+      setCreatingCat(false);
+      setNewCatName('');
+    } else {
+      alert(res.error || 'Error al crear la categoría.');
+    }
+    setLoadingNewCat(false);
+  };
 
   const [selectedItem, setSelectedItem] = useState('');
   const [selectedCantidad, setSelectedCantidad] = useState('');
@@ -168,15 +194,70 @@ export default function ProductoForm({
               </div>
             </div>
 
-            <div>
-              <label className="text-sm font-medium text-neutral-400 block mb-1.5">Nombre</label>
-              <input 
-                required
-                type="text" 
-                className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 text-white focus:border-indigo-500 transition-colors"
-                value={formData.nombre}
-                onChange={e => setFormData({...formData, nombre: e.target.value})}
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-neutral-400 block mb-1.5">Nombre</label>
+                <input 
+                  required
+                  type="text" 
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 text-white focus:border-indigo-500 transition-colors"
+                  value={formData.nombre}
+                  onChange={e => setFormData({...formData, nombre: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="text-sm font-medium text-neutral-400">Categoría</label>
+                  {!creatingCat && (
+                    <button
+                      type="button"
+                      onClick={() => setCreatingCat(true)}
+                      className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1"
+                    >
+                      <Plus size={12} /> Nueva
+                    </button>
+                  )}
+                </div>
+
+                {creatingCat ? (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Ej. Bebidas, Snacks..."
+                      value={newCatName}
+                      onChange={e => setNewCatName(e.target.value)}
+                      className="flex-1 bg-neutral-950 border border-indigo-500 rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      disabled={loadingNewCat}
+                      onClick={handleSaveNewCategory}
+                      className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded-lg font-medium transition-colors disabled:opacity-50"
+                    >
+                      {loadingNewCat ? '...' : 'Crear'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setCreatingCat(false); setNewCatName(''); }}
+                      className="p-2 text-neutral-400 hover:text-white rounded-lg"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 text-white focus:border-indigo-500 transition-colors"
+                    value={formData.categoria_id}
+                    onChange={e => setFormData({...formData, categoria_id: e.target.value})}
+                  >
+                    <option value="">Sin categoría</option>
+                    {catsList.map(c => (
+                      <option key={c.id} value={c.id}>{c.nombre}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-3 gap-4">

@@ -29,29 +29,20 @@ export default async function CatalogoPage() {
     return <div className="p-8 text-rose-400">Error: No tienes empresa configurada.</div>;
   }
 
-  // Obtener sedes directamente para la empresa
-  const { data: sedes } = await supabase
-    .from('sedes')
-    .select('id, nombre_sede')
-    .eq('empresa_id', empresaId)
-    .order('nombre_sede');
-
-  const { data: productos } = await supabase
-    .from('productos')
-    .select('*')
-    .eq('empresa_id', empresaId)
-    .order('nombre');
-
-  const { data: insumos } = await supabase
-    .from('inventario_insumos')
-    .select('id, nombre, unidad_medida, costo_promedio, cantidad_actual, sede_id')
-    .eq('empresa_id', empresaId)
-    .order('nombre');
-
-  const { data: recetas } = await supabase
-    .from('recetas')
-    .select('*')
-    .eq('empresa_id', empresaId);
+  // Obtener datos del catálogo concurrentemente
+  const [
+    { data: sedes },
+    { data: productos },
+    { data: categorias },
+    { data: insumos },
+    { data: recetas }
+  ] = await Promise.all([
+    supabase.from('sedes').select('id, nombre_sede').eq('empresa_id', empresaId).order('nombre_sede'),
+    supabase.from('productos').select('*, categorias(id, nombre)').eq('empresa_id', empresaId).order('nombre'),
+    supabase.from('categorias').select('id, nombre').eq('empresa_id', empresaId).order('nombre'),
+    supabase.from('inventario_insumos').select('id, nombre, unidad_medida, costo_promedio, cantidad_actual, sede_id').eq('empresa_id', empresaId).order('nombre'),
+    supabase.from('recetas').select('*').eq('empresa_id', empresaId)
+  ]);
 
   return (
     <div className="space-y-6">
@@ -64,7 +55,13 @@ export default async function CatalogoPage() {
           </p>
         </div>
       </div>
-      <CatalogoClient productos={productos || []} sedes={sedes || []} insumos={insumos || []} recetas={recetas || []} />
+      <CatalogoClient 
+        productos={productos || []} 
+        sedes={sedes || []} 
+        categorias={categorias || []}
+        insumos={insumos || []} 
+        recetas={recetas || []} 
+      />
     </div>
   );
 }

@@ -6,17 +6,32 @@ import ProductoForm from './ProductoForm';
 import BulkRecetaModal from './BulkRecetaModal';
 import { deleteProducto } from '@/actions/catalogo-actions';
 
-export default function CatalogoClient({ productos, sedes, insumos, recetas }: { productos: any[], sedes: any[], insumos: any[], recetas: any[] }) {
+export default function CatalogoClient({ 
+  productos, 
+  sedes, 
+  categorias = [], 
+  insumos, 
+  recetas 
+}: { 
+  productos: any[], 
+  sedes: any[], 
+  categorias?: any[], 
+  insumos: any[], 
+  recetas: any[] 
+}) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategoria, setSelectedCategoria] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isBulkOpen, setIsBulkOpen] = useState(false);
   const [editingProd, setEditingProd] = useState<any>(null);
   const [isPending, startTransition] = useTransition();
 
-  const filtered = productos.filter(p => 
-    (p.nombre?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-    (p.codigo_barras?.toLowerCase() || '').includes(searchTerm.toLowerCase())
-  );
+  const filtered = productos.filter(p => {
+    const matchesSearch = (p.nombre?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (p.codigo_barras?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+    const matchesCat = !selectedCategoria || p.categoria_id === selectedCategoria;
+    return matchesSearch && matchesCat;
+  });
 
   const handleEdit = (p: any) => {
     setEditingProd(p);
@@ -32,18 +47,32 @@ export default function CatalogoClient({ productos, sedes, insumos, recetas }: {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center gap-4">
-        <div className="relative w-full max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 w-4 h-4" />
-          <input
-            type="text"
-            placeholder="Buscar producto..."
-            className="w-full bg-neutral-900 border border-neutral-800 text-sm text-white rounded-lg pl-9 pr-4 py-2 focus:border-indigo-500 transition-colors"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
+        <div className="flex flex-1 items-center gap-3">
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Buscar producto o código..."
+              className="w-full bg-neutral-900 border border-neutral-800 text-sm text-white rounded-lg pl-9 pr-4 py-2 focus:border-indigo-500 transition-colors"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <select
+            value={selectedCategoria}
+            onChange={(e) => setSelectedCategoria(e.target.value)}
+            className="bg-neutral-900 border border-neutral-800 text-sm text-neutral-300 rounded-lg px-3 py-2 focus:border-indigo-500 outline-none transition-colors shrink-0"
+          >
+            <option value="">Todas las categorías</option>
+            {categorias.map(c => (
+              <option key={c.id} value={c.id}>{c.nombre}</option>
+            ))}
+          </select>
         </div>
-        <div className="flex gap-2">
+
+        <div className="flex gap-2 shrink-0">
           <button 
             onClick={() => setIsBulkOpen(true)}
             className="flex items-center gap-2 px-4 py-2 bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-white rounded-lg font-medium transition-colors text-sm"
@@ -65,6 +94,7 @@ export default function CatalogoClient({ productos, sedes, insumos, recetas }: {
             <thead className="bg-neutral-950/50 text-neutral-400">
               <tr>
                 <th className="px-6 py-4 font-medium">Producto</th>
+                <th className="px-6 py-4 font-medium">Categoría</th>
                 <th className="px-6 py-4 font-medium">Tipo</th>
                 <th className="px-6 py-4 font-medium">Costo</th>
                 <th className="px-6 py-4 font-medium">P. Venta</th>
@@ -82,6 +112,15 @@ export default function CatalogoClient({ productos, sedes, insumos, recetas }: {
                         <p className="text-xs text-neutral-500">{p.codigo_barras || 'Sin código'}</p>
                       </div>
                     </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    {p.categorias?.nombre ? (
+                      <span className="px-2.5 py-0.5 rounded-md bg-neutral-800 border border-neutral-700 text-neutral-300 text-xs font-medium">
+                        {p.categorias.nombre}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-neutral-600 italic">Sin categoría</span>
+                    )}
                   </td>
                   <td className="px-6 py-4">
                     {p.es_compuesto ? (
@@ -110,7 +149,7 @@ export default function CatalogoClient({ productos, sedes, insumos, recetas }: {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-neutral-500">No se encontraron productos.</td>
+                  <td colSpan={6} className="px-6 py-12 text-center text-neutral-500">No se encontraron productos.</td>
                 </tr>
               )}
             </tbody>
@@ -122,6 +161,7 @@ export default function CatalogoClient({ productos, sedes, insumos, recetas }: {
         <ProductoForm 
           initialData={editingProd} 
           sedes={sedes}
+          categorias={categorias}
           insumos={insumos}
           productos={productos}
           recetas={recetas}

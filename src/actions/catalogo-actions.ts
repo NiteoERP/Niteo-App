@@ -22,6 +22,7 @@ export async function createProducto(data: any) {
     .from('productos')
     .insert({
       empresa_id: perfil.empresa_id,
+      categoria_id: data.categoria_id || null,
       nombre: data.nombre,
       codigo_barras: data.codigo_barras || '',
       precio_venta: parseFloat(data.precio_venta) || 0,
@@ -110,6 +111,7 @@ export async function updateProducto(id: string, data: any) {
   if (!perfil) return { success: false, error: 'Perfil no encontrado' };
 
   const { error } = await supabase.from('productos').update({
+      categoria_id: data.categoria_id || null,
       nombre: data.nombre,
       codigo_barras: data.codigo_barras || '',
       precio_venta: parseFloat(data.precio_venta) || 0,
@@ -199,3 +201,59 @@ export async function bulkAssignReceta(data: {
   revalidatePath('/dashboard/catalogo');
   return { success: true };
 }
+
+/**
+ * Crea una nueva categoría para la empresa si no existe previamente.
+ */
+export async function createCategoria(nombre: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autorizado' };
+
+  const { data: perfil } = await supabase
+    .from('perfiles')
+    .select('empresa_id')
+    .eq('id', user.id)
+    .single();
+
+  if (!perfil) return { success: false, error: 'Perfil no encontrado' };
+
+  if (!nombre || !nombre.trim()) {
+    return { success: false, error: 'El nombre de la categoría es requerido.' };
+  }
+
+  const nombreLimpio = nombre.trim();
+  const idPos = 'CAT-' + Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 6);
+
+  // Verificar si ya existe una categoría con ese nombre
+  const { data: existing } = await supabase
+    .from('categorias')
+    .select('id, nombre, id_pos')
+    .eq('empresa_id', perfil.empresa_id)
+    .ilike('nombre', nombreLimpio)
+    .maybeSingle();
+
+  if (existing) {
+    return { success: true, data: existing };
+  }
+
+  const { data, error } = await supabase
+    .from('categorias')
+    .insert({
+      empresa_id: perfil.empresa_id,
+      nombre: nombreLimpio,
+      id_pos: idPos,
+      estado_activo: true
+    })
+    .select('id, nombre, id_pos')
+    .single();
+
+  if (error) {
+    console.error('Error al crear categoría:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/dashboard/catalogo');
+  return { success: true, data };
+}
+
