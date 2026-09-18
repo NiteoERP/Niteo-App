@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { format, startOfDay, endOfDay } from 'date-fns';
+import { format, startOfDay, endOfDay, addDays, differenceInCalendarDays } from 'date-fns';
 
 // Re-exporta useSedes para que los consumidores puedan importarlo desde aquí si quieren.
 export { useSedes } from './useDashboardData';
@@ -57,6 +57,185 @@ export function useCatalogosInformes(empresaId: string) {
     clientes: data?.clientes ?? [], 
     isLoading 
   };
+}
+
+// ─── Helper: Agregar fila de Totales a reportes numéricos ───────────────────
+function appendReportTotals(reportId: string, rawData: any[]): any[] {
+  if (!rawData || rawData.length === 0) return rawData;
+
+  const lastRow = rawData[rawData.length - 1];
+  const firstColVal = String(Object.values(lastRow)[0] ?? '').toUpperCase();
+  if (firstColVal.includes('TOTAL')) return rawData;
+
+  const sample = rawData[0];
+  const keys = Object.keys(sample);
+
+  if (reportId === 'ventas_diarias') {
+    let sumFacturas = 0;
+    let sumVentas = 0;
+    let sumDesc = 0;
+    for (const r of rawData) {
+      sumFacturas += Number(r.cantidad_facturas || 0);
+      sumVentas += Number(r.total_ventas || 0);
+      sumDesc += Number(r.total_descuentos || 0);
+    }
+    const avgTicket = sumFacturas > 0 ? sumVentas / sumFacturas : 0;
+    return [
+      ...rawData,
+      {
+        fecha: 'TOTALES',
+        cantidad_facturas: sumFacturas,
+        total_ventas: sumVentas,
+        total_descuentos: sumDesc,
+        ticket_promedio: avgTicket,
+      },
+    ];
+  }
+
+  if (reportId === 'ventas_usuarios') {
+    let sumFacturas = 0;
+    let sumVentas = 0;
+    for (const r of rawData) {
+      sumFacturas += Number(r.cantidad_facturas || 0);
+      sumVentas += Number(r.total_ventas || 0);
+    }
+    const avgTicket = sumFacturas > 0 ? sumVentas / sumFacturas : 0;
+    return [
+      ...rawData,
+      {
+        nombre_cajero: 'TOTALES',
+        cantidad_facturas: sumFacturas,
+        total_ventas: sumVentas,
+        promedio_por_factura: avgTicket,
+      },
+    ];
+  }
+
+  if (reportId === 'ventas_clientes') {
+    let sumVisitas = 0;
+    let sumGastado = 0;
+    for (const r of rawData) {
+      sumVisitas += Number(r.visitas || 0);
+      sumGastado += Number(r.total_gastado || 0);
+    }
+    const avgTicket = sumVisitas > 0 ? sumGastado / sumVisitas : 0;
+    return [
+      ...rawData,
+      {
+        cliente: 'TOTALES',
+        visitas: sumVisitas,
+        total_gastado: sumGastado,
+        ticket_promedio: avgTicket,
+      },
+    ];
+  }
+
+  if (reportId === 'ventas_categoria') {
+    let sumItems = 0;
+    let sumVendido = 0;
+    for (const r of rawData) {
+      sumItems += Number(r.cantidad_items || 0);
+      sumVendido += Number(r.total_vendido || 0);
+    }
+    const avgTicket = sumItems > 0 ? sumVendido / sumItems : 0;
+    return [
+      ...rawData,
+      {
+        categoria: 'TOTALES',
+        cantidad_items: sumItems,
+        total_vendido: sumVendido,
+        ticket_promedio: avgTicket,
+      },
+    ];
+  }
+
+  if (reportId === 'productos_vendidos') {
+    let sumUnidades = 0;
+    let sumIngresos = 0;
+    for (const r of rawData) {
+      sumUnidades += Number(r.unidades_vendidas || 0);
+      sumIngresos += Number(r.ingresos_total || 0);
+    }
+    const avgPrecio = sumUnidades > 0 ? sumIngresos / sumUnidades : 0;
+    return [
+      ...rawData,
+      {
+        codigo: '',
+        producto: 'TOTALES',
+        categoria: '',
+        unidades_vendidas: sumUnidades,
+        ingresos_total: sumIngresos,
+        precio_promedio: avgPrecio,
+      },
+    ];
+  }
+
+  if (reportId === 'detalle_ventas') {
+    let sumSub = 0;
+    let sumDesc = 0;
+    let sumTot = 0;
+    for (const r of rawData) {
+      sumSub += Number(r.subtotal || 0);
+      sumDesc += Number(r.descuento || 0);
+      sumTot += Number(r.total || 0);
+    }
+    return [
+      ...rawData,
+      {
+        numero_orden: 'TOTALES',
+        numero_documento: '',
+        fecha_hora: '',
+        cliente: '',
+        cajero: '',
+        productos: '',
+        subtotal: sumSub,
+        descuento: sumDesc,
+        total: sumTot,
+        metodos_pago: '',
+        estado: '',
+      },
+    ];
+  }
+
+  if (reportId === 'cuentas_por_cobrar') {
+    let sumDeuda = 0;
+    let sumFacturas = 0;
+    for (const r of rawData) {
+      sumDeuda += Number(r.total_deuda || 0);
+      sumFacturas += Number(r.total_facturas || 0);
+    }
+    return [
+      ...rawData,
+      {
+        cliente_id: '',
+        nombre_cliente: 'TOTALES',
+        rif_cedula: '',
+        total_deuda: sumDeuda,
+        total_facturas: sumFacturas,
+        nombre_sede: '',
+      },
+    ];
+  }
+
+  if (reportId === 'cuentas_abiertas') {
+    let sumTot = 0;
+    for (const r of rawData) {
+      sumTot += Number(r.total || 0);
+    }
+    return [
+      ...rawData,
+      {
+        id: '',
+        numero_documento: '',
+        nombre_cuenta: 'TOTALES',
+        total: sumTot,
+        fecha_apertura: '',
+        nombre_sede: '',
+      },
+    ];
+  }
+
+  return rawData;
 }
 
 // ─── Hook: Generador de Reportes ──────────────────────────────────────────────
@@ -221,6 +400,9 @@ export function useGenerateReport(empresaId: string) {
               string,
               { operador: string; cantidad: number; total_divisas: number; total_bs: number }
             > = {};
+            let sumCant = 0;
+            let sumDiv = 0;
+            let sumBs = 0;
             for (const row of joinedData) {
               const op = row.nombre_operador || 'Desconocido';
               if (!summary[op])
@@ -228,8 +410,11 @@ export function useGenerateReport(empresaId: string) {
               summary[op].cantidad += 1;
               summary[op].total_divisas += Number(row.monto_divisas || 0);
               summary[op].total_bs += Number(row.monto_bs || 0);
+              sumCant += 1;
+              sumDiv += Number(row.monto_divisas || 0);
+              sumBs += Number(row.monto_bs || 0);
             }
-            const result = Object.values(summary)
+            const result: any[] = Object.values(summary)
               .sort((a, b) => b.total_divisas - a.total_divisas)
               .map(s => ({
                 'OPERADOR': s.operador,
@@ -237,6 +422,14 @@ export function useGenerateReport(empresaId: string) {
                 'TOTAL DOLARES': `$ ${s.total_divisas.toFixed(2)}`,
                 'TOTAL Bs.': `Bs.S ${s.total_bs.toFixed(2)}`,
               }));
+            if (result.length > 0) {
+              result.push({
+                'OPERADOR': 'TOTALES',
+                'COMPRAS REALIZADAS': sumCant,
+                'TOTAL DOLARES': `$ ${sumDiv.toFixed(2)}`,
+                'TOTAL Bs.': `Bs.S ${sumBs.toFixed(2)}`,
+              });
+            }
             setReportData(result);
             return;
           }
@@ -325,18 +518,70 @@ export function useGenerateReport(empresaId: string) {
             }
           }
 
-          const formattedData = Object.values(byDate)
-            .sort((a, b) => a.fecha.localeCompare(b.fecha))
-            .map(row => {
-              const obj: Record<string, any> = {
-                Fecha: row.fecha,
-                'Total (USD)': `$ ${row.total_usd.toFixed(2)}`,
-              };
-              Object.entries(row.metodos).forEach(([m, v]) => { 
-                obj[m] = `$ ${Number(v).toFixed(2)}`; 
-              });
-              return obj;
-            });
+          // Recolectar todos los métodos únicos encontrados en el período
+          const allMethodsSet = new Set<string>();
+          for (const day of Object.values(byDate)) {
+            for (const m of Object.keys(day.metodos)) {
+              if (m) allMethodsSet.add(m.trim());
+            }
+          }
+
+          // Orden preferente de métodos conocidos
+          const preferredOrder = ['Efectivo', 'Pago Movil', 'Punto', 'Zelle', 'Binance', 'Pt Bancrecer', 'Cashea', 'Credito'];
+          const allMethods = Array.from(allMethodsSet).sort((a, b) => {
+            const ia = preferredOrder.indexOf(a);
+            const ib = preferredOrder.indexOf(b);
+            if (ia !== -1 && ib !== -1) return ia - ib;
+            if (ia !== -1) return -1;
+            if (ib !== -1) return 1;
+            return a.localeCompare(b);
+          });
+
+          if (allMethods.length === 0) {
+            allMethods.push('Efectivo', 'Pago Movil', 'Punto', 'Zelle');
+          }
+
+          // Generar todos los días del período seleccionado
+          const totalDays = Math.min(Math.max(differenceInCalendarDays(endDate, startDate) + 1, 1), 366);
+          const formattedData: Record<string, any>[] = [];
+          let grandTotal = 0;
+          const methodTotals: Record<string, number> = {};
+          allMethods.forEach(m => { methodTotals[m] = 0; });
+
+          let cur = startOfDay(startDate);
+          for (let i = 0; i < totalDays; i++) {
+            const dateIso = format(cur, 'yyyy-MM-dd');
+            const dateLabel = format(cur, 'dd/MM/yyyy');
+            const dayData = byDate[dateIso] || { total_usd: 0, metodos: {} };
+
+            grandTotal += dayData.total_usd;
+
+            const rowObj: Record<string, any> = {
+              Fecha: dateLabel,
+              'Total (USD)': `$ ${dayData.total_usd.toFixed(2)}`,
+            };
+
+            for (const m of allMethods) {
+              const val = Number(dayData.metodos[m] || 0);
+              methodTotals[m] += val;
+              rowObj[m] = `$ ${val.toFixed(2)}`;
+            }
+
+            formattedData.push(rowObj);
+            cur = addDays(cur, 1);
+          }
+
+          // Fila de TOTALES al final
+          if (formattedData.length > 0) {
+            const totalRow: Record<string, any> = {
+              Fecha: 'TOTALES',
+              'Total (USD)': `$ ${grandTotal.toFixed(2)}`,
+            };
+            for (const m of allMethods) {
+              totalRow[m] = `$ ${(methodTotals[m] || 0).toFixed(2)}`;
+            }
+            formattedData.push(totalRow);
+          }
 
           setReportData(formattedData);
           return;
@@ -429,7 +674,8 @@ export function useGenerateReport(empresaId: string) {
 
         if (rpcError) throw new Error(rpcError.message);
 
-        setReportData(data ?? []);
+        const processed = appendReportTotals(reportId, data ?? []);
+        setReportData(processed);
       } catch (err: any) {
         setError(err.message || 'Error de conexión.');
         setReportData(null);

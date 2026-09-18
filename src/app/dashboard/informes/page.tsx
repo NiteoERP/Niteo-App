@@ -272,9 +272,25 @@ export default function InformesPage() {
   
   const exportExcel = () => {
     if (!reportData || reportData.length === 0) return;
-    const ws = XLSX.utils.json_to_sheet(reportData);
+    const keys = Array.from(new Set(reportData.flatMap(r => Object.keys(r))));
+    const firstKeyCandidates = ['Fecha', 'FECHA', 'fecha', 'numero_orden', 'codigo', 'cliente', 'operador', 'OPERADOR', 'categoria', 'nombre_cajero', 'nombre_cliente'];
+    const foundFirstKey = firstKeyCandidates.find(k => keys.includes(k));
+    if (foundFirstKey && keys.indexOf(foundFirstKey) > 0) {
+      keys.splice(keys.indexOf(foundFirstKey), 1);
+      keys.unshift(foundFirstKey);
+    }
+
+    const normalizedData = reportData.map(row => {
+      const obj: Record<string, any> = {};
+      keys.forEach(k => {
+        obj[k] = row[k] ?? '';
+      });
+      return obj;
+    });
+
+    const ws = XLSX.utils.json_to_sheet(normalizedData);
     const colWidths: number[] = [];
-    reportData.forEach(row =>
+    normalizedData.forEach(row =>
       Object.entries(row).forEach(([k, v], i) => {
         colWidths[i] = Math.max(colWidths[i] || 0, String(v ?? '').length, k.length);
       })
@@ -302,7 +318,14 @@ export default function InformesPage() {
     doc.text(`Período: ${format(sheetStartDate, 'dd/MM/yyyy')} - ${format(sheetEndDate, 'dd/MM/yyyy')}`, 14, 36);
     doc.text(`Generado el: ${new Date().toLocaleString()}`, 14, 42);
 
-    const keys = Object.keys(reportData[0] || {});
+    const keys = Array.from(new Set(reportData.flatMap(r => Object.keys(r))));
+    const firstKeyCandidates = ['Fecha', 'FECHA', 'fecha', 'numero_orden', 'codigo', 'cliente', 'operador', 'OPERADOR', 'categoria', 'nombre_cajero', 'nombre_cliente'];
+    const foundFirstKey = firstKeyCandidates.find(k => keys.includes(k));
+    if (foundFirstKey && keys.indexOf(foundFirstKey) > 0) {
+      keys.splice(keys.indexOf(foundFirstKey), 1);
+      keys.unshift(foundFirstKey);
+    }
+
     const head = [keys.map(k => k.replace(/_/g, ' ').toUpperCase())];
     
     const body = reportData.map(row => {
@@ -322,7 +345,19 @@ export default function InformesPage() {
       theme: 'grid',
       headStyles: { fillColor: [24, 24, 27], textColor: 255 },
       alternateRowStyles: { fillColor: [250, 250, 250] },
-      styles: { fontSize: 9 },
+      styles: { fontSize: 8 },
+      didParseCell: (hookData) => {
+        const rowRaw = reportData[hookData.row.index];
+        if (rowRaw) {
+          const isTotal = String(rowRaw[keys[0]] || '').toUpperCase().includes('TOTAL') || 
+                          String(rowRaw['Fecha'] || rowRaw['FECHA'] || '').toUpperCase().includes('TOTAL');
+          if (isTotal) {
+            hookData.cell.styles.fontStyle = 'bold';
+            hookData.cell.styles.fillColor = [225, 225, 230];
+            hookData.cell.styles.textColor = [15, 23, 42];
+          }
+        }
+      }
     });
     
     doc.save(`${selectedReportName.replace(/ /g, '_')}_${format(new Date(), 'yyyyMMdd')}.pdf`);
@@ -743,31 +778,51 @@ export default function InformesPage() {
                 </div>
               </div>
 
-              <div className="overflow-x-auto print:overflow-visible print:h-auto rounded-xl border border-neutral-200">
-                <table className="w-full text-sm text-left border-collapse">
-                  <thead className="bg-neutral-100 text-neutral-700 font-bold uppercase text-xs">
-                    <tr>
-                      {Object.keys(reportData[0] || {}).map(key => (
-                        <th key={key} className="px-5 py-4 border-b border-neutral-200">{key.replace(/_/g, ' ')}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-200">
-                    {reportData.map((row, i) => (
-                      <tr key={i} className="hover:bg-neutral-50">
-                        {Object.values(row).map((val: any, j) => (
-                          <td key={j} className="px-5 py-4 text-neutral-800 font-medium">
-                            {typeof val === 'number' ? val.toLocaleString('en-US', { minimumFractionDigits: 2 }) : val}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                    {reportData.length === 0 && (
-                      <tr><td colSpan={10} className="px-5 py-12 text-center text-neutral-500">Sin datos para este período.</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              {(() => {
+                const keys = Array.from(new Set(reportData.flatMap(r => Object.keys(r))));
+                const firstKeyCandidates = ['Fecha', 'FECHA', 'fecha', 'numero_orden', 'codigo', 'cliente', 'operador', 'OPERADOR', 'categoria', 'nombre_cajero', 'nombre_cliente'];
+                const foundFirstKey = firstKeyCandidates.find(k => keys.includes(k));
+                if (foundFirstKey && keys.indexOf(foundFirstKey) > 0) {
+                  keys.splice(keys.indexOf(foundFirstKey), 1);
+                  keys.unshift(foundFirstKey);
+                }
+
+                return (
+                  <div className="overflow-x-auto print:overflow-visible print:h-auto rounded-xl border border-neutral-200">
+                    <table className="w-full text-sm text-left border-collapse">
+                      <thead className="bg-neutral-100 text-neutral-700 font-bold uppercase text-xs">
+                        <tr>
+                          {keys.map(key => (
+                            <th key={key} className="px-5 py-4 border-b border-neutral-200 whitespace-nowrap">{key.replace(/_/g, ' ')}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-neutral-200">
+                        {reportData.map((row, i) => {
+                          const isTotalRow = String(row[keys[0]] || '').toUpperCase().includes('TOTAL') || 
+                                             String(row['Fecha'] || row['FECHA'] || '').toUpperCase().includes('TOTAL');
+                          return (
+                            <tr key={i} className={isTotalRow ? 'bg-neutral-100 font-black border-t-2 border-neutral-400' : 'hover:bg-neutral-50'}>
+                              {keys.map(key => {
+                                const val = row[key];
+                                const isNumber = typeof val === 'number';
+                                return (
+                                  <td key={key} className={`px-5 py-4 whitespace-nowrap ${isTotalRow ? 'font-black text-neutral-950 bg-neutral-100/90' : 'text-neutral-800 font-medium'}`}>
+                                    {isNumber ? val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : (val ?? '-')}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          );
+                        })}
+                        {reportData.length === 0 && (
+                          <tr><td colSpan={keys.length || 10} className="px-5 py-12 text-center text-neutral-500">Sin datos para este período.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -1045,7 +1100,14 @@ function ResultTable({ data }: { data: any[] }) {
   }, [data]);
 
   if (!data || data.length === 0) return null;
-  const keys = Object.keys(data[0]);
+  const keys = Array.from(new Set(data.flatMap(r => Object.keys(r))));
+  const firstKeyCandidates = ['Fecha', 'FECHA', 'fecha', 'numero_orden', 'codigo', 'cliente', 'operador', 'OPERADOR', 'categoria', 'nombre_cajero', 'nombre_cliente'];
+  const foundFirstKey = firstKeyCandidates.find(k => keys.includes(k));
+  if (foundFirstKey && keys.indexOf(foundFirstKey) > 0) {
+    keys.splice(keys.indexOf(foundFirstKey), 1);
+    keys.unshift(foundFirstKey);
+  }
+
   const totalPages = Math.ceil(data.length / pageSize);
   const paginatedData = data.slice((page - 1) * pageSize, page * pageSize);
 
@@ -1056,26 +1118,34 @@ function ResultTable({ data }: { data: any[] }) {
           <thead className="text-xs text-neutral-400 uppercase bg-neutral-950/50 border-b border-neutral-800">
             <tr>
               {keys.map((key, i) => (
-                <th key={key} className={`px-6 py-4 font-bold ${i === 0 ? 'sticky left-0 bg-neutral-950 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]' : ''}`}>
+                <th key={key} className={`px-6 py-4 font-bold whitespace-nowrap ${i === 0 ? 'sticky left-0 bg-neutral-950 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]' : ''}`}>
                   {key.replace(/_/g, ' ')}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-800/50">
-            {paginatedData.map((row, idx) => (
-              <tr key={idx} className="hover:bg-neutral-800/30 transition-colors">
-                {keys.map((key, i) => {
-                  const val = row[key];
-                  const isNumber = typeof val === 'number';
-                  return (
-                    <td key={key} className={`px-6 py-3 ${i === 0 ? 'font-medium text-white whitespace-nowrap sticky left-0 bg-neutral-900 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)] z-10' : 'text-neutral-300'}`}>
-                      {isNumber ? val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : String(val ?? '')}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
+            {paginatedData.map((row, idx) => {
+              const isTotalRow = String(row[keys[0]] || '').toUpperCase().includes('TOTAL') || 
+                                 String(row['Fecha'] || row['FECHA'] || '').toUpperCase().includes('TOTAL');
+              return (
+                <tr key={idx} className={`transition-colors ${isTotalRow ? 'bg-neutral-800/90 font-black border-t-2 border-amber-500/50' : 'hover:bg-neutral-800/30'}`}>
+                  {keys.map((key, i) => {
+                    const val = row[key];
+                    const isNumber = typeof val === 'number';
+                    return (
+                      <td key={key} className={`px-6 py-3 whitespace-nowrap ${
+                        isTotalRow 
+                          ? (i === 0 ? 'font-black text-amber-400 sticky left-0 bg-neutral-800 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]' : 'font-black text-amber-300')
+                          : (i === 0 ? 'font-medium text-white sticky left-0 bg-neutral-900 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)] z-10' : 'text-neutral-300')
+                      }`}>
+                        {isNumber ? val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : String(val ?? '')}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
