@@ -107,6 +107,19 @@ export async function procesarImportacionUniversal(productos: any[], sedeId: str
     }
   }
 
+  // 3. Consultar códigos de barra existentes en la empresa para evitar colisiones
+  const { data: existingCodes } = await supabase
+    .from('productos')
+    .select('codigo_barras')
+    .eq('empresa_id', perfil.empresa_id)
+    .not('codigo_barras', 'is', null);
+
+  const usedBarcodes = new Set<string>(
+    (existingCodes || [])
+      .map((c: any) => c.codigo_barras ? String(c.codigo_barras).trim() : '')
+      .filter((b: string) => b.length > 0)
+  );
+
   let successCount = 0;
 
   // Procesamos en bloques
@@ -118,13 +131,30 @@ export async function procesarImportacionUniversal(productos: any[], sedeId: str
       const catKey = p.categoria ? p.categoria.toString().trim().toLowerCase() : '';
       const catId = catKey ? (categoriasMap.get(catKey) || null) : null;
 
+      let barcodeVal: string | null = null;
+      if (p.codigo_barras) {
+        const rawCode = String(p.codigo_barras).trim();
+        if (rawCode.length > 0) {
+          if (!usedBarcodes.has(rawCode)) {
+            barcodeVal = rawCode;
+            usedBarcodes.add(rawCode);
+          } else {
+            // Código repetido en el archivo o ya existente en la base de datos:
+            // se deja en null para no romper la importación del resto del catálogo
+            barcodeVal = null;
+          }
+        }
+      }
+
+      const rawDesc = p.descripcion ? String(p.descripcion).trim() : '';
+
       return {
         empresa_id: perfil.empresa_id,
         sede_id: sedeId,
         categoria_id: catId,
-        nombre: p.nombre,
-        descripcion: p.descripcion ? p.descripcion.toString().trim() : null,
-        codigo_barras: p.codigo_barras || '',
+        nombre: p.nombre ? String(p.nombre).trim() : 'Producto Sin Nombre',
+        descripcion: rawDesc.length > 0 ? rawDesc : null,
+        codigo_barras: barcodeVal,
         precio_venta: parseFloat(p.precio_venta) || 0,
         costo: parseFloat(p.costo) || 0,
         precio_modificable: Boolean(p.precio_modificable),
@@ -332,18 +362,39 @@ export async function procesarEntidadesAronium(entidades: any, sedeId: string) {
 
   // Insertar Productos
   if (entidades.productos && entidades.productos.length > 0) {
+    const { data: existingCodesAronium } = await supabase
+      .from('productos')
+      .select('codigo_barras')
+      .eq('empresa_id', perfil.empresa_id)
+      .not('codigo_barras', 'is', null);
+
+    const usedBarcodesAronium = new Set<string>(
+      (existingCodesAronium || [])
+        .map((c: any) => c.codigo_barras ? String(c.codigo_barras).trim() : '')
+        .filter((b: string) => b.length > 0)
+    );
+
     const chunkSize = 200;
     for (let i = 0; i < entidades.productos.length; i += chunkSize) {
       const batch = entidades.productos.slice(i, i + chunkSize).map((p: any) => {
         const catRef = (p.ProductGroupId ?? p.categoria_id ?? p.categoria)?.toString();
         const categoria_id = catRef ? (catPosMap.get(catRef) || catPosMap.get(catRef.toLowerCase().trim()) || null) : null;
 
+        let barcodeVal: string | null = null;
+        if (p.Barcode) {
+          const raw = String(p.Barcode).trim();
+          if (raw.length > 0 && !usedBarcodesAronium.has(raw)) {
+            barcodeVal = raw;
+            usedBarcodesAronium.add(raw);
+          }
+        }
+
         return {
           empresa_id: perfil.empresa_id,
           sede_id: sedeId,
           categoria_id,
           nombre: p.Name,
-          codigo_barras: p.Barcode || '',
+          codigo_barras: barcodeVal,
           precio_venta: p.Price || 0,
           costo: p.Cost || 0,
           estado_activo: true,
