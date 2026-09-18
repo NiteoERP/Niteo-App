@@ -338,36 +338,49 @@ export default function TerminalVirtual({
               {catalogoFiltrado.map((prod) => {
                 const enCarrito = carrito.find((i) => i.producto_id === prod.producto_id);
                 return (
-                  <button
+                  <div
                     key={prod.producto_id}
                     onClick={() => agregarProducto(prod)}
-                    className={`group relative flex flex-col gap-1.5 p-4 rounded-xl border text-left transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] ${
+                    className={`group relative flex flex-col gap-1.5 p-4 rounded-xl border text-left cursor-pointer transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] ${
                       enCarrito
                         ? 'bg-indigo-500/10 border-indigo-500/40 shadow-[0_0_12px_rgba(99,102,241,0.15)]'
                         : 'bg-neutral-900 border-neutral-800 hover:border-neutral-700 hover:bg-neutral-800/50'
                     }`}
                   >
                     {enCarrito && (
-                      <span className="absolute top-2 right-2 bg-indigo-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                        {enCarrito.cantidad}
-                      </span>
+                      <div className="absolute top-2 right-2 flex items-center gap-1.5 z-10">
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            eliminarItem(prod.producto_id);
+                          }}
+                          className="w-5 h-5 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition-colors cursor-pointer"
+                          title="Quitar del carrito"
+                        >
+                          <X size={12} strokeWidth={3} />
+                        </div>
+                        <span className="bg-indigo-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-sm pointer-events-none">
+                          {enCarrito.cantidad}
+                        </span>
+                      </div>
                     )}
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-1 ${
                       enCarrito ? 'bg-indigo-500/20' : 'bg-neutral-800 group-hover:bg-neutral-700'
                     }`}>
                       <Package size={16} className={enCarrito ? 'text-indigo-400' : 'text-neutral-400'} />
                     </div>
-                    <span className={`text-xs font-semibold leading-tight line-clamp-2 ${
-                      enCarrito ? 'text-indigo-300' : 'text-neutral-200'
-                    }`}>
+                    <span className={`text-xs font-semibold leading-tight line-clamp-2 ${enCarrito ? 'text-indigo-200' : 'text-neutral-200'}`}>
                       {prod.nombre}
                     </span>
-                    <span className={`text-sm font-bold mt-auto ${
-                      enCarrito ? 'text-indigo-400' : 'text-emerald-400'
-                    }`}>
-                      ${Number(prod.precio_venta).toFixed(2)}
-                    </span>
-                  </button>
+                    <div className="mt-auto flex flex-col gap-0.5">
+                      <span className={`text-sm font-black ${enCarrito ? 'text-indigo-400' : 'text-emerald-400'}`}>
+                        {prod.precio_venta.toFixed(2)} USD
+                      </span>
+                      <span className="text-[10px] text-neutral-500">
+                        Bs {(prod.precio_venta * tasaActiva).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
                 );
               })}
             </div>
