@@ -200,7 +200,34 @@ export default function InformesPage() {
     }
   }, [reportData, selectedReport]);
 
+  // Bloquear scroll de fondo y escuchar tecla Escape para cerrar modal de previsualización
+  useEffect(() => {
+    if (!showPreviewModal) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowPreviewModal(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
 
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [showPreviewModal]);
+
+  // Permitir cerrar panel de reporte con tecla Escape si no hay modal abierto
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !showPreviewModal && sheetOpen) {
+        setSheetOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showPreviewModal, sheetOpen]);
 
   // ── Helpers de fecha ──────────────────────────────────────────────────────
 
@@ -742,7 +769,10 @@ export default function InformesPage() {
           MODAL PREVISUALIZACIÓN (Print / PDF) — compartido mobile+desktop
       ══════════════════════════════════════════════════════════════════ */}
       {showPreviewModal && reportData && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex justify-center items-start overflow-y-auto print:overflow-visible print:h-auto p-4 sm:p-8 print:p-0 print:bg-white print:block">
+        <div 
+          onClick={() => setShowPreviewModal(false)}
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex justify-center items-start overflow-y-auto print:overflow-visible print:h-auto p-3 sm:p-6 print:p-0 print:bg-white print:block cursor-pointer"
+        >
           <style>{`
             @media print {
               @page {
@@ -755,11 +785,25 @@ export default function InformesPage() {
               }
             }
           `}</style>
-          <div className={`w-full my-auto flex flex-col print:my-0 transition-all duration-200 ${
-            pageOrientation === 'landscape' ? 'max-w-[96vw] 2xl:max-w-[1450px]' : 'max-w-5xl'
-          }`}>
-            {/* Toolbar */}
-            <div className="w-full flex justify-between items-center mb-4 print:hidden shrink-0 pt-6 flex-wrap gap-3">
+
+          {/* Botón flotante siempre visible en la esquina de la pantalla */}
+          <button
+            type="button"
+            onClick={() => setShowPreviewModal(false)}
+            className="fixed top-4 right-4 z-[75] p-2.5 rounded-full bg-neutral-900 text-neutral-300 hover:text-white hover:bg-rose-600 border border-neutral-700 shadow-2xl transition-all print:hidden"
+            title="Cerrar ventana (Esc)"
+          >
+            <X size={20} />
+          </button>
+
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className={`w-full my-auto flex flex-col print:my-0 transition-all duration-200 cursor-default ${
+              pageOrientation === 'landscape' ? 'max-w-[96vw] 2xl:max-w-[1450px]' : 'max-w-5xl'
+            }`}
+          >
+            {/* Toolbar STICKY — se mantiene visible siempre arriba aunque se baje en la tabla */}
+            <div className="sticky top-2 z-40 bg-neutral-950/95 backdrop-blur-md py-3 px-4 rounded-2xl border border-neutral-800 shadow-2xl mb-4 w-full flex justify-between items-center print:hidden shrink-0 flex-wrap gap-3">
               <h3 className="text-white font-bold text-lg flex items-center gap-2">
                 <FileText size={20} className="text-indigo-400" />
                 {selectedReportName}
@@ -792,10 +836,12 @@ export default function InformesPage() {
                   <Printer size={16} /> Imprimir / PDF
                 </button>
                 <button
+                  type="button"
                   onClick={() => setShowPreviewModal(false)}
-                  className="bg-neutral-800 hover:bg-neutral-700 text-white px-4 py-2 rounded-lg font-medium text-sm border border-neutral-700"
+                  className="bg-neutral-800 hover:bg-rose-600 hover:text-white text-white px-4 py-2 rounded-lg font-bold text-sm border border-neutral-700 transition-colors flex items-center gap-1.5 shadow-sm"
+                  title="Cerrar (Esc)"
                 >
-                  Cerrar
+                  <X size={16} /> Cerrar
                 </button>
               </div>
             </div>

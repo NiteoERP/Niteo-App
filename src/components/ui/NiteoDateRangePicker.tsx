@@ -69,6 +69,24 @@ export default function NiteoDateRangePicker({
     }
   }, [isOpen, startDate, endDate]);
 
+  // Bloquear scroll de fondo y escuchar tecla Escape para cerrar
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isOpen]);
+
   const today = useMemo(() => new Date(), []);
 
   // Generador de matriz de 42 días (6 semanas) empezando en Lunes
@@ -268,11 +286,21 @@ export default function NiteoDateRangePicker({
           className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150 cursor-pointer"
         >
           <div 
-            className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 sm:p-6 shadow-2xl max-w-4xl w-full text-white animate-in zoom-in-95 duration-150 overflow-y-auto max-h-[95vh] cursor-default"
+            className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 sm:p-6 shadow-2xl max-w-4xl w-full text-white animate-in zoom-in-95 duration-150 overflow-y-auto max-h-[95vh] cursor-default relative"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Botón cerrar X en la esquina */}
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="absolute top-4 right-4 p-2 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-xl transition-colors"
+              title="Cerrar (Esc)"
+            >
+              <X size={18} />
+            </button>
+
             {/* Header: Período y Pill central */}
-            <div className="text-center mb-6">
+            <div className="text-center mb-6 pr-8 pl-8">
               <h2 className="text-lg font-bold text-neutral-200 mb-2">Período</h2>
               <div className="inline-block bg-indigo-600 text-white font-bold text-sm px-6 py-1.5 rounded-xl shadow-[0_0_15px_rgba(99,102,241,0.35)]">
                 {pillDisplay}
