@@ -293,7 +293,7 @@ export default function NiteoDateRangePicker({
                     <ChevronLeft size={16} />
                   </button>
                   <span className="text-xs font-semibold text-white capitalize">
-                    {format(monthStart, 'MMMM [de] yyyy', { locale: es })}
+                    {format(monthStart, 'MMMM yyyy', { locale: es })}
                   </span>
                   <button
                     type="button"
@@ -356,7 +356,7 @@ export default function NiteoDateRangePicker({
                     <ChevronLeft size={16} />
                   </button>
                   <span className="text-xs font-semibold text-white capitalize">
-                    {format(monthEnd, 'MMMM [de] yyyy', { locale: es })}
+                    {format(monthEnd, 'MMMM yyyy', { locale: es })}
                   </span>
                   <button
                     type="button"
