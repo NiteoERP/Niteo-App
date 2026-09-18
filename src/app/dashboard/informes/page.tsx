@@ -603,27 +603,25 @@ export default function InformesPage() {
                 </div>
               )}
 
-              {/* — Píldoras de fecha rápidas — */}
+              {/* — Período — */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider">Período</label>
-                <div className="flex gap-2 flex-wrap">
-                  {DATE_PILLS.map(pill => (
-                    <button
-                      key={pill.key}
-                      onClick={() => setSheetPreset(pill.key)}
-                      className={`px-4 py-2 rounded-full text-sm font-semibold border transition-all ${
-                        sheetDateKey === pill.key
-                          ? 'bg-indigo-600 border-indigo-500 text-white'
-                          : 'bg-neutral-800 border-neutral-700 text-neutral-400 hover:text-white hover:border-neutral-600'
-                      }`}
-                    >
-                      {pill.label}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-xs text-neutral-600 pt-1">
-                  {format(sheetStartDate, 'dd/MM/yy')} → {format(sheetEndDate, 'dd/MM/yy')}
-                </p>
+                <NiteoDateRangePicker
+                  startDate={format(sheetStartDate, 'yyyy-MM-dd')}
+                  endDate={format(sheetEndDate, 'yyyy-MM-dd')}
+                  onChange={(s, e) => {
+                    if (s && e) {
+                      const d1 = new Date(s + 'T00:00:00');
+                      const d2 = new Date(e + 'T23:59:59');
+                      if (!isNaN(d1.getTime()) && !isNaN(d2.getTime())) {
+                        setSheetStartDate(d1);
+                        setSheetEndDate(d2);
+                      }
+                    }
+                  }}
+                  align="left"
+                  className="w-full"
+                />
               </div>
 
 
@@ -806,7 +804,6 @@ function DesktopReportPanel({
 }) {
   const group = REPORT_CATALOG.find(g => g.reports.some(r => r.id === report.id));
   const Icon  = report.icon;
-  const [showCustomDates, setShowCustomDates] = useState(false);
 
   return (
     <div className="flex flex-col h-full">
@@ -880,50 +877,25 @@ function DesktopReportPanel({
             </div>
           )}
 
-          {/* Período - píldoras */}
-          <div className="space-y-2">
+          {/* Período */}
+          <div className="space-y-1.5">
             <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider">Período</label>
-            <div className="flex flex-wrap gap-2">
-              {DATE_PILLS.map(pill => (
-                <button key={pill.key} onClick={() => { setSheetPreset(pill.key); setShowCustomDates(false); }}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                    sheetDateKey === pill.key
-                      ? 'bg-indigo-600 border-indigo-500 text-white'
-                      : 'bg-neutral-800 border-neutral-700 text-neutral-400 hover:text-white'
-                  }`}
-                >
-                  {pill.label}
-                </button>
-              ))}
-              <button onClick={() => setShowCustomDates(!showCustomDates)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                  showCustomDates ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-neutral-800 border-neutral-700 text-neutral-400 hover:text-white'
-                }`}
-              >
-                Personalizado
-              </button>
-            </div>
-            {showCustomDates && (
-              <div className="pt-2">
-                <NiteoDateRangePicker
-                  startDate={format(sheetStartDate, 'yyyy-MM-dd')}
-                  endDate={format(sheetEndDate, 'yyyy-MM-dd')}
-                  onChange={(s, e) => {
-                    if (s) {
-                      const d1 = new Date(s + 'T00:00:00');
-                      if (!isNaN(d1.getTime())) setSheetStartDate(d1);
-                    }
-                    if (e) {
-                      const d2 = new Date(e + 'T23:59:59');
-                      if (!isNaN(d2.getTime())) setSheetEndDate(d2);
-                    }
-                  }}
-                  align="left"
-                  className="w-full"
-                />
-              </div>
-            )}
-            <p className="text-xs text-neutral-600">{format(sheetStartDate,'dd/MM/yy')} → {format(sheetEndDate,'dd/MM/yy')}</p>
+            <NiteoDateRangePicker
+              startDate={format(sheetStartDate, 'yyyy-MM-dd')}
+              endDate={format(sheetEndDate, 'yyyy-MM-dd')}
+              onChange={(s, e) => {
+                if (s && e) {
+                  const d1 = new Date(s + 'T00:00:00');
+                  const d2 = new Date(e + 'T23:59:59');
+                  if (!isNaN(d1.getTime()) && !isNaN(d2.getTime())) {
+                    setSheetStartDate(d1);
+                    setSheetEndDate(d2);
+                  }
+                }
+              }}
+              align="left"
+              className="w-full"
+            />
           </div>
 
           {/* Botón generar */}
