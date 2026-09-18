@@ -5,7 +5,7 @@ import {
   FileText, FileSpreadsheet, Printer, Search, ChevronDown, ChevronRight,
   TrendingUp, Clock, Calendar as CalendarIcon, Users, CreditCard, DollarSign,
   Package, AlertTriangle, Receipt, Star, BarChart2, X, Loader2,
-  Store, Tag, ShieldAlert, LayoutGrid, Trash2, List,
+  Store, Tag, ShieldAlert, LayoutGrid, Trash2, List, RotateCw,
 } from 'lucide-react';
 import { useEmpresa } from '@/components/providers/EmpresaProvider';
 import { useSedes, useCatalogosInformes, useGenerateReport, ExtraFilters } from '@/hooks/useInformesData';
@@ -186,6 +186,19 @@ export default function InformesPage() {
   // Resultado del reporte
   const { reportData, isGenerating: isLoading, error: reportError, generateReport, setReportData, setError: setReportError } = useGenerateReport(empresaId || '');
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [pageOrientation, setPageOrientation] = useState<'portrait' | 'landscape'>('portrait');
+
+  // Ajustar automáticamente la orientación según la cantidad de columnas o tipo de reporte
+  useEffect(() => {
+    if (reportData && reportData.length > 0) {
+      const colCount = Object.keys(reportData[0]).length;
+      if (colCount > 6 || selectedReport?.id === 'ventas_metodos_pago') {
+        setPageOrientation('landscape');
+      } else {
+        setPageOrientation('portrait');
+      }
+    }
+  }, [reportData, selectedReport]);
 
 
 
@@ -303,7 +316,7 @@ export default function InformesPage() {
 
   const exportPDF = () => {
     if (!reportData || reportData.length === 0) return;
-    const doc = new jsPDF('landscape');
+    const doc = new jsPDF(pageOrientation);
     
     doc.setFontSize(22);
     doc.setTextColor(79, 70, 229);
@@ -345,7 +358,7 @@ export default function InformesPage() {
       theme: 'grid',
       headStyles: { fillColor: [24, 24, 27], textColor: 255 },
       alternateRowStyles: { fillColor: [250, 250, 250] },
-      styles: { fontSize: 8 },
+      styles: { fontSize: keys.length > 10 ? 6.5 : (keys.length > 6 ? 7.5 : 8.5), cellPadding: keys.length > 10 ? 1.5 : 2 },
       didParseCell: (hookData) => {
         const rowRaw = reportData[hookData.row.index];
         if (rowRaw) {
@@ -730,14 +743,42 @@ export default function InformesPage() {
       ══════════════════════════════════════════════════════════════════ */}
       {showPreviewModal && reportData && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex justify-center items-start overflow-y-auto print:overflow-visible print:h-auto p-4 sm:p-8 print:p-0 print:bg-white print:block">
-          <div className="w-full max-w-5xl my-auto flex flex-col print:my-0">
+          <style>{`
+            @media print {
+              @page {
+                size: ${pageOrientation};
+                margin: 8mm;
+              }
+              body {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
+            }
+          `}</style>
+          <div className={`w-full my-auto flex flex-col print:my-0 transition-all duration-200 ${
+            pageOrientation === 'landscape' ? 'max-w-[96vw] 2xl:max-w-[1450px]' : 'max-w-5xl'
+          }`}>
             {/* Toolbar */}
-            <div className="w-full flex justify-between items-center mb-4 print:hidden shrink-0 pt-6">
+            <div className="w-full flex justify-between items-center mb-4 print:hidden shrink-0 pt-6 flex-wrap gap-3">
               <h3 className="text-white font-bold text-lg flex items-center gap-2">
                 <FileText size={20} className="text-indigo-400" />
                 {selectedReportName}
               </h3>
               <div className="flex items-center gap-2 flex-wrap justify-end">
+                {/* Botón de alternar Orientación (Vertical / Horizontal) */}
+                <button
+                  type="button"
+                  onClick={() => setPageOrientation(prev => prev === 'landscape' ? 'portrait' : 'landscape')}
+                  className="bg-neutral-800 hover:bg-neutral-700 text-white px-3.5 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm border border-neutral-700 shadow-sm"
+                  title="Cambiar formato de orientación (Vertical / Horizontal)"
+                >
+                  <RotateCw size={15} className="text-amber-400" />
+                  <span className="hidden sm:inline text-neutral-400">Formato:</span>
+                  <span className="font-bold text-amber-300">
+                    {pageOrientation === 'landscape' ? 'Horizontal (Apaisado)' : 'Vertical'}
+                  </span>
+                </button>
+
                 <button
                   onClick={exportExcel}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm"
@@ -760,7 +801,11 @@ export default function InformesPage() {
             </div>
 
             {/* Documento (papel) */}
-            <div className="bg-white text-black w-full rounded-xl shadow-2xl p-8 sm:p-12 print:shadow-none print:p-0 mb-8 shrink-0 min-h-[800px]">
+            <div className={`bg-white text-black w-full rounded-xl shadow-2xl print:shadow-none print:p-0 mb-8 shrink-0 transition-all ${
+              pageOrientation === 'landscape'
+                ? 'p-6 sm:p-10 min-h-[600px]'
+                : 'p-8 sm:p-12 min-h-[800px]'
+            }`}>
               <div className="border-b-2 border-neutral-200 pb-6 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
                 <div>
                   <h1 className="text-3xl font-black uppercase text-neutral-900 tracking-tight">{selectedReportName}</h1>
@@ -787,13 +832,17 @@ export default function InformesPage() {
                   keys.unshift(foundFirstKey);
                 }
 
+                const isWide = keys.length > 8;
+
                 return (
                   <div className="overflow-x-auto print:overflow-visible print:h-auto rounded-xl border border-neutral-200">
-                    <table className="w-full text-sm text-left border-collapse">
-                      <thead className="bg-neutral-100 text-neutral-700 font-bold uppercase text-xs">
+                    <table className={`w-full text-left border-collapse ${isWide ? 'text-[11px]' : 'text-xs'}`}>
+                      <thead className="bg-neutral-100 text-neutral-700 font-bold uppercase">
                         <tr>
                           {keys.map(key => (
-                            <th key={key} className="px-5 py-4 border-b border-neutral-200 whitespace-nowrap">{key.replace(/_/g, ' ')}</th>
+                            <th key={key} className={`border-b border-neutral-200 whitespace-nowrap ${isWide ? 'px-3 py-2.5' : 'px-5 py-4'}`}>
+                              {key.replace(/_/g, ' ')}
+                            </th>
                           ))}
                         </tr>
                       </thead>
@@ -807,7 +856,9 @@ export default function InformesPage() {
                                 const val = row[key];
                                 const isNumber = typeof val === 'number';
                                 return (
-                                  <td key={key} className={`px-5 py-4 whitespace-nowrap ${isTotalRow ? 'font-black text-neutral-950 bg-neutral-100/90' : 'text-neutral-800 font-medium'}`}>
+                                  <td key={key} className={`whitespace-nowrap ${isWide ? 'px-3 py-2' : 'px-5 py-4'} ${
+                                    isTotalRow ? 'font-black text-neutral-950 bg-neutral-100/90' : 'text-neutral-800 font-medium'
+                                  }`}>
                                     {isNumber ? val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : (val ?? '-')}
                                   </td>
                                 );
