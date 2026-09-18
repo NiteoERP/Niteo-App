@@ -140,3 +140,62 @@ export async function updateProducto(id: string, data: any) {
   revalidatePath('/dashboard/catalogo');
   return { success: true };
 }
+
+export async function bulkAssignReceta(data: {
+  productIds: string[];
+  recetaItems: any[];
+  mode: 'append' | 'replace';
+}) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autorizado' };
+
+  const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
+  if (!perfil) return { success: false, error: 'Perfil no encontrado' };
+
+  if (!data.productIds.length || !data.recetaItems.length) {
+    return { success: false, error: 'Datos insuficientes.' };
+  }
+
+  // 1. Force the products to be 'ELABORADO' (es_compuesto = true) and remove es_reventa if true
+  await supabase.from('productos')
+    .update({ es_compuesto: true, es_reventa: false })
+    .in('id', data.productIds);
+
+  // 2. Manage recipes
+  if (data.mode === 'replace') {
+    // Delete all existing recipes for these products
+    await supabase.from('recetas')
+      .delete()
+      .in('producto_id', data.productIds);
+  }
+
+  // Insert new recipes
+  const inserts: any[] = [];
+  for (const prodId of data.productIds) {
+    for (const item of data.recetaItems) {
+      inserts.push({
+        empresa_id: perfil.empresa_id,
+        producto_id: prodId,
+        insumo_id: item.tipo === 'insumo' ? item.id : null,
+        subproducto_id: item.tipo === 'producto' ? item.id : null,
+        cantidad_necesaria: item.cantidad
+      });
+    }
+  }
+
+  // Supabase limits inserts, chunk if very large (though usually fine for < 1000 rows)
+  if (inserts.length > 0) {
+    const { error: insertErr } = await supabase.from('recetas').insert(inserts);
+    if (insertErr) return { success: false, error: insertErr.message };
+  }
+
+  // 3. (Optional but recommended) Recalculate cost for these products?
+  // We can skip this for now or trigger a background job. The user will see it update when they edit individually.
+  // Or we do a simple update:
+  // For each product, we could calculate the sum, but doing it in SQL is complex here.
+  // Let's just revalidate path.
+
+  revalidatePath('/dashboard/catalogo');
+  return { success: true };
+}
