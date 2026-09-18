@@ -51,6 +51,7 @@ export default function ProductoForm({
     nombre: initialData?.nombre || '',
     categoria_id: initialData?.categoria_id || '',
     descripcion: initialData?.descripcion || '',
+    notas_preparacion_str: initialData?.notas_preparacion ? initialData.notas_preparacion.join(', ') : '',
     codigo_barras: initialData?.codigo_barras || '',
     precio_venta: initialData?.precio_venta || 0,
     costo: initialData?.costo || 0,
@@ -151,7 +152,10 @@ export default function ProductoForm({
         codigo_barras: formData.codigo_barras ? formData.codigo_barras.trim() : null,
         descripcion: formData.descripcion ? formData.descripcion.trim() : null,
         categoria_id: formData.categoria_id ? formData.categoria_id : null,
+        notas_preparacion: formData.notas_preparacion_str ? formData.notas_preparacion_str.split(',').map(s => s.trim()).filter(s => s !== '') : [],
       };
+      // Remove the UI-only string field from payload
+      delete (payload as any).notas_preparacion_str;
       const action = isEditing ? updateProducto(initialData.id, payload) : createProducto(payload);
       const res = await action;
       if (res.success) {
@@ -275,6 +279,17 @@ export default function ProductoForm({
                 className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 text-white focus:border-indigo-500 transition-colors resize-none text-sm placeholder:text-neutral-600"
                 value={formData.descripcion}
                 onChange={e => setFormData({...formData, descripcion: e.target.value})}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-neutral-400 block mb-1.5">Notas rápidas de preparación (separadas por coma)</label>
+              <textarea 
+                rows={2}
+                placeholder="Ej: Sin cebolla, Para llevar, Bien cocido, Sin salsas..."
+                className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 text-white focus:border-indigo-500 transition-colors resize-none text-sm placeholder:text-neutral-600"
+                value={formData.notas_preparacion_str}
+                onChange={e => setFormData({...formData, notas_preparacion_str: e.target.value})}
               />
             </div>
 
