@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { HistorialVentaPOS, getHistorialVentasCompleto, toggleVentaVerificada, getResumenVerificacionMes } from '@/actions/pos-actions';
-import { Search, Calendar, ChevronDown, ChevronUp, Receipt, DollarSign, Clock, Users, CheckCircle2, Circle, Hash, ChevronLeft, ChevronRight, Printer, Ban } from 'lucide-react';
+import { Search, Calendar, ChevronDown, ChevronUp, Receipt, DollarSign, Clock, Users, CheckCircle2, Circle, Hash, ChevronLeft, ChevronRight, Printer, Ban, Sparkles, Filter, X } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import {
   format, startOfMonth, endOfMonth, eachDayOfInterval,
@@ -19,6 +19,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
   const [fechaFiltro, setFechaFiltro] = useState('');
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [busqueda, setBusqueda] = useState('');
+  const [filtroMetodo, setFiltroMetodo] = useState('TODOS');
   const [page, setPage] = useState(1);
   
   // Estado del calendario (resumen de verificación del mes exacto sin límites)
@@ -134,14 +135,72 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
     }
   };
 
-  const filtradas = ventas.filter(v => {
-    if (busqueda) {
-      const b = busqueda.toLowerCase();
-      return v.numero_documento.toLowerCase().includes(b) || 
-             (v.cliente_nombre && v.cliente_nombre.toLowerCase().includes(b));
-    }
-    return true;
-  });
+  const isCortesiaVenta = (v: HistorialVentaPOS) => {
+    const hasCortesiaPago = v.pagos?.some(p => p.tipo_pago?.toLowerCase().includes('cortes'));
+    const isZeroTotalWithItems = Number(v.total) === 0 && (Number(v.descuento) > 0 || (v.detalles && v.detalles.length > 0));
+    const isDocCortesia = v.tipo_documento?.toLowerCase().includes('cortes') || v.numero_orden?.toLowerCase().includes('cortes');
+    return Boolean(hasCortesiaPago || isZeroTotalWithItems || isDocCortesia);
+  };
+
+  const metodosDisponibles = useMemo(() => {
+    const set = new Set<string>();
+    ventas.forEach(v => {
+      v.pagos?.forEach(p => {
+        if (p.tipo_pago && !p.tipo_pago.toLowerCase().includes('cortes')) {
+          set.add(p.tipo_pago);
+        }
+      });
+    });
+    // Métodos comunes por defecto
+    ['Efectivo USD', 'Pago Móvil', 'Zelle', 'Punto de Venta', 'Efectivo BS'].forEach(m => set.add(m));
+    return Array.from(set).sort();
+  }, [ventas]);
+
+  const filtradas = useMemo(() => {
+    return ventas.filter(v => {
+      // 1. Filtro de búsqueda por texto
+      if (busqueda.trim()) {
+        const b = busqueda.toLowerCase().trim();
+        const docFormatted = formatDocNumber(v.numero_documento).toLowerCase();
+        const docRaw = (v.numero_documento || '').toLowerCase();
+        const cliente = (v.cliente_nombre || '').toLowerCase();
+        const orden = (v.numero_orden || '').toLowerCase();
+        
+        const matches = docFormatted.includes(b) || 
+                        docRaw.includes(b) || 
+                        cliente.includes(b) || 
+                        orden.includes(b);
+        if (!matches) return false;
+      }
+
+      // 2. Filtro de método de pago
+      if (filtroMetodo === 'CORTESIA') {
+        if (!isCortesiaVenta(v)) return false;
+      } else if (filtroMetodo === 'CREDITO') {
+        const hasCredito = v.pagos?.some(p => p.tipo_pago?.toLowerCase().includes('credito'));
+        if (v.esta_pagado && !hasCredito) return false;
+      } else if (filtroMetodo !== 'TODOS') {
+        const hasPago = v.pagos?.some(p => p.tipo_pago?.toLowerCase() === filtroMetodo.toLowerCase());
+        if (!hasPago) return false;
+      }
+
+      return true;
+    });
+  }, [ventas, busqueda, filtroMetodo]);
+
+  const { totalMontoFiltrado, totalCortesias } = useMemo(() => {
+    let sum = 0;
+    let cortesiasCount = 0;
+    ventas.forEach(v => {
+      if (isCortesiaVenta(v)) cortesiasCount++;
+    });
+    filtradas.forEach(v => {
+      if (v.estado_activo !== false) {
+        sum += Number(v.total || 0);
+      }
+    });
+    return { totalMontoFiltrado: sum, totalCortesias: cortesiasCount };
+  }, [ventas, filtradas]);
 
   return (
     <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 md:p-6 animate-in fade-in space-y-6">
@@ -239,11 +298,119 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
         </div>
       </div>
 
+      {/* Barra de Filtros y Búsqueda */}
+      <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 bg-neutral-950/80 border border-neutral-800 p-3.5 rounded-xl">
+        {/* Buscador */}
+        <div className="relative flex-1">
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Buscar por # documento, cliente o mesa..."
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            className="w-full bg-neutral-900 border border-neutral-800 rounded-lg pl-9 pr-8 py-2 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-indigo-500 transition-colors"
+          />
+          {busqueda && (
+            <button 
+              onClick={() => setBusqueda('')} 
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white text-xs p-1 rounded-md"
+              title="Borrar búsqueda"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* Selector de Método de Pago */}
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          <div className="relative min-w-[190px] flex-1 sm:flex-initial">
+            <select
+              value={filtroMetodo}
+              onChange={(e) => setFiltroMetodo(e.target.value)}
+              className="w-full bg-neutral-900 border border-neutral-800 rounded-lg pl-3 pr-8 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors cursor-pointer appearance-none"
+            >
+              <option value="TODOS">💳 Todos los métodos</option>
+              <option value="CORTESIA">⭐ Solo Cortesías</option>
+              <option value="CREDITO">⏳ Crédito / Por pagar</option>
+              <optgroup label="Métodos de Pago">
+                {metodosDisponibles.map(m => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </optgroup>
+            </select>
+            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+          </div>
+
+          {/* Botón Acceso Rápido Solo Cortesías */}
+          <button
+            type="button"
+            onClick={() => setFiltroMetodo(prev => prev === 'CORTESIA' ? 'TODOS' : 'CORTESIA')}
+            className={`px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all whitespace-nowrap border ${
+              filtroMetodo === 'CORTESIA'
+                ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-sm shadow-amber-500/10'
+                : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border-neutral-800 hover:text-white'
+            }`}
+            title="Ver rápidamente todas las ventas por cortesía"
+          >
+            <span>⭐</span>
+            <span>Cortesías</span>
+            {totalCortesias > 0 && (
+              <span className="ml-0.5 px-1.5 py-0.2 text-[10px] bg-amber-500/30 text-amber-200 rounded-full font-bold">
+                {totalCortesias}
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Resumen de Resultados Filtrados */}
+      <div className="flex flex-wrap items-center justify-between gap-3 px-3.5 py-2.5 bg-black/30 border border-neutral-800/80 rounded-lg text-xs">
+        <div className="flex items-center gap-3 text-neutral-400 flex-wrap">
+          <span>
+            Mostrando <strong className="text-white">{filtradas.length}</strong> {filtradas.length === 1 ? 'venta' : 'ventas'}
+          </span>
+          {filtroMetodo === 'CORTESIA' && (
+            <span className="flex items-center gap-1 text-amber-400 font-medium bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+              ⭐ Filtro: Solo Cortesías
+            </span>
+          )}
+          {filtroMetodo !== 'TODOS' && filtroMetodo !== 'CORTESIA' && (
+            <span className="flex items-center gap-1 text-indigo-400 font-medium bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+              Filtro: {filtroMetodo}
+            </span>
+          )}
+          {fechaFiltro && (
+            <span className="flex items-center gap-1 text-neutral-300 bg-neutral-800 px-2 py-0.5 rounded border border-neutral-700">
+              📅 {format(parseISO(fechaFiltro), 'dd MMM yyyy', { locale: es })}
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-3 ml-auto">
+          <div className="text-right">
+            <span className="text-neutral-400 mr-1.5">Total Filtrado:</span>
+            <span className="text-emerald-400 font-bold text-sm">{formatCurrency(totalMontoFiltrado)}</span>
+          </div>
+          {(busqueda || filtroMetodo !== 'TODOS' || fechaFiltro) && (
+            <button
+              onClick={() => {
+                setBusqueda('');
+                setFiltroMetodo('TODOS');
+                setFechaFiltro('');
+              }}
+              className="text-[11px] text-neutral-400 hover:text-white underline ml-2 transition-colors cursor-pointer"
+            >
+              Limpiar filtros
+            </button>
+          )}
+        </div>
+      </div>
+
       {loading ? (
         <div className="flex justify-center p-12 text-indigo-400 animate-pulse">Cargando historial...</div>
       ) : filtradas.length === 0 ? (
         <div className="text-center p-12 text-neutral-500 border border-neutral-800 border-dashed rounded-xl">
-          No hay ventas registradas {fechaFiltro ? 'en esta fecha' : 'recientemente'}.
+          No hay ventas registradas {fechaFiltro ? 'en esta fecha' : 'con los filtros seleccionados'}.
         </div>
       ) : (
         <div className="space-y-3">
@@ -269,6 +436,11 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                     <div className="flex items-center gap-2">
                       <p className={`font-bold ${venta.estado_activo === false ? 'text-red-400 line-through' : 'text-white'}`}>{formatDocNumber(venta.numero_documento)}</p>
                       {venta.estado_activo === false && <span className="bg-red-500/20 text-red-400 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">Anulada</span>}
+                      {isCortesiaVenta(venta) && (
+                        <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase flex items-center gap-1 shadow-sm">
+                          <span>⭐</span> Cortesía
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 text-xs text-neutral-400 mt-1">
                       <Clock size={12} /> {formatDateTime(venta.fecha_venta)}
@@ -295,8 +467,24 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
 
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <p className={`text-sm font-bold ${venta.estado_activo === false ? 'text-red-400' : 'text-emerald-400'}`}>{formatCurrency(venta.total)}</p>
-                    <p className="text-xs text-neutral-500">{venta.pagos?.length > 0 ? venta.pagos.map(p => p.tipo_pago).join(', ') : (venta.esta_pagado ? 'No registrado' : 'A Crédito / Por pagar')}</p>
+                    <p className={`text-sm font-bold ${venta.estado_activo === false ? 'text-red-400' : isCortesiaVenta(venta) ? 'text-amber-400' : 'text-emerald-400'}`}>
+                      {formatCurrency(venta.total)}
+                    </p>
+                    <div className="flex items-center justify-end gap-1 flex-wrap mt-0.5">
+                      {isCortesiaVenta(venta) ? (
+                        <span className="text-[11px] text-amber-400/90 font-medium">⭐ Cortesía</span>
+                      ) : venta.pagos?.length > 0 ? (
+                        venta.pagos.map((p, idx) => (
+                          <span key={idx} className="text-[10px] text-neutral-300 bg-neutral-800/80 px-1.5 py-0.5 rounded border border-neutral-700/50">
+                            {p.tipo_pago}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-xs text-neutral-500">
+                          {venta.esta_pagado ? 'No registrado' : 'A Crédito / Por pagar'}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   {expandedId === venta.id_factura.toString() ? <ChevronUp size={20} className="text-neutral-500" /> : <ChevronDown size={20} className="text-neutral-500" />}
                 </div>
@@ -330,12 +518,24 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                     ))}
                   </div>
 
-                  {venta.pagos && venta.pagos.length > 0 && (
+                  {((venta.pagos && venta.pagos.length > 0) || isCortesiaVenta(venta)) && (
                     <div className="mt-4 pt-3 border-t border-neutral-800/50">
                       <h4 className="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">Métodos de Pago</h4>
                       <div className="flex gap-2 flex-wrap">
-                        {venta.pagos.map((p, idx) => (
-                          <span key={idx} className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs px-2.5 py-1 rounded-md font-medium flex items-center gap-1">
+                        {isCortesiaVenta(venta) && (!venta.pagos || venta.pagos.length === 0 || !venta.pagos.some(p => p.tipo_pago?.toLowerCase().includes('cortes'))) && (
+                          <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs px-2.5 py-1 rounded-md font-medium flex items-center gap-1">
+                            ⭐ Cortesía (100% Bonificado / $0.00)
+                          </span>
+                        )}
+                        {venta.pagos?.map((p, idx) => (
+                          <span 
+                            key={idx} 
+                            className={`text-xs px-2.5 py-1 rounded-md font-medium flex items-center gap-1 border ${
+                              p.tipo_pago?.toLowerCase().includes('cortes')
+                                ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                                : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                            }`}
+                          >
                             <DollarSign size={12} />
                             {p.tipo_pago}: {formatCurrency(p.monto)}
                           </span>
