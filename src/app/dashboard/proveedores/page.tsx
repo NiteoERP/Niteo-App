@@ -161,6 +161,7 @@ export default function ProveedoresPage() {
   const [editFacNumero, setEditFacNumero] = useState('');
   const [editFacFecha, setEditFacFecha] = useState('');
   const [editFacFechaVencimiento, setEditFacFechaVencimiento] = useState('');
+  const [editFacSede, setEditFacSede] = useState('');
   const [isEditLoading, setIsEditLoading] = useState(false);
   const [errorEdit, setErrorEdit] = useState('');
 
@@ -171,6 +172,7 @@ export default function ProveedoresPage() {
     setEditFacNumero(fac.numero_factura || '');
     setEditFacFecha(fac.fecha_emision?.split('T')[0] || '');
     setEditFacFechaVencimiento(fac.fecha_vencimiento?.split('T')[0] || '');
+    setEditFacSede(fac.sede_id || '');
     setErrorEdit('');
     setShowEditFacturaModal(true);
   };
@@ -178,6 +180,9 @@ export default function ProveedoresPage() {
   const handleGuardarEdicionFactura = async () => {
     if (!editFacTotal || isNaN(Number(editFacTotal)) || Number(editFacTotal) <= 0) {
       setErrorEdit('Monto inválido'); return;
+    }
+    if (!editFacSede) {
+      setErrorEdit('Sede requerida'); return;
     }
     setIsEditLoading(true);
     setErrorEdit('');
@@ -187,7 +192,8 @@ export default function ProveedoresPage() {
       total: Number(editFacTotal),
       numero_factura: editFacNumero,
       fecha_emision: editFacFecha,
-      fecha_vencimiento: editFacFechaVencimiento || undefined
+      fecha_vencimiento: editFacFechaVencimiento || undefined,
+      sede_id: editFacSede
     });
     
     if (res.success) {
@@ -1704,11 +1710,25 @@ export default function ProveedoresPage() {
               )}
               
               <div>
-                <label className="block text-sm font-medium text-neutral-400 mb-1.5">Número de Factura</label>
-                <div className="relative">
-                  <Hash size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
-                  <input type="text" value={editFacNumero} onChange={e => setEditFacNumero(e.target.value)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-9 pr-4 py-2 text-white text-sm" placeholder="S/N" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-400 mb-1.5">Sede</label>
+                    <select value={editFacSede} onChange={e => setEditFacSede(e.target.value)}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-white text-sm appearance-none focus:outline-none focus:border-indigo-500">
+                      <option className="bg-neutral-900" value="">Seleccionar Sede...</option>
+                      {sedes.map(s => (
+                        <option key={s.id} value={s.id} className="bg-neutral-900">{s.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-400 mb-1.5">Número de Factura</label>
+                    <div className="relative">
+                      <Hash size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                      <input type="text" value={editFacNumero} onChange={e => setEditFacNumero(e.target.value)}
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-9 pr-4 py-2 text-white text-sm" placeholder="S/N" />
+                    </div>
+                  </div>
                 </div>
               </div>
 

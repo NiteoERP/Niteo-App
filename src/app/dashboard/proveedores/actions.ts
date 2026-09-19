@@ -416,6 +416,7 @@ export async function editarFacturaProveedor(
     total: number;
     fecha_emision: string;
     fecha_vencimiento?: string;
+    sede_id?: string;
   }
 ) {
   const supabase = await createClient();
@@ -433,7 +434,7 @@ export async function editarFacturaProveedor(
   let nuevoSaldo = payload.total - sumPagos;
   if (nuevoSaldo < 0) nuevoSaldo = 0;
 
-  const { error } = await supabase.from('compras_facturas').update({
+  const updateDataFac: any = {
     numero_factura: payload.numero_factura,
     concepto: payload.concepto,
     total: payload.total,
@@ -443,7 +444,10 @@ export async function editarFacturaProveedor(
     modificado: true,
     usuario_modificacion_id: user.id,
     fecha_modificacion: new Date().toISOString()
-  }).eq('id', facturaId);
+  };
+  if (payload.sede_id) updateDataFac.sede_id = payload.sede_id;
+
+  const { error } = await supabase.from('compras_facturas').update(updateDataFac).eq('id', facturaId);
 
   if (error) return { success: false, error: error.message };
 
@@ -461,13 +465,16 @@ export async function editarFacturaProveedor(
   if (punts && punts.length > 0) {
     const matchPunt = punts[0];
     const newBs = payload.total * Number(matchPunt.tasa_cambio);
-    await supabase.from('compras_puntuales').update({
+    const updateDataPunt: any = {
       monto_divisas: payload.total,
       monto_bs: newBs,
       modificado: true,
       usuario_modificacion_id: user.id,
       fecha_modificacion: new Date().toISOString()
-    }).eq('id', matchPunt.id);
+    };
+    if (payload.sede_id) updateDataPunt.id_sede = payload.sede_id;
+
+    await supabase.from('compras_puntuales').update(updateDataPunt).eq('id', matchPunt.id);
   }
 
   return { success: true };
