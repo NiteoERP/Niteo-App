@@ -451,13 +451,13 @@ export async function editarFacturaProveedor(
 
   if (error) return { success: false, error: error.message };
 
-  // Intentar actualizar la compra_puntual vinculada
+  // Intentar actualizar la compra_puntual vinculada y transferir inventario si cambió de sede
   const baseDate = new Date(fac.fecha_registro || fac.fecha_emision);
   const minDate = new Date(baseDate.getTime() - 60000).toISOString();
   const maxDate = new Date(baseDate.getTime() + 60000).toISOString();
 
   const { data: punts } = await supabase.from('compras_puntuales')
-    .select('id, tasa_cambio')
+    .select('id, tasa_cambio, detalles, id_sede')
     .eq('monto_divisas', fac.total)
     .gte('fecha_registro', minDate)
     .lte('fecha_registro', maxDate);
@@ -472,7 +472,105 @@ export async function editarFacturaProveedor(
       usuario_modificacion_id: user.id,
       fecha_modificacion: new Date().toISOString()
     };
-    if (payload.sede_id) updateDataPunt.id_sede = payload.sede_id;
+
+    // Si cambió la sede, traspasamos el inventario físico de una sede a la otra
+    if (payload.sede_id && payload.sede_id !== fac.sede_id) {
+      updateDataPunt.id_sede = payload.sede_id;
+
+      try {
+        let detObj: any = null;
+        if (typeof matchPunt.detalles === 'string') {
+          detObj = JSON.parse(matchPunt.detalles);
+        } else if (typeof matchPunt.detalles === 'object') {
+          detObj = matchPunt.detalles;
+        }
+
+        if (detObj && detObj.is_insumos && Array.isArray(detObj.items)) {
+          for (const item of detObj.items) {
+            const oldInsumoId = item.insumo_id;
+            const cantidad = Number(item.cantidad || 0);
+
+            if (oldInsumoId && cantidad > 0) {
+              // 1. Obtener insumo de la sede anterior
+              const { data: oldInsumo } = await supabase.from('inventario_insumos')
+                .select('*')
+                .eq('id', oldInsumoId)
+                .single();
+
+              if (oldInsumo) {
+                // Descontar de la sede anterior
+                const cantAnterior = Number(oldInsumo.cantidad_actual || 0);
+                const nuevaCantOld = Math.max(0, cantAnterior - cantidad);
+                await supabase.from('inventario_insumos')
+                  .update({ cantidad_actual: nuevaCantOld })
+                  .eq('id', oldInsumo.id);
+
+                await supabase.from('movimientos_inventario').insert({
+                  empresa_id: oldInsumo.empresa_id,
+                  insumo_id: oldInsumo.id,
+                  usuario_id: user.id,
+                  tipo_movimiento: 'SALIDA',
+                  motivo: `Corrección de sede en factura: traspaso hacia nueva sede`,
+                  cantidad: cantidad,
+                  costo_perdido: 0,
+                  fecha_movimiento: new Date().toISOString()
+                });
+
+                // 2. Buscar o crear el insumo en la nueva sede
+                const targetNombre = (oldInsumo.nombre || item.nombre_nuevo || '').trim();
+                const { data: targetInsumos } = await supabase.from('inventario_insumos')
+                  .select('*')
+                  .eq('empresa_id', oldInsumo.empresa_id)
+                  .eq('sede_id', payload.sede_id)
+                  .ilike('nombre', targetNombre);
+
+                let targetInsumoId = oldInsumo.id;
+                if (targetInsumos && targetInsumos.length > 0) {
+                  const targetInsumo = targetInsumos[0];
+                  targetInsumoId = targetInsumo.id;
+                  const nuevaCantTarget = Number(targetInsumo.cantidad_actual || 0) + cantidad;
+                  await supabase.from('inventario_insumos')
+                    .update({ cantidad_actual: nuevaCantTarget })
+                    .eq('id', targetInsumo.id);
+                } else {
+                  // Crear nuevo insumo en la sede destino
+                  const { data: createdInsumo } = await supabase.from('inventario_insumos').insert({
+                    empresa_id: oldInsumo.empresa_id,
+                    sede_id: payload.sede_id,
+                    nombre: oldInsumo.nombre,
+                    unidad_medida: oldInsumo.unidad_medida,
+                    cantidad_actual: cantidad,
+                    costo_promedio: oldInsumo.costo_promedio
+                  }).select('id').single();
+
+                  if (createdInsumo?.id) {
+                    targetInsumoId = createdInsumo.id;
+                  }
+                }
+
+                await supabase.from('movimientos_inventario').insert({
+                  empresa_id: oldInsumo.empresa_id,
+                  insumo_id: targetInsumoId,
+                  usuario_id: user.id,
+                  tipo_movimiento: 'ENTRADA',
+                  motivo: `Corrección de sede en factura: recepción desde sede anterior`,
+                  cantidad: cantidad,
+                  costo_perdido: 0,
+                  fecha_movimiento: new Date().toISOString()
+                });
+
+                // Actualizar referencia en los detalles
+                item.insumo_id = targetInsumoId;
+              }
+            }
+          }
+
+          updateDataPunt.detalles = JSON.stringify(detObj);
+        }
+      } catch (err) {
+        console.error('Error al transferir inventario por cambio de sede:', err);
+      }
+    }
 
     await supabase.from('compras_puntuales').update(updateDataPunt).eq('id', matchPunt.id);
   }
