@@ -600,6 +600,12 @@ export default function CreditosPage() {
                 <div className="space-y-6">
                    {[1,2].map(i => <div key={i} className="h-40 bg-neutral-900/50 border border-neutral-800 rounded-xl animate-pulse"></div>)}
                 </div>
+              ) : detalle.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+                  <Wallet size={48} className="text-neutral-700 mb-4" />
+                  <h2 className="text-xl font-bold text-neutral-400">No hay deudas</h2>
+                  <p className="text-sm text-neutral-500 mt-2">Este cliente no tiene facturas con saldo pendiente.</p>
+                </div>
               ) : (
                 detalle.map((fac, i) => (
                   <div key={i} className="bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden shadow-lg">

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, startTransition } from "react";
 import { getSedes } from "@/actions/dashboard-actions";
 import { getInsumos } from "@/actions/compras-actions";
 import {
@@ -19,6 +19,7 @@ import { format } from "date-fns";
 import MobileCompraForm from "@/components/compras/MobileCompraForm";
 import Link from "next/link";
 import { formatFecha } from "@/utils/date-utils";
+import AbonosGlobalesHistorial from "./AbonosGlobalesHistorial";
 
 // ── Helpers ────────────────────────────────────────────────
 function Badge({ label, color = 'neutral' }: { label: string; color?: string }) {
@@ -38,7 +39,8 @@ function Badge({ label, color = 'neutral' }: { label: string; color?: string }) 
 // ── Main Component ─────────────────────────────────────────
 export default function ProveedoresPage() {
   const { formatCurrency, empresa, userRole } = useEmpresa();
-  const isMasterOrAdmin = userRole === 'MASTER' || userRole === 'ADMINISTRADOR';
+  const roleUpper = (userRole || '').toUpperCase();
+  const isMasterOrAdmin = roleUpper === 'MASTER' || roleUpper === 'ADMINISTRADOR';
   const [sedes, setSedes] = useState<any[]>([]);
   const [sedeId, setSedeId] = useState("ALL");
 
@@ -123,6 +125,9 @@ export default function ProveedoresPage() {
   const toggleHistorialPagadas = (provId: string) => {
     setMostrarHistorialPagadas(prev => ({ ...prev, [provId]: !prev[provId] }));
   };
+
+  // Historial de Abonos Globales
+  const [abonosProvInfo, setAbonosProvInfo] = useState<{id: string, nombre: string} | null>(null);
 
   // ── Modal: Pago General / Cascada FIFO ──────────────────────
   const [showPagoGeneralModal, setShowPagoGeneralModal] = useState(false);
@@ -307,8 +312,6 @@ export default function ProveedoresPage() {
     if (!targetSede || targetSede === 'ALL') {
       if (sedeId && sedeId !== 'ALL') {
         targetSede = sedeId;
-      } else if (sedes.length > 0) {
-        targetSede = sedes[0].id;
       }
     }
 
@@ -450,8 +453,15 @@ export default function ProveedoresPage() {
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
             <input
               type="text"
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
+              defaultValue={debouncedSearch}
+              onChange={e => {
+                const val = e.target.value;
+                const win = window as any;
+                if (win.searchTimeout) clearTimeout(win.searchTimeout);
+                win.searchTimeout = setTimeout(() => {
+                  setDebouncedSearch(val);
+                }, 400);
+              }}
               placeholder="Buscar proveedor..."
               className="w-full bg-neutral-950 border border-neutral-800 text-neutral-300 text-sm py-2 pl-9 pr-3 rounded-xl outline-none focus:border-emerald-500"
             />
@@ -711,6 +721,11 @@ export default function ProveedoresPage() {
                             onClick={() => openNuevaFacturaModal(provId)}
                             className="text-xs flex items-center gap-1.5 text-indigo-400 hover:text-indigo-300 border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-xl transition-colors font-semibold">
                             <Plus size={13} /> Agregar factura
+                          </button>
+                          <button
+                            onClick={() => setAbonosProvInfo({id: provId, nombre: prov.nombre_comercial})}
+                            className="text-xs flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 px-3 py-1.5 rounded-xl transition-colors font-semibold">
+                            <History size={13} /> Historial de Abonos
                           </button>
                         </div>
                       </div>
@@ -1745,6 +1760,17 @@ export default function ProveedoresPage() {
           </div>
         </div>
       )}
+
+      {/* MODAL HISTORIAL DE ABONOS GLOBALES */}
+      {abonosProvInfo && (
+        <AbonosGlobalesHistorial
+          proveedorId={abonosProvInfo.id}
+          proveedorNombre={abonosProvInfo.nombre}
+          sedeId={sedeId}
+          onClose={() => setAbonosProvInfo(null)}
+        />
+      )}
+
     </div>
   );
 }
