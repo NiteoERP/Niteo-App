@@ -21,8 +21,10 @@ export default async function CajaPage(props: { searchParams: Promise<{ sede?: s
     sedes = sedes.filter(s => s.id === profile.sede_id);
   }
 
-  // By default, if no sede is specified, getHistorialCierres will use profile.sede_id (or ALL if master and ALL passed)
-  const sedeFiltro = searchParams.sede || 'ALL';
+  const { cookies } = await import('next/headers');
+  const cookieStore = await cookies();
+  const activeSedeCookie = cookieStore.get('active_sede')?.value;
+  const sedeFiltro = searchParams.sede || (activeSedeCookie && activeSedeCookie !== 'ALL' ? activeSedeCookie : 'ALL');
   const cierres = await getHistorialCierres(sedeFiltro);
 
   return (

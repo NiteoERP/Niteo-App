@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { HistorialVentaPOS, getHistorialVentasCompleto, toggleVentaVerificada, getResumenVerificacionMes } from '@/actions/pos-actions';
 import { Search, Calendar, ChevronDown, ChevronUp, Receipt, DollarSign, Clock, Users, CheckCircle2, Circle, Hash, ChevronLeft, ChevronRight, Printer, Ban, Sparkles, Filter, X } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+import { normalizePaymentKey, getCanonicalPaymentMethodName, unifyPaymentMethods } from '@/utils/payment-methods';
 import {
   format, startOfMonth, endOfMonth, eachDayOfInterval,
   getDay, addMonths, subMonths, isSameDay, parseISO
@@ -143,17 +144,13 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
   };
 
   const metodosDisponibles = useMemo(() => {
-    const set = new Set<string>();
+    const rawMethods: string[] = [];
     ventas.forEach(v => {
       v.pagos?.forEach(p => {
-        if (p.tipo_pago && !p.tipo_pago.toLowerCase().includes('cortes')) {
-          set.add(p.tipo_pago);
-        }
+        if (p.tipo_pago) rawMethods.push(p.tipo_pago);
       });
     });
-    // Métodos comunes por defecto
-    ['Efectivo USD', 'Pago Móvil', 'Zelle', 'Punto de Venta', 'Efectivo BS'].forEach(m => set.add(m));
-    return Array.from(set).sort();
+    return unifyPaymentMethods(rawMethods);
   }, [ventas]);
 
   const filtradas = useMemo(() => {
@@ -177,10 +174,11 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
       if (filtroMetodo === 'CORTESIA') {
         if (!isCortesiaVenta(v)) return false;
       } else if (filtroMetodo === 'CREDITO') {
-        const hasCredito = v.pagos?.some(p => p.tipo_pago?.toLowerCase().includes('credito'));
+        const hasCredito = v.pagos?.some(p => normalizePaymentKey(p.tipo_pago).includes('credit'));
         if (v.esta_pagado && !hasCredito) return false;
       } else if (filtroMetodo !== 'TODOS') {
-        const hasPago = v.pagos?.some(p => p.tipo_pago?.toLowerCase() === filtroMetodo.toLowerCase());
+        const targetKey = normalizePaymentKey(filtroMetodo);
+        const hasPago = v.pagos?.some(p => normalizePaymentKey(p.tipo_pago) === targetKey);
         if (!hasPago) return false;
       }
 
@@ -476,7 +474,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                       ) : venta.pagos?.length > 0 ? (
                         venta.pagos.map((p, idx) => (
                           <span key={idx} className="text-[10px] text-neutral-300 bg-neutral-800/80 px-1.5 py-0.5 rounded border border-neutral-700/50">
-                            {p.tipo_pago}
+                            {getCanonicalPaymentMethodName(p.tipo_pago)}
                           </span>
                         ))
                       ) : (
@@ -537,7 +535,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                             }`}
                           >
                             <DollarSign size={12} />
-                            {p.tipo_pago}: {formatCurrency(p.monto)}
+                            {getCanonicalPaymentMethodName(p.tipo_pago)}: {formatCurrency(p.monto)}
                           </span>
                         ))}
                       </div>

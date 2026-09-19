@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -9,14 +9,17 @@ export default function SedeSelector({ sedes, activeSedeId }: { sedes: any[], ac
   const searchParams = useSearchParams();
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    document.cookie = `active_sede=${e.target.value}; path=/; max-age=31536000;`;
-    const params = new URLSearchParams(searchParams.toString());
-    if (e.target.value === 'ALL') {
+    const newSede = e.target.value;
+    document.cookie = `active_sede=${newSede}; path=/; max-age=31536000; SameSite=Lax;`;
+    const params = new URLSearchParams(window.location.search);
+    if (newSede === 'ALL') {
       params.delete('sede');
     } else {
-      params.set('sede', e.target.value);
+      params.set('sede', newSede);
     }
-    router.push(`?${params.toString()}`);
+    // Forzar navegación completa para que todas las pantallas y Server Components
+    // recarguen inmediatamente los datos de la nueva sede seleccionada sin caché obsoleto
+    window.location.href = `${window.location.pathname}?${params.toString()}`;
   };
 
   if (sedes.length <= 1) return null;

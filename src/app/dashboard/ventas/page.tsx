@@ -16,7 +16,9 @@ export const metadata: Metadata = {
   description: 'Panel de reporte de ventas de sucursales.',
 };
 
-export default async function POSPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+export const dynamic = 'force-dynamic';
+
+export default async function POSPage({ searchParams }: { searchParams: Promise<{ tab?: string, sede?: string }> }) {
   const params = await searchParams;
   const tab = params.tab || 'ventas';
   const supabase = await createClient();
@@ -48,7 +50,9 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
   const activeSedeCookie = cookieStore.get('active_sede')?.value;
   
   let activeSedeId = perfil.sede_id;
-  if (perfil.rol === 'MASTER' && activeSedeCookie) {
+  if ((perfil.rol === 'MASTER' || !perfil.sede_id) && params.sede) {
+    activeSedeId = params.sede;
+  } else if (perfil.rol === 'MASTER' && activeSedeCookie) {
     activeSedeId = activeSedeCookie;
   }
   if (!activeSedeId && sedes && sedes.length > 0) {
@@ -92,7 +96,7 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
         {/* Tabs Navigation */}
         <div className="flex overflow-x-auto bg-neutral-900 border border-neutral-800 rounded-lg p-1 hide-scrollbar">
           <a
-            href="?tab=ventas"
+            href={`?tab=ventas${activeSedeId ? `&sede=${activeSedeId}` : ''}`}
             className={`flex flex-1 items-center justify-center gap-2 h-14 px-4 rounded-md text-sm font-medium transition-all whitespace-nowrap shrink-0 ${
               tab === 'ventas'
                 ? 'bg-neutral-800 text-white shadow-sm'
@@ -103,7 +107,7 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
             Ventas en Vivo
           </a>
           <a
-            href="?tab=cuentas"
+            href={`?tab=cuentas${activeSedeId ? `&sede=${activeSedeId}` : ''}`}
             className={`flex flex-1 items-center justify-center gap-2 h-14 px-4 rounded-md text-sm font-medium transition-all whitespace-nowrap shrink-0 ${
               tab === 'cuentas'
                 ? 'bg-neutral-800 text-white shadow-sm'
@@ -114,7 +118,7 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
             Cuentas Abiertas
           </a>
           <a
-            href="?tab=catalogo"
+            href={`?tab=catalogo${activeSedeId ? `&sede=${activeSedeId}` : ''}`}
             className={`flex flex-1 items-center justify-center gap-2 h-14 px-4 rounded-md text-sm font-medium transition-all whitespace-nowrap shrink-0 ${
               tab === 'catalogo'
                 ? 'bg-neutral-800 text-white shadow-sm'
@@ -125,7 +129,7 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
             Catálogo
           </a>
           <a
-            href="?tab=historial"
+            href={`?tab=historial${activeSedeId ? `&sede=${activeSedeId}` : ''}`}
             className={`flex flex-1 items-center justify-center gap-2 h-14 px-4 rounded-md text-sm font-medium transition-all whitespace-nowrap shrink-0 ${
               tab === 'historial'
                 ? 'bg-neutral-800 text-white shadow-sm'

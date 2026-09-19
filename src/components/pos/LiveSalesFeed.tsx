@@ -3,6 +3,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { VentaPOS } from '@/actions/pos-actions';
 import { Eye, EyeOff, Receipt, Clock, CheckCircle2, ChevronDown, ChevronUp, Users, CreditCard, Search } from 'lucide-react';
+import { normalizePaymentKey, getCanonicalPaymentMethodName, unifyPaymentMethods } from '@/utils/payment-methods';
 
 interface LiveSalesFeedProps {
   initialSales: VentaPOS[];
@@ -37,16 +38,13 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
   };
 
   const metodosDisponibles = useMemo(() => {
-    const set = new Set<string>();
+    const rawMethods: string[] = [];
     sales.forEach(s => {
       s.pagos?.forEach(p => {
-        if (p.tipo_pago && !p.tipo_pago.toLowerCase().includes('cortes')) {
-          set.add(p.tipo_pago);
-        }
+        if (p.tipo_pago) rawMethods.push(p.tipo_pago);
       });
     });
-    ['Efectivo USD', 'Pago Móvil', 'Zelle', 'Punto de Venta', 'Efectivo BS'].forEach(m => set.add(m));
-    return Array.from(set).sort();
+    return unifyPaymentMethods(rawMethods);
   }, [sales]);
 
   const filtradas = useMemo(() => {
@@ -64,10 +62,11 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
       if (filtroMetodo === 'CORTESIA') {
         if (!isCortesiaVenta(v)) return false;
       } else if (filtroMetodo === 'CREDITO') {
-        const hasCredito = v.pagos?.some(p => p.tipo_pago?.toLowerCase().includes('credito'));
+        const hasCredito = v.pagos?.some(p => normalizePaymentKey(p.tipo_pago).includes('credit'));
         if (v.esta_pagado && !hasCredito) return false;
       } else if (filtroMetodo !== 'TODOS') {
-        const hasPago = v.pagos?.some(p => p.tipo_pago?.toLowerCase() === filtroMetodo.toLowerCase());
+        const targetKey = normalizePaymentKey(filtroMetodo);
+        const hasPago = v.pagos?.some(p => normalizePaymentKey(p.tipo_pago) === targetKey);
         if (!hasPago) return false;
       }
 
@@ -339,7 +338,7 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
                           sale.pagos.map((p, idx) => (
                             <span key={idx} className="text-[11px] font-medium text-emerald-400 flex items-center gap-1 bg-emerald-400/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
                               <CreditCard size={11} />
-                              {p.tipo_pago}: {formatCurrency(p.monto)}
+                              {getCanonicalPaymentMethodName(p.tipo_pago)}: {formatCurrency(p.monto)}
                             </span>
                           ))
                         ) : (

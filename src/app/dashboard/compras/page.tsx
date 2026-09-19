@@ -1,7 +1,9 @@
-﻿import React from 'react';
+import React from 'react';
 import { createClient } from '@/utils/supabase/server';
 import ComprasClient from './ComprasClient';
 import { cookies } from 'next/headers';
+
+export const dynamic = 'force-dynamic';
 
 export default async function ComprasPage({ searchParams }: { searchParams: Promise<{ sede?: string }> }) {
   const params = await searchParams;
