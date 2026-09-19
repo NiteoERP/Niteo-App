@@ -488,9 +488,16 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
 
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <p className={`text-sm font-bold ${venta.estado_activo === false ? 'text-red-400' : isCortesiaVenta(venta) ? 'text-amber-400' : 'text-emerald-400'}`}>
-                      {formatCurrency(venta.total)}
-                    </p>
+                    {isCortesiaVenta(venta) ? (
+                      <div>
+                        <p className="text-sm font-bold text-amber-400">$0.00</p>
+                        <p className="text-[10px] text-amber-400/80 font-medium">Cortesía ({formatCurrency(venta.total)})</p>
+                      </div>
+                    ) : (
+                      <p className={`text-sm font-bold ${venta.estado_activo === false ? 'text-red-400' : 'text-emerald-400'}`}>
+                        {formatCurrency(venta.total)}
+                      </p>
+                    )}
                     <div className="flex items-center justify-end gap-1 flex-wrap mt-0.5">
                       {isCortesiaVenta(venta) ? (
                         <span className="text-[11px] text-amber-400/90 font-medium">⭐ Cortesía</span>

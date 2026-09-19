@@ -377,8 +377,15 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
                   {/* Derecha: Total y Flecha */}
                   <div className="flex items-center justify-between md:justify-end gap-6 border-t md:border-t-0 border-neutral-800 pt-3 md:pt-0 mt-3 md:mt-0">
                     <div className="text-right">
-                      <p className="text-neutral-200 font-bold text-lg">{formatCurrency(sale.total)}</p>
-                      {sale.descuento > 0 && (
+                      {isCortesiaVenta(sale) ? (
+                        <div>
+                          <p className="text-amber-400 font-bold text-lg">$0.00</p>
+                          <p className="text-amber-400/80 text-[11px] font-medium">Cortesía ({formatCurrency(sale.total)})</p>
+                        </div>
+                      ) : (
+                        <p className="text-neutral-200 font-bold text-lg">{formatCurrency(sale.total)}</p>
+                      )}
+                      {sale.descuento > 0 && !isCortesiaVenta(sale) && (
                         <p className="text-amber-500 text-xs">- {formatCurrency(sale.descuento)} desc.</p>
                       )}
                     </div>

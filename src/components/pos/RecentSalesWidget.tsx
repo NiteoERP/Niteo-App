@@ -131,7 +131,11 @@ export default function RecentSalesWidget() {
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-neutral-200 font-bold text-sm">{formatCurrency(sale.total)}</p>
+                {sale.tipo_documento?.toLowerCase().includes('cortes') ? (
+                  <p className="text-amber-400 font-bold text-sm">$0.00 <span className="text-[10px] text-amber-400/80 font-normal">⭐ Cortesía</span></p>
+                ) : (
+                  <p className="text-neutral-200 font-bold text-sm">{formatCurrency(sale.total)}</p>
+                )}
               </div>
             </div>
           ))
