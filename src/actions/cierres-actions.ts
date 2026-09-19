@@ -49,15 +49,33 @@ export async function getCierrePrevio(fechaStr: string, requestedSedeId?: string
     }
   }
 
-  // 2. Sumar Ventas del Día (de Niteo Sync)
+  // 2. Sumar Ventas del Día (de Niteo Sync) - Excluyendo Cortesías / Regalías (dinero no percibido)
   const { data: ventasData } = await supabase
     .from('ventas_facturas')
-    .select('total')
+    .select(`
+      total,
+      tipo_documento,
+      numero_orden,
+      ventas_pagos (
+        tipo_pago,
+        monto
+      )
+    `)
     .eq('sede_id', targetSedeId)
     .gte('fecha_venta', `${fechaStr}T00:00:00.000Z`)
     .lte('fecha_venta', `${fechaStr}T23:59:59.999Z`);
   
-  const ventasTotales = ventasData ? ventasData.reduce((acc, curr) => acc + Number(curr.total), 0) : 0;
+  const ventasTotales = ventasData ? ventasData.reduce((acc, curr: any) => {
+    const isCortesia = curr.ventas_pagos?.some((p: any) => {
+      const tp = (p.tipo_pago || '').toLowerCase();
+      return tp.includes('cortes') || tp.includes('regal');
+    }) ||
+    (curr.tipo_documento && curr.tipo_documento.toLowerCase().includes('cortes')) ||
+    (curr.numero_orden && curr.numero_orden.toLowerCase().includes('cortes'));
+
+    if (isCortesia) return acc;
+    return acc + Number(curr.total || 0);
+  }, 0) : 0;
 
   // 3. Sumar Gastos Operativos del Día
   const { data: gastosData } = await supabase
@@ -515,7 +533,11 @@ export async function getResumenPagos(fechaInicio: string, fechaFin: string, sed
     }
     
     grouped[fecha].metodos[metodo] += amountUSD;
-    grouped[fecha].total_usd += amountUSD;
+    // Cortesías/Regalías no se suman a los ingresos percibidos
+    const isCortesia = metodo.includes('CORTES') || metodo.includes('REGAL');
+    if (!isCortesia) {
+      grouped[fecha].total_usd += amountUSD;
+    }
   });
 
   const result = Object.values(grouped).sort((a, b) => a.fecha.localeCompare(b.fecha));

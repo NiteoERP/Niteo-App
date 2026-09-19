@@ -126,7 +126,7 @@ const REPORT_CATALOG: ReportGroup[] = [
     reports: [
       { id: 'stock_valorizado',   name: 'Valorización de Stock',   desc: 'Cantidades actuales y valor total del inventario',     icon: Package },
       { id: 'stock_bajo',         name: 'Alertas de Reposición',   desc: 'Artículos por debajo del nivel mínimo de stock',       icon: AlertTriangle },
-      { id: 'mermas',             name: 'Mermas y Regalías',       desc: 'Pérdidas, daños y cortesías registradas',              icon: Trash2, badge: 'Próx.' },
+      { id: 'mermas',             name: 'Mermas y Regalías',       desc: 'Pérdidas, daños y cortesías registradas',              icon: Trash2 },
     ],
   },
   {
@@ -616,6 +616,18 @@ export default function InformesPage() {
             {/* Contenido scrollable */}
             <div className="flex-1 overflow-y-auto print:overflow-visible print:h-auto custom-scrollbar px-5 space-y-5 pb-4">
 
+              {selectedReport.id === 'mermas' && (
+                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-amber-400">
+                    <Trash2 size={13} />
+                    <span>Auditoría de Regalías y Mermas</span>
+                  </div>
+                  <p className="text-neutral-400 leading-relaxed text-[11px]">
+                    Las cortesías bonificadas al 100% y mermas no ingresan como ventas percibidas. Aquí se auditan por producto, destinatario, costo y valor venta.
+                  </p>
+                </div>
+              )}
+
               {/* — Sede selector — */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider">Sucursal</label>
@@ -871,7 +883,7 @@ export default function InformesPage() {
 
               {(() => {
                 const keys = Array.from(new Set(reportData.flatMap(r => Object.keys(r))));
-                const firstKeyCandidates = ['Fecha', 'FECHA', 'fecha', 'numero_orden', 'codigo', 'cliente', 'operador', 'OPERADOR', 'categoria', 'nombre_cajero', 'nombre_cliente'];
+                const firstKeyCandidates = ['Fecha', 'FECHA', 'fecha', 'Día', 'Dia', 'DIA', 'numero_orden', 'codigo', 'cliente', 'operador', 'OPERADOR', 'categoria', 'nombre_cajero', 'nombre_cliente'];
                 const foundFirstKey = firstKeyCandidates.find(k => keys.includes(k));
                 if (foundFirstKey && keys.indexOf(foundFirstKey) > 0) {
                   keys.splice(keys.indexOf(foundFirstKey), 1);
@@ -978,6 +990,18 @@ function DesktopReportPanel({
       <div className="flex flex-1 overflow-hidden print:overflow-visible print:h-auto">
         {/* Columna Filtros */}
         <div className="w-72 border-r border-neutral-800 flex flex-col p-5 space-y-5 shrink-0 overflow-y-auto print:overflow-visible print:h-auto">
+
+          {report.id === 'mermas' && (
+            <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-amber-400">
+                <Trash2 size={13} />
+                <span>Auditoría de Regalías y Mermas</span>
+              </div>
+              <p className="text-neutral-400 leading-relaxed text-[11px]">
+                Las cortesías bonificadas al 100% y mermas no ingresan como ventas percibidas. Aquí se auditan por producto, destinatario, costo y valor venta.
+              </p>
+            </div>
+          )}
 
           {/* Sede */}
           <div className="space-y-1.5">

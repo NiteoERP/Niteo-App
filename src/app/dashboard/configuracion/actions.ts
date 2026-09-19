@@ -5,6 +5,20 @@ import { revalidatePath } from 'next/cache';
 
 export async function updateEmpresaSaaS(empresaId: string, data: any) {
   const supabase = await createClient();
+
+  // Asegurar que 'Cortesía' siempre esté presente y normalizado
+  let metodos: string[] = Array.isArray(data.metodos_pago) ? [...data.metodos_pago] : [];
+  if (!metodos.some(m => m.toLowerCase().includes('cortes'))) {
+    metodos.push('Cortesía');
+  }
+  // Deduplicar letra por letra (case-insensitive)
+  const seen = new Set<string>();
+  metodos = metodos.filter(m => {
+    const norm = m.trim().toLowerCase();
+    if (!norm || seen.has(norm)) return false;
+    seen.add(norm);
+    return true;
+  });
   
   const { error } = await supabase
     .from('empresas')
@@ -14,7 +28,7 @@ export async function updateEmpresaSaaS(empresaId: string, data: any) {
       simbolo_moneda: data.simbolo_moneda,
       zona_horaria: data.zona_horaria,
       metodo_costeo_despachos: data.metodo_costeo_despachos,
-      metodos_pago: data.metodos_pago,
+      metodos_pago: metodos,
       metodo_costeo_inventario: data.metodo_costeo_inventario,
       costeo_promedio_n: data.costeo_promedio_n
     })

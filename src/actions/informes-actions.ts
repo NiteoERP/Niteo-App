@@ -3,7 +3,7 @@ import { getResumenPagos } from './cierres-actions';
 
 
 import { createClient } from '@/utils/supabase/server';
-import { startOfDay, endOfDay } from 'date-fns';
+import { startOfDay, endOfDay, format, parseISO } from 'date-fns';
 import { formatFecha } from '@/utils/date-utils';
 
 // ─── Helpers de carga de datos para filtros dinámicos ───────────────────────
@@ -288,6 +288,10 @@ export async function generateReport(
       rpcParams = { p_empresa_id, p_sede_id, p_fecha_inicio, p_fecha_fin };
       break;
 
+    // ── Mermas y Regalías (Cortesías bonificadas + pérdidas) ────────────────
+    case 'mermas':
+      return await handleMermasYRegaliasReport(supabase, p_empresa_id, p_sede_id, p_fecha_inicio, p_fecha_fin);
+
     // ── NUEVOS Informes de Ventas ──────────────────────────────────────────
 
     /**
@@ -353,6 +357,17 @@ export async function generateReport(
     return { success: false, error: error.message };
   }
 
+  // En detalle_ventas: eliminar cortesías/regalías del informe de ventas percibidas
+  if (reportId === 'detalle_ventas' && Array.isArray(data)) {
+    const sinCortesias = data.filter((r: any) => {
+      const mp = String(r.metodos_pago || '').toLowerCase();
+      const numDoc = String(r.numero_documento || '').toLowerCase();
+      const numOrd = String(r.numero_orden || '').toLowerCase();
+      return !mp.includes('cortes') && !mp.includes('regal') && !numDoc.includes('cortes') && !numOrd.includes('cortes');
+    });
+    return { success: true, data: sinCortesias };
+  }
+
   return { success: true, data };
 }
 
@@ -414,3 +429,195 @@ async function handleComprasReports(supabase: any, reportId: string, empresaId: 
   
   return { success: false, error: 'Unknown report' };
 }
+
+async function handleMermasYRegaliasReport(
+  supabase: any,
+  empresaId: string,
+  sedeId: string | null,
+  start: string,
+  end: string
+) {
+  try {
+    // 1. Obtener pagos de cortesía con su factura, cliente, detalles y productos
+    let pagosQuery = supabase
+      .from('ventas_pagos')
+      .select(`
+        id,
+        tipo_pago,
+        monto,
+        ventas_facturas!inner (
+          id,
+          fecha_venta,
+          numero_documento,
+          numero_orden,
+          cliente_nombre,
+          tipo_documento,
+          total,
+          empresa_id,
+          sede_id,
+          clientes (
+            id,
+            nombre
+          ),
+          ventas_detalles (
+            cantidad,
+            precio_unitario,
+            total,
+            productos (
+              id,
+              nombre,
+              costo,
+              precio_venta
+            )
+          )
+        )
+      `)
+      .ilike('tipo_pago', '%cortes%')
+      .eq('ventas_facturas.empresa_id', empresaId)
+      .gte('ventas_facturas.fecha_venta', start)
+      .lte('ventas_facturas.fecha_venta', end)
+      .order('ventas_facturas(fecha_venta)', { ascending: false });
+
+    if (sedeId) {
+      pagosQuery = pagosQuery.eq('ventas_facturas.sede_id', sedeId);
+    }
+
+    const { data: pagosData, error: pagosErr } = await pagosQuery;
+    if (pagosErr) {
+      console.error('Error fetching cortesias:', pagosErr);
+      return { success: false, error: pagosErr.message };
+    }
+
+    // 2. Consultar mermas manuales registradas en la tabla shrinkages si existen
+    let shrinkagesQuery = supabase
+      .from('shrinkages')
+      .select(`
+        id,
+        quantity,
+        unit_cost,
+        total_loss,
+        notes,
+        created_at,
+        shrinkage_reasons (name),
+        productos (nombre, precio_venta)
+      `)
+      .gte('created_at', start)
+      .lte('created_at', end);
+
+    const { data: shrinkData } = await shrinkagesQuery;
+
+    const rows: Record<string, any>[] = [];
+    let sumCantidad = 0;
+    let sumCostoTotal = 0;
+    let sumVentaTotal = 0;
+
+    // Procesar Cortesías
+    for (const p of pagosData || []) {
+      const f = p.ventas_facturas;
+      if (!f) continue;
+
+      const fechaStr = formatFecha(f.fecha_venta);
+      const destinatario = 
+        f.cliente_nombre || 
+        (f.clientes?.nombre && f.clientes?.nombre !== 'Unknown' ? f.clientes.nombre : '') || 
+        f.numero_orden || 
+        'Consumidor Final';
+
+      const refDoc = f.numero_documento || f.numero_orden || 'Cortesía';
+      const detalles = f.ventas_detalles || [];
+
+      if (detalles.length === 0) {
+        const monto = Number(p.monto || f.total || 0);
+        sumCantidad += 1;
+        sumVentaTotal += monto;
+        rows.push({
+          'Fecha': fechaStr,
+          'Tipo': 'Cortesía',
+          'Lo Que Se Regaló': 'Consumo / Cortesía General',
+          'Cantidad': 1,
+          'A Quién Se Regaló': destinatario,
+          'Precio Coste Unitario ($)': '$ 0.00',
+          'Total Coste ($)': '$ 0.00',
+          'Precio Venta Unitario ($)': `$ ${monto.toFixed(2)}`,
+          'Total Venta Regalada ($)': `$ ${monto.toFixed(2)}`,
+          'Nº Ref': refDoc
+        });
+      } else {
+        for (const d of detalles) {
+          const prodName = d.productos?.nombre || 'Producto sin nombre';
+          const cant = Number(d.cantidad || 1);
+          const costoUnit = Number(d.productos?.costo || 0);
+          const subtotalCosto = costoUnit * cant;
+          const pvUnit = Number(d.precio_unitario || d.productos?.precio_venta || 0);
+          const subtotalVenta = pvUnit * cant;
+
+          sumCantidad += cant;
+          sumCostoTotal += subtotalCosto;
+          sumVentaTotal += subtotalVenta;
+
+          rows.push({
+            'Fecha': fechaStr,
+            'Tipo': 'Cortesía',
+            'Lo Que Se Regaló': prodName,
+            'Cantidad': cant,
+            'A Quién Se Regaló': destinatario,
+            'Precio Coste Unitario ($)': `$ ${costoUnit.toFixed(2)}`,
+            'Total Coste ($)': `$ ${subtotalCosto.toFixed(2)}`,
+            'Precio Venta Unitario ($)': `$ ${pvUnit.toFixed(2)}`,
+            'Total Venta Regalada ($)': `$ ${subtotalVenta.toFixed(2)}`,
+            'Nº Ref': refDoc
+          });
+        }
+      }
+    }
+
+    // Procesar Mermas si existen
+    for (const s of (shrinkData as any[]) || []) {
+      const fechaStr = formatFecha(s.created_at);
+      const cant = Number(s.quantity || 1);
+      const costoUnit = Number(s.unit_cost || 0);
+      const subtotalCosto = Number(s.total_loss || (cant * costoUnit));
+      const pvUnit = Number(s.productos?.precio_venta || 0);
+      const subtotalVenta = cant * pvUnit;
+
+      sumCantidad += cant;
+      sumCostoTotal += subtotalCosto;
+      sumVentaTotal += subtotalVenta;
+
+      rows.push({
+        'Fecha': fechaStr,
+        'Tipo': s.shrinkage_reasons?.name || 'Merma',
+        'Lo Que Se Regaló': s.productos?.nombre || 'Insumo / Producto',
+        'Cantidad': cant,
+        'A Quién Se Regaló': s.notes || 'Ajuste de inventario',
+        'Precio Coste Unitario ($)': `$ ${costoUnit.toFixed(2)}`,
+        'Total Coste ($)': `$ ${subtotalCosto.toFixed(2)}`,
+        'Precio Venta Unitario ($)': `$ ${pvUnit.toFixed(2)}`,
+        'Total Venta Regalada ($)': `$ ${subtotalVenta.toFixed(2)}`,
+        'Nº Ref': 'Ajuste Merma'
+      });
+    }
+
+    // Fila de TOTALES al final
+    if (rows.length > 0) {
+      rows.push({
+        'Fecha': 'TOTAL',
+        'Tipo': '',
+        'Lo Que Se Regaló': `${rows.length} registros bonificados`,
+        'Cantidad': sumCantidad,
+        'A Quién Se Regaló': '',
+        'Precio Coste Unitario ($)': '',
+        'Total Coste ($)': `$ ${sumCostoTotal.toFixed(2)}`,
+        'Precio Venta Unitario ($)': '',
+        'Total Venta Regalada ($)': `$ ${sumVentaTotal.toFixed(2)}`,
+        'Nº Ref': ''
+      });
+    }
+
+    return { success: true, data: rows };
+  } catch (err: any) {
+    console.error('Error generating mermas report:', err);
+    return { success: false, error: err.message || 'Error generando reporte de mermas' };
+  }
+}
+

@@ -186,19 +186,31 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
     });
   }, [ventas, busqueda, filtroMetodo]);
 
-  const { totalMontoFiltrado, totalCortesias } = useMemo(() => {
-    let sum = 0;
+  const { totalMontoFiltrado, totalValorRegalado, totalCortesias } = useMemo(() => {
+    let sumPercibido = 0;
+    let sumRegalado = 0;
     let cortesiasCount = 0;
+
     ventas.forEach(v => {
       if (isCortesiaVenta(v)) cortesiasCount++;
     });
+
     filtradas.forEach(v => {
       if (v.estado_activo !== false) {
-        sum += Number(v.total || 0);
+        if (isCortesiaVenta(v)) {
+          sumRegalado += Number(v.total || 0);
+        } else {
+          sumPercibido += Number(v.total || 0);
+        }
       }
     });
-    return { totalMontoFiltrado: sum, totalCortesias: cortesiasCount };
-  }, [ventas, filtradas]);
+
+    return { 
+      totalMontoFiltrado: filtroMetodo === 'CORTESIA' ? sumRegalado : sumPercibido, 
+      totalValorRegalado: sumRegalado,
+      totalCortesias: cortesiasCount 
+    };
+  }, [ventas, filtradas, filtroMetodo]);
 
   return (
     <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 md:p-6 animate-in fade-in space-y-6">
@@ -385,9 +397,20 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
         </div>
 
         <div className="flex items-center gap-3 ml-auto">
-          <div className="text-right">
-            <span className="text-neutral-400 mr-1.5">Total Filtrado:</span>
-            <span className="text-emerald-400 font-bold text-sm">{formatCurrency(totalMontoFiltrado)}</span>
+          <div className="text-right flex items-center gap-2">
+            <div>
+              <span className="text-neutral-400 mr-1.5">
+                {filtroMetodo === 'CORTESIA' ? 'Valor Regalado:' : 'Total Percibido:'}
+              </span>
+              <span className={`font-bold text-sm ${filtroMetodo === 'CORTESIA' ? 'text-amber-400' : 'text-emerald-400'}`}>
+                {formatCurrency(totalMontoFiltrado)}
+              </span>
+            </div>
+            {filtroMetodo !== 'CORTESIA' && totalValorRegalado > 0 && (
+              <span className="text-[11px] text-amber-400/90 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20" title="Valor en productos entregados por cortesía (excluidos del ingreso percibido)">
+                🎁 {formatCurrency(totalValorRegalado)} en cortesías
+              </span>
+            )}
           </div>
           {(busqueda || filtroMetodo !== 'TODOS' || fechaFiltro) && (
             <button

@@ -5,13 +5,17 @@ import { updateEmpresaSaaS } from './actions';
 import { Building2, Save, Loader2, AlertCircle, Globe, DollarSign, Calculator, Package, FlaskConical, Info, X } from 'lucide-react';
 
 export default function SettingsForm({ empresa }: { empresa: any }) {
+  const initialMetodos: string[] = Array.isArray(empresa.metodos_pago) ? empresa.metodos_pago : [];
+  const hasCortesia = initialMetodos.some(m => m.toLowerCase().includes('cortes'));
+  const standardizedMetodos = hasCortesia ? initialMetodos : [...initialMetodos, 'Cortesía'];
+
   const [formData, setFormData] = useState({
     nombre_comercial: empresa.nombre_comercial || '',
     moneda: empresa.moneda || 'USD',
     simbolo_moneda: empresa.simbolo_moneda || '$',
     zona_horaria: empresa.zona_horaria || 'America/Caracas',
     metodo_costeo_despachos: empresa.metodo_costeo_despachos || 'PROMEDIO',
-    metodos_pago: empresa.metodos_pago || [],
+    metodos_pago: standardizedMetodos,
     metodo_costeo_inventario: empresa.metodo_costeo_inventario || 'MOVIL',
     costeo_promedio_n: empresa.costeo_promedio_n || 3,
   });
@@ -117,56 +121,84 @@ export default function SettingsForm({ empresa }: { empresa: any }) {
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-neutral-300 mb-1.5">Métodos de Pago Disponibles</label>
             <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-4">
-               <div className="flex flex-wrap gap-2 mb-4">
-                  {formData.metodos_pago.map((metodo: string, idx: number) => (
-                     <div key={idx} className="flex items-center gap-1.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-sm font-medium px-3 py-1.5 rounded-lg">
-                        <span>{metodo}</span>
-                        <button 
-                           type="button" 
-                           onClick={() => setFormData({...formData, metodos_pago: formData.metodos_pago.filter((_: string, i: number) => i !== idx)})}
-                           className="text-indigo-400 hover:text-red-400 p-0.5 transition-colors"
-                        >
-                           <X size={14} />
-                        </button>
-                     </div>
-                  ))}
-               </div>
-               <div className="flex items-center gap-2 max-w-sm">
-                  <div className="relative flex-1">
-                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 w-4 h-4" />
-                     <input 
-                        type="text" 
-                        placeholder="Añadir método (ej. Zelle)"
-                        id="nuevoMetodoInput"
-                        onKeyDown={e => {
-                           if (e.key === 'Enter') {
-                              e.preventDefault();
-                              const val = e.currentTarget.value.trim();
-                              if (val && !formData.metodos_pago.includes(val)) {
-                                 setFormData({...formData, metodos_pago: [...formData.metodos_pago, val]});
-                                 e.currentTarget.value = '';
-                              }
-                           }
-                        }}
-                        className="w-full bg-neutral-900 border border-neutral-800 text-white rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition-colors" 
-                     />
-                  </div>
-                  <button 
-                     type="button"
-                     onClick={() => {
-                        const input = document.getElementById('nuevoMetodoInput') as HTMLInputElement;
-                        const val = input?.value.trim();
-                        if (val && !formData.metodos_pago.includes(val)) {
-                           setFormData({...formData, metodos_pago: [...formData.metodos_pago, val]});
-                           if (input) input.value = '';
-                        }
-                     }}
-                     className="bg-neutral-800 hover:bg-neutral-700 text-white text-sm font-medium px-3 py-2 rounded-lg transition-colors border border-neutral-700"
-                  >
-                     Añadir
-                  </button>
-               </div>
-               <p className="text-xs text-neutral-500 mt-3">Presiona <kbd className="bg-neutral-800 border border-neutral-700 px-1 py-0.5 rounded text-[10px]">Enter</kbd> para agregar. Si quieres permitir ventas a crédito, añade <strong>Crédito</strong> a la lista.</p>
+                <div className="flex flex-wrap gap-2 mb-4">
+                   {formData.metodos_pago.map((metodo: string, idx: number) => {
+                      const isCortesia = metodo.toLowerCase().includes('cortes') || metodo.toLowerCase().includes('regal');
+                      return (
+                         <div 
+                            key={idx} 
+                            className={`flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border ${
+                               isCortesia 
+                                  ? 'bg-amber-500/10 border-amber-500/30 text-amber-300' 
+                                  : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-300'
+                            }`}
+                         >
+                            <span>{metodo}</span>
+                            {isCortesia ? (
+                               <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ml-1" title="Método estándar fijo del sistema">
+                                  Fijo
+                               </span>
+                            ) : (
+                               <button 
+                                  type="button" 
+                                  onClick={() => setFormData({...formData, metodos_pago: formData.metodos_pago.filter((_: string, i: number) => i !== idx)})}
+                                  className="text-indigo-400 hover:text-red-400 p-0.5 transition-colors"
+                                  title="Eliminar método"
+                               >
+                                  <X size={14} />
+                               </button>
+                            )}
+                         </div>
+                      );
+                   })}
+                </div>
+                <div className="flex items-center gap-2 max-w-sm">
+                   <div className="relative flex-1">
+                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 w-4 h-4" />
+                      <input 
+                         type="text" 
+                         placeholder="Añadir método (ej. Zelle)"
+                         id="nuevoMetodoInput"
+                         onKeyDown={e => {
+                            if (e.key === 'Enter') {
+                               e.preventDefault();
+                               const val = e.currentTarget.value.trim();
+                               if (val && !formData.metodos_pago.some((m: string) => m.toLowerCase() === val.toLowerCase())) {
+                                  setFormData({...formData, metodos_pago: [...formData.metodos_pago, val]});
+                                  e.currentTarget.value = '';
+                               }
+                            }
+                         }}
+                         className="w-full bg-neutral-900 border border-neutral-800 text-white rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-indigo-500 transition-colors" 
+                      />
+                   </div>
+                   <button 
+                      type="button"
+                      onClick={() => {
+                         const input = document.getElementById('nuevoMetodoInput') as HTMLInputElement;
+                         const val = input?.value.trim();
+                         if (val && !formData.metodos_pago.some((m: string) => m.toLowerCase() === val.toLowerCase())) {
+                            setFormData({...formData, metodos_pago: [...formData.metodos_pago, val]});
+                            if (input) input.value = '';
+                         }
+                      }}
+                      className="bg-neutral-800 hover:bg-neutral-700 text-white text-sm font-medium px-3 py-2 rounded-lg transition-colors border border-neutral-700"
+                   >
+                      Añadir
+                   </button>
+                </div>
+                <p className="text-xs text-neutral-500 mt-3">Presiona <kbd className="bg-neutral-800 border border-neutral-700 px-1 py-0.5 rounded text-[10px]">Enter</kbd> para agregar. Si quieres permitir ventas a crédito, añade <strong>Crédito</strong> a la lista.</p>
+
+                {/* Tarjeta explicativa sobre el método Cortesía / Regalía */}
+                <div className="mt-4 p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start gap-3">
+                   <Info className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                   <div className="text-xs space-y-1">
+                      <p className="font-semibold text-amber-300">Método Estandarizado: Cortesía / Regalía</p>
+                      <p className="text-neutral-400 leading-relaxed">
+                         El método <strong>Cortesía</strong> está activo de forma fija en todas las empresas para evitar inconsistencias. Los consumos bonificados al 100% <strong>no se computan en los ingresos percibidos de ventas</strong> ni cierres de caja (dinero real), sino que se auditan de forma exclusiva en el informe de <strong>Mermas y Regalías</strong> con el producto entregado, destinatario, costo unitario y precio venta.
+                      </p>
+                   </div>
+                </div>
             </div>
           </div>
         </div>
