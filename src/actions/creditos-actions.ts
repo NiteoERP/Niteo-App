@@ -155,6 +155,8 @@ export async function registrarAbonoGlobal(clienteId: string, sedeId: string, mo
 
   let restante = monto;
   let facturasPagadas = 0;
+  const batchId = 'GLB_' + crypto.randomUUID();
+  const fechaEfectiva = fechaPago || new Date().toISOString();
 
   for (const fac of facturas || []) {
     if (restante <= 0) break;
@@ -167,10 +169,11 @@ export async function registrarAbonoGlobal(clienteId: string, sedeId: string, mo
     await supabase.from('ventas_pagos').insert({
       empresa_id: profile.empresa_id,
       factura_id: fac.id,
-      id_pos: 'WEB_GLB_' + crypto.randomUUID(),
+      id_pos: batchId,
       tipo_pago: metodoPago,
       monto: monto_abonar,
-      fecha_pago: fechaPago || new Date().toISOString()
+      fecha_pago: fechaEfectiva,
+      referencia: referencia || null
     });
 
     restante -= monto_abonar;
@@ -185,7 +188,7 @@ export async function registrarAbonoGlobal(clienteId: string, sedeId: string, mo
 
       await registrarAsiento(
         profile.empresa_id,
-        fechaPago || new Date().toISOString(),
+        fechaEfectiva,
         `Abono global de cliente - Método: ${metodoPago}`,
         'abono_global',
         clienteId,
@@ -207,8 +210,6 @@ export async function registrarAbonoGlobal(clienteId: string, sedeId: string, mo
   };
 }
 
-
-
 export async function getHistorialAbonosCliente(clienteId: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -224,19 +225,62 @@ export async function getHistorialAbonosCliente(clienteId: string) {
       monto,
       tipo_pago,
       fecha_pago,
+      referencia,
+      id_pos,
       ventas_facturas!inner (
         id,
         cliente_id,
         numero_documento,
-        id_pos
+        id_pos,
+        fecha_venta,
+        total
       )
     `)
     .eq('ventas_facturas.cliente_id', clienteId)
     .eq('empresa_id', profile.empresa_id)
-    .order('fecha_pago', { ascending: false });
+    .neq('tipo_pago', 'Credito')
+    .order('fecha_pago', { ascending: false, nullsFirst: false });
 
   if (error) return { success: false, error: error.message };
-  return { success: true, data };
+
+  // Agrupar abonos por lote / transacción (misma fecha y método)
+  const gruposMap: Record<string, any> = {};
+
+  for (const pago of data || []) {
+    const rawDate = pago.fecha_pago || (pago.ventas_facturas as any)?.fecha_venta;
+    const dateObj = rawDate ? new Date(rawDate) : new Date();
+    const isGlobalBatch = pago.id_pos && (pago.id_pos.startsWith('GLB_') || pago.id_pos.startsWith('WEB_GLB_'));
+    const timeKey = Math.floor(dateObj.getTime() / 60000); // agrupado al minuto
+    const groupKey = isGlobalBatch
+      ? (pago.id_pos.startsWith('GLB_') ? pago.id_pos : `glb_${timeKey}_${pago.tipo_pago}`)
+      : `ind_${pago.id}`;
+
+    if (!gruposMap[groupKey]) {
+      gruposMap[groupKey] = {
+        id: pago.id,
+        fecha: dateObj.toISOString(),
+        monto_total: 0,
+        tipo_pago: pago.tipo_pago || 'Abono',
+        referencia: pago.referencia || null,
+        facturas: []
+      };
+    }
+
+    gruposMap[groupKey].monto_total += Number(pago.monto) || 0;
+    gruposMap[groupKey].facturas.push({
+      factura_id: (pago.ventas_facturas as any)?.id,
+      numero_documento: (pago.ventas_facturas as any)?.numero_documento || (pago.ventas_facturas as any)?.id_pos || 'Factura',
+      monto: Number(pago.monto) || 0
+    });
+  }
+
+  const grupos = Object.values(gruposMap).map((g: any) => ({
+    ...g,
+    monto_total: Number(g.monto_total.toFixed(2)),
+    cantidad_facturas: g.facturas.length
+  })).sort((a: any, b: any) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+
+  return { success: true, data: grupos };
 }
 
 

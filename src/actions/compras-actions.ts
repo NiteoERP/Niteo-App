@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 
 import { registrarAsiento } from './contabilidad-actions';  
+import { toSafeIsoDate } from '@/utils/date-utils';  
 
 function normalizeUnidadMedida(u: string): string {
   const clean = (u || '').trim().toLowerCase();
@@ -40,12 +41,12 @@ export async function registrarCompra(formData: FormData) {
   if (!profile) return { error: 'No se pudo obtener el perfil del usuario.' };
 
   const cookieStore = await cookies();
-    const activeSedeCookie = cookieStore.get('active_sede')?.value;
-    let activeSedeId = profile.sede_id;
-    if (profile.rol === 'MASTER' && activeSedeCookie) {
-      activeSedeId = activeSedeCookie;
-    }
-    if (!activeSedeId) {
+  const activeSedeCookie = cookieStore.get('active_sede')?.value;
+  let activeSedeId = profile.sede_id && profile.sede_id !== 'ALL' ? profile.sede_id : undefined;
+  if (profile.rol === 'MASTER' && activeSedeCookie && activeSedeCookie !== 'ALL') {
+    activeSedeId = activeSedeCookie;
+  }
+  if (!activeSedeId || activeSedeId === 'ALL') {
     const { data: sedes } = await supabase.from('sedes').select('id').eq('empresa_id', profile.empresa_id).limit(1).single();
     if (sedes) activeSedeId = sedes.id;
     else return { error: 'Crea una sede primero.' };
@@ -118,7 +119,7 @@ export async function registrarCompra(formData: FormData) {
   return { success: true }; 
 }  
 
-export async function getInsumos() {   
+export async function getInsumos(targetSedeId?: string) {   
   const supabase = await createClient();      
   const { data: { user } } = await supabase.auth.getUser();   
   if (!user) return [];    
@@ -126,27 +127,34 @@ export async function getInsumos() {
   if (!profile) return [];
 
   const cookieStore = await cookies();
-    const activeSedeCookie = cookieStore.get('active_sede')?.value;
-    let activeSedeId = profile.sede_id;
-    if (profile.rol === 'MASTER' && activeSedeCookie) {
-      activeSedeId = activeSedeCookie;
-    }
-    if (!activeSedeId) {
-    const { data: sedes } = await supabase.from('sedes').select('id').eq('empresa_id', profile.empresa_id).limit(1).single();
-    if (sedes) activeSedeId = sedes.id;
-  }    
-  // Filtramos estrictamente por sede_id (tienda) para que no se crucen insumos   
-  const { data, error } = await supabase     
+  const activeSedeCookie = cookieStore.get('active_sede')?.value;
+  let activeSedeId = targetSedeId && targetSedeId !== 'ALL' ? targetSedeId : undefined;
+  if (!activeSedeId && profile.rol === 'MASTER' && activeSedeCookie && activeSedeCookie !== 'ALL') {
+    activeSedeId = activeSedeCookie;
+  }
+  if (!activeSedeId && profile.sede_id && profile.sede_id !== 'ALL') {
+    activeSedeId = profile.sede_id;
+  }
+
+  let query = supabase     
     .from('inventario_insumos')     
-    .select('id, nombre, unidad_medida')     
-    .eq('sede_id', activeSedeId)     
+    .select('id, nombre, unidad_medida, cantidad_actual, costo_promedio');
+
+  if (activeSedeId && activeSedeId !== 'ALL') {
+    query = query.eq('sede_id', activeSedeId);
+  } else {
+    query = query.eq('empresa_id', profile.empresa_id);
+  }
+
+  const { data, error } = await query     
     .order('nombre', { ascending: true })     
-    .limit(50);    
+    .limit(200);    
+
   if (error) {     
     console.error('Error cargando insumos:', error);     
     return [];   
   }    
-  return data; 
+  return data || []; 
 }    
 
 export async function getTasaDelDia(): Promise<number> {
@@ -182,12 +190,15 @@ export async function registrarFacturaInsumos(factura: {
   if (!profile) return { error: 'Perfil no encontrado.' };
 
   const cookieStore = await cookies();
-    const activeSedeCookie = cookieStore.get('active_sede')?.value;
-    let activeSedeId = factura.sede_id || profile.sede_id;
-    if (profile.rol === 'MASTER' && activeSedeCookie && !factura.sede_id) {
-      activeSedeId = activeSedeCookie;
-    }
-    if (!activeSedeId) {
+  const activeSedeCookie = cookieStore.get('active_sede')?.value;
+  let activeSedeId = factura.sede_id && factura.sede_id !== 'ALL' ? factura.sede_id : undefined;
+  if (!activeSedeId && profile.rol === 'MASTER' && activeSedeCookie && activeSedeCookie !== 'ALL') {
+    activeSedeId = activeSedeCookie;
+  }
+  if (!activeSedeId && profile.sede_id && profile.sede_id !== 'ALL') {
+    activeSedeId = profile.sede_id;
+  }
+  if (!activeSedeId || activeSedeId === 'ALL') {
     const { data: sedes } = await supabase.from('sedes').select('id').eq('empresa_id', profile.empresa_id).limit(1).single();
     if (sedes) activeSedeId = sedes.id;
     else return { error: 'Crea una sede primero.' };
@@ -211,6 +222,8 @@ export async function registrarFacturaInsumos(factura: {
     ? factura.items.reduce((acc, it) => acc + (Number(it.costoTotal) || 0), 0)
     : (montoTotalDivisas * tasaEfectiva);
 
+  const safeFechaEmision = toSafeIsoDate(factura.fecha_emision);
+
   const { data: header, error: headErr } = await supabase.from('compras_puntuales').insert({     
     id_empresa: profile.empresa_id,     
     id_sede: activeSedeId,     
@@ -218,6 +231,7 @@ export async function registrarFacturaInsumos(factura: {
     monto_divisas: Number(montoTotalDivisas.toFixed(2)),     
     monto_bs: Number(montoTotalBs.toFixed(2)),     
     tasa_cambio: tasaEfectiva,     
+    fecha_registro: safeFechaEmision,
     detalles: JSON.stringify({
       texto: factura.descripcion?.trim() ? factura.descripcion : `Compra Insumos - ${factura.items.length} items`,
       is_insumos: true,
@@ -266,8 +280,8 @@ export async function registrarFacturaInsumos(factura: {
           concepto: conceptoFinal,
           total: Number(montoTotalDivisas.toFixed(2)),
           saldo_pendiente: saldoPendiente,
-          fecha_emision: factura.fecha_emision || new Date().toISOString(),
-          fecha_vencimiento: factura.fecha_vencimiento || null,
+          fecha_emision: safeFechaEmision,
+          fecha_vencimiento: factura.fecha_vencimiento ? toSafeIsoDate(factura.fecha_vencimiento) : null,
           usuario_id: user.id
         }).select('id').single();
 
@@ -277,8 +291,8 @@ export async function registrarFacturaInsumos(factura: {
             factura_id: nuevaFactura.id,
             monto: Number(montoTotalDivisas.toFixed(2)),
             metodo_pago: factura.metodo_pago,
+            fecha_pago: safeFechaEmision,
             usuario_id: user.id,
-            fecha_pago: factura.fecha_emision || new Date().toISOString()
           });
         }
       }
@@ -385,12 +399,12 @@ export async function editarFacturaInsumos(
   if (!profile) return { error: 'Perfil no encontrado.' };
 
   const cookieStore = await cookies();
-    const activeSedeCookie = cookieStore.get('active_sede')?.value;
-    let activeSedeId = profile.sede_id;
-    if (profile.rol === 'MASTER' && activeSedeCookie) {
-      activeSedeId = activeSedeCookie;
-    }
-    if (!activeSedeId) {
+  const activeSedeCookie = cookieStore.get('active_sede')?.value;
+  let activeSedeId = profile.sede_id && profile.sede_id !== 'ALL' ? profile.sede_id : undefined;
+  if (profile.rol === 'MASTER' && activeSedeCookie && activeSedeCookie !== 'ALL') {
+    activeSedeId = activeSedeCookie;
+  }
+  if (!activeSedeId || activeSedeId === 'ALL') {
     const { data: sedes } = await supabase.from('sedes').select('id').eq('empresa_id', profile.empresa_id).limit(1).single();
     if (sedes) activeSedeId = sedes.id;
   }

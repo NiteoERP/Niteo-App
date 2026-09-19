@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { format, startOfDay, endOfDay, addDays, differenceInCalendarDays } from 'date-fns';
+import { formatFecha } from '@/utils/date-utils';
 
 // Re-exporta useSedes para que los consumidores puedan importarlo desde aquí si quieren.
 export { useSedes } from './useDashboardData';
@@ -332,7 +333,7 @@ export function useGenerateReport(empresaId: string) {
                 sumDivisas += Number(d.monto_divisas || 0);
                 sumBs += Number(d.monto_bs || 0);
                 return {
-                  'FECHA': new Date(d.fecha_registro).toLocaleDateString(),
+                  'FECHA': formatFecha(d.fecha_registro),
                   'PROVEEDOR / GASTO': d.proveedor || 'Sin Nombre',
                   'DOLARES': `$ ${Number(d.monto_divisas ?? 0).toFixed(2)}`,
                   'TASA': d.tasa_cambio,
@@ -370,7 +371,7 @@ export function useGenerateReport(empresaId: string) {
                 sumDivisas += Number(d.monto_divisas || 0);
                 sumBs += Number(d.monto_bs || 0);
                 return {
-                  'FECHA': new Date(d.fecha_registro).toLocaleDateString(),
+                  'FECHA': formatFecha(d.fecha_registro),
                   'PROVEEDOR / GASTO': d.proveedor || 'Sin Nombre',
                   'DOLARES': `$ ${Number(d.monto_divisas ?? 0).toFixed(2)}`,
                   'TASA': d.tasa_cambio,

@@ -2,6 +2,8 @@
 
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
+import { revalidatePath } from 'next/cache';
+import { toSafeIsoDate } from '@/utils/date-utils';
 
 /**
  * Función interna de seguridad para extraer el contexto
@@ -23,12 +25,12 @@ async function getAuthContext() {
   const cookieStore = await cookies();
   const activeSedeCookie = cookieStore.get('active_sede')?.value;
 
-  let idSede = perfil.sede_id;
-  if (perfil.rol === 'MASTER' && activeSedeCookie) {
+  let idSede = perfil.sede_id && perfil.sede_id !== 'ALL' ? perfil.sede_id : undefined;
+  if (perfil.rol === 'MASTER' && activeSedeCookie && activeSedeCookie !== 'ALL') {
     idSede = activeSedeCookie;
   }
 
-  if (!idSede) {
+  if (!idSede || idSede === 'ALL') {
     const { data: sedes } = await supabase.from('sedes').select('id').eq('empresa_id', perfil.empresa_id).limit(1).single();
     if (sedes) idSede = sedes.id;
   }
@@ -255,7 +257,7 @@ export async function registrarCompraPuntual(data: {
     };
 
     if (data.fechaRegistro) {
-      payload.fecha_registro = data.fechaRegistro;
+      payload.fecha_registro = toSafeIsoDate(data.fechaRegistro);
     }
 
     const { error } = await supabase
@@ -331,6 +333,8 @@ export async function registrarFactura(
     const { data: empData } = await supabase.from('empresas').select('metodo_costeo_despachos').eq('id', idEmpresa).single();
     const metodoCosteo = empData?.metodo_costeo_despachos || 'PROMEDIO';
 
+    const safeFecha = fechaRegistro ? toSafeIsoDate(fechaRegistro) : new Date().toISOString();
+
     const lineas = productosFactura.map(p => {
       const payload: any = {
         id_proveedor: idProveedor,
@@ -343,9 +347,7 @@ export async function registrarFactura(
         id_sede: idSede,
         id_usuario: user.id
       };
-      if (fechaRegistro) {
-        payload.created_at = fechaRegistro; // Asumiendo que la columna es created_at o fecha_registro. Verificaremos
-      }
+      payload.created_at = safeFecha;
       return payload;
     });
 
@@ -362,7 +364,7 @@ export async function registrarFactura(
         concepto: 'Ingreso de Mercancía',
         total: totalFactura,
         saldo_pendiente: totalFactura, // Por defecto entra como deuda a Proveedores
-        fecha_emision: fechaRegistro || new Date().toISOString(),
+        fecha_emision: safeFecha,
         usuario_id: user.id
       });
       if (fError) console.error('Error al registrar en compras_facturas:', fError);

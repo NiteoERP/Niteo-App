@@ -10,6 +10,7 @@ import CreatableSelect from 'react-select/creatable';
 import { useLiveTable } from '@/hooks/useLiveTable';
 import NiteoDatePicker from '@/components/ui/NiteoDatePicker';
 import NiteoDateRangePicker from '@/components/ui/NiteoDateRangePicker';
+import { formatFecha } from '@/utils/date-utils';
 
 import SedeSelector from "@/components/inventario/SedeSelector";
 export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes: any[], activeSedeId: string, profile: any }) {
@@ -566,7 +567,7 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
                 <tbody className="divide-y divide-neutral-800/50">
                   {ultimasCompras.map(compra => (
                     <tr key={compra.id} className="hover:bg-white/5 transition-colors text-neutral-300">
-                      <td className="py-4 px-6 whitespace-nowrap">{new Date(compra.fecha_registro || compra.fecha).toLocaleDateString('es-VE')}</td>
+                      <td className="py-4 px-6 whitespace-nowrap">{formatFecha(compra.fecha_registro || compra.fecha)}</td>
                       <td className="py-4 px-6 font-medium text-neutral-200">{compra.proveedor}</td>
                       <td className="py-4 px-6 text-right font-medium text-white flex flex-col items-end">
                         <span>{formatCurrency(compra.monto_divisas)}</span>
@@ -588,7 +589,7 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
                   <div key={compra.id} className="p-4 flex justify-between items-center">
                     <div>
                       <p className="font-medium text-neutral-200">{compra.proveedor}</p>
-                      <p className="text-xs text-neutral-500">{new Date(compra.fecha_registro || compra.fecha).toLocaleDateString('es-VE')}</p>
+                      <p className="text-xs text-neutral-500">{formatFecha(compra.fecha_registro || compra.fecha)}</p>
                     </div>
                     <div className="flex flex-col items-end">
                       <span className="font-bold text-white">{formatCurrency(compra.monto_divisas)}</span>
@@ -714,7 +715,7 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
                 <tbody className="divide-y divide-neutral-800/50">
                   {historialCompleto.map(compra => (
                     <tr key={compra.id} className="hover:bg-white/5 transition-colors text-neutral-300">
-                      <td className="py-4 px-6 whitespace-nowrap">{new Date(compra.fecha_registro || compra.fecha).toLocaleString('es-VE')}</td>
+                      <td className="py-4 px-6 whitespace-nowrap">{formatFecha(compra.fecha_registro || compra.fecha, { includeTime: true })}</td>
                       <td className="py-4 px-6 font-medium text-neutral-200">
                         {compra.proveedor}
                         {compra.modificado && (
@@ -778,7 +779,7 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
                             </span>
                           )}
                         </p>
-                        <p className="text-xs text-neutral-500">{new Date(compra.fecha_registro || compra.fecha).toLocaleString('es-VE')}</p>
+                        <p className="text-xs text-neutral-500">{formatFecha(compra.fecha_registro || compra.fecha, { includeTime: true })}</p>
                       </div>
                       <div className="flex flex-col items-end">
                         <span className="font-bold text-white">{formatCurrency(compra.monto_divisas)}</span>

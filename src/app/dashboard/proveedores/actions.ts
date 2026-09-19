@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server';
 import { getTasaBcvAction } from '@/actions/config-actions';
+import { toSafeIsoDate } from '@/utils/date-utils';
 
 export async function getProveedoresConDeuda(sedeId: string, page: number = 1, limit: number = 20, searchQuery: string = '') {
   const supabase = await createClient();
@@ -37,7 +38,7 @@ export async function getFacturasProveedor(proveedorId: string, sedeId: string) 
   if (!user) return { success: false, error: 'No autenticado' };
 
   let query = supabase.from('compras_facturas')
-    .select('id, numero_factura, concepto, total, saldo_pendiente, fecha_emision, fecha_vencimiento, modificado, usuario_modificacion_id, pagos:compras_pagos(id, monto, metodo_pago, referencia, banco_origen, fecha_pago)')
+    .select('id, sede_id, numero_factura, concepto, total, saldo_pendiente, fecha_emision, fecha_vencimiento, modificado, usuario_modificacion_id, pagos:compras_pagos(id, monto, metodo_pago, referencia, banco_origen, fecha_pago)')
     .eq('proveedor_id', proveedorId)
     .order('fecha_emision', { ascending: false });
     
@@ -50,15 +51,23 @@ export async function getFacturasProveedor(proveedorId: string, sedeId: string) 
 
   const { data: profile } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
   let userMap: Record<string, string> = {};
+  let sedeMap: Record<string, string> = {};
   if (profile) {
-    const { data: perfiles } = await supabase.from('perfiles').select('id, nombre_completo').eq('empresa_id', profile.empresa_id);
-    if (perfiles) {
-      perfiles.forEach(p => { userMap[p.id] = p.nombre_completo; });
+    const [perfilesRes, sedesRes] = await Promise.all([
+      supabase.from('perfiles').select('id, nombre_completo').eq('empresa_id', profile.empresa_id),
+      supabase.from('sedes').select('id, nombre_sede').eq('empresa_id', profile.empresa_id)
+    ]);
+    if (perfilesRes.data) {
+      perfilesRes.data.forEach(p => { userMap[p.id] = p.nombre_completo; });
+    }
+    if (sedesRes.data) {
+      sedesRes.data.forEach(s => { sedeMap[s.id] = s.nombre_sede; });
     }
   }
 
-  const mappedData = data?.map(d => ({
+  const mappedData = data?.map((d: any) => ({
     ...d,
+    sede_nombre: d.sede_id ? (sedeMap[d.sede_id] || null) : null,
     modificado_por: d.modificado ? (userMap[d.usuario_modificacion_id] || 'Usuario Desconocido') : null
   })) || [];
 
@@ -77,7 +86,7 @@ export async function registrarPagoProveedor(facturaId: string, monto: number, m
     referencia,
     banco_origen: bancoOrigen,
     usuario_id: user.id,
-    fecha_pago: fechaPago || new Date().toISOString()
+    fecha_pago: toSafeIsoDate(fechaPago)
   };
 
   const { error } = await supabase.from('compras_pagos').insert(payload);
@@ -99,11 +108,6 @@ export async function registrarPagoGeneralProveedor(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'No autenticado' };
 
-  if (!montoTotal || montoTotal <= 0) {
-    return { success: false, error: 'El monto a abonar debe ser mayor a 0' };
-  }
-
-  // Traer todas las facturas pendientes ordenadas por emisión (más vieja primero - FIFO)
   let query = supabase.from('compras_facturas')
     .select('id, saldo_pendiente, fecha_emision')
     .eq('proveedor_id', proveedorId)
@@ -114,21 +118,19 @@ export async function registrarPagoGeneralProveedor(
     query = query.eq('sede_id', sedeId);
   }
 
-  const { data: facturas, error: facErr } = await query;
-  if (facErr) return { success: false, error: facErr.message };
-  if (!facturas || facturas.length === 0) {
-    return { success: false, error: 'No hay facturas pendientes para este proveedor.' };
-  }
+  const { data: facturas, error } = await query;
+  if (error) return { success: false, error: error.message };
+  if (!facturas || facturas.length === 0) return { success: false, error: 'El proveedor no tiene facturas pendientes.' };
 
   let remanente = montoTotal;
   let facturasAbonadas = 0;
+  const safeFechaPago = toSafeIsoDate(fechaPago);
 
   for (const fac of facturas) {
-    if (remanente <= 0) break;
-    const saldo = Number(fac.saldo_pendiente);
-    if (saldo <= 0) continue;
+    if (remanente <= 0.001) break;
 
-    const abono = Math.min(saldo, remanente);
+    const saldo = Number(fac.saldo_pendiente);
+    const abono = Math.min(remanente, saldo);
     if (abono <= 0) continue;
 
     const { error: pErr } = await supabase.from('compras_pagos').insert({
@@ -138,7 +140,7 @@ export async function registrarPagoGeneralProveedor(
       referencia: referencia || null,
       banco_origen: bancoOrigen || null,
       usuario_id: user.id,
-      fecha_pago: fechaPago || new Date().toISOString()
+      fecha_pago: safeFechaPago
     });
 
     if (pErr) {
@@ -261,18 +263,22 @@ export async function crearFacturaProveedor(
     conceptoFinal += ` (Bs. ${Number(total).toLocaleString('es-VE', { minimumFractionDigits: 2 })} @ ${tasaActual})`;
   }
 
+  const finalSedeId = (sedeId && sedeId !== 'ALL') ? sedeId : null;
+
+  const safeFechaEmision = toSafeIsoDate(fechaEmision);
+
   // 1. Insert into compras_facturas (supplier debt tracking)
   const { data: factura, error: facError } = await supabase.from('compras_facturas')
     .insert({
       empresa_id: profile.empresa_id,
-      sede_id: sedeId || null,
+      sede_id: finalSedeId,
       proveedor_id: proveedorId,
       numero_factura: numeroFactura || 'S/N',
       concepto: conceptoFinal,
       total: Number(totalUSD.toFixed(2)),
       saldo_pendiente: saldoPendiente,
-      fecha_emision: fechaEmision,
-      fecha_vencimiento: fechaVencimiento || null,
+      fecha_emision: safeFechaEmision,
+      fecha_vencimiento: fechaVencimiento ? toSafeIsoDate(fechaVencimiento) : null,
       usuario_id: user.id
     })
     .select('id')
@@ -286,7 +292,7 @@ export async function crearFacturaProveedor(
       monto: Number(totalUSD.toFixed(2)),
       metodo_pago: metodoPago,
       referencia: 'Pago al contado / registro inicial',
-      fecha_pago: fechaEmision || new Date().toISOString(),
+      fecha_pago: safeFechaEmision,
       usuario_id: user.id
     });
   }
@@ -294,11 +300,12 @@ export async function crearFacturaProveedor(
   // 2. Also register in compras_puntuales so it shows in Compras history
   await supabase.from('compras_puntuales').insert({
     id_empresa: profile.empresa_id,
-    id_sede: sedeId || null,
+    id_sede: finalSedeId,
     proveedor: prov?.nombre_comercial || 'Proveedor',
     monto_divisas: Number(totalUSD.toFixed(2)),
     monto_bs: Number(montoBs.toFixed(2)),
     tasa_cambio: tasaActual,
+    fecha_registro: safeFechaEmision,
     detalles: conceptoFinal,
     metodo_pago: metodoPago || 'Por pagar',
     estado: 'PROCESADA',
@@ -331,10 +338,12 @@ export async function crearFacturaProveedorConInsumos(
     tasaFinal = bcv.tasa || 804.81;
   }
 
+  const finalSedeId = (sedeId && sedeId !== 'ALL') ? sedeId : undefined;
+
   const res = await registrarFacturaInsumos({
     proveedor: prov?.nombre_comercial || 'Proveedor',
     proveedor_id: proveedorId,
-    sede_id: sedeId,
+    sede_id: finalSedeId,
     moneda,
     tasa: tasaFinal,
     metodo_pago: metodoPago,
@@ -429,8 +438,8 @@ export async function editarFacturaProveedor(
     concepto: payload.concepto,
     total: payload.total,
     saldo_pendiente: nuevoSaldo,
-    fecha_emision: payload.fecha_emision,
-    fecha_vencimiento: payload.fecha_vencimiento || null,
+    fecha_emision: toSafeIsoDate(payload.fecha_emision),
+    fecha_vencimiento: payload.fecha_vencimiento ? toSafeIsoDate(payload.fecha_vencimiento) : null,
     modificado: true,
     usuario_modificacion_id: user.id,
     fecha_modificacion: new Date().toISOString()
@@ -460,6 +469,58 @@ export async function editarFacturaProveedor(
       fecha_modificacion: new Date().toISOString()
     }).eq('id', matchPunt.id);
   }
+
+  return { success: true };
+}
+
+export async function eliminarFacturaProveedor(facturaId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autenticado' };
+
+  const { data: profile } = await supabase.from('perfiles').select('empresa_id, rol').eq('id', user.id).single();
+  if (!profile) return { success: false, error: 'Perfil no encontrado' };
+
+  const userRole = user.app_metadata?.user_role || profile.rol || 'CAJERO';
+  const isMasterOrAdmin = userRole === 'MASTER' || userRole === 'ADMINISTRADOR';
+  if (!isMasterOrAdmin) {
+    return { success: false, error: 'Solo usuarios con rol Master o Administrador pueden eliminar facturas de proveedores.' };
+  }
+
+  const { data: fac, error: facErr } = await supabase.from('compras_facturas')
+    .select('*')
+    .eq('id', facturaId)
+    .single();
+
+  if (facErr || !fac) return { success: false, error: 'Factura no encontrada' };
+
+  // 1. Eliminar pagos asociados en compras_pagos
+  await supabase.from('compras_pagos').delete().eq('factura_id', facturaId);
+
+  // 2. Buscar y eliminar compras_puntuales vinculadas
+  const dateStr = fac.fecha_registro || fac.fecha_emision;
+  if (dateStr) {
+    const baseDate = new Date(dateStr);
+    const minDate = new Date(baseDate.getTime() - 120000).toISOString();
+    const maxDate = new Date(baseDate.getTime() + 120000).toISOString();
+
+    const { data: punts } = await supabase.from('compras_puntuales')
+      .select('id')
+      .eq('id_empresa', profile.empresa_id)
+      .eq('monto_divisas', fac.total)
+      .gte('fecha_registro', minDate)
+      .lte('fecha_registro', maxDate);
+
+    if (punts && punts.length > 0) {
+      for (const p of punts) {
+        await supabase.from('compras_puntuales').delete().eq('id', p.id);
+      }
+    }
+  }
+
+  // 3. Eliminar factura en compras_facturas
+  const { error: delErr } = await supabase.from('compras_facturas').delete().eq('id', facturaId);
+  if (delErr) return { success: false, error: delErr.message };
 
   return { success: true };
 }

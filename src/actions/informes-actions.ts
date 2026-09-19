@@ -4,6 +4,7 @@ import { getResumenPagos } from './cierres-actions';
 
 import { createClient } from '@/utils/supabase/server';
 import { startOfDay, endOfDay } from 'date-fns';
+import { formatFecha } from '@/utils/date-utils';
 
 // ─── Helpers de carga de datos para filtros dinámicos ───────────────────────
 
@@ -140,7 +141,7 @@ export async function generateReport(
             sumDivisas += Number(d.monto_divisas || 0);
             sumBs += Number(d.monto_bs || 0);
             return {
-              'FECHA': new Date(d.fecha_registro).toLocaleDateString(),
+              'FECHA': formatFecha(d.fecha_registro),
               'PROVEEDOR / GASTO': d.proveedor || 'Sin Nombre',
               'DOLARES': `$ ${d.monto_divisas?.toFixed(2)}`,
               'TASA': d.tasa_cambio,
@@ -178,7 +179,7 @@ export async function generateReport(
             sumDivisas += Number(d.monto_divisas || 0);
             sumBs += Number(d.monto_bs || 0);
             return {
-              'FECHA': new Date(d.fecha_registro).toLocaleDateString(),
+              'FECHA': formatFecha(d.fecha_registro),
               'PROVEEDOR / GASTO': d.proveedor || 'Sin Nombre',
               'DOLARES': `$ ${d.monto_divisas?.toFixed(2)}`,
               'TASA': d.tasa_cambio,

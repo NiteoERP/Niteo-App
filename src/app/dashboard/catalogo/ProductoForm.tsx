@@ -152,7 +152,7 @@ export default function ProductoForm({
         codigo_barras: formData.codigo_barras ? formData.codigo_barras.trim() : null,
         descripcion: formData.descripcion ? formData.descripcion.trim() : null,
         categoria_id: formData.categoria_id ? formData.categoria_id : null,
-        notas_preparacion: formData.notas_preparacion_str ? formData.notas_preparacion_str.split(',').map(s => s.trim()).filter(s => s !== '') : [],
+        notas_preparacion: formData.notas_preparacion_str ? formData.notas_preparacion_str.split(',').map((s: string) => s.trim()).filter((s: string) => s !== '') : [],
       };
       // Remove the UI-only string field from payload
       delete (payload as any).notas_preparacion_str;

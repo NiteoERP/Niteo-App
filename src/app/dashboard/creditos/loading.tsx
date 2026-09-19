@@ -1,7 +1,7 @@
 
 export default function LoadingCreditos() {
   return (
-    <div className="flex h-[calc(100vh-64px)] overflow-hidden">
+    <div className="-m-4 md:-m-6 flex h-[calc(100dvh-64px-5rem)] lg:h-[calc(100dvh-64px)] overflow-hidden bg-neutral-950">
       <div className="w-full lg:w-[400px] bg-neutral-950 flex flex-col border-r border-neutral-800">
         <div className="p-4 border-b border-neutral-800 bg-neutral-950/50">
           <div className="h-8 bg-neutral-800/50 animate-pulse rounded-lg w-1/3 mb-4"></div>

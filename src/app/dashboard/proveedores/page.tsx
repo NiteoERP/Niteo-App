@@ -6,18 +6,19 @@ import { getInsumos } from "@/actions/compras-actions";
 import {
   getProveedoresConDeuda, getFacturasProveedor, registrarPagoProveedor,
   getHistoricoProveedores, getTodosProveedores, crearFacturaProveedor, crearProveedor,
-  crearFacturaProveedorConInsumos, registrarPagoGeneralProveedor
+  crearFacturaProveedorConInsumos, registrarPagoGeneralProveedor, eliminarFacturaProveedor
 } from "./actions";
 import { getTasaBcvAction } from "@/actions/config-actions";
 import { useEmpresa } from "@/components/providers/EmpresaProvider";
 import {
   Store, Wallet, Search, Check, FileText, ChevronDown, ChevronUp,
   Clock, PlusCircle, X, Plus, User, Phone, MapPin, Hash,
-  CreditCard, Building2, AlertCircle, History, DollarSign, Package, CheckCircle2, Pencil, Info, Edit2
+  CreditCard, Building2, AlertCircle, History, DollarSign, Package, CheckCircle2, Pencil, Info, Edit2, Trash2
 } from "lucide-react";
 import { format } from "date-fns";
 import MobileCompraForm from "@/components/compras/MobileCompraForm";
 import Link from "next/link";
+import { formatFecha } from "@/utils/date-utils";
 
 // ── Helpers ────────────────────────────────────────────────
 function Badge({ label, color = 'neutral' }: { label: string; color?: string }) {
@@ -28,7 +29,7 @@ function Badge({ label, color = 'neutral' }: { label: string; color?: string }) 
     neutral: 'bg-neutral-700 text-neutral-300 border-neutral-700',
   };
   return (
-    <span className={`text-xs font-semibold px-2 py-0.5 rounded border ${map[color] || map.neutral}`}>
+    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md border inline-flex items-center gap-1 ${map[color] || map.neutral}`}>
       {label}
     </span>
   );
@@ -36,7 +37,8 @@ function Badge({ label, color = 'neutral' }: { label: string; color?: string }) 
 
 // ── Main Component ─────────────────────────────────────────
 export default function ProveedoresPage() {
-  const { formatCurrency, empresa } = useEmpresa();
+  const { formatCurrency, empresa, userRole } = useEmpresa();
+  const isMasterOrAdmin = userRole === 'MASTER' || userRole === 'ADMINISTRADOR';
   const [sedes, setSedes] = useState<any[]>([]);
   const [sedeId, setSedeId] = useState("ALL");
 
@@ -268,9 +270,52 @@ export default function ProveedoresPage() {
     setCreandoProveedor(false);
   };
 
+  const openNuevaFacturaModal = (targetProvId?: string) => {
+    if (targetProvId) setFacProveedorId(targetProvId);
+    else setFacProveedorId('');
+    const initialSede = (sedeId && sedeId !== 'ALL') ? sedeId : (sedes[0]?.id || '');
+    setFacSede(initialSede);
+    if (initialSede && initialSede !== 'ALL') {
+      getInsumos(initialSede).then(res => {
+        if (Array.isArray(res)) setInsumosList(res);
+      });
+    }
+    setFacturaTab('insumos');
+    setErrorFactura('');
+    setShowFacturaModal(true);
+  };
+
+  const handleEliminarFactura = async (facId: string) => {
+    if (!confirm('¿Estás seguro de que deseas eliminar esta factura de proveedor? Se revertirán los registros y abonos asociados.')) return;
+    const res = await eliminarFacturaProveedor(facId);
+    if (res.success) {
+      fetchInit();
+      if (expandedId) {
+        const r2 = await getFacturasProveedor(expandedId, sedeId);
+        if (r2.success) setFacturasProveedor(r2.data || []);
+      }
+    } else {
+      alert(res.error || 'Error al eliminar factura');
+    }
+  };
+
   // ── Crear Factura ─────────────────────────────────────────
   const handleCrearFactura = async () => {
     if (!facProveedorId) { setErrorFactura('Selecciona un proveedor'); return; }
+
+    let targetSede = facSede;
+    if (!targetSede || targetSede === 'ALL') {
+      if (sedeId && sedeId !== 'ALL') {
+        targetSede = sedeId;
+      } else if (sedes.length > 0) {
+        targetSede = sedes[0].id;
+      }
+    }
+
+    if (!targetSede || targetSede === 'ALL') {
+      setErrorFactura('Debes seleccionar una sede válida para registrar la factura.');
+      return;
+    }
     
     let totalToSubmit = Number(facTotal);
     if (facturaTab === 'gastos') {
@@ -288,12 +333,12 @@ export default function ProveedoresPage() {
     let res;
     if (facturaTab === 'gastos') {
       res = await crearFacturaProveedor(
-        facProveedorId, facSede || sedeId, facNumero, facConcepto,
+        facProveedorId, targetSede, facNumero, facConcepto,
         totalToSubmit, facFecha, facMetodoPago, facMoneda, tasaFinal, facFechaVencimiento
       );
     } else {
       res = await crearFacturaProveedorConInsumos(
-        facProveedorId, facSede || sedeId, facNumero, facConcepto,
+        facProveedorId, targetSede, facNumero, facConcepto,
         facFecha, facMetodoPago, facMoneda, tasaFinal, facFechaVencimiento, facItems
       );
     }
@@ -374,8 +419,8 @@ export default function ProveedoresPage() {
   };
 
   // ── Helpers ───────────────────────────────────────────────
-  const safeDate = (d: string) => { try { return format(new Date(d), 'dd/MM/yyyy'); } catch { return d; } };
-  const safeDateTime = (d: string) => { try { return format(new Date(d), 'dd/MM/yyyy HH:mm'); } catch { return d; } };
+  const safeDate = (d: string) => formatFecha(d);
+  const safeDateTime = (d: string) => formatFecha(d, { includeTime: true });
 
   // ── RENDER ────────────────────────────────────────────────
   return (
@@ -387,7 +432,7 @@ export default function ProveedoresPage() {
           <p className="text-neutral-400 text-sm mt-0.5">Gestiona tus proveedores, facturas y pagos</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => { setShowFacturaModal(true); setFacturaTab('insumos'); setErrorFactura(''); }}
+          <button onClick={() => openNuevaFacturaModal()}
             className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-4 py-2 rounded-xl text-sm transition-colors">
             <FileText size={16} /> Nueva Factura
           </button>
@@ -517,6 +562,11 @@ export default function ProveedoresPage() {
                               <div className="flex items-center gap-2 mb-1 flex-wrap">
                                 <h5 className="font-bold text-white">{fac.concepto || 'Factura / Deuda'}</h5>
                                 {fac.numero_factura && <span className="text-xs bg-neutral-800 text-neutral-300 px-2 py-0.5 rounded">Nº {fac.numero_factura}</span>}
+                                {fac.sede_nombre && (
+                                  <span className="text-[11px] bg-neutral-800/80 text-neutral-300 border border-neutral-700/60 px-2 py-0.5 rounded-md flex items-center gap-1 font-medium">
+                                    <Store size={11} className="text-indigo-400" /> {fac.sede_nombre}
+                                  </span>
+                                )}
                                 {fac.modificado && (
                                   <span className="text-[10px] font-medium bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded border border-amber-500/20" title={`Modificada por: ${fac.modificado_por || 'Usuario'}`}>
                                     Modificada
@@ -561,6 +611,17 @@ export default function ProveedoresPage() {
                                   <FileText size={11} />
                                   Ver detalles
                                 </button>
+                                {isMasterOrAdmin && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleEliminarFactura(fac.id)}
+                                    className="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 font-medium bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 px-2 py-0.5 rounded-lg transition-colors"
+                                    title="Eliminar factura (Solo Master/Admin)"
+                                  >
+                                    <Trash2 size={11} />
+                                    Eliminar
+                                  </button>
+                                )}
                               </div>
                             </div>
                             <div className="flex items-center gap-4">
@@ -647,7 +708,7 @@ export default function ProveedoresPage() {
                             </button>
                           )}
                           <button
-                            onClick={() => { setFacProveedorId(provId); setShowFacturaModal(true); setFacturaTab('insumos'); setErrorFactura(''); }}
+                            onClick={() => openNuevaFacturaModal(provId)}
                             className="text-xs flex items-center gap-1.5 text-indigo-400 hover:text-indigo-300 border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-xl transition-colors font-semibold">
                             <Plus size={13} /> Agregar factura
                           </button>
@@ -823,17 +884,45 @@ export default function ProveedoresPage() {
               
             <div className="p-6 space-y-4 pt-4">
               {/* Campos comunes (siempre visibles) */}
-              <div>
-                <label className="block text-sm text-neutral-400 mb-1.5">Proveedor *</label>
-                <select value={facProveedorId} onChange={e => setFacProveedorId(e.target.value)}
-                  className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 appearance-none">
-                  <option className="bg-neutral-900 text-white" value="">Selecciona un proveedor...</option>
-                  {todosProveedores.map(p => <option key={p.id} value={p.id} className="bg-neutral-900 text-white">{p.nombre_comercial}{p.rif_cedula ? ` (${p.rif_cedula})` : ''}</option>)}
-                </select>
-                <button onClick={() => { setShowFacturaModal(false); setShowCrearModal(true); }}
-                  className="text-xs text-indigo-400 hover:text-indigo-300 mt-1.5 flex items-center gap-1">
-                  <Plus size={12} /> Crear nuevo proveedor
-                </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Proveedor *</label>
+                  <select value={facProveedorId} onChange={e => setFacProveedorId(e.target.value)}
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 appearance-none">
+                    <option className="bg-neutral-900 text-white" value="">Selecciona un proveedor...</option>
+                    {todosProveedores.map(p => <option key={p.id} value={p.id} className="bg-neutral-900 text-white">{p.nombre_comercial}{p.rif_cedula ? ` (${p.rif_cedula})` : ''}</option>)}
+                  </select>
+                  <button onClick={() => { setShowFacturaModal(false); setShowCrearModal(true); }}
+                    className="text-xs text-indigo-400 hover:text-indigo-300 mt-1.5 flex items-center gap-1">
+                    <Plus size={12} /> Crear nuevo proveedor
+                  </button>
+                </div>
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5 flex items-center gap-1.5">
+                    <Store size={14} className="text-indigo-400" /> Sede de la Factura *
+                  </label>
+                  <select 
+                    value={facSede} 
+                    onChange={e => {
+                      const sId = e.target.value;
+                      setFacSede(sId);
+                      if (sId && sId !== 'ALL') {
+                        getInsumos(sId).then(res => {
+                          if (Array.isArray(res)) setInsumosList(res);
+                        });
+                      }
+                    }}
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 appearance-none font-medium"
+                  >
+                    <option value="" disabled className="bg-neutral-900 text-white">Selecciona una sede...</option>
+                    {sedes.map(s => (
+                      <option key={s.id} value={s.id} className="bg-neutral-900 text-white">
+                        {s.nombre}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-[11px] text-neutral-500 mt-1.5 block">Los insumos y gastos se registrarán en esta sede</span>
+                </div>
               </div>
               
               <div className="grid grid-cols-3 gap-3">
