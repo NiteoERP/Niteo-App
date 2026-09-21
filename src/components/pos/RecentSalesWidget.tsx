@@ -86,7 +86,8 @@ export default function RecentSalesWidget() {
   };
 
   const formatTime = (isoString: string) => {
-    return new Date(isoString).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    if (!isoString) return '-';
+    return new Date(isoString).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'America/Caracas' });
   };
 
   return (

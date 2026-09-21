@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { format, startOfDay, endOfDay, addDays, differenceInCalendarDays } from 'date-fns';
-import { formatFecha } from '@/utils/date-utils';
+import { formatFecha, toLocalDateKey } from '@/utils/date-utils';
 
 // Re-exporta useSedes para que los consumidores puedan importarlo desde aquí si quieren.
 export { useSedes } from './useDashboardData';
@@ -269,8 +269,8 @@ export function useGenerateReport(empresaId: string) {
 
       const p_empresa_id = empresaId;
       const p_sede_id = sedeId === 'ALL' ? null : sedeId;
-      const p_fecha_inicio = `${format(startDate, 'yyyy-MM-dd')}T00:00:00+00:00`;
-      const p_fecha_fin = `${format(endDate, 'yyyy-MM-dd')}T23:59:59.999+00:00`;
+      const p_fecha_inicio = `${format(startDate, 'yyyy-MM-dd')}T00:00:00-04:00`;
+      const p_fecha_fin = `${format(endDate, 'yyyy-MM-dd')}T23:59:59.999-04:00`;
       const p_categoria = extra.categoriaFilter || null;
       const p_cajero_id = extra.cajeroId || null;
       const p_cliente_id = extra.clienteId || null;
@@ -683,7 +683,7 @@ export function useGenerateReport(empresaId: string) {
           > = {};
 
           for (const row of rows as any[]) {
-            const fecha = (row.fecha_venta as string)?.split('T')[0] ?? '';
+            const fecha = toLocalDateKey(row.fecha_venta);
             if (!byDate[fecha]) byDate[fecha] = { fecha, total_usd: 0, metodos: {} };
             const pagos = row.ventas_pagos || [];
             let perceivedRowTotal = 0;

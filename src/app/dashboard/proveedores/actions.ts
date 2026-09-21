@@ -681,6 +681,53 @@ export async function eliminarFacturaProveedor(facturaId: string) {
     }
   }
 
+  // 1b. Revertir inventario si la factura tenía productos terminados/mercancía (compras_mercancia)
+  if (fac.numero_factura && fac.proveedor_id) {
+    try {
+      const { data: mercs } = await adminClient.from('compras_mercancia')
+        .select('*')
+        .eq('id_empresa', profile.empresa_id)
+        .eq('nro_factura', fac.numero_factura)
+        .eq('id_proveedor', fac.proveedor_id);
+
+      if (mercs && mercs.length > 0) {
+        for (const m of mercs) {
+          if (m.id_producto && Number(m.cantidad) > 0) {
+            const { data: prod } = await adminClient.from('productos')
+              .select('id, stock_actual')
+              .eq('id', m.id_producto)
+              .single();
+
+            if (prod) {
+              const newStock = Math.max(0, Number(prod.stock_actual || 0) - Number(m.cantidad));
+              await adminClient.from('productos')
+                .update({ stock_actual: newStock })
+                .eq('id', prod.id);
+
+              await adminClient.from('movimientos_inventario').insert({
+                empresa_id: profile.empresa_id,
+                producto_id: prod.id,
+                usuario_id: user.id,
+                tipo_movimiento: 'SALIDA',
+                motivo: `Eliminación de factura (${fac.numero_factura}): reversión de mercancía`,
+                cantidad: Number(m.cantidad),
+                costo_perdido: 0,
+                fecha_movimiento: new Date().toISOString()
+              });
+            }
+          }
+        }
+        await adminClient.from('compras_mercancia')
+          .delete()
+          .eq('id_empresa', profile.empresa_id)
+          .eq('nro_factura', fac.numero_factura)
+          .eq('id_proveedor', fac.proveedor_id);
+      }
+    } catch (e) {
+      console.error('Error al revertir mercancía al eliminar factura:', e);
+    }
+  }
+
   // 2. Eliminar pagos asociados en compras_pagos
   await adminClient.from('compras_pagos').delete().eq('factura_id', facturaId);
 

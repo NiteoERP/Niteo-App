@@ -62,8 +62,8 @@ export async function getCierrePrevio(fechaStr: string, requestedSedeId?: string
       )
     `)
     .eq('sede_id', targetSedeId)
-    .gte('fecha_venta', `${fechaStr}T00:00:00.000Z`)
-    .lte('fecha_venta', `${fechaStr}T23:59:59.999Z`);
+    .gte('fecha_venta', `${fechaStr}T00:00:00-04:00`)
+    .lte('fecha_venta', `${fechaStr}T23:59:59.999-04:00`);
   
   const ventasTotales = ventasData ? ventasData.reduce((acc, curr: any) => {
     const isCortesia = curr.ventas_pagos?.some((p: any) => {
@@ -82,8 +82,8 @@ export async function getCierrePrevio(fechaStr: string, requestedSedeId?: string
     .from('gastos_sede')
     .select('monto')
     .eq('sede_id', targetSedeId)
-    .gte('fecha_gasto', `${fechaStr}T00:00:00.000Z`)
-    .lte('fecha_gasto', `${fechaStr}T23:59:59.999Z`);
+    .gte('fecha_gasto', `${fechaStr}T00:00:00-04:00`)
+    .lte('fecha_gasto', `${fechaStr}T23:59:59.999-04:00`);
   
   const gastosTotales = gastosData ? gastosData.reduce((acc, curr) => acc + Number(curr.monto), 0) : 0;
 

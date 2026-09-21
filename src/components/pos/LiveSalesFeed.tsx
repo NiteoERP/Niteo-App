@@ -166,9 +166,10 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
   };
 
   const formatDateTime = (isoString: string) => {
+    if (!isoString) return '-';
     const d = new Date(isoString);
-    const dateOpts: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short', timeZone: 'UTC' };
-    const timeOpts: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' };
+    const dateOpts: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short', timeZone: 'America/Caracas' };
+    const timeOpts: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'America/Caracas' };
     return `${d.toLocaleDateString('es-ES', dateOpts)} - ${d.toLocaleTimeString('en-US', timeOpts)}`;
   };
 

@@ -38,8 +38,16 @@ export function generarTicketPOS(factura: any, empresa: any, items: any[], pagos
 
   // Cabecera Empresa
   addCenteredText(empresa?.nombre_comercial || 'Niteo POS', yPos, 14, true);
-  yPos += 5;
-  addCenteredText(`Fecha: ${format(new Date(factura.fecha_venta), 'dd/MM/yyyy HH:mm')}`, yPos, 8);
+  const fechaStr = new Date(factura.fecha_venta).toLocaleString('es-VE', {
+    timeZone: 'America/Caracas',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  });
+  addCenteredText(`Fecha: ${fechaStr}`, yPos, 8);
   yPos += 4;
   addCenteredText(`Ticket: ${factura.numero_documento}`, yPos, 8);
   yPos += 6;
