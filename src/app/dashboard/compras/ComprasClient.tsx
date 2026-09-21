@@ -14,7 +14,10 @@ import { formatFecha } from '@/utils/date-utils';
 
 import SedeSelector from "@/components/inventario/SedeSelector";
 export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes: any[], activeSedeId: string, profile: any }) {
-  const { empresa } = useEmpresa();
+  const { empresa, userRole, permisos } = useEmpresa();
+  const roleUpper = (userRole || profile?.rol || profile?.role || '').toUpperCase();
+  const hasPermisoEliminar = (Array.isArray(permisos) && permisos.includes('eliminar_facturas')) || (Array.isArray(profile?.permisos) && profile.permisos.includes('eliminar_facturas'));
+  const canDeleteFactura = roleUpper === 'MASTER' || roleUpper === 'ADMINISTRADOR' || hasPermisoEliminar;
   const defaultPaymentMethods = ['Efectivo USD', 'Zelle', 'Pago Móvil', 'Transferencia Bs', 'Punto de Venta'];
     const [dbMetodos, setDbMetodos] = useState<any[]>([]);
   
@@ -754,7 +757,9 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
                           setEditingRow({...compra, parsed_detalles: parsed, edit_items: parsed?.items ? JSON.parse(JSON.stringify(parsed.items)) : []}); 
                           setIsEditModalOpen(true); 
                         }} className="text-indigo-400 hover:text-indigo-300 p-1"><Edit2 size={16}/></button>
-                        <button onClick={() => handleEliminarCompra(compra.id)} className="text-neutral-500 hover:text-rose-400 p-1"><Trash2 size={16}/></button>
+                        {canDeleteFactura && (
+                          <button onClick={() => handleEliminarCompra(compra.id)} className="text-neutral-500 hover:text-rose-400 p-1" title="Eliminar compra"><Trash2 size={16}/></button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -810,7 +815,9 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
                           setEditingRow({...compra, parsed_detalles: parsed, edit_items: parsed?.items ? JSON.parse(JSON.stringify(parsed.items)) : []}); 
                           setIsEditModalOpen(true); 
                         }} className="text-indigo-400 hover:text-indigo-300 p-2"><Edit2 size={18}/></button>
-                        <button onClick={() => handleEliminarCompra(compra.id)} className="text-neutral-500 hover:text-rose-400 p-2"><Trash2 size={18}/></button>
+                        {canDeleteFactura && (
+                          <button onClick={() => handleEliminarCompra(compra.id)} className="text-neutral-500 hover:text-rose-400 p-2" title="Eliminar compra"><Trash2 size={18}/></button>
+                        )}
                       </div>
                     </div>
                   </div>

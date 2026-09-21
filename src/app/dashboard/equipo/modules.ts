@@ -1,4 +1,4 @@
-﻿export interface ModuleDefinition {
+export interface ModuleDefinition {
   id: string;
   label: string;
   description: string;
@@ -103,6 +103,12 @@ export const AVAILABLE_MODULES: ModuleDefinition[] = [
     id: 'ver_todas_compras', 
     label: 'Ver Compras Globales', 
     description: 'Visualizar compras de todas las sucursales sin restricción de sede', 
+    category: 'admin' 
+  },
+  { 
+    id: 'eliminar_facturas', 
+    label: 'Permitir Eliminar Facturas', 
+    description: 'Autoriza al usuario a eliminar facturas y compras de proveedores con reversión de stock', 
     category: 'admin' 
   },
 ];

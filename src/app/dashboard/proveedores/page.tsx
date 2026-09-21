@@ -38,9 +38,10 @@ function Badge({ label, color = 'neutral' }: { label: string; color?: string }) 
 
 // ── Main Component ─────────────────────────────────────────
 export default function ProveedoresPage() {
-  const { formatCurrency, empresa, userRole } = useEmpresa();
+  const { formatCurrency, empresa, userRole, permisos } = useEmpresa();
   const roleUpper = (userRole || '').toUpperCase();
-  const isMasterOrAdmin = roleUpper === 'MASTER' || roleUpper === 'ADMINISTRADOR';
+  const hasPermisoEliminar = Array.isArray(permisos) && permisos.includes('eliminar_facturas');
+  const isMasterOrAdmin = roleUpper === 'MASTER' || roleUpper === 'ADMINISTRADOR' || hasPermisoEliminar;
   const [sedes, setSedes] = useState<any[]>([]);
   const [sedeId, setSedeId] = useState("ALL");
 

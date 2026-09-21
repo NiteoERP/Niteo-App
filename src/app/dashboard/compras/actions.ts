@@ -306,15 +306,65 @@ export async function actualizarCompraPuntual(id_compra: string, data: {
 
 export async function eliminarCompraPuntual(id_compra: string) {
   try {
-    const { supabase, idEmpresa } = await getAuthContext();
-    // Borrado fÃƒÂ­sico
-    const { error } = await supabase
+    const { idEmpresa, user, userRole, permisos } = await getAuthContext();
+    const roleUpper = (userRole || '').toUpperCase();
+    const hasPermiso = Array.isArray(permisos) && permisos.includes('eliminar_facturas');
+    const isMasterOrAdmin =
+      roleUpper === 'MASTER' ||
+      roleUpper === 'ADMINISTRADOR' ||
+      roleUpper === 'ADMIN' ||
+      hasPermiso;
+
+    if (!isMasterOrAdmin) {
+      return { success: false, error: 'No tienes permisos asignados para eliminar compras o facturas.' };
+    }
+
+    const { createClient: createAdminClient } = await import('@supabase/supabase-js');
+    const admin = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    // Si tiene items de insumos, revertir inventario
+    const { data: compra } = await admin.from('compras_puntuales').select('*').eq('id', id_compra).single();
+    if (compra) {
+      try {
+        let detObj = typeof compra.detalles === 'string' ? JSON.parse(compra.detalles) : compra.detalles;
+        if (detObj && detObj.is_insumos && Array.isArray(detObj.items)) {
+          for (const item of detObj.items) {
+            if (item.insumo_id && item.cantidad > 0) {
+              const { data: ins } = await admin.from('inventario_insumos').select('id, cantidad_actual').eq('id', item.insumo_id).single();
+              if (ins) {
+                const newCant = Math.max(0, Number(ins.cantidad_actual || 0) - Number(item.cantidad));
+                await admin.from('inventario_insumos').update({ cantidad_actual: newCant }).eq('id', ins.id);
+                await admin.from('movimientos_inventario').insert({
+                  empresa_id: idEmpresa,
+                  insumo_id: ins.id,
+                  usuario_id: user.id,
+                  tipo_movimiento: 'SALIDA',
+                  motivo: 'Eliminación de compra de insumos: reversión de stock',
+                  cantidad: Number(item.cantidad),
+                  costo_perdido: 0,
+                  fecha_movimiento: new Date().toISOString()
+                });
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Error al revertir inventario en compras:', e);
+      }
+    }
+
+    const { error } = await admin
       .from('compras_puntuales')
       .delete()
       .eq('id', id_compra)
       .eq('id_empresa', idEmpresa);
       
     if (error) throw error;
+    revalidatePath('/dashboard/compras');
+    revalidatePath('/dashboard/inventario');
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message };

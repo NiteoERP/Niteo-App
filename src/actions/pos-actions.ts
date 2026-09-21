@@ -180,12 +180,12 @@ export async function getHistorialVentasCompleto(sedeId: string, fechaFiltro?: s
       const [y, m] = fechaFiltro.split('-').map(Number);
       const lastDay = new Date(y, m, 0).getDate();
       query = query
-        .gte('fecha_venta', `${fechaFiltro}-01T00:00:00+00:00`)
-        .lte('fecha_venta', `${fechaFiltro}-${String(lastDay).padStart(2, '0')}T23:59:59.999+00:00`);
+        .gte('fecha_venta', `${fechaFiltro}-01T00:00:00-04:00`)
+        .lte('fecha_venta', `${fechaFiltro}-${String(lastDay).padStart(2, '0')}T23:59:59.999-04:00`);
     } else { // yyyy-MM-dd
       query = query
-        .gte('fecha_venta', `${fechaFiltro}T00:00:00+00:00`)
-        .lte('fecha_venta', `${fechaFiltro}T23:59:59.999+00:00`);
+        .gte('fecha_venta', `${fechaFiltro}T00:00:00-04:00`)
+        .lte('fecha_venta', `${fechaFiltro}T23:59:59.999-04:00`);
     }
   }
   
@@ -240,8 +240,8 @@ export async function getResumenVerificacionMes(sedeId: string, yearMonth: strin
     .eq('sede_id', sedeId)
     .neq('numero_documento', 'TEST')
     .eq('estado_activo', true)
-    .gte('fecha_venta', `${yearMonth}-01T00:00:00+00:00`)
-    .lte('fecha_venta', `${yearMonth}-${String(lastDay).padStart(2, '0')}T23:59:59.999+00:00`);
+    .gte('fecha_venta', `${yearMonth}-01T00:00:00-04:00`)
+    .lte('fecha_venta', `${yearMonth}-${String(lastDay).padStart(2, '0')}T23:59:59.999-04:00`);
 
   if (error || !data) {
     console.error('Error fetching monthly verification summary:', error);
@@ -251,7 +251,8 @@ export async function getResumenVerificacionMes(sedeId: string, yearMonth: strin
   const summary: Record<string, { total: number; verified: number }> = {};
   for (const row of data) {
     if (!row.fecha_venta) continue;
-    const dateKey = row.fecha_venta.slice(0, 10);
+    // Agrupar por la fecha exacta en la zona horaria de Venezuela (America/Caracas)
+    const dateKey = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Caracas' }).format(new Date(row.fecha_venta));
     if (!summary[dateKey]) {
       summary[dateKey] = { total: 0, verified: 0 };
     }

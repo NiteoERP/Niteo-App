@@ -585,21 +585,23 @@ export async function eliminarFacturaProveedor(facturaId: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'No autenticado' };
 
-  const { data: profile } = await supabase.from('perfiles').select('empresa_id, rol').eq('id', user.id).single();
+  const { data: profile } = await supabase.from('perfiles').select('empresa_id, rol, permisos').eq('id', user.id).single();
   if (!profile) return { success: false, error: 'Perfil no encontrado' };
 
   const rolProfile = (profile.rol || '').toUpperCase();
   const rolMeta = (user.app_metadata?.user_role || '').toUpperCase();
+  const hasPermiso = Array.isArray(profile.permisos) && profile.permisos.includes('eliminar_facturas');
   const isMasterOrAdmin =
     rolProfile === 'MASTER' ||
     rolProfile === 'ADMINISTRADOR' ||
     rolProfile === 'ADMIN' ||
     rolMeta === 'MASTER' ||
     rolMeta === 'ADMINISTRADOR' ||
-    rolMeta === 'ADMIN';
+    rolMeta === 'ADMIN' ||
+    hasPermiso;
 
   if (!isMasterOrAdmin) {
-    return { success: false, error: 'Solo usuarios con rol Master o Administrador pueden eliminar facturas de proveedores.' };
+    return { success: false, error: 'No tienes permisos asignados para eliminar facturas de proveedores. Contacta al Master para que te habilite el permiso en Equipo.' };
   }
 
   const adminClient = createAdminClient();
