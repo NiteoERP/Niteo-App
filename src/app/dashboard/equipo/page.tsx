@@ -6,8 +6,12 @@ import { redirect } from 'next/navigation';
 export default async function EquipoPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const empresaId = user?.app_metadata?.empresa_id;
-  const userRole = user?.app_metadata?.user_role;
+
+  if (!user) redirect('/login');
+
+  const { data: currentProfile } = await supabase.from('perfiles').select('empresa_id, rol').eq('id', user.id).single();
+  const empresaId = user?.app_metadata?.empresa_id || currentProfile?.empresa_id;
+  const userRole = user?.app_metadata?.user_role || currentProfile?.rol;
 
   if (!empresaId) return <div className="p-8 text-rose-400">Error: No tienes empresa configurada.</div>;
   if (userRole !== 'MASTER') redirect('/dashboard'); // Solo Master puede ver el equipo

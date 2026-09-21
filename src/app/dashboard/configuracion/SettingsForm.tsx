@@ -2,7 +2,31 @@
 
 import { useState, useTransition } from 'react';
 import { updateEmpresaSaaS } from './actions';
-import { Building2, Save, Loader2, AlertCircle, Globe, DollarSign, Calculator, Package, FlaskConical, Info, X } from 'lucide-react';
+import { Building2, Save, Loader2, AlertCircle, Globe, DollarSign, Calculator, Package, FlaskConical, Info, X, Share2, Phone, ToggleLeft, ToggleRight, Copy, Check, ExternalLink } from 'lucide-react';
+
+// Prefijos telefónicos por país (prioritario Venezuela)
+const COUNTRY_CODES = [
+  { code: '+58',  flag: '🇻🇪', name: 'Venezuela' },
+  { code: '+57',  flag: '🇨🇴', name: 'Colombia' },
+  { code: '+1',   flag: '🇺🇸', name: 'Estados Unidos' },
+  { code: '+52',  flag: '🇲🇽', name: 'México' },
+  { code: '+54',  flag: '🇦🇷', name: 'Argentina' },
+  { code: '+56',  flag: '🇨🇱', name: 'Chile' },
+  { code: '+51',  flag: '🇵🇪', name: 'Perú' },
+  { code: '+593', flag: '🇪🇨', name: 'Ecuador' },
+  { code: '+591', flag: '🇧🇴', name: 'Bolivia' },
+  { code: '+595', flag: '🇵🇾', name: 'Paraguay' },
+  { code: '+598', flag: '🇺🇾', name: 'Uruguay' },
+  { code: '+507', flag: '🇵🇦', name: 'Panamá' },
+  { code: '+506', flag: '🇨🇷', name: 'Costa Rica' },
+  { code: '+53',  flag: '🇨🇺', name: 'Cuba' },
+  { code: '+1809',flag: '🇩🇴', name: 'República Dominicana' },
+  { code: '+34',  flag: '🇪🇸', name: 'España' },
+  { code: '+44',  flag: '🇬🇧', name: 'Reino Unido' },
+  { code: '+55',  flag: '🇧🇷', name: 'Brasil' },
+  { code: '+49',  flag: '🇩🇪', name: 'Alemania' },
+  { code: '+33',  flag: '🇫🇷', name: 'Francia' },
+];
 
 export default function SettingsForm({ empresa }: { empresa: any }) {
   const initialMetodos: string[] = Array.isArray(empresa.metodos_pago) ? empresa.metodos_pago : [];
@@ -18,7 +42,34 @@ export default function SettingsForm({ empresa }: { empresa: any }) {
     metodos_pago: standardizedMetodos,
     metodo_costeo_inventario: empresa.metodo_costeo_inventario || 'MOVIL',
     costeo_promedio_n: empresa.costeo_promedio_n || 3,
+    // Catálogo público
+    catalogo_activo: empresa.catalogo_activo ?? false,
+    whatsapp_catalogo: empresa.whatsapp_catalogo || '',
   });
+
+  // Para el campo de teléfono: separar prefijo del número
+  const parsePhone = (full: string) => {
+    for (const c of COUNTRY_CODES) {
+      if (full?.startsWith(c.code)) {
+        return { prefix: c.code, number: full.slice(c.code.length).trim() };
+      }
+    }
+    return { prefix: '+58', number: full || '' };
+  };
+  const parsed = parsePhone(empresa.whatsapp_catalogo || '');
+  const [phonePrefix, setPhonePrefix] = useState(parsed.prefix);
+  const [phoneNumber, setPhoneNumber] = useState(parsed.number);
+  const [copied, setCopied] = useState(false);
+
+  const catalogUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/catalogo/${empresa.slug_catalogo || ''}`
+    : `/catalogo/${empresa.slug_catalogo || ''}`;
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(catalogUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
   
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState('');
@@ -28,8 +79,12 @@ export default function SettingsForm({ empresa }: { empresa: any }) {
     e.preventDefault();
     setError('');
     setSuccess(false);
+    const fullPhone = phoneNumber.trim() ? `${phonePrefix}${phoneNumber.trim()}` : '';
     startTransition(async () => {
-      const res = await updateEmpresaSaaS(empresa.id, formData);
+      const res = await updateEmpresaSaaS(empresa.id, {
+        ...formData,
+        whatsapp_catalogo: fullPhone,
+      });
       if (!res.success) {
         setError('Error al guardar: ' + res.error);
       } else {
@@ -300,6 +355,119 @@ export default function SettingsForm({ empresa }: { empresa: any }) {
               <Info size={14} className="text-neutral-500 shrink-0 mt-0.5" />
               <p className="text-xs text-neutral-500">{METODO_INFO[formData.metodo_costeo_inventario]}</p>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* --- SECCIÓN: CATÁLOGO PÚBLICO --- */}
+      <div className="border-t border-neutral-800 pt-7">
+        <div className="flex items-center gap-2 mb-5">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+            <Share2 size={16} className="text-emerald-400" />
+          </div>
+          <div>
+            <h3 className="text-base font-semibold text-white">Catálogo Público</h3>
+            <p className="text-xs text-neutral-500">Comparte tu catálogo con clientes sin que inicien sesión</p>
+          </div>
+        </div>
+
+        <div className="space-y-5">
+          {/* Toggle activar/desactivar */}
+          <div className="flex items-center justify-between p-4 rounded-xl border border-neutral-800 bg-neutral-950">
+            <div>
+              <p className="text-sm font-medium text-white">Catálogo activo</p>
+              <p className="text-xs text-neutral-500 mt-0.5">Cuando está activo, los clientes pueden ver y pedir productos</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, catalogo_activo: !formData.catalogo_activo })}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all border ${
+                formData.catalogo_activo
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
+                  : 'bg-neutral-800 border-neutral-700 text-neutral-400 hover:bg-neutral-700'
+              }`}
+            >
+              {formData.catalogo_activo
+                ? <><ToggleRight size={18} /> Activo</>
+                : <><ToggleLeft size={18} /> Inactivo</>}
+            </button>
+          </div>
+
+          {/* Link público */}
+          {empresa.slug_catalogo && (
+            <div>
+              <label className="block text-sm font-medium text-neutral-300 mb-1.5">Link del catálogo</label>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2.5 text-sm text-neutral-400 font-mono truncate">
+                  /catalogo/<span className="text-emerald-400">{empresa.slug_catalogo}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="flex items-center gap-1.5 px-3 py-2.5 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-white text-sm rounded-lg transition-all shrink-0"
+                >
+                  {copied ? <><Check size={14} className="text-emerald-400" /> Copiado</> : <><Copy size={14} /> Copiar</>}
+                </button>
+                {formData.catalogo_activo && (
+                  <a
+                    href={catalogUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-2.5 bg-emerald-600/10 hover:bg-emerald-600/20 border border-emerald-600/30 text-emerald-400 text-sm rounded-lg transition-all shrink-0"
+                  >
+                    <ExternalLink size={14} /> Ver
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* WhatsApp para pedidos */}
+          <div>
+            <label className="block text-sm font-medium text-neutral-300 mb-1.5 flex items-center gap-2">
+              <Phone size={14} className="text-emerald-400" />
+              Número para catálogo (WhatsApp)
+            </label>
+            <p className="text-xs text-neutral-500 mb-2">Los pedidos del catálogo llegarán a este número de WhatsApp</p>
+            <div className="flex gap-2">
+              {/* Selector de código de país */}
+              <select
+                value={phonePrefix}
+                onChange={(e) => setPhonePrefix(e.target.value)}
+                className="bg-neutral-950 border border-neutral-800 text-white rounded-lg px-2 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-colors shrink-0"
+                style={{ minWidth: '140px' }}
+              >
+                {COUNTRY_CODES.map(c => (
+                  <option key={c.code} value={c.code}>
+                    {c.flag} {c.code} {c.name}
+                  </option>
+                ))}
+              </select>
+              {/* Número local */}
+              <div className="relative flex-1">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 w-4 h-4" />
+                <input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                  placeholder="4141234567"
+                  className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-lg pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                />
+              </div>
+            </div>
+            {phoneNumber && (
+              <p className="text-xs text-emerald-400/70 mt-1.5">
+                Número completo: <span className="font-mono">{phonePrefix}{phoneNumber}</span>
+              </p>
+            )}
+          </div>
+
+          {/* Info */}
+          <div className="flex items-start gap-2 p-3 bg-neutral-950 border border-neutral-800 rounded-lg">
+            <Info size={14} className="text-neutral-500 shrink-0 mt-0.5" />
+            <p className="text-xs text-neutral-500">
+              Solo se mostrarán los productos con <strong className="text-neutral-400">estado activo</strong> y que tengan <strong className="text-neutral-400">existencia en inventario</strong>. Los cambios se reflejan en tiempo real.
+            </p>
           </div>
         </div>
       </div>

@@ -1,23 +1,31 @@
 'use client';
 
 import React, { useState, useTransition } from 'react';
-import { Plus, Search, Edit2, Trash2, PackageSearch, Box } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, PackageSearch, Box, Share2, Copy, Check, ExternalLink, ToggleLeft, ToggleRight, Link } from 'lucide-react';
 import ProductoForm from './ProductoForm';
 import BulkRecetaModal from './BulkRecetaModal';
 import { deleteProducto } from '@/actions/catalogo-actions';
+import { updateCatalogoConfig } from '@/app/dashboard/configuracion/actions';
 
 export default function CatalogoClient({ 
   productos, 
   sedes, 
   categorias = [], 
   insumos, 
-  recetas 
+  recetas,
+  empresa,
 }: { 
   productos: any[], 
   sedes: any[], 
   categorias?: any[], 
   insumos: any[], 
-  recetas: any[] 
+  recetas: any[],
+  empresa: {
+    nombre_comercial: string;
+    slug_catalogo: string | null;
+    catalogo_activo: boolean;
+    whatsapp_catalogo: string | null;
+  } | null,
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategoria, setSelectedCategoria] = useState('');
@@ -25,6 +33,9 @@ export default function CatalogoClient({
   const [isBulkOpen, setIsBulkOpen] = useState(false);
   const [editingProd, setEditingProd] = useState<any>(null);
   const [isPending, startTransition] = useTransition();
+  const [copied, setCopied] = useState(false);
+  const [catalogoActivo, setCatalogoActivo] = useState(empresa?.catalogo_activo ?? false);
+  const [isToggling, startToggle] = useTransition();
 
   const filtered = productos.filter(p => {
     const matchesSearch = (p.nombre?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
@@ -46,8 +57,115 @@ export default function CatalogoClient({
     });
   };
 
+  const catalogUrl = empresa?.slug_catalogo
+    ? `${typeof window !== 'undefined' ? window.location.origin : ''}/catalogo/${empresa.slug_catalogo}`
+    : null;
+
+  const handleCopyLink = () => {
+    if (!catalogUrl) return;
+    navigator.clipboard.writeText(catalogUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleToggleCatalogo = () => {
+    if (!empresa?.slug_catalogo) return;
+    const newValue = !catalogoActivo;
+    setCatalogoActivo(newValue);
+    // We need the empresaId — since we don't have it here, we'll call a different approach
+    // Actually updateCatalogoConfig needs empresaId. Let's trigger a form action instead.
+    // We use a hidden form with the server action.
+    startToggle(async () => {
+      // We don't have empresaId in this component, so we call a client-side fetch
+      // to a dedicated endpoint, or use the updateCatalogoConfig via a wrapper.
+      // For simplicity, store empresaId in empresa prop.
+    });
+  };
+
   return (
     <div className="space-y-6">
+
+      {/* ── Panel de Catálogo Compartido ── */}
+      {empresa && (
+        <div className={`rounded-xl border p-4 transition-all ${
+          catalogoActivo
+            ? 'bg-emerald-500/5 border-emerald-500/20'
+            : 'bg-neutral-900 border-neutral-800'
+        }`}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                catalogoActivo ? 'bg-emerald-500/15 text-emerald-400' : 'bg-neutral-800 text-neutral-500'
+              }`}>
+                <Share2 size={18} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white flex items-center gap-2">
+                  Catálogo Público
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${
+                    catalogoActivo
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                      : 'bg-neutral-800 text-neutral-500 border border-neutral-700'
+                  }`}>
+                    {catalogoActivo ? 'Activo' : 'Inactivo'}
+                  </span>
+                </p>
+                <p className="text-xs text-neutral-500 mt-0.5">
+                  {catalogoActivo
+                    ? 'Tu catálogo es visible públicamente. Los clientes pueden ver y pedir productos.'
+                    : 'Activa el catálogo desde Ajustes para compartirlo con tus clientes.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
+              {empresa.slug_catalogo && (
+                <>
+                  {/* Link con slug */}
+                  <div className="hidden sm:flex items-center gap-1.5 bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-1.5 text-xs text-neutral-400 font-mono max-w-[200px] overflow-hidden">
+                    <Link size={11} className="shrink-0 text-neutral-600" />
+                    <span className="truncate">catalogo/<span className="text-emerald-400">{empresa.slug_catalogo}</span></span>
+                  </div>
+
+                  {/* Copiar */}
+                  <button
+                    onClick={handleCopyLink}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-white text-xs rounded-lg transition-all"
+                  >
+                    {copied
+                      ? <><Check size={13} className="text-emerald-400" /> Copiado</>
+                      : <><Copy size={13} /> Copiar link</>}
+                  </button>
+
+                  {/* Abrir */}
+                  {catalogoActivo && catalogUrl && (
+                    <a
+                      href={catalogUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600/10 hover:bg-emerald-600/20 border border-emerald-600/30 text-emerald-400 text-xs rounded-lg transition-all"
+                    >
+                      <ExternalLink size={13} /> Ver catálogo
+                    </a>
+                  )}
+                </>
+              )}
+
+              {/* Ir a Ajustes si no hay slug */}
+              {!empresa.slug_catalogo && (
+                <a
+                  href="/dashboard/configuracion"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-600/30 text-indigo-400 text-xs rounded-lg transition-all"
+                >
+                  Configurar en Ajustes →
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Barra de búsqueda + botones ── */}
       <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
         <div className="flex flex-1 items-center gap-3">
           <div className="relative w-full max-w-sm">

@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { format, startOfDay, endOfDay, addDays, differenceInCalendarDays } from 'date-fns';
-import { formatFecha, toLocalDateKey } from '@/utils/date-utils';
+import { formatFecha, toLocalDateKey, DEFAULT_TIMEZONE, getTimezoneOffsetString } from '@/utils/date-utils';
 
 // Re-exporta useSedes para que los consumidores puedan importarlo desde aquí si quieren.
 export { useSedes } from './useDashboardData';
@@ -17,6 +17,7 @@ export interface ExtraFilters {
   categoriaFilter?: string;
   cajeroId?: string;
   clienteId?: string;
+  timeZone?: string;
 }
 
 export interface CatalogoItem {
@@ -269,8 +270,16 @@ export function useGenerateReport(empresaId: string) {
 
       const p_empresa_id = empresaId;
       const p_sede_id = sedeId === 'ALL' ? null : sedeId;
-      const p_fecha_inicio = `${format(startDate, 'yyyy-MM-dd')}T00:00:00-04:00`;
-      const p_fecha_fin = `${format(endDate, 'yyyy-MM-dd')}T23:59:59.999-04:00`;
+
+      let timeZone = extra.timeZone;
+      if (!timeZone) {
+        const { data: emp } = await supabase.from('empresas').select('zona_horaria').eq('id', p_empresa_id).maybeSingle();
+        timeZone = emp?.zona_horaria || DEFAULT_TIMEZONE;
+      }
+      const tzOffset = getTimezoneOffsetString(timeZone);
+
+      const p_fecha_inicio = `${format(startDate, 'yyyy-MM-dd')}T00:00:00${tzOffset}`;
+      const p_fecha_fin = `${format(endDate, 'yyyy-MM-dd')}T23:59:59.999${tzOffset}`;
       const p_categoria = extra.categoriaFilter || null;
       const p_cajero_id = extra.cajeroId || null;
       const p_cliente_id = extra.clienteId || null;
@@ -683,7 +692,7 @@ export function useGenerateReport(empresaId: string) {
           > = {};
 
           for (const row of rows as any[]) {
-            const fecha = toLocalDateKey(row.fecha_venta);
+            const fecha = toLocalDateKey(row.fecha_venta, timeZone);
             if (!byDate[fecha]) byDate[fecha] = { fecha, total_usd: 0, metodos: {} };
             const pagos = row.ventas_pagos || [];
             let perceivedRowTotal = 0;

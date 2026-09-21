@@ -7,16 +7,19 @@ import Link from 'next/link';
 export default async function DespachosPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const empresaId = user?.app_metadata?.empresa_id;
 
-  if (!empresaId) return <div className="p-8 text-rose-400">Error: No tienes empresa configurada.</div>;
+  if (!user) return <div className="p-8 text-rose-400">Error: No tienes empresa configurada.</div>;
 
   // Obtener perfil para restricción de sedes
   const { data: perfil } = await supabase
     .from('perfiles')
-    .select('sede_id, rol')
+    .select('empresa_id, sede_id, rol')
     .eq('id', user.id)
     .single();
+
+  const empresaId = user?.app_metadata?.empresa_id || perfil?.empresa_id;
+
+  if (!empresaId) return <div className="p-8 text-rose-400">Error: No tienes empresa configurada.</div>;
 
   const userRole = user.app_metadata?.user_role || perfil?.rol || 'CAJERO';
   const userSedeId = perfil?.sede_id || '';

@@ -11,7 +11,8 @@ export default async function ClientesPage() {
     redirect('/login');
   }
 
-  const empresaId = user.app_metadata?.empresa_id;
+  const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
+  const empresaId = user.app_metadata?.empresa_id || perfil?.empresa_id;
   
   if (!empresaId) {
     return <div className="p-8 text-rose-400">Error: No tienes empresa configurada.</div>;

@@ -48,6 +48,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Rutas públicas — sin verificación de auth (catálogo compartido)
+  if (request.nextUrl.pathname.startsWith('/catalogo')) {
+    return supabaseResponse;
+  }
+
   // Proteger rutas /dashboard
   if (request.nextUrl.pathname.startsWith('/dashboard')) {
     if (!user) {

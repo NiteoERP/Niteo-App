@@ -35,13 +35,15 @@ export default async function CatalogoPage() {
     { data: productos },
     { data: categorias },
     { data: insumos },
-    { data: recetas }
+    { data: recetas },
+    { data: empresa }
   ] = await Promise.all([
     supabase.from('sedes').select('id, nombre_sede').eq('empresa_id', empresaId).order('nombre_sede'),
     supabase.from('productos').select('*, categorias(id, nombre)').eq('empresa_id', empresaId).order('nombre'),
     supabase.from('categorias').select('id, nombre').eq('empresa_id', empresaId).order('nombre'),
     supabase.from('inventario_insumos').select('id, nombre, unidad_medida, costo_promedio, cantidad_actual, sede_id').eq('empresa_id', empresaId).order('nombre'),
-    supabase.from('recetas').select('*').eq('empresa_id', empresaId)
+    supabase.from('recetas').select('*').eq('empresa_id', empresaId),
+    supabase.from('empresas').select('nombre_comercial, slug_catalogo, catalogo_activo, whatsapp_catalogo').eq('id', empresaId).single(),
   ]);
 
   return (
@@ -60,7 +62,8 @@ export default async function CatalogoPage() {
         sedes={sedes || []} 
         categorias={categorias || []}
         insumos={insumos || []} 
-        recetas={recetas || []} 
+        recetas={recetas || []}
+        empresa={empresa || null}
       />
     </div>
   );

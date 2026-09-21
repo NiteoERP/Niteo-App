@@ -13,15 +13,16 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
   const params = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const empresaId = user?.app_metadata?.empresa_id;
-
-  if (!empresaId) return <div className="p-8 text-rose-400">Error: No tienes empresa configurada.</div>;
 
   const { data: profile } = await supabase
     .from('perfiles')
-    .select('sede_id, rol, permisos, permiso_venta_costo')
+    .select('empresa_id, sede_id, rol, permisos, permiso_venta_costo')
     .eq('id', user?.id)
     .single();
+
+  const empresaId = user?.app_metadata?.empresa_id || profile?.empresa_id;
+
+  if (!empresaId) return <div className="p-8 text-rose-400">Error: No tienes empresa configurada.</div>;
   
   // Consultar sedes de la empresa directamente con la sesión autenticada
   const { data: sedesData } = await supabase

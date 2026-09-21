@@ -24,7 +24,7 @@ export default async function SettingsPage() {
   if (empresaId) {
     const { data: empresa } = await supabase
       .from('empresas')
-      .select('*')
+      .select('*, slug_catalogo, whatsapp_catalogo, catalogo_activo')
       .eq('id', empresaId)
       .single();
     

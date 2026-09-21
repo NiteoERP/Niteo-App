@@ -27,16 +27,19 @@ export async function getCierrePrevio(fechaStr: string, requestedSedeId?: string
   const targetSedeId = requestedSedeId || profile.sede_id;
   if (!targetSedeId) throw new Error("Debe seleccionar una sede para consultar el cierre");
 
-  // 1. Consultar la Tasa de Cambio (Manual si la empresa la definió, o la más reciente de tasa_cambiaria)
+  // 1. Consultar la Tasa de Cambio y Zona Horaria de la Empresa
   let tasaCambio = 814.69; // Valor de fallback
-  const { data: empTasa } = await supabase
+  const { data: empData } = await supabase
     .from('empresas')
-    .select('tipo_tasa, tasa_manual')
+    .select('tipo_tasa, tasa_manual, zona_horaria')
     .eq('id', profile.empresa_id)
     .maybeSingle();
 
-  if (empTasa && empTasa.tipo_tasa === 'MANUAL' && Number(empTasa.tasa_manual) > 0) {
-    tasaCambio = Number(empTasa.tasa_manual);
+  const timeZone = empData?.zona_horaria || DEFAULT_TIMEZONE;
+  const tzOffset = getTimezoneOffsetString(timeZone);
+
+  if (empData && empData.tipo_tasa === 'MANUAL' && Number(empData.tasa_manual) > 0) {
+    tasaCambio = Number(empData.tasa_manual);
   } else {
     const { data: tasaData } = await supabase
       .from('tasa_cambiaria')
@@ -63,8 +66,8 @@ export async function getCierrePrevio(fechaStr: string, requestedSedeId?: string
       )
     `)
     .eq('sede_id', targetSedeId)
-    .gte('fecha_venta', `${fechaStr}T00:00:00-04:00`)
-    .lte('fecha_venta', `${fechaStr}T23:59:59.999-04:00`);
+    .gte('fecha_venta', `${fechaStr}T00:00:00${tzOffset}`)
+    .lte('fecha_venta', `${fechaStr}T23:59:59.999${tzOffset}`);
   
   const ventasTotales = ventasData ? ventasData.reduce((acc, curr: any) => {
     const isCortesia = curr.ventas_pagos?.some((p: any) => {
@@ -83,8 +86,8 @@ export async function getCierrePrevio(fechaStr: string, requestedSedeId?: string
     .from('gastos_sede')
     .select('monto')
     .eq('sede_id', targetSedeId)
-    .gte('fecha_gasto', `${fechaStr}T00:00:00-04:00`)
-    .lte('fecha_gasto', `${fechaStr}T23:59:59.999-04:00`);
+    .gte('fecha_gasto', `${fechaStr}T00:00:00${tzOffset}`)
+    .lte('fecha_gasto', `${fechaStr}T23:59:59.999${tzOffset}`);
   
   const gastosTotales = gastosData ? gastosData.reduce((acc, curr) => acc + Number(curr.monto), 0) : 0;
 

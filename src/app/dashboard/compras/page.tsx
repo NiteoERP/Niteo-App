@@ -9,11 +9,12 @@ export default async function ComprasPage({ searchParams }: { searchParams: Prom
   const params = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const empresaId = user?.app_metadata?.empresa_id;
+
+  const { data: profile } = await supabase.from('perfiles').select('empresa_id, sede_id, rol, permisos').eq('id', user?.id).single();
+  const empresaId = user?.app_metadata?.empresa_id || profile?.empresa_id;
 
   if (!empresaId) return <div className="p-8 text-rose-400">Error: No tienes empresa configurada.</div>;
 
-  const { data: profile } = await supabase.from('perfiles').select('sede_id, rol, permisos').eq('id', user?.id).single();
   const { data: sedesDb } = await supabase.from('sedes').select('id, nombre_sede').eq('empresa_id', empresaId);
   const sedes = sedesDb || [];
   
