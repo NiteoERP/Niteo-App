@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useState, useMemo } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { useEmpresa } from '@/components/providers/EmpresaProvider';
 import { VentaPOS } from '@/actions/pos-actions';
 import { Eye, EyeOff, Receipt, Clock, CheckCircle2, ChevronDown, ChevronUp, Users, CreditCard, Search } from 'lucide-react';
 import { normalizePaymentKey, getCanonicalPaymentMethodName, unifyPaymentMethods } from '@/utils/payment-methods';
@@ -11,6 +12,9 @@ interface LiveSalesFeedProps {
 }
 
 export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedProps) {
+  const { timeZone, empresa } = useEmpresa();
+  const activeTz = timeZone || empresa?.zona_horaria || 'America/Caracas';
+
   const [sales, setSales] = useState<VentaPOS[]>(initialSales);
   const [privacyMode, setPrivacyMode] = useState(false);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
@@ -168,8 +172,8 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
   const formatDateTime = (isoString: string) => {
     if (!isoString) return '-';
     const d = new Date(isoString);
-    const dateOpts: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short', timeZone: 'America/Caracas' };
-    const timeOpts: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'America/Caracas' };
+    const dateOpts: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short', timeZone: activeTz };
+    const timeOpts: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: activeTz };
     return `${d.toLocaleDateString('es-ES', dateOpts)} - ${d.toLocaleTimeString('en-US', timeOpts)}`;
   };
 

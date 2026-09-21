@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server';
 import { registrarAsiento } from './contabilidad-actions';
+import { DEFAULT_TIMEZONE, getTimezoneOffsetString, getLocalDayRange, toLocalDateKey } from '@/utils/date-utils';
 
 export interface VentaPOS {
   verificado?: boolean;
@@ -157,8 +158,24 @@ export interface HistorialVentaPOS extends VentaPOS {
   estado_activo: boolean;
 }
 
-export async function getHistorialVentasCompleto(sedeId: string, fechaFiltro?: string, page: number = 1, limit: number = 50): Promise<HistorialVentaPOS[]> {
+export async function getHistorialVentasCompleto(
+  sedeId: string,
+  fechaFiltro?: string,
+  page: number = 1,
+  limit: number = 50,
+  clientTimeZone?: string
+): Promise<HistorialVentaPOS[]> {
   const supabase = await createClient();
+
+  let timeZone = clientTimeZone;
+  if (!timeZone) {
+    const { data: sede } = await supabase
+      .from('sedes')
+      .select('empresas(zona_horaria)')
+      .eq('id', sedeId)
+      .maybeSingle();
+    timeZone = (sede as any)?.empresas?.zona_horaria || DEFAULT_TIMEZONE;
+  }
 
   let query = supabase
     .from('ventas_facturas')
@@ -176,17 +193,10 @@ export async function getHistorialVentasCompleto(sedeId: string, fechaFiltro?: s
     .order('fecha_venta', { ascending: false });
 
   if (fechaFiltro) {
-    if (fechaFiltro.length === 7) { // yyyy-MM
-      const [y, m] = fechaFiltro.split('-').map(Number);
-      const lastDay = new Date(y, m, 0).getDate();
-      query = query
-        .gte('fecha_venta', `${fechaFiltro}-01T00:00:00-04:00`)
-        .lte('fecha_venta', `${fechaFiltro}-${String(lastDay).padStart(2, '0')}T23:59:59.999-04:00`);
-    } else { // yyyy-MM-dd
-      query = query
-        .gte('fecha_venta', `${fechaFiltro}T00:00:00-04:00`)
-        .lte('fecha_venta', `${fechaFiltro}T23:59:59.999-04:00`);
-    }
+    const range = getLocalDayRange(fechaFiltro, timeZone);
+    query = query
+      .gte('fecha_venta', range.start)
+      .lte('fecha_venta', range.end);
   }
   
   const from = (page - 1) * limit;
@@ -229,10 +239,24 @@ export async function getHistorialVentasCompleto(sedeId: string, fechaFiltro?: s
   }));
 }
 
-export async function getResumenVerificacionMes(sedeId: string, yearMonth: string) {
+export async function getResumenVerificacionMes(
+  sedeId: string,
+  yearMonth: string,
+  clientTimeZone?: string
+) {
   const supabase = await createClient();
-  const [y, m] = yearMonth.split('-').map(Number);
-  const lastDay = new Date(y, m, 0).getDate();
+
+  let timeZone = clientTimeZone;
+  if (!timeZone) {
+    const { data: sede } = await supabase
+      .from('sedes')
+      .select('empresas(zona_horaria)')
+      .eq('id', sedeId)
+      .maybeSingle();
+    timeZone = (sede as any)?.empresas?.zona_horaria || DEFAULT_TIMEZONE;
+  }
+
+  const range = getLocalDayRange(yearMonth, timeZone);
 
   const { data, error } = await supabase
     .from('ventas_facturas')
@@ -240,8 +264,8 @@ export async function getResumenVerificacionMes(sedeId: string, yearMonth: strin
     .eq('sede_id', sedeId)
     .neq('numero_documento', 'TEST')
     .eq('estado_activo', true)
-    .gte('fecha_venta', `${yearMonth}-01T00:00:00-04:00`)
-    .lte('fecha_venta', `${yearMonth}-${String(lastDay).padStart(2, '0')}T23:59:59.999-04:00`);
+    .gte('fecha_venta', range.start)
+    .lte('fecha_venta', range.end);
 
   if (error || !data) {
     console.error('Error fetching monthly verification summary:', error);
@@ -251,8 +275,8 @@ export async function getResumenVerificacionMes(sedeId: string, yearMonth: strin
   const summary: Record<string, { total: number; verified: number }> = {};
   for (const row of data) {
     if (!row.fecha_venta) continue;
-    // Agrupar por la fecha exacta en la zona horaria de Venezuela (America/Caracas)
-    const dateKey = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Caracas' }).format(new Date(row.fecha_venta));
+    // Agrupar por la fecha exacta en la zona horaria de la empresa
+    const dateKey = toLocalDateKey(row.fecha_venta, timeZone);
     if (!summary[dateKey]) {
       summary[dateKey] = { total: 0, verified: 0 };
     }

@@ -3,10 +3,14 @@
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { getVentasRecientes, VentaPOS } from '@/actions/pos-actions';
+import { useEmpresa } from '@/components/providers/EmpresaProvider';
 import { Receipt, CheckCircle2, ChevronRight, Store } from 'lucide-react';
 import Link from 'next/link';
 
 export default function RecentSalesWidget() {
+  const { timeZone, empresa } = useEmpresa();
+  const activeTz = timeZone || empresa?.zona_horaria || 'America/Caracas';
+
   const [sales, setSales] = useState<VentaPOS[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sedeId, setSedeId] = useState<string | null>(null);
@@ -87,7 +91,7 @@ export default function RecentSalesWidget() {
 
   const formatTime = (isoString: string) => {
     if (!isoString) return '-';
-    return new Date(isoString).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'America/Caracas' });
+    return new Date(isoString).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: activeTz });
   };
 
   return (

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { HistorialVentaPOS, getHistorialVentasCompleto, toggleVentaVerificada, getResumenVerificacionMes } from '@/actions/pos-actions';
 import { Search, Calendar, ChevronDown, ChevronUp, Receipt, DollarSign, Clock, Users, CheckCircle2, Circle, Hash, ChevronLeft, ChevronRight, Printer, Ban, Sparkles, Filter, X } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+import { useEmpresa } from '@/components/providers/EmpresaProvider';
 import { normalizePaymentKey, getCanonicalPaymentMethodName, unifyPaymentMethods } from '@/utils/payment-methods';
 import {
   format, startOfMonth, endOfMonth, eachDayOfInterval,
@@ -12,6 +13,9 @@ import {
 import { es } from 'date-fns/locale';
 
 export default function HistorialVentas({ sedeId }: { sedeId: string }) {
+  const { timeZone, empresa } = useEmpresa();
+  const activeTz = timeZone || empresa?.zona_horaria || 'America/Caracas';
+
   const [ventas, setVentas] = useState<HistorialVentaPOS[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -29,7 +33,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
 
   const cargarVentas = async () => {
     setLoading(true);
-    const data = await getHistorialVentasCompleto(sedeId, fechaFiltro || undefined, page, 100);
+    const data = await getHistorialVentasCompleto(sedeId, fechaFiltro || undefined, page, 100, activeTz);
     setVentas(prev => page === 1 ? data : [...prev, ...data]);
     setLoading(false);
   };
@@ -41,17 +45,17 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
     const supabase = createClient();
     const channel = supabase.channel('realtime_ventas_historial')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'ventas_facturas', filter: `sede_id=eq.${sedeId}` }, () => {
-        getHistorialVentasCompleto(sedeId, fechaFiltro || undefined, page, 100).then(data => setVentas(data));
-        getResumenVerificacionMes(sedeId, format(calMonth, 'yyyy-MM')).then(setMonthSummary);
+        getHistorialVentasCompleto(sedeId, fechaFiltro || undefined, page, 100, activeTz).then(data => setVentas(data));
+        getResumenVerificacionMes(sedeId, format(calMonth, 'yyyy-MM'), activeTz).then(setMonthSummary);
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [sedeId, fechaFiltro, page]);
+  }, [sedeId, fechaFiltro, page, activeTz]);
 
   useEffect(() => {
-    getResumenVerificacionMes(sedeId, format(calMonth, 'yyyy-MM')).then(setMonthSummary);
-  }, [sedeId, calMonth]);
+    getResumenVerificacionMes(sedeId, format(calMonth, 'yyyy-MM'), activeTz).then(setMonthSummary);
+  }, [sedeId, calMonth, activeTz]);
 
   const dayStatusMap = useMemo(() => {
     const map = new Map<string, 'verified' | 'partial' | 'empty'>();
@@ -83,8 +87,8 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
   const formatDateTime = (iso: string) => {
     if (!iso) return '-';
     const d = new Date(iso);
-    const dateOpts: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short', timeZone: 'America/Caracas' };
-    const timeOpts: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'America/Caracas' };
+    const dateOpts: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short', timeZone: activeTz };
+    const timeOpts: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: activeTz };
     return `${d.toLocaleDateString('es-ES', dateOpts)} - ${d.toLocaleTimeString('en-US', timeOpts)}`;
   };
   
