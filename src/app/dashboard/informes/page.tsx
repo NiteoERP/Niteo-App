@@ -17,6 +17,7 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import NiteoDateRangePicker from '@/components/ui/NiteoDateRangePicker';
+import InformeComprasNetas from '@/components/informes/InformeComprasNetas';
 
 
 // ─── Tipos ──────────────────────────────────────────────────────────────────
@@ -136,6 +137,13 @@ const REPORT_CATALOG: ReportGroup[] = [
     color: 'text-rose-400',
     bgColor: 'bg-rose-500/10 border-rose-500/20',
     reports: [
+      {
+        id: 'compras_netas',
+        name: 'Compras Netas por Sede',
+        desc: 'Compras locales + Despachos recibidos - Despachos entregados',
+        icon: DollarSign,
+        badge: 'Financiero',
+      },
       { id: 'compras_insumos',    name: 'Informe Compras Insumos', desc: 'Detalle de compras para producción (Fecha, Proveedor, Montos, Operador)', icon: Tag, extraFilters: ['cajero'] },
       { id: 'compras_operador',   name: 'Compras por Operador',    desc: 'Quién compró más, veces compradas y monto total', icon: Users, extraFilters: ['cajero'] },
       { id: 'gastos_operativos',  name: 'Gastos Operativos',       desc: 'Desglose de gastos operativos por fecha y motivo', icon: Receipt, extraFilters: ['cajero'] },
@@ -533,36 +541,59 @@ export default function InformesPage() {
 
         {/* Panel de Filtros — Desktop (solo cuando hay reporte seleccionado) */}
         {sheetOpen && selectedReport && (
-          <div className="hidden lg:flex flex-1 flex-col animate-in fade-in duration-200">
-            <DesktopReportPanel
-              report={selectedReport}
-              sedes={sedes}
-              sedeId={sedeId}
-              setSedeId={setSedeId}
-              sheetStartDate={sheetStartDate}
-              sheetEndDate={sheetEndDate}
-              setSheetStartDate={setSheetStartDate}
-              setSheetEndDate={setSheetEndDate}
-              sheetDateKey={sheetDateKey}
-              setSheetPreset={setSheetPreset}
-              isLoading={isLoading}
-              reportData={reportData}
-              reportError={reportError}
-              categorias={categorias}
-              cajeros={cajeros}
-              clientes={clientes}
-              loadingFilters={loadingFilters}
-              categoriaFilter={categoriaFilter}
-              setCategoriaFilter={setCategoriaFilter}
-              cajeroFilter={cajeroFilter}
-              setCajeroFilter={setCajeroFilter}
-              clienteFilter={clienteFilter}
-              setClienteFilter={setClienteFilter}
-              onGenerate={() => setShowPreviewModal(true)}
-              onExport={exportExcel}
-              onClose={() => setSheetOpen(false)}
-            />
-
+          <div className="hidden lg:flex flex-1 flex-col animate-in fade-in duration-200 overflow-y-auto custom-scrollbar">
+            {selectedReport.id === 'compras_netas' ? (
+              <div className="p-6 space-y-6">
+                <div className="flex items-center justify-between pb-4 border-b border-neutral-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center border bg-rose-500/10 border-rose-500/20 text-rose-400">
+                      <DollarSign size={20} />
+                    </div>
+                    <div>
+                      <p className="font-bold text-white text-lg">Compras Netas por Sede</p>
+                      <p className="text-xs text-neutral-400">Cálculo de mercancía real consumida y perteneciente a cada sucursal</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setSheetOpen(false)} className="p-2 text-neutral-500 hover:text-white hover:bg-neutral-800 rounded-xl transition-colors">
+                    <X size={18} />
+                  </button>
+                </div>
+                <InformeComprasNetas
+                  sedes={sedes}
+                  initialSedeId={sedeId !== 'ALL' ? sedeId : (sedes[0]?.id || '')}
+                  onSedeChange={setSedeId}
+                />
+              </div>
+            ) : (
+              <DesktopReportPanel
+                report={selectedReport}
+                sedes={sedes}
+                sedeId={sedeId}
+                setSedeId={setSedeId}
+                sheetStartDate={sheetStartDate}
+                sheetEndDate={sheetEndDate}
+                setSheetStartDate={setSheetStartDate}
+                setSheetEndDate={setSheetEndDate}
+                sheetDateKey={sheetDateKey}
+                setSheetPreset={setSheetPreset}
+                isLoading={isLoading}
+                reportData={reportData}
+                reportError={reportError}
+                categorias={categorias}
+                cajeros={cajeros}
+                clientes={clientes}
+                loadingFilters={loadingFilters}
+                categoriaFilter={categoriaFilter}
+                setCategoriaFilter={setCategoriaFilter}
+                cajeroFilter={cajeroFilter}
+                setCajeroFilter={setCajeroFilter}
+                clienteFilter={clienteFilter}
+                setClienteFilter={setClienteFilter}
+                onGenerate={() => setShowPreviewModal(true)}
+                onExport={exportExcel}
+                onClose={() => setSheetOpen(false)}
+              />
+            )}
           </div>
         )}
       </div>
@@ -615,7 +646,16 @@ export default function InformesPage() {
 
             {/* Contenido scrollable */}
             <div className="flex-1 overflow-y-auto print:overflow-visible print:h-auto custom-scrollbar px-5 space-y-5 pb-4">
-
+              {selectedReport.id === 'compras_netas' ? (
+                <div className="py-2">
+                  <InformeComprasNetas
+                    sedes={sedes}
+                    initialSedeId={sedeId !== 'ALL' ? sedeId : (sedes[0]?.id || '')}
+                    onSedeChange={setSedeId}
+                  />
+                </div>
+              ) : (
+                <>
               {selectedReport.id === 'mermas' && (
                 <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs space-y-1">
                   <div className="flex items-center gap-1.5 font-bold text-amber-400">
@@ -771,6 +811,8 @@ export default function InformesPage() {
                 <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-3">
                   <p className="text-rose-400 text-sm font-medium">{reportError}</p>
                 </div>
+              )}
+                </>
               )}
             </div>
           </div>

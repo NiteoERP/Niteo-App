@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useOptimistic, useTransition, useState, useMemo } from 'react';
-import { createInsumo, deleteInsumo, ajustarInventarioBatch } from './actions';
+import { createInsumo, deleteInsumo, ajustarInventarioBatch, registrarVentaAlCosto } from './actions';
 import {
   PackageOpen, Plus, Trash2, Loader2, AlertCircle, FileText,
   Save, X, Edit3, DollarSign, Boxes,
   ArrowUpCircle, ArrowDownCircle, History, BarChart3, ChevronDown, ChevronUp,
-  PackageSearch, Activity, Download, Calendar, Lock,
+  PackageSearch, Activity, Download, Calendar, Lock, BadgePercent, CheckCircle2, Search,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
@@ -55,6 +55,7 @@ const MOTIVO_LABELS: Record<string, string> = {
   'VENTA POS': 'Venta POS',
   'MERMA': 'Merma / Pérdida',
   'TRANSFORMACION': 'Transformación',
+  'VENTA_AL_COSTO': 'Venta al Costo',
 };
 
 function getMotivoLabel(motivo: string) {
@@ -294,12 +295,14 @@ export default function InsumosManager({
   sedeId,
   initialMovimientos = [],
   canSeeCosts = false,
+  canVentaCosto = false,
 }: {
   initialInsumos: Insumo[];
   empresaId: string;
   sedeId: string;
   initialMovimientos?: Movimiento[];
   canSeeCosts?: boolean;
+  canVentaCosto?: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState('');
@@ -325,6 +328,16 @@ export default function InsumosManager({
   const [showAdjustModal, setShowAdjustModal] = useState(false);
   const [adjustData, setAdjustData] = useState<Record<string, string>>({});
   const [isAdjusting, setIsAdjusting] = useState(false);
+
+  // Venta al Costo Modal state
+  const [showVentaCostoModal, setShowVentaCostoModal] = useState(false);
+  const [vcSearchQuery, setVcSearchQuery] = useState('');
+  const [vcSelectedInsumoId, setVcSelectedInsumoId] = useState<string>('');
+  const [vcCantidad, setVcCantidad] = useState<string>('');
+  const [vcNotas, setVcNotas] = useState<string>('');
+  const [vcLoading, setVcLoading] = useState(false);
+  const [vcError, setVcError] = useState<string | null>(null);
+  const [vcSuccessMsg, setVcSuccessMsg] = useState<string | null>(null);
 
   // Export modal
   const [showExportModal, setShowExportModal] = useState(false);
@@ -449,6 +462,62 @@ export default function InsumosManager({
     }
   };
 
+  // ── Lógica de Venta al Costo ───────────────────────────────────────────────
+  const vcSelectedInsumo = useMemo(() => {
+    return optimisticInsumos.find(i => i.id === vcSelectedInsumoId) || null;
+  }, [optimisticInsumos, vcSelectedInsumoId]);
+
+  const vcFilteredInsumos = useMemo(() => {
+    if (!vcSearchQuery.trim()) return optimisticInsumos.slice(0, 15);
+    const q = vcSearchQuery.toLowerCase();
+    return optimisticInsumos.filter(i => i.nombre.toLowerCase().includes(q)).slice(0, 25);
+  }, [optimisticInsumos, vcSearchQuery]);
+
+  const vcCantidadNum = parseFloat(vcCantidad) || 0;
+  const vcCostoPromedio = Number(vcSelectedInsumo?.costo_promedio || 0);
+  const vcTotalCosto = Number((vcCantidadNum * vcCostoPromedio).toFixed(4));
+
+  const handleProcessVentaCosto = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!vcSelectedInsumo) {
+      setVcError('Por favor selecciona un insumo de la lista.');
+      return;
+    }
+    if (vcCantidadNum <= 0) {
+      setVcError('Ingresa una cantidad mayor a 0.');
+      return;
+    }
+    if (vcCantidadNum > vcSelectedInsumo.cantidad_actual) {
+      setVcError(`Stock insuficiente. Solo hay ${vcSelectedInsumo.cantidad_actual} ${vcSelectedInsumo.unidad_medida} disponibles.`);
+      return;
+    }
+
+    setVcLoading(true);
+    setVcError(null);
+
+    const res = await registrarVentaAlCosto(vcSelectedInsumo.id, vcCantidadNum, vcNotas);
+    setVcLoading(false);
+
+    if (!res.success) {
+      setVcError(res.error || 'Error al procesar la venta al costo.');
+    } else {
+      addOptimisticInsumo({
+        type: 'update',
+        payload: [{ id: vcSelectedInsumo.id, cantidad_actual: res.nuevoStock }]
+      });
+
+      setVcSuccessMsg(`Salida registrada con éxito: ${vcCantidadNum} ${vcSelectedInsumo.unidad_medida} de ${vcSelectedInsumo.nombre} ($${vcTotalCosto.toFixed(2)} USD).`);
+      setTimeout(() => {
+        setVcSuccessMsg(null);
+        setShowVentaCostoModal(false);
+        setVcSelectedInsumoId('');
+        setVcCantidad('');
+        setVcSearchQuery('');
+        setVcNotas('');
+      }, 1600);
+    }
+  };
+
   const handleInsumoClick = async (insumo: Insumo) => {
     setSelectedInsumo(insumo);
     setIsLoadingHistorial(true);
@@ -484,6 +553,20 @@ export default function InsumosManager({
           <PackageOpen className="text-emerald-400" /> Control de Insumos Base
         </h2>
         <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+          {canVentaCosto && (
+            <button
+              onClick={() => {
+                setVcError(null);
+                setVcSuccessMsg(null);
+                setShowVentaCostoModal(true);
+              }}
+              className="bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 border border-indigo-500/40 hover:border-indigo-500 px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap shadow-sm hover:shadow-indigo-500/10"
+              title="Registrar salida de insumos a precio de costo (consumo interno o familiar)"
+            >
+              <BadgePercent size={16} className="text-indigo-400" />
+              <span>Venta al Costo</span>
+            </button>
+          )}
           {canSeeCosts && (
             <button
               onClick={() => setShowExportModal(true)}
@@ -975,6 +1058,7 @@ export default function InsumosManager({
                               <span className="font-medium text-neutral-200">{getMotivoLabel(mov.motivo)}</span>
                               {mov.motivo === 'COMPRA' && <span className="ml-2 text-[10px] bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded border border-indigo-500/20">COMPRA</span>}
                               {mov.motivo === 'VENTA POS' && <span className="ml-2 text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20">VENTA</span>}
+                              {mov.motivo === 'VENTA_AL_COSTO' && <span className="ml-2 text-[10px] bg-purple-500/10 text-purple-400 px-2 py-0.5 rounded border border-purple-500/20">VENTA COSTO</span>}
                             </td>
                             <td className="px-4 py-3 text-neutral-400 font-mono text-xs">
                               {format(parseISO(mov.fecha_movimiento), 'dd/MM/yyyy HH:mm', { locale: es })}
@@ -1001,6 +1085,239 @@ export default function InsumosManager({
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL / SLIDE-OVER VENTA AL COSTO ───────────────────────────── */}
+      {showVentaCostoModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[120] flex justify-end animate-in fade-in duration-200">
+          <div className="w-full max-w-lg bg-neutral-900 h-full shadow-2xl flex flex-col border-l border-neutral-800 animate-in slide-in-from-right duration-300">
+            {/* Header del Modal */}
+            <div className="px-6 py-5 border-b border-neutral-800 flex justify-between items-center bg-neutral-950/60 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shadow-inner">
+                  <BadgePercent size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Venta al Costo</h3>
+                  <p className="text-xs text-neutral-400">Traspaso familiar / consumo a precio de costo</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowVentaCostoModal(false)}
+                className="text-neutral-400 hover:text-white p-2 rounded-xl hover:bg-neutral-800 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Formulario / Contenido */}
+            <form onSubmit={handleProcessVentaCosto} className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-6 overflow-y-auto space-y-5 custom-scrollbar flex-1">
+                {/* Mensajes de feedback */}
+                {vcSuccessMsg && (
+                  <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs rounded-xl font-medium flex items-center gap-2 animate-in fade-in">
+                    <CheckCircle2 size={16} className="shrink-0 text-emerald-400" />
+                    <span>{vcSuccessMsg}</span>
+                  </div>
+                )}
+                {vcError && (
+                  <div className="p-3.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs rounded-xl font-medium flex items-center gap-2 animate-in fade-in">
+                    <AlertCircle size={16} className="shrink-0 text-rose-400" />
+                    <span>{vcError}</span>
+                  </div>
+                )}
+
+                {/* Explicación informativa */}
+                <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-2xl p-3.5 text-xs text-indigo-300/90 leading-relaxed">
+                  Esta operación deduce el insumo del inventario físico al <strong>costo promedio registrado</strong>, sincerando las Compras Netas sin registrar venta comercial ni margen de ganancia.
+                </div>
+
+                {/* Paso 1: Selección de Insumo con Autocomplete */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-neutral-300 uppercase tracking-wider">
+                    1. Insumo de la Sede
+                  </label>
+
+                  {!vcSelectedInsumo ? (
+                    <div className="space-y-2">
+                      <div className="relative">
+                        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500" />
+                        <input
+                          type="text"
+                          value={vcSearchQuery}
+                          onChange={e => setVcSearchQuery(e.target.value)}
+                          placeholder="Buscar insumo por nombre..."
+                          className="w-full bg-neutral-950 border border-neutral-800 focus:border-indigo-500 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none transition-colors"
+                          autoFocus
+                        />
+                      </div>
+
+                      {/* Lista de resultados de búsqueda */}
+                      <div className="border border-neutral-800 rounded-2xl max-h-56 overflow-y-auto bg-neutral-950/70 divide-y divide-neutral-800/60 custom-scrollbar">
+                        {vcFilteredInsumos.length === 0 ? (
+                          <div className="p-4 text-center text-xs text-neutral-500">
+                            No se encontraron insumos con ese nombre.
+                          </div>
+                        ) : (
+                          vcFilteredInsumos.map(insumo => (
+                            <button
+                              key={insumo.id}
+                              type="button"
+                              onClick={() => {
+                                setVcSelectedInsumoId(insumo.id);
+                                setVcSearchQuery('');
+                                setVcError(null);
+                              }}
+                              className="w-full text-left px-4 py-2.5 hover:bg-neutral-800/50 flex items-center justify-between transition-colors group"
+                            >
+                              <div>
+                                <p className="text-xs font-semibold text-white group-hover:text-indigo-300 transition-colors">
+                                  {insumo.nombre}
+                                </p>
+                                <p className="text-[11px] text-neutral-400 font-mono">
+                                  Costo: ${(Number(insumo.costo_promedio) || 0).toFixed(4)} / {insumo.unidad_medida}
+                                </p>
+                              </div>
+                              <span className={`text-xs font-bold px-2 py-0.5 rounded-lg border ${
+                                insumo.cantidad_actual > 0
+                                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                  : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                              }`}>
+                                {insumo.cantidad_actual} {insumo.unidad_medida}
+                              </span>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    /* Insumo seleccionado */
+                    <div className="bg-neutral-950 border border-indigo-500/30 rounded-2xl p-4 relative">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-bold text-white flex items-center gap-2">
+                            {vcSelectedInsumo.nombre}
+                            <span className="text-[10px] uppercase font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                              {vcSelectedInsumo.unidad_medida}
+                            </span>
+                          </p>
+                          <div className="flex items-center gap-4 mt-2 text-xs">
+                            <span className="text-neutral-400">
+                              Stock Disponible: <strong className="text-white">{vcSelectedInsumo.cantidad_actual} {vcSelectedInsumo.unidad_medida}</strong>
+                            </span>
+                            <span className="text-neutral-400">
+                              Costo Promedio: <strong className="text-indigo-400 font-mono">${vcCostoPromedio.toFixed(4)}</strong>
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setVcSelectedInsumoId('');
+                            setVcCantidad('');
+                          }}
+                          className="text-xs font-medium text-neutral-400 hover:text-white bg-neutral-800 hover:bg-neutral-700 px-2.5 py-1 rounded-lg transition-colors"
+                        >
+                          Cambiar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Paso 2: Cantidad a Retirar */}
+                {vcSelectedInsumo && (
+                  <div className="space-y-4 pt-2 border-t border-neutral-800 animate-in fade-in duration-200">
+                    <div>
+                      <div className="flex justify-between items-center mb-1.5">
+                        <label className="text-xs font-bold text-neutral-300 uppercase tracking-wider">
+                          2. Cantidad a Retirar
+                        </label>
+                        <span className="text-xs text-neutral-500">
+                          Máx: {vcSelectedInsumo.cantidad_actual} {vcSelectedInsumo.unidad_medida}
+                        </span>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          step="any"
+                          min="0.0001"
+                          max={vcSelectedInsumo.cantidad_actual}
+                          required
+                          value={vcCantidad}
+                          onChange={e => setVcCantidad(e.target.value)}
+                          placeholder="0.00"
+                          className="w-full bg-neutral-950 border border-neutral-800 focus:border-indigo-500 rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none transition-colors"
+                        />
+                        <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400 font-bold uppercase">
+                          {vcSelectedInsumo.unidad_medida}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Resumen de cálculo en vivo */}
+                    <div className="grid grid-cols-2 gap-3 bg-neutral-950/80 border border-neutral-800 rounded-2xl p-4">
+                      <div>
+                        <p className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Costo Total ($)</p>
+                        <p className="text-xl font-black text-white font-mono mt-0.5">
+                          ${vcTotalCosto.toFixed(2)} <span className="text-xs text-neutral-500 font-normal">USD</span>
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Nuevo Stock</p>
+                        <p className={`text-xl font-black font-mono mt-0.5 ${
+                          (vcSelectedInsumo.cantidad_actual - vcCantidadNum) < 0 ? 'text-rose-400' : 'text-emerald-400'
+                        }`}>
+                          {Math.max(0, vcSelectedInsumo.cantidad_actual - vcCantidadNum).toFixed(2)}{' '}
+                          <span className="text-xs text-neutral-500 font-normal">{vcSelectedInsumo.unidad_medida}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Paso 3: Nota u observación opcional */}
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-300 mb-1.5">
+                        Nota / Beneficiario (Opcional)
+                      </label>
+                      <input
+                        type="text"
+                        value={vcNotas}
+                        onChange={e => setVcNotas(e.target.value)}
+                        placeholder="Ej. Para socio / familiar Carlos"
+                        className="w-full bg-neutral-950 border border-neutral-800 focus:border-indigo-500 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none transition-colors"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer del Slide-Over */}
+              <div className="p-5 border-t border-neutral-800 bg-neutral-950/90 flex items-center justify-end gap-3 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowVentaCostoModal(false)}
+                  disabled={vcLoading}
+                  className="px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white rounded-xl hover:bg-neutral-800 transition-colors disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={
+                    vcLoading ||
+                    !vcSelectedInsumo ||
+                    vcCantidadNum <= 0 ||
+                    vcCantidadNum > (vcSelectedInsumo?.cantidad_actual || 0)
+                  }
+                  className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-lg shadow-indigo-600/20 cursor-pointer disabled:cursor-not-allowed"
+                >
+                  {vcLoading ? <Loader2 size={14} className="animate-spin" /> : <BadgePercent size={14} />}
+                  Procesar Venta al Costo
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

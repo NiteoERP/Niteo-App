@@ -1,8 +1,10 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@/utils/supabase/admin';
 import { getTasaBcvAction } from '@/actions/config-actions';
 import { toSafeIsoDate } from '@/utils/date-utils';
+import { revalidatePath } from 'next/cache';
 
 export async function getProveedoresConDeuda(sedeId: string, page: number = 1, limit: number = 20, searchQuery: string = '') {
   const supabase = await createClient();
@@ -586,31 +588,42 @@ export async function eliminarFacturaProveedor(facturaId: string) {
   const { data: profile } = await supabase.from('perfiles').select('empresa_id, rol').eq('id', user.id).single();
   if (!profile) return { success: false, error: 'Perfil no encontrado' };
 
-  const userRole = (user.app_metadata?.user_role || profile.rol || 'CAJERO').toUpperCase();
-  const isMasterOrAdmin = userRole === 'MASTER' || userRole === 'ADMINISTRADOR';
+  const rolProfile = (profile.rol || '').toUpperCase();
+  const rolMeta = (user.app_metadata?.user_role || '').toUpperCase();
+  const isMasterOrAdmin =
+    rolProfile === 'MASTER' ||
+    rolProfile === 'ADMINISTRADOR' ||
+    rolProfile === 'ADMIN' ||
+    rolMeta === 'MASTER' ||
+    rolMeta === 'ADMINISTRADOR' ||
+    rolMeta === 'ADMIN';
+
   if (!isMasterOrAdmin) {
     return { success: false, error: 'Solo usuarios con rol Master o Administrador pueden eliminar facturas de proveedores.' };
   }
 
-  const { data: fac, error: facErr } = await supabase.from('compras_facturas')
+  const adminClient = createAdminClient();
+
+  const { data: fac, error: facErr } = await adminClient.from('compras_facturas')
     .select('*')
     .eq('id', facturaId)
     .single();
 
   if (facErr || !fac) return { success: false, error: 'Factura no encontrada' };
 
-  // 1. Eliminar pagos asociados en compras_pagos
-  await supabase.from('compras_pagos').delete().eq('factura_id', facturaId);
+  if (fac.empresa_id !== profile.empresa_id) {
+    return { success: false, error: 'No autorizado para esta empresa' };
+  }
 
-  // 2. Buscar y eliminar compras_puntuales vinculadas
+  // 1. Revertir inventario si la factura tenía insumos y eliminar compras_puntuales vinculadas
   const dateStr = fac.fecha_registro || fac.fecha_emision;
   if (dateStr) {
     const baseDate = new Date(dateStr);
     const minDate = new Date(baseDate.getTime() - 120000).toISOString();
     const maxDate = new Date(baseDate.getTime() + 120000).toISOString();
 
-    const { data: punts } = await supabase.from('compras_puntuales')
-      .select('id')
+    const { data: punts } = await adminClient.from('compras_puntuales')
+      .select('*')
       .eq('id_empresa', profile.empresa_id)
       .eq('monto_divisas', fac.total)
       .gte('fecha_registro', minDate)
@@ -618,14 +631,67 @@ export async function eliminarFacturaProveedor(facturaId: string) {
 
     if (punts && punts.length > 0) {
       for (const p of punts) {
-        await supabase.from('compras_puntuales').delete().eq('id', p.id);
+        try {
+          let detObj: any = null;
+          if (typeof p.detalles === 'string') {
+            detObj = JSON.parse(p.detalles);
+          } else if (typeof p.detalles === 'object') {
+            detObj = p.detalles;
+          }
+
+          if (detObj && detObj.is_insumos && Array.isArray(detObj.items)) {
+            for (const item of detObj.items) {
+              const oldInsumoId = item.insumo_id;
+              const cantidad = Number(item.cantidad || 0);
+
+              if (oldInsumoId && cantidad > 0) {
+                const { data: insumo } = await adminClient.from('inventario_insumos')
+                  .select('id, cantidad_actual')
+                  .eq('id', oldInsumoId)
+                  .single();
+
+                if (insumo) {
+                  const newQty = Math.max(0, Number(insumo.cantidad_actual || 0) - cantidad);
+                  await adminClient.from('inventario_insumos')
+                    .update({ cantidad_actual: newQty })
+                    .eq('id', insumo.id);
+
+                  await adminClient.from('movimientos_inventario').insert({
+                    empresa_id: profile.empresa_id,
+                    insumo_id: insumo.id,
+                    usuario_id: user.id,
+                    tipo_movimiento: 'SALIDA',
+                    motivo: `Eliminación de factura de proveedor (${fac.numero_factura || 'S/N'}): reversión de stock`,
+                    cantidad: cantidad,
+                    costo_perdido: 0,
+                    fecha_movimiento: new Date().toISOString()
+                  });
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Error al revertir inventario al eliminar factura:', e);
+        }
+
+        await adminClient.from('compras_puntuales').delete().eq('id', p.id);
       }
     }
   }
 
+  // 2. Eliminar pagos asociados en compras_pagos
+  await adminClient.from('compras_pagos').delete().eq('factura_id', facturaId);
+
   // 3. Eliminar factura en compras_facturas
-  const { error: delErr } = await supabase.from('compras_facturas').delete().eq('id', facturaId);
-  if (delErr) return { success: false, error: delErr.message };
+  const { error: delErr } = await adminClient.from('compras_facturas').delete().eq('id', facturaId);
+  if (delErr) {
+    console.error('Error al eliminar compras_facturas:', delErr);
+    return { success: false, error: delErr.message };
+  }
+
+  revalidatePath('/dashboard/proveedores');
+  revalidatePath('/dashboard/compras');
+  revalidatePath('/dashboard/inventario');
 
   return { success: true };
 }

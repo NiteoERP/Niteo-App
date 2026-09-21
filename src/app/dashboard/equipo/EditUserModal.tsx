@@ -18,6 +18,7 @@ interface MemberToEdit {
   permisos?: string[];
   sede_id?: string | null;
   pin_seguridad?: string;
+  permiso_venta_costo?: boolean;
 }
 
 interface EditUserModalProps {
@@ -37,6 +38,7 @@ export default function EditUserModal({ member, sedes, isOpen, onClose, onUpdate
   const [selectedSede, setSelectedSede] = useState<string>(member.sede_id || 'ALL');
   const [selectedModules, setSelectedModules] = useState<string[]>(member.permisos || []);
   const [pinSeguridad, setPinSeguridad] = useState<string>(member.pin_seguridad || '');
+  const [permisoVentaCosto, setPermisoVentaCosto] = useState<boolean>(!!member.permiso_venta_costo);
 
   useEffect(() => {
     setNombre(member.nombre_completo || '');
@@ -44,6 +46,7 @@ export default function EditUserModal({ member, sedes, isOpen, onClose, onUpdate
     setSelectedSede(member.sede_id || 'ALL');
     setSelectedModules(member.permisos || []);
     setPinSeguridad(member.pin_seguridad || '');
+    setPermisoVentaCosto(!!member.permiso_venta_costo);
     setError(null);
   }, [member, isOpen]);
 
@@ -90,6 +93,7 @@ export default function EditUserModal({ member, sedes, isOpen, onClose, onUpdate
       permisos: selectedModules,
       sede_id: selectedSede === 'ALL' ? null : selectedSede,
       pin_seguridad: pinSeguridad.trim() || undefined,
+      permiso_venta_costo: permisoVentaCosto,
     });
 
     if (!res.success) {
@@ -102,6 +106,7 @@ export default function EditUserModal({ member, sedes, isOpen, onClose, onUpdate
         rol,
         permisos: selectedModules,
         sede_id: selectedSede === 'ALL' ? null : selectedSede,
+        permiso_venta_costo: permisoVentaCosto,
       });
       setLoading(false);
       onClose();
@@ -213,6 +218,33 @@ export default function EditUserModal({ member, sedes, isOpen, onClose, onUpdate
                 </p>
               </div>
             )}
+
+            {/* Privilegio Especial: Venta al Costo */}
+            <div className="bg-neutral-950/60 border border-neutral-800/80 rounded-2xl p-4 flex items-center justify-between gap-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-white flex items-center gap-2 cursor-pointer" onClick={() => setPermisoVentaCosto(!permisoVentaCosto)}>
+                  Permitir Venta al Costo
+                </label>
+                <p className="text-[11px] text-neutral-400 leading-snug">
+                  Habilita al usuario para procesar salidas de inventario a precio de costo (consumo interno/familiar).
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={permisoVentaCosto}
+                onClick={() => setPermisoVentaCosto(!permisoVentaCosto)}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  permisoVentaCosto ? 'bg-indigo-600' : 'bg-neutral-800'
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                    permisoVentaCosto ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
 
             {/* Selector de Módulos desglosados */}
             <div className="space-y-4 pt-2 border-t border-neutral-800">

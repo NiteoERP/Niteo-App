@@ -6,7 +6,7 @@ import { getSedes } from '@/actions/sedes-actions';
 import { AVAILABLE_MODULES, CATEGORY_LABELS, ROLE_PRESETS } from './modules';
 import { X, Plus, Loader2, Check, ShieldCheck, Building2 } from 'lucide-react';
 
-export default function AddUserModal({ onUserCreated }: { onUserCreated?: (member: { id: string; nombre_completo: string; rol: string; permisos: string[]; sede_id: string | null }) => void }) {
+export default function AddUserModal({ onUserCreated }: { onUserCreated?: (member: { id: string; nombre_completo: string; rol: string; permisos: string[]; sede_id: string | null; permiso_venta_costo?: boolean }) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -14,6 +14,7 @@ export default function AddUserModal({ onUserCreated }: { onUserCreated?: (membe
   const [sedes, setSedes] = useState<any[]>([]);
   const [selectedSede, setSelectedSede] = useState<string>('ALL');
   const [selectedRol, setSelectedRol] = useState<string>('CAJERO');
+  const [permisoVentaCosto, setPermisoVentaCosto] = useState<boolean>(false);
   
   // Por defecto para cajero: Ventas (pos) y Cierres (caja)
   const [selectedModules, setSelectedModules] = useState<string[]>(ROLE_PRESETS.CAJERO);
@@ -65,7 +66,7 @@ export default function AddUserModal({ onUserCreated }: { onUserCreated?: (membe
     const password = (formData.get('password') as string).trim();
     const pinSeguridad = (formData.get('pin_seguridad') as string)?.trim() || '';
 
-    const res = await createUser(email, password, nombre, selectedModules, selectedSede, selectedRol, pinSeguridad);
+    const res = await createUser(email, password, nombre, selectedModules, selectedSede, selectedRol, pinSeguridad, permisoVentaCosto);
     if (!res.success) {
       setError(res.error || 'Error al crear usuario');
       setLoading(false);
@@ -76,6 +77,7 @@ export default function AddUserModal({ onUserCreated }: { onUserCreated?: (membe
         rol: selectedRol,
         permisos: selectedModules,
         sede_id: selectedSede === 'ALL' ? null : selectedSede,
+        permiso_venta_costo: permisoVentaCosto,
       });
       setIsOpen(false);
       setLoading(false);
@@ -83,6 +85,7 @@ export default function AddUserModal({ onUserCreated }: { onUserCreated?: (membe
       setSelectedModules(ROLE_PRESETS.CAJERO);
       setSelectedSede('ALL');
       setSelectedRol('CAJERO');
+      setPermisoVentaCosto(false);
     }
   };
 
@@ -176,6 +179,33 @@ export default function AddUserModal({ onUserCreated }: { onUserCreated?: (membe
                     </select>
                   </div>
                 )}
+
+                {/* Privilegio Especial: Venta al Costo */}
+                <div className="bg-neutral-950/60 border border-neutral-800/80 rounded-2xl p-4 flex items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-white flex items-center gap-2 cursor-pointer" onClick={() => setPermisoVentaCosto(!permisoVentaCosto)}>
+                      Permitir Venta al Costo
+                    </label>
+                    <p className="text-[11px] text-neutral-400 leading-snug">
+                      Habilita al usuario para procesar salidas de inventario a precio de costo (consumo interno/familiar).
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={permisoVentaCosto}
+                    onClick={() => setPermisoVentaCosto(!permisoVentaCosto)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      permisoVentaCosto ? 'bg-indigo-600' : 'bg-neutral-800'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                        permisoVentaCosto ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
 
                 {/* Permisos desglosados */}
                 <div className="space-y-4 pt-2 border-t border-neutral-800">

@@ -276,6 +276,42 @@ export function useGenerateReport(empresaId: string) {
       const p_cliente_id = extra.clienteId || null;
 
       try {
+        // ── Reporte Compras Netas (Server Action con las 3 consultas paralelas) ──
+        if (reportId === 'compras_netas') {
+          if (!p_sede_id) {
+            throw new Error('Debe seleccionar una sede específica para el informe de Compras Netas.');
+          }
+          const { obtenerComprasNetasSede } = await import('@/actions/informes-actions');
+          const res = await obtenerComprasNetasSede(p_sede_id, p_fecha_inicio, p_fecha_fin);
+          if (!res.success || !res.data) {
+            throw new Error(res.error || 'Error al obtener compras netas');
+          }
+          const formattedRows = res.data.movimientos.map(m => ({
+            'FECHA': m.fecha_formateada,
+            'TIPO': m.tipo_label,
+            'IMPACTO': m.signo === '+' ? '+ SUMA' : '- RESTA',
+            'DETALLE': m.descripcion,
+            'ORIGEN / DESTINO': m.origen_destino,
+            'REFERENCIA': m.referencia,
+            'MONTO USD': `${m.signo} $ ${m.monto_usd.toFixed(2)}`,
+            'MONTO Bs': m.monto_bs > 0 ? `${m.signo} Bs.S ${m.monto_bs.toFixed(2)}` : '-'
+          }));
+          if (formattedRows.length > 0) {
+            formattedRows.push({
+              'FECHA': 'TOTAL COMPRA NETA',
+              'TIPO': 'TOTAL PERÍODO',
+              'IMPACTO': '=',
+              'DETALLE': `Locales ($${res.data.compras_locales.total_usd.toFixed(2)}) + Recibidos ($${res.data.despachos_recibidos.total_usd.toFixed(2)}) - Entregados ($${res.data.despachos_entregados.total_usd.toFixed(2)})`,
+              'ORIGEN / DESTINO': res.data.sede.nombre,
+              'REFERENCIA': 'TOTAL',
+              'MONTO USD': `$ ${res.data.compra_neta_usd.toFixed(2)}`,
+              'MONTO Bs': `Bs.S ${res.data.compras_locales.total_bs.toFixed(2)}`
+            });
+          }
+          setReportData(formattedRows);
+          return;
+        }
+
         // ── Reportes de Compras (JS-level aggregation desde browser) ──────────
         if (['compras_insumos', 'compras_operador', 'gastos_operativos'].includes(reportId)) {
           const query = supabase

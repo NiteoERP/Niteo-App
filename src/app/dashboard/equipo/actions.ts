@@ -30,7 +30,7 @@ export async function updateMemberAccess(memberId: string, permisos: string[], s
   return { success: true };
 }
 
-export async function createUser(email: string, password: string, nombreCompleto: string, permisos: string[], sede_id: string | null, rol: string = 'CAJERO', pinSeguridad: string = '') {
+export async function createUser(email: string, password: string, nombreCompleto: string, permisos: string[], sede_id: string | null, rol: string = 'CAJERO', pinSeguridad: string = '', permiso_venta_costo: boolean = false) {
   const cleanEmail = email.trim().toLowerCase();
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -102,6 +102,7 @@ export async function createUser(email: string, password: string, nombreCompleto
     sede_id: sede_id === 'ALL' ? null : sede_id,
     estado_activo: true,
     pin_seguridad: pinSeguridad || null,
+    permiso_venta_costo: permiso_venta_costo,
   }, { onConflict: 'id' });
 
   if (profileErr) {
@@ -187,6 +188,7 @@ export async function updateMemberDetails(
     permisos: string[];
     sede_id: string | null;
     pin_seguridad?: string;
+    permiso_venta_costo?: boolean;
   }
 ) {
   const supabase = await createClient();
@@ -205,6 +207,10 @@ export async function updateMemberDetails(
   
   if (data.pin_seguridad !== undefined) {
     payload.pin_seguridad = data.pin_seguridad || null;
+  }
+
+  if (data.permiso_venta_costo !== undefined) {
+    payload.permiso_venta_costo = data.permiso_venta_costo;
   }
 
   const { error } = await supabase

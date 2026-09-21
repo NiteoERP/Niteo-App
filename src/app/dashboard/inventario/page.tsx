@@ -17,7 +17,11 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
 
   if (!empresaId) return <div className="p-8 text-rose-400">Error: No tienes empresa configurada.</div>;
 
-  const { data: profile } = await supabase.from('perfiles').select('sede_id, rol, permisos').eq('id', user?.id).single();
+  const { data: profile } = await supabase
+    .from('perfiles')
+    .select('sede_id, rol, permisos, permiso_venta_costo')
+    .eq('id', user?.id)
+    .single();
   
   // Consultar sedes de la empresa directamente con la sesión autenticada
   const { data: sedesData } = await supabase
@@ -29,6 +33,9 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
 
   // Ver costos y movimientos: solo MASTER o quien tenga el permiso 'finanzas'
   const canSeeCosts = profile?.rol === 'MASTER' || (profile?.permisos || []).includes('finanzas');
+
+  // Privilegio Venta al Costo: MASTER o permiso_venta_costo habilitado
+  const canVentaCosto = user?.app_metadata?.user_role === 'MASTER' || profile?.rol === 'MASTER' || profile?.permiso_venta_costo === true;
 
   const { cookies } = await import('next/headers');
   const cookieStore = await cookies();
@@ -138,6 +145,7 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
             sedeId={activeSedeId || ''}
             initialMovimientos={movimientos}
             canSeeCosts={canSeeCosts}
+            canVentaCosto={canVentaCosto}
           />
         )}
         {currentTab === 'transformaciones' && (

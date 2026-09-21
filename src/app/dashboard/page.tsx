@@ -199,11 +199,26 @@ export default function DashboardPage() {
             </div>
 
             {/* COGS + Mermas */}
-            <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center gap-4">
-              <div className="bg-orange-100 text-orange-600 p-3 rounded-xl"><ShoppingCart size={24} /></div>
-              <div>
-                <p className="text-sm font-bold text-gray-500 uppercase">Costo Insumos (COGS)</p>
-                <h3 className="text-2xl font-black text-gray-900 dark:text-white">{formatCurrency(kpis.cogs + kpis.mermas)}</h3>
+            <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="bg-orange-100 text-orange-600 p-3 rounded-xl"><ShoppingCart size={24} /></div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-bold text-gray-500 uppercase">
+                      {sedeId ? 'Compras / Insumos (Sede)' : 'Costo Insumos (COGS)'}
+                    </p>
+                    {sedeId && (
+                      <Link
+                        href="/dashboard/informes"
+                        className="text-[10px] bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-bold px-2 py-0.5 rounded-full hover:underline"
+                        title="Ver auditoría detallada de Compras Netas"
+                      >
+                        Compras Netas →
+                      </Link>
+                    )}
+                  </div>
+                  <h3 className="text-2xl font-black text-gray-900 dark:text-white">{formatCurrency(kpis.cogs + kpis.mermas)}</h3>
+                </div>
               </div>
             </div>
 

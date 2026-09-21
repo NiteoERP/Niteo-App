@@ -346,6 +346,41 @@ export async function generateReport(
       };
       break;
 
+    case 'compras_netas': {
+      if (!p_sede_id) {
+        return { success: false, error: 'El informe de Compras Netas requiere seleccionar una sede específica obligatoriamente.' };
+      }
+      const netasRes = await obtenerComprasNetasSede(p_sede_id, p_fecha_inicio, p_fecha_fin);
+      if (!netasRes.success || !netasRes.data) {
+        return { success: false, error: netasRes.error || 'Error calculando compras netas' };
+      }
+      const formattedRows = netasRes.data.movimientos.map(m => ({
+        'FECHA': m.fecha_formateada,
+        'TIPO': m.tipo_label,
+        'IMPACTO': m.signo === '+' ? '+ SUMA' : '- RESTA',
+        'DETALLE': m.descripcion,
+        'ORIGEN / DESTINO': m.origen_destino,
+        'REFERENCIA': m.referencia,
+        'MONTO USD': `${m.signo} $ ${m.monto_usd.toFixed(2)}`,
+        'MONTO Bs': m.monto_bs > 0 ? `${m.signo} Bs.S ${m.monto_bs.toFixed(2)}` : '-'
+      }));
+
+      if (formattedRows.length > 0) {
+        formattedRows.push({
+          'FECHA': 'TOTAL COMPRA NETA',
+          'TIPO': 'TOTAL PERÍODO',
+          'IMPACTO': '=',
+          'DETALLE': `Locales ($${netasRes.data.compras_locales.total_usd.toFixed(2)}) + Recibidos ($${netasRes.data.despachos_recibidos.total_usd.toFixed(2)}) - Entregados ($${netasRes.data.despachos_entregados.total_usd.toFixed(2)})`,
+          'ORIGEN / DESTINO': netasRes.data.sede.nombre,
+          'REFERENCIA': 'ECUACIÓN CONTABLE',
+          'MONTO USD': `$ ${netasRes.data.compra_neta_usd.toFixed(2)}`,
+          'MONTO Bs': `Bs.S ${netasRes.data.compras_locales.total_bs.toFixed(2)}`
+        });
+      }
+
+      return { success: true, data: formattedRows, metadata: netasRes.data };
+    }
+
     default:
       return { success: false, error: 'Reporte no implementado todavía.' };
   }
@@ -620,4 +655,502 @@ async function handleMermasYRegaliasReport(
     return { success: false, error: err.message || 'Error generando reporte de mermas' };
   }
 }
+
+// ─── LÓGICA DE COMPRAS NETAS POR SEDE ────────────────────────────────────────
+
+export interface MovimientoCompraNeta {
+  id: string;
+  fecha: string;
+  fecha_formateada: string;
+  tipo: 'COMPRA_LOCAL' | 'DESPACHO_RECIBIDO' | 'DESPACHO_ENTREGADO' | 'VENTA_AL_COSTO';
+  tipo_label: string;
+  signo: '+' | '-';
+  descripcion: string;
+  referencia: string;
+  origen_destino: string;
+  monto_usd: number;
+  monto_bs: number;
+  cantidad?: number;
+}
+
+export interface ComprasNetasResponse {
+  success: boolean;
+  error?: string;
+  data?: {
+    sede: { id: string; nombre: string };
+    periodo: { inicio: string; fin: string };
+    compras_locales: { total_usd: number; total_bs: number; cantidad: number };
+    despachos_recibidos: { total_usd: number; cantidad: number };
+    despachos_entregados: { total_usd: number; cantidad: number };
+    ventas_costo: { total_usd: number; cantidad: number };
+    compra_neta_usd: number;
+    movimientos: MovimientoCompraNeta[];
+  };
+}
+
+/**
+ * Calcula la Compra Neta de una sede específica en un rango de fechas.
+ * Ecuación contable:
+ * Compras Netas = (Compras Locales Directas) + (Despachos Recibidos) - (Despachos Entregados)
+ */
+export async function obtenerComprasNetasSede(
+  id_sede: string,
+  fechaInicio: string,
+  fechaFin: string
+): Promise<ComprasNetasResponse> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'No autenticado' };
+
+    const { data: profile } = await supabase
+      .from('perfiles')
+      .select('empresa_id')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile) return { success: false, error: 'Perfil no encontrado' };
+    const empresaId = profile.empresa_id;
+
+    if (!id_sede || id_sede === 'ALL') {
+      return { success: false, error: 'Debe seleccionar una sede específica para el cálculo de compras netas.' };
+    }
+
+    // Normalizar fechas a ISO string completo
+    const p_fecha_inicio = fechaInicio.includes('T') ? fechaInicio : `${fechaInicio}T00:00:00.000Z`;
+    const p_fecha_fin = fechaFin.includes('T') ? fechaFin : `${fechaFin}T23:59:59.999Z`;
+
+    // 1. Obtener nombre de la sede y 3 consultas paralelas (Promise.all)
+    const [
+      sedeRes,
+      comprasLocalesPuntualesRes,
+      comprasMercanciaRes,
+      despachosRecibidosDetallesRes,
+      despachosRecibidosItemsRes,
+      despachosEntregadosDetallesRes,
+      despachosEntregadosItemsRes,
+      ventasCostoRes
+    ] = await Promise.all([
+      // Info de la sede
+      supabase.from('sedes').select('id, nombre_sede').eq('id', id_sede).single(),
+
+      // A) Compras Locales Directas (compras_puntuales)
+      supabase
+        .from('compras_puntuales')
+        .select('id, proveedor, fecha_registro, monto_divisas, monto_bs, tasa_cambio, detalles, metodo_pago, estado')
+        .eq('id_empresa', empresaId)
+        .eq('id_sede', id_sede)
+        .gte('fecha_registro', p_fecha_inicio)
+        .lte('fecha_registro', p_fecha_fin)
+        .neq('estado', 'ANULADA')
+        .order('fecha_registro', { ascending: true }),
+
+      // A.2) Compras mercancia (si aplica en el sistema)
+      supabase
+        .from('compras_mercancia')
+        .select('id, id_proveedor, nro_factura, cantidad, precio_unitario, total, created_at')
+        .eq('id_empresa', empresaId)
+        .eq('id_sede', id_sede)
+        .gte('created_at', p_fecha_inicio)
+        .lte('created_at', p_fecha_fin),
+
+      // B) Despachos Recibidos (despachos_detalles con JOIN despachos)
+      supabase
+        .from('despachos_detalles')
+        .select(`
+          id,
+          monto_total,
+          cantidad_enviada,
+          cantidad_recibida,
+          precio_unitario,
+          nombre_item,
+          despacho:despachos!inner (
+            id,
+            estado,
+            sede_origen_id,
+            sede_destino_id,
+            fecha_envio,
+            fecha_recepcion,
+            origen:sedes!despachos_sede_origen_id_fkey (id, nombre_sede),
+            destino:sedes!despachos_sede_destino_id_fkey (id, nombre_sede)
+          )
+        `)
+        .eq('despacho.sede_destino_id', id_sede)
+        .in('despacho.estado', ['RECIBIDO', 'COMPLETADO'])
+        .gte('despacho.fecha_envio', p_fecha_inicio)
+        .lte('despacho.fecha_envio', p_fecha_fin),
+
+      // B.2) Despachos Recibidos (despachos_items fallback para insumos)
+      supabase
+        .from('despachos_items')
+        .select(`
+          id,
+          nombre_insumo,
+          cantidad,
+          cantidad_recibida,
+          costo_unitario,
+          costo_transferencia,
+          despacho:despachos!inner (
+            id,
+            estado,
+            sede_origen_id,
+            sede_destino_id,
+            fecha_envio,
+            fecha_recepcion,
+            origen:sedes!despachos_sede_origen_id_fkey (id, nombre_sede),
+            destino:sedes!despachos_sede_destino_id_fkey (id, nombre_sede)
+          )
+        `)
+        .eq('despacho.sede_destino_id', id_sede)
+        .in('despacho.estado', ['RECIBIDO', 'COMPLETADO'])
+        .gte('despacho.fecha_envio', p_fecha_inicio)
+        .lte('despacho.fecha_envio', p_fecha_fin),
+
+      // C) Despachos Entregados (despachos_detalles con JOIN despachos)
+      supabase
+        .from('despachos_detalles')
+        .select(`
+          id,
+          monto_total,
+          cantidad_enviada,
+          cantidad_recibida,
+          precio_unitario,
+          nombre_item,
+          despacho:despachos!inner (
+            id,
+            estado,
+            sede_origen_id,
+            sede_destino_id,
+            fecha_envio,
+            fecha_recepcion,
+            origen:sedes!despachos_sede_origen_id_fkey (id, nombre_sede),
+            destino:sedes!despachos_sede_destino_id_fkey (id, nombre_sede)
+          )
+        `)
+        .eq('despacho.sede_origen_id', id_sede)
+        .neq('despacho.estado', 'CANCELADO')
+        .gte('despacho.fecha_envio', p_fecha_inicio)
+        .lte('despacho.fecha_envio', p_fecha_fin),
+
+      // C.2) Despachos Entregados (despachos_items fallback para insumos)
+      supabase
+        .from('despachos_items')
+        .select(`
+          id,
+          nombre_insumo,
+          cantidad,
+          cantidad_recibida,
+          costo_unitario,
+          costo_transferencia,
+          despacho:despachos!inner (
+            id,
+            estado,
+            sede_origen_id,
+            sede_destino_id,
+            fecha_envio,
+            fecha_recepcion,
+            origen:sedes!despachos_sede_origen_id_fkey (id, nombre_sede),
+            destino:sedes!despachos_sede_destino_id_fkey (id, nombre_sede)
+          )
+        `)
+        .eq('despacho.sede_origen_id', id_sede)
+        .neq('despacho.estado', 'CANCELADO')
+        .gte('despacho.fecha_envio', p_fecha_inicio)
+        .lte('despacho.fecha_envio', p_fecha_fin),
+
+      // D) Ventas al Costo (Traspaso Familiar / Consumo Interno)
+      supabase
+        .from('movimientos_inventario')
+        .select(`
+          id,
+          cantidad,
+          costo_perdido,
+          fecha_movimiento,
+          inventario_insumos!inner (
+            id,
+            nombre,
+            unidad_medida,
+            sede_id
+          )
+        `)
+        .eq('empresa_id', empresaId)
+        .eq('motivo', 'VENTA_AL_COSTO')
+        .eq('inventario_insumos.sede_id', id_sede)
+        .gte('fecha_movimiento', p_fecha_inicio)
+        .lte('fecha_movimiento', p_fecha_fin),
+    ]);
+
+    if (comprasLocalesPuntualesRes.error) {
+      throw new Error(`Error en compras locales: ${comprasLocalesPuntualesRes.error.message}`);
+    }
+    if (despachosRecibidosDetallesRes.error) {
+      throw new Error(`Error en despachos recibidos: ${despachosRecibidosDetallesRes.error.message}`);
+    }
+    if (despachosEntregadosDetallesRes.error) {
+      throw new Error(`Error en despachos entregados: ${despachosEntregadosDetallesRes.error.message}`);
+    }
+
+    const sedeNombre = sedeRes.data?.nombre_sede || 'Sede Seleccionada';
+    const movimientos: MovimientoCompraNeta[] = [];
+
+    // ── PROCESAR A) COMPRAS LOCALES DIRECTAS (+) ─────────────────────────────
+    let totalComprasLocalesUSD = 0;
+    let totalComprasLocalesBs = 0;
+    let cantComprasLocales = 0;
+
+    for (const c of (comprasLocalesPuntualesRes.data || [])) {
+      const montoUSD = Number(c.monto_divisas || 0);
+      const montoBs = Number(c.monto_bs || 0);
+      totalComprasLocalesUSD += montoUSD;
+      totalComprasLocalesBs += montoBs;
+      cantComprasLocales += 1;
+
+      let obs = c.detalles;
+      if (typeof obs === 'string' && obs.includes('{')) {
+        try { obs = JSON.parse(obs).texto; } catch (_) {}
+      } else if (typeof obs === 'object') {
+        obs = obs?.texto || '';
+      }
+
+      movimientos.push({
+        id: `compra-${c.id}`,
+        fecha: c.fecha_registro,
+        fecha_formateada: formatFecha(c.fecha_registro),
+        tipo: 'COMPRA_LOCAL',
+        tipo_label: 'Compra Local Directa',
+        signo: '+',
+        descripcion: `Compra a ${c.proveedor || 'Proveedor'}${obs ? ` (${obs})` : ''}`,
+        referencia: `Comp #${c.id.slice(0, 8)}`,
+        origen_destino: c.proveedor || 'Proveedor Directo',
+        monto_usd: montoUSD,
+        monto_bs: montoBs,
+      });
+    }
+
+    for (const cm of (comprasMercanciaRes.data || [])) {
+      const montoUSD = Number(cm.total || 0);
+      totalComprasLocalesUSD += montoUSD;
+      cantComprasLocales += 1;
+
+      movimientos.push({
+        id: `cm-${cm.id}`,
+        fecha: cm.created_at,
+        fecha_formateada: formatFecha(cm.created_at),
+        tipo: 'COMPRA_LOCAL',
+        tipo_label: 'Compra Mercancía',
+        signo: '+',
+        descripcion: `Factura Nº ${cm.nro_factura || 'S/N'}`,
+        referencia: `Fact #${cm.nro_factura || cm.id.slice(0, 8)}`,
+        origen_destino: 'Proveedor Mercancía',
+        monto_usd: montoUSD,
+        monto_bs: 0,
+        cantidad: Number(cm.cantidad || 1),
+      });
+    }
+
+    // ── PROCESAR B) DESPACHOS RECIBIDOS (+) ──────────────────────────────────
+    let totalDespachosRecibidosUSD = 0;
+    let cantDespachosRecibidos = 0;
+    const despachosRecibidosIdsProcesados = new Set<string>();
+
+    const getSedeName = (rel: any): string => {
+      if (!rel) return 'Otra Sede';
+      if (Array.isArray(rel)) return rel[0]?.nombre_sede || 'Otra Sede';
+      return rel?.nombre_sede || 'Otra Sede';
+    };
+
+    // De despachos_detalles
+    for (const dd of (despachosRecibidosDetallesRes.data || [])) {
+      const d: any = Array.isArray(dd.despacho) ? dd.despacho[0] : dd.despacho;
+      if (!d) continue;
+
+      despachosRecibidosIdsProcesados.add(d.id);
+      const montoUSD = Number(dd.monto_total || (Number(dd.cantidad_recibida || dd.cantidad_enviada || 0) * Number(dd.precio_unitario || 0)));
+      totalDespachosRecibidosUSD += montoUSD;
+      cantDespachosRecibidos += 1;
+
+      const origenNombre = getSedeName(d.origen);
+      const fechaMov = d.fecha_recepcion || d.fecha_envio;
+
+      movimientos.push({
+        id: `desp-rec-${dd.id}`,
+        fecha: fechaMov,
+        fecha_formateada: formatFecha(fechaMov),
+        tipo: 'DESPACHO_RECIBIDO',
+        tipo_label: 'Despacho Recibido',
+        signo: '+',
+        descripcion: `Recibido de ${origenNombre}: ${dd.nombre_item}`,
+        referencia: `Desp #${d.id.slice(0, 8)}`,
+        origen_destino: `Desde: ${origenNombre}`,
+        monto_usd: montoUSD,
+        monto_bs: 0,
+        cantidad: Number(dd.cantidad_recibida ?? dd.cantidad_enviada ?? 0),
+      });
+    }
+
+    // Fallback de despachos_items (para despachos que no estén en despachos_detalles)
+    for (const di of (despachosRecibidosItemsRes.data || [])) {
+      const d: any = Array.isArray(di.despacho) ? di.despacho[0] : di.despacho;
+      if (!d || despachosRecibidosIdsProcesados.has(d.id)) continue;
+
+      const cant = Number(di.cantidad_recibida ?? di.cantidad ?? 0);
+      const costo = Number(di.costo_transferencia ?? di.costo_unitario ?? 0);
+      const montoUSD = cant * costo;
+      totalDespachosRecibidosUSD += montoUSD;
+      cantDespachosRecibidos += 1;
+
+      const origenNombre = getSedeName(d.origen);
+      const fechaMov = d.fecha_recepcion || d.fecha_envio;
+
+      movimientos.push({
+        id: `desp-item-rec-${di.id}`,
+        fecha: fechaMov,
+        fecha_formateada: formatFecha(fechaMov),
+        tipo: 'DESPACHO_RECIBIDO',
+        tipo_label: 'Despacho Recibido (Insumos)',
+        signo: '+',
+        descripcion: `Recibido de ${origenNombre}: ${di.nombre_insumo}`,
+        referencia: `Desp #${d.id.slice(0, 8)}`,
+        origen_destino: `Desde: ${origenNombre}`,
+        monto_usd: montoUSD,
+        monto_bs: 0,
+        cantidad: cant,
+      });
+    }
+
+    // ── PROCESAR C) DESPACHOS ENTREGADOS / ENVIADOS (-) ──────────────────────
+    let totalDespachosEntregadosUSD = 0;
+    let cantDespachosEntregados = 0;
+    const despachosEntregadosIdsProcesados = new Set<string>();
+
+    // De despachos_detalles
+    for (const dd of (despachosEntregadosDetallesRes.data || [])) {
+      const d: any = Array.isArray(dd.despacho) ? dd.despacho[0] : dd.despacho;
+      if (!d) continue;
+
+      despachosEntregadosIdsProcesados.add(d.id);
+      const montoUSD = Number(dd.monto_total || (Number(dd.cantidad_enviada || 0) * Number(dd.precio_unitario || 0)));
+      totalDespachosEntregadosUSD += montoUSD;
+      cantDespachosEntregados += 1;
+
+      const destinoNombre = getSedeName(d.destino);
+      const fechaMov = d.fecha_envio;
+
+      movimientos.push({
+        id: `desp-ent-${dd.id}`,
+        fecha: fechaMov,
+        fecha_formateada: formatFecha(fechaMov),
+        tipo: 'DESPACHO_ENTREGADO',
+        tipo_label: 'Despacho Entregado',
+        signo: '-',
+        descripcion: `Enviado a ${destinoNombre}: ${dd.nombre_item}`,
+        referencia: `Desp #${d.id.slice(0, 8)}`,
+        origen_destino: `Hacia: ${destinoNombre}`,
+        monto_usd: montoUSD,
+        monto_bs: 0,
+        cantidad: Number(dd.cantidad_enviada ?? 0),
+      });
+    }
+
+    // Fallback de despachos_items (para despachos que no estén en despachos_detalles)
+    for (const di of (despachosEntregadosItemsRes.data || [])) {
+      const d: any = Array.isArray(di.despacho) ? di.despacho[0] : di.despacho;
+      if (!d || despachosEntregadosIdsProcesados.has(d.id)) continue;
+
+      const cant = Number(di.cantidad ?? 0);
+      const costo = Number(di.costo_transferencia ?? di.costo_unitario ?? 0);
+      const montoUSD = cant * costo;
+      totalDespachosEntregadosUSD += montoUSD;
+      cantDespachosEntregados += 1;
+
+      const destinoNombre = getSedeName(d.destino);
+      const fechaMov = d.fecha_envio;
+
+      movimientos.push({
+        id: `desp-item-ent-${di.id}`,
+        fecha: fechaMov,
+        fecha_formateada: formatFecha(fechaMov),
+        tipo: 'DESPACHO_ENTREGADO',
+        tipo_label: 'Despacho Entregado (Insumos)',
+        signo: '-',
+        descripcion: `Enviado a ${destinoNombre}: ${di.nombre_insumo}`,
+        referencia: `Desp #${d.id.slice(0, 8)}`,
+        origen_destino: `Hacia: ${destinoNombre}`,
+        monto_usd: montoUSD,
+        monto_bs: 0,
+        cantidad: cant,
+      });
+    }
+
+    // D) Procesar Ventas al Costo (Traspaso Familiar / Consumo Interno)
+    let totalVentasCostoUSD = 0;
+    let cantVentasCosto = 0;
+
+    for (const vc of (ventasCostoRes.data || [])) {
+      const cant = Number(vc.cantidad ?? 0);
+      const montoUSD = Number(vc.costo_perdido ?? 0);
+      totalVentasCostoUSD += montoUSD;
+      cantVentasCosto += 1;
+
+      const insumoInfo: any = Array.isArray(vc.inventario_insumos)
+        ? vc.inventario_insumos[0]
+        : vc.inventario_insumos;
+      const insumoNombre = insumoInfo?.nombre || 'Insumo';
+      const unidad = insumoInfo?.unidad_medida || '';
+      const fechaMov = vc.fecha_movimiento;
+
+      movimientos.push({
+        id: `venta-costo-${vc.id}`,
+        fecha: fechaMov,
+        fecha_formateada: formatFecha(fechaMov),
+        tipo: 'VENTA_AL_COSTO',
+        tipo_label: 'Venta al Costo',
+        signo: '-',
+        descripcion: `Retiro al costo: ${cant} ${unidad} de ${insumoNombre}`,
+        referencia: `Traspaso #${vc.id.slice(0, 8)}`,
+        origen_destino: `Consumo Interno / Familiar`,
+        monto_usd: montoUSD,
+        monto_bs: 0,
+        cantidad: cant,
+      });
+    }
+
+    // ── CALCULAR LA ECUACIÓN: COMPRA NETA = (A + B) - C - D ─────────────────
+    const compraNetaUSD = (totalComprasLocalesUSD + totalDespachosRecibidosUSD) - totalDespachosEntregadosUSD - totalVentasCostoUSD;
+
+    // Ordenar cronológicamente (más reciente primero o ascendente)
+    movimientos.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+
+    return {
+      success: true,
+      data: {
+        sede: { id: id_sede, nombre: sedeNombre },
+        periodo: { inicio: p_fecha_inicio, fin: p_fecha_fin },
+        compras_locales: {
+          total_usd: totalComprasLocalesUSD,
+          total_bs: totalComprasLocalesBs,
+          cantidad: cantComprasLocales,
+        },
+        despachos_recibidos: {
+          total_usd: totalDespachosRecibidosUSD,
+          cantidad: cantDespachosRecibidos,
+        },
+        despachos_entregados: {
+          total_usd: totalDespachosEntregadosUSD,
+          cantidad: cantDespachosEntregados,
+        },
+        ventas_costo: {
+          total_usd: totalVentasCostoUSD,
+          cantidad: cantVentasCosto,
+        },
+        compra_neta_usd: compraNetaUSD,
+        movimientos,
+      },
+    };
+  } catch (err: any) {
+    console.error('Error en obtenerComprasNetasSede:', err);
+    return { success: false, error: err.message || 'Error inesperado al calcular compras netas.' };
+  }
+}
+
 

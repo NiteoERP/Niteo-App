@@ -15,7 +15,7 @@ export default async function EquipoPage() {
   const [miembrosRes, sedes] = await Promise.all([
     supabase
       .from('perfiles')
-      .select('id, nombre_completo, rol, permisos, sede_id, pin_seguridad')
+      .select('id, nombre_completo, rol, permisos, sede_id, pin_seguridad, permiso_venta_costo')
       .eq('empresa_id', empresaId)
       .order('rol', { ascending: false }),
     (async () => {

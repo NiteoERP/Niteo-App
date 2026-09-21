@@ -193,3 +193,103 @@ export async function getHistorialInsumo(insumoId: string) {
   // Retornamos descendente para que la tabla en el drawer muestre lo más reciente primero
   return result.reverse();
 }
+
+/**
+ * Registra una "Venta al Costo" (Traspaso Familiar / Consumo Interno).
+ * Deduce atómicamente el stock en inventario_insumos y registra la salida
+ * en movimientos_inventario con motivo: 'VENTA_AL_COSTO' y costo_perdido calculado.
+ */
+export async function registrarVentaAlCosto(insumoId: string, cantidad: number, notas?: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Usuario no autenticado.' };
+  }
+
+  // 1. Validar privilegios del usuario (MASTER o con permiso_venta_costo)
+  const isMaster = user.app_metadata?.user_role === 'MASTER';
+  const { data: profile } = await supabase
+    .from('perfiles')
+    .select('empresa_id, rol, permiso_venta_costo')
+    .eq('id', user.id)
+    .single();
+
+  const hasPermission = isMaster || profile?.rol === 'MASTER' || profile?.permiso_venta_costo === true;
+
+  if (!hasPermission) {
+    return {
+      success: false,
+      error: 'No tienes el privilegio "Venta al Costo" habilitado. Contacta al usuario Master.'
+    };
+  }
+
+  if (!cantidad || cantidad <= 0) {
+    return { success: false, error: 'La cantidad a retirar debe ser mayor a 0.' };
+  }
+
+  // 2. Obtener insumo actual
+  const { data: insumo, error: insumoErr } = await supabase
+    .from('inventario_insumos')
+    .select('id, empresa_id, sede_id, nombre, unidad_medida, costo_promedio, cantidad_actual')
+    .eq('id', insumoId)
+    .single();
+
+  if (insumoErr || !insumo) {
+    return { success: false, error: 'El insumo seleccionado no existe en el inventario.' };
+  }
+
+  if (insumo.cantidad_actual < cantidad) {
+    return {
+      success: false,
+      error: `Stock insuficiente. Disponible: ${insumo.cantidad_actual} ${insumo.unidad_medida}, solicitado: ${cantidad} ${insumo.unidad_medida}`
+    };
+  }
+
+  const nuevoStock = insumo.cantidad_actual - cantidad;
+  const costoPromedio = Number(insumo.costo_promedio || 0);
+  const costoTotal = Number((cantidad * costoPromedio).toFixed(4));
+
+  // 3. Actualizar existencia en almacén
+  const { error: updateErr } = await supabase
+    .from('inventario_insumos')
+    .update({ cantidad_actual: nuevoStock })
+    .eq('id', insumoId);
+
+  if (updateErr) {
+    return { success: false, error: `Error al actualizar inventario: ${updateErr.message}` };
+  }
+
+  // 4. Registrar movimiento de inventario con motivo VENTA_AL_COSTO
+  const { error: movErr } = await supabase
+    .from('movimientos_inventario')
+    .insert({
+      empresa_id: insumo.empresa_id,
+      insumo_id: insumo.id,
+      usuario_id: user.id,
+      tipo_movimiento: 'SALIDA',
+      cantidad: cantidad,
+      costo_perdido: costoTotal,
+      motivo: 'VENTA_AL_COSTO',
+      fecha_movimiento: new Date().toISOString(),
+    });
+
+  if (movErr) {
+    console.error('Error insertando movimiento VENTA_AL_COSTO:', movErr);
+  }
+
+  revalidatePath('/dashboard/inventario');
+  revalidatePath('/dashboard/informes');
+  revalidatePath('/dashboard/finanzas');
+
+  return {
+    success: true,
+    insumoId: insumo.id,
+    insumoNombre: insumo.nombre,
+    unidadMedida: insumo.unidad_medida,
+    cantidadRetirada: cantidad,
+    nuevoStock,
+    costoTotal,
+  };
+}
+

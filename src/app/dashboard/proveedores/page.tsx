@@ -298,6 +298,10 @@ export default function ProveedoresPage() {
 
   const handleEliminarFactura = async (facId: string) => {
     if (!confirm('¿Estás seguro de que deseas eliminar esta factura de proveedor? Se revertirán los registros y abonos asociados.')) return;
+    
+    // Optimistic removal
+    setFacturasProveedor(prev => prev.filter(f => f.id !== facId));
+
     const res = await eliminarFacturaProveedor(facId);
     if (res.success) {
       fetchInit();
@@ -307,6 +311,10 @@ export default function ProveedoresPage() {
       }
     } else {
       alert(res.error || 'Error al eliminar factura');
+      if (expandedId) {
+        const r2 = await getFacturasProveedor(expandedId, sedeId);
+        if (r2.success) setFacturasProveedor(r2.data || []);
+      }
     }
   };
 

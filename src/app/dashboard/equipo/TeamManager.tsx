@@ -15,6 +15,7 @@ export type Member = {
   permisos?: string[];
   sede_id?: string | null;
   pin_seguridad?: string;
+  permiso_venta_costo?: boolean;
 };
 
 interface SedeOption {
@@ -190,6 +191,11 @@ export default function TeamManager({
                               <Layers size={12} className="text-neutral-400" />
                               {permisosCount} {permisosCount === 1 ? 'Módulo' : 'Módulos'}
                             </span>
+                            {member.permiso_venta_costo && (
+                              <span className="text-[10px] font-bold text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 px-2 py-0.5 rounded-md" title="Habilitado para procesar Venta al Costo">
+                                Venta al Costo
+                              </span>
+                            )}
                           </div>
                           <span className="text-xs text-neutral-500 mt-1 truncate max-w-[220px] md:text-center text-left w-full" title={getModuleNames(member.permisos)}>
                             {getModuleNames(member.permisos)}
