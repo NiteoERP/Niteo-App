@@ -127,6 +127,12 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
   // Modal de Edición
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingRow, setEditingRow] = useState<any>(null);
+  const [addEditInsumoSearch, setAddEditInsumoSearch] = useState('');
+  const [addEditIsNew, setAddEditIsNew] = useState(false);
+  const [addEditNombreNuevo, setAddEditNombreNuevo] = useState('');
+  const [addEditUnidad, setAddEditUnidad] = useState('Kg');
+  const [addEditCantidad, setAddEditCantidad] = useState('');
+  const [addEditTotal, setAddEditTotal] = useState('');
 
   useEffect(() => {
     cargarDatosGatillo();
@@ -867,10 +873,23 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
                           const monedaBadge = it.monedaItem === 'VES' ? 'VES' : 'USD';
                           return (
                            <div key={idx} className="grid grid-cols-12 gap-2 items-center bg-neutral-900 p-3 rounded-lg border border-neutral-800">
-                              {/* Nombre */}
-                              <div className="col-span-12 sm:col-span-4">
-                                <span className="text-sm font-semibold text-white">{it.nombre_nuevo}</span>
-                                <p className="text-xs text-neutral-500 sm:hidden">{monedaBadge} · {it.cantidad} × {precioUnit.toFixed(2)} = {it.costoTotal.toFixed(2)}</p>
+                              {/* Nombre y botón eliminar en móvil */}
+                              <div className="col-span-12 sm:col-span-4 flex items-center justify-between">
+                                <div>
+                                  <span className="text-sm font-semibold text-white">{it.nombre_nuevo}</span>
+                                  <p className="text-xs text-neutral-500 sm:hidden">{monedaBadge} · {it.cantidad} × {precioUnit.toFixed(2)} = {it.costoTotal.toFixed(2)}</p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const n = editingRow.edit_items.filter((_:any, i:number) => i !== idx);
+                                    setEditingRow({...editingRow, edit_items: n});
+                                  }}
+                                  className="sm:hidden p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors flex items-center gap-1 text-xs font-semibold"
+                                  title="Eliminar insumo"
+                                >
+                                  <Trash2 size={15}/> Quitar
+                                </button>
                               </div>
                               {/* Cantidad */}
                               <div className="col-span-4 sm:col-span-2">
@@ -901,16 +920,160 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
                               <div className="hidden sm:flex col-span-1 justify-center">
                                 <span className={`text-xs font-bold px-2 py-1 rounded ${monedaBadge === 'USD' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>{monedaBadge}</span>
                               </div>
-                              {/* Delete */}
+                              {/* Delete desktop */}
                               <div className="hidden sm:flex col-span-1 justify-center">
                                 <button onClick={() => {
                                     const n = editingRow.edit_items.filter((_:any, i:number) => i !== idx);
                                     setEditingRow({...editingRow, edit_items: n});
-                                 }} className="p-1.5 text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"><Trash2 size={16}/></button>
+                                 }} className="p-1.5 text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors" title="Eliminar insumo"><Trash2 size={16}/></button>
                               </div>
                            </div>
                           );
                         })}
+
+                        {/* FORMULARIO PARA AGREGAR NUEVO INSUMO A ESTA COMPRA */}
+                        <div className="mt-4 p-3 bg-neutral-950/80 rounded-xl border border-indigo-500/30 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+                              <Plus size={14} /> Agregar Producto / Insumo a la Factura
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setAddEditIsNew(!addEditIsNew);
+                                setAddEditInsumoSearch('');
+                                setAddEditNombreNuevo('');
+                              }}
+                              className="text-xs text-neutral-400 hover:text-white underline"
+                            >
+                              {addEditIsNew ? 'Seleccionar existente' : '+ Crear nuevo'}
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+                            {addEditIsNew ? (
+                              <>
+                                <div className="sm:col-span-4">
+                                  <label className="block text-[11px] font-medium text-neutral-400 mb-1">Nombre Insumo</label>
+                                  <input
+                                    type="text"
+                                    value={addEditNombreNuevo}
+                                    onChange={e => setAddEditNombreNuevo(e.target.value)}
+                                    placeholder="Ej. Harina de Trigo"
+                                    className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-indigo-500"
+                                  />
+                                </div>
+                                <div className="sm:col-span-2">
+                                  <label className="block text-[11px] font-medium text-neutral-400 mb-1">Unidad</label>
+                                  <select
+                                    value={addEditUnidad}
+                                    onChange={e => setAddEditUnidad(e.target.value)}
+                                    className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-indigo-500"
+                                  >
+                                    {['Kg', 'Gr', 'Lt', 'Ml', 'Und', 'Cajas', 'Paquetes'].map(u => (
+                                      <option key={u} value={u} className="bg-neutral-900">{u}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="sm:col-span-6">
+                                <label className="block text-[11px] font-medium text-neutral-400 mb-1">Insumo</label>
+                                <select
+                                  value={addEditInsumoSearch}
+                                  onChange={e => setAddEditInsumoSearch(e.target.value)}
+                                  className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-indigo-500"
+                                >
+                                  <option value="">Selecciona un insumo...</option>
+                                  {productosDb.map(p => (
+                                    <option key={p.id} value={p.id} className="bg-neutral-900">
+                                      {p.nombre_producto || p.nombre}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+
+                            <div className="sm:col-span-2">
+                              <label className="block text-[11px] font-medium text-neutral-400 mb-1">Cantidad</label>
+                              <input
+                                type="number"
+                                step="any"
+                                min="0.01"
+                                placeholder="0.00"
+                                value={addEditCantidad}
+                                onChange={e => setAddEditCantidad(e.target.value)}
+                                className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-indigo-500 text-center"
+                              />
+                            </div>
+
+                            <div className="sm:col-span-2">
+                              <label className="block text-[11px] font-medium text-neutral-400 mb-1">Total ($)</label>
+                              <input
+                                type="number"
+                                step="any"
+                                min="0.01"
+                                placeholder="0.00"
+                                value={addEditTotal}
+                                onChange={e => setAddEditTotal(e.target.value)}
+                                className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-indigo-500 text-center"
+                              />
+                            </div>
+
+                            <div className="sm:col-span-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const qty = Number(addEditCantidad);
+                                  const cost = Number(addEditTotal);
+                                  if (!qty || qty <= 0 || !cost || cost <= 0) return;
+
+                                  let newItem: any = null;
+                                  if (addEditIsNew) {
+                                    if (!addEditNombreNuevo.trim()) return;
+                                    newItem = {
+                                      id: Math.random().toString(),
+                                      insumo_id: null,
+                                      is_new: true,
+                                      nombre_nuevo: addEditNombreNuevo.trim(),
+                                      unidad_nueva: addEditUnidad || 'Und',
+                                      cantidad: qty,
+                                      costoTotal: cost,
+                                      monedaItem: 'USD'
+                                    };
+                                  } else {
+                                    if (!addEditInsumoSearch) return;
+                                    const found = productosDb.find(p => p.id === addEditInsumoSearch);
+                                    newItem = {
+                                      id: Math.random().toString(),
+                                      insumo_id: addEditInsumoSearch,
+                                      is_new: false,
+                                      nombre_nuevo: found?.nombre_producto || found?.nombre || 'Insumo',
+                                      unidad_nueva: found?.unidad_medida || 'Und',
+                                      cantidad: qty,
+                                      costoTotal: cost,
+                                      monedaItem: 'USD'
+                                    };
+                                  }
+
+                                  setEditingRow({
+                                    ...editingRow,
+                                    edit_items: [...(editingRow.edit_items || []), newItem]
+                                  });
+
+                                  setAddEditInsumoSearch('');
+                                  setAddEditNombreNuevo('');
+                                  setAddEditIsNew(false);
+                                  setAddEditCantidad('');
+                                  setAddEditTotal('');
+                                }}
+                                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-1.5 px-3 rounded-lg transition-colors flex items-center justify-center gap-1"
+                              >
+                                <Plus size={14} /> Añadir
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                      </div>
                   </div>
                 )}

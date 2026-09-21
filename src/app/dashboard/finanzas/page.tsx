@@ -12,6 +12,10 @@ import {
   Store,
   Info,
   Layers,
+  BadgePercent,
+  Receipt,
+  ArrowDownLeft,
+  ArrowUpRight,
 } from 'lucide-react';
 import { getReporteFinanciero } from '@/actions/finanzas-actions';
 import { useEmpresa } from '@/components/providers/EmpresaProvider';
@@ -59,7 +63,7 @@ export default function FinanzasPage() {
     if (res.success) {
       setData(res.data);
     } else {
-      setData(res.data); // still set mock data to prevent crashes
+      setData(res.data);
       setErrorMsg(res.error || 'Error cargando reporte');
     }
     setLoading(false);
@@ -97,13 +101,20 @@ export default function FinanzasPage() {
         fecha: date,
         Ingresos: valIng,
         Egresos: valEgr,
-        Ganancia: valIng - valEgr,
+        Ganancia: Number((valIng - valEgr).toFixed(2)),
       };
     });
   }
 
   const isSedeEspecifica = selectedSedeId && selectedSedeId !== 'ALL';
   const breakdown = data?.compras_netas_breakdown;
+  const foodCost = Number(data?.food_cost_porcentaje || 0);
+
+  const getFoodCostBadge = (pct: number) => {
+    if (pct <= 32) return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+    if (pct <= 38) return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+    return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+  };
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
@@ -176,93 +187,161 @@ export default function FinanzasPage() {
       ) : data ? (
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Ingresos Totales */}
-            <div className="bg-neutral-900/50 border border-neutral-800 p-6 rounded-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl -mr-10 -mt-10"></div>
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl">
-                  <TrendingUp size={24} />
-                </div>
-                <div>
-                  <h3 className="text-neutral-400 font-medium">Ingresos Totales</h3>
-                  <span className="text-[11px] text-neutral-500">Ventas percibidas</span>
-                </div>
-              </div>
-              <p className="text-3xl font-bold text-white">{formatCurrency(data.total_ingresos)}</p>
-            </div>
-
-            {/* Egresos / Compras Netas */}
-            <div className="bg-neutral-900/50 border border-neutral-800 p-6 rounded-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 rounded-full blur-3xl -mr-10 -mt-10"></div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-rose-500/10 text-rose-400 rounded-xl">
-                    <TrendingDown size={24} />
+            {/* 1. Ingresos Totales */}
+            <div className="bg-neutral-900/50 border border-neutral-800 p-6 rounded-2xl relative overflow-hidden flex flex-col justify-between">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl">
+                      <TrendingUp size={22} />
+                    </div>
+                    <div>
+                      <h3 className="text-neutral-400 font-medium text-sm">Ingresos Totales</h3>
+                      <span className="text-[11px] text-neutral-500">Ventas netas reales</span>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-neutral-400 font-medium">
-                      {isSedeEspecifica ? 'Compras Netas de la Sede' : 'Gastos / Compras Totales'}
-                    </h3>
-                    {isSedeEspecifica && (
-                      <span className="text-[11px] font-semibold text-indigo-400">
-                        Ecuación: Locales + Recibidos − Entregados
-                      </span>
-                    )}
-                  </div>
+                  {data.total_facturas > 0 && (
+                    <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-neutral-800 text-neutral-300 border border-neutral-700">
+                      {data.total_facturas} facturas
+                    </span>
+                  )}
                 </div>
+                <p className="text-3xl font-black text-white tracking-tight">{formatCurrency(data.total_ingresos)}</p>
               </div>
-              <p className="text-3xl font-bold text-white">{formatCurrency(data.total_egresos)}</p>
 
-              {/* Detalle si es sede específica */}
-              {isSedeEspecifica && breakdown && (
-                <div className="mt-3 pt-3 border-t border-neutral-800/80 text-xs text-neutral-400 flex flex-wrap gap-x-3 gap-y-1">
-                  <span>Locales: <strong className="text-neutral-200">${breakdown.compras_locales.toFixed(2)}</strong></span>
-                  <span>+ Recibidos: <strong className="text-cyan-400">${breakdown.despachos_recibidos.toFixed(2)}</strong></span>
-                  <span>− Entregados: <strong className="text-rose-400">${breakdown.despachos_entregados.toFixed(2)}</strong></span>
+              {data.total_facturas > 0 && (
+                <div className="mt-4 pt-3 border-t border-neutral-800/80 text-xs text-neutral-400 flex items-center justify-between">
+                  <span>Ticket Promedio:</span>
+                  <strong className="text-white font-mono">${Number(data.ticket_promedio).toFixed(2)} USD</strong>
                 </div>
               )}
             </div>
 
-            {/* Ganancia Neta */}
-            <div className="bg-indigo-600 p-6 rounded-2xl relative overflow-hidden shadow-[0_0_30px_rgba(79,70,229,0.2)]">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 bg-white/20 text-white rounded-xl">
-                  <DollarSign size={24} />
+            {/* 2. Egresos / Compras Netas (Food Cost) */}
+            <div className="bg-neutral-900/50 border border-neutral-800 p-6 rounded-2xl relative overflow-hidden flex flex-col justify-between">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-rose-500/10 text-rose-400 rounded-xl">
+                      <TrendingDown size={22} />
+                    </div>
+                    <div>
+                      <h3 className="text-neutral-400 font-medium text-sm">
+                        {isSedeEspecifica ? 'Compras Netas (Sede)' : 'Compras Netas Consolidadas'}
+                      </h3>
+                      <span className="text-[11px] text-neutral-500 font-semibold text-indigo-400">
+                        {isSedeEspecifica
+                          ? '(Locales + Recibidos) − Entregados − V.Costo'
+                          : 'Locales − Ventas al Costo'}
+                      </span>
+                    </div>
+                  </div>
+                  {foodCost > 0 && (
+                    <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${getFoodCostBadge(foodCost)}`}>
+                      Food Cost: {foodCost}%
+                    </span>
+                  )}
                 </div>
-                <div>
-                  <h3 className="text-indigo-100 font-medium">Ganancia Neta Real</h3>
-                  <span className="text-[11px] text-indigo-200 font-medium">Ingresos − Compras Netas</span>
-                </div>
+                <p className="text-3xl font-black text-white tracking-tight">{formatCurrency(data.total_egresos)}</p>
               </div>
-              <p className="text-3xl font-bold text-white">{formatCurrency(data.ganancia_neta)}</p>
+
+              {/* Detalle de desglose contable */}
+              {breakdown && (
+                <div className="mt-4 pt-3 border-t border-neutral-800/80 text-[11px] text-neutral-400 flex flex-wrap gap-x-3 gap-y-1">
+                  <span>Locales: <strong className="text-neutral-200">${breakdown.compras_locales.toFixed(2)}</strong></span>
+                  {isSedeEspecifica && (
+                    <>
+                      <span>+ Recibidos: <strong className="text-cyan-400">${(breakdown.despachos_recibidos || 0).toFixed(2)}</strong></span>
+                      <span>− Entregados: <strong className="text-rose-400">${(breakdown.despachos_entregados || 0).toFixed(2)}</strong></span>
+                    </>
+                  )}
+                  {breakdown.ventas_costo > 0 && (
+                    <span>− V. Costo: <strong className="text-purple-400">${breakdown.ventas_costo.toFixed(2)}</strong></span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* 3. Ganancia Neta Real (Margen) */}
+            <div className="bg-gradient-to-br from-indigo-900/60 via-indigo-950/80 to-neutral-900 border border-indigo-500/30 p-6 rounded-2xl relative overflow-hidden flex flex-col justify-between shadow-[0_0_30px_rgba(79,70,229,0.15)]">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-indigo-500/20 text-indigo-300 rounded-xl border border-indigo-500/30">
+                      <DollarSign size={22} />
+                    </div>
+                    <div>
+                      <h3 className="text-indigo-200 font-bold text-sm">Ganancia Bruta Real</h3>
+                      <span className="text-[11px] text-indigo-300/80 font-medium">Ingresos − Compras Netas</span>
+                    </div>
+                  </div>
+                  {data.margen_bruto_porcentaje > 0 && (
+                    <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-indigo-500 text-white shadow-sm">
+                      Margen: {data.margen_bruto_porcentaje}%
+                    </span>
+                  )}
+                </div>
+                <p className="text-3xl font-black text-white tracking-tight">{formatCurrency(data.ganancia_neta)}</p>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-indigo-500/20 text-xs text-indigo-300/80 flex items-center justify-between">
+                <span>Rentabilidad sobre Ventas:</span>
+                <strong className="text-white font-mono">{data.margen_bruto_porcentaje}%</strong>
+              </div>
             </div>
           </div>
 
-          <div className="bg-neutral-900/50 border border-neutral-800 rounded-2xl p-6">
-            <h3 className="text-lg font-medium text-white mb-6">
-              Flujo de Caja {isSedeEspecifica ? `— ${data?.sede_info?.nombre || 'Sede'}` : 'Consolidado'}
-            </h3>
+          {/* Gráfico de Flujo de Caja */}
+          <div className="bg-neutral-900/50 border border-neutral-800 rounded-2xl p-6 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+              <div>
+                <h3 className="text-lg font-bold text-white">
+                  Flujo de Caja {isSedeEspecifica ? `— ${data?.sede_info?.nombre || 'Sede'}` : 'Consolidado'}
+                </h3>
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  Comparativa cronológica de ventas percibidas vs compras netas reales por día.
+                </p>
+              </div>
+            </div>
+
             <div className="h-[400px] w-full">
               {chartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                    <XAxis dataKey="fecha" stroke="#888" tick={{ fill: '#888' }} />
-                    <YAxis stroke="#888" tick={{ fill: '#888' }} />
+                    <XAxis
+                      dataKey="fecha"
+                      stroke="#888"
+                      tick={{ fill: '#888', fontSize: 11 }}
+                      tickFormatter={(f: string) => {
+                        if (!f) return '';
+                        const p = f.split('-');
+                        return p.length === 3 ? `${p[2]}/${p[1]}` : f;
+                      }}
+                    />
+                    <YAxis
+                      stroke="#888"
+                      tick={{ fill: '#888', fontSize: 11 }}
+                      tickFormatter={(val: number) => `$${val}`}
+                    />
                     <RechartsTooltip
                       contentStyle={{ backgroundColor: '#171717', borderColor: '#262626', borderRadius: '12px' }}
                       itemStyle={{ fontWeight: 500 }}
+                      formatter={(val: any) => [`$${Number(val).toFixed(2)} USD`]}
+                      labelFormatter={(lbl: any) => `Fecha: ${lbl}`}
                     />
                     <Legend />
-                    <Bar dataKey="Ingresos" fill="#10b981" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Egresos" fill="#f43f5e" radius={[4, 4, 0, 0]} />
-                    <Line type="monotone" dataKey="Ganancia" stroke="#6366f1" strokeWidth={3} dot={{ r: 4 }} />
+                    <Bar name="Ventas (Ingresos)" dataKey="Ingresos" fill="#10b981" radius={[4, 4, 0, 0]} />
+                    <Bar name="Compras Netas" dataKey="Egresos" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+                    <Line name="Margen Diario" type="monotone" dataKey="Ganancia" stroke="#6366f1" strokeWidth={3} dot={{ r: 4 }} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-full flex items-center justify-center text-neutral-500">
-                  No hay datos en este rango de fechas
+                <div className="h-full flex items-center justify-center text-neutral-500 text-sm">
+                  No hay movimientos registrados en este rango de fechas
                 </div>
               )}
             </div>

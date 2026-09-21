@@ -164,8 +164,18 @@ export default function ProveedoresPage() {
   const [editFacSede, setEditFacSede] = useState('');
   const [isEditLoading, setIsEditLoading] = useState(false);
   const [errorEdit, setErrorEdit] = useState('');
+  const [editFacItems, setEditFacItems] = useState<any[]>([]);
+  const [editFacOriginalItems, setEditFacOriginalItems] = useState<any[]>([]);
+  const [editFacCompraPuntualId, setEditFacCompraPuntualId] = useState<string | null>(null);
+  const [isLoadingEditItems, setIsLoadingEditItems] = useState(false);
+  const [editAddInsumoSearch, setEditAddInsumoSearch] = useState('');
+  const [editAddIsNew, setEditAddIsNew] = useState(false);
+  const [editAddNombreNuevo, setEditAddNombreNuevo] = useState('');
+  const [editAddUnidad, setEditAddUnidad] = useState('Kg');
+  const [editAddCantidad, setEditAddCantidad] = useState('');
+  const [editAddTotal, setEditAddTotal] = useState('');
 
-  const openEditModal = (fac: any) => {
+  const openEditModal = async (fac: any) => {
     setFacturaEditando(fac);
     setEditFacConcepto(fac.concepto || '');
     setEditFacTotal(String(fac.total || ''));
@@ -174,11 +184,34 @@ export default function ProveedoresPage() {
     setEditFacFechaVencimiento(fac.fecha_vencimiento?.split('T')[0] || '');
     setEditFacSede(fac.sede_id || '');
     setErrorEdit('');
+    setEditFacItems([]);
+    setEditFacOriginalItems([]);
+    setEditFacCompraPuntualId(null);
     setShowEditFacturaModal(true);
+
+    if (fac.sede_id) {
+      getInsumos(fac.sede_id).then(res => {
+        if (Array.isArray(res)) setInsumosList(res);
+      });
+    }
+
+    setIsLoadingEditItems(true);
+    const { getFacturaDetallesItems } = await import('./actions');
+    const res = await getFacturaDetallesItems(fac.id);
+    if (res.success && res.data?.items) {
+      setEditFacItems(res.data.items);
+      setEditFacOriginalItems(JSON.parse(JSON.stringify(res.data.items)));
+      setEditFacCompraPuntualId(res.compra_puntual_id);
+    }
+    setIsLoadingEditItems(false);
   };
 
   const handleGuardarEdicionFactura = async () => {
-    if (!editFacTotal || isNaN(Number(editFacTotal)) || Number(editFacTotal) <= 0) {
+    const calculatedTotal = editFacItems.length > 0
+      ? editFacItems.reduce((acc: number, it: any) => acc + Number(it.costoTotal || 0), 0)
+      : Number(editFacTotal);
+
+    if (isNaN(calculatedTotal) || calculatedTotal <= 0) {
       setErrorEdit('Monto inválido'); return;
     }
     if (!editFacSede) {
@@ -186,10 +219,24 @@ export default function ProveedoresPage() {
     }
     setIsEditLoading(true);
     setErrorEdit('');
+
+    if (editFacCompraPuntualId && editFacOriginalItems.length > 0) {
+      const { editarFacturaInsumos } = await import('@/actions/compras-actions');
+      await editarFacturaInsumos(editFacCompraPuntualId, {
+        descripcion: editFacConcepto,
+        proveedor: facturaEditando.proveedor_nombre || 'Proveedor',
+        moneda: 'USD',
+        tasa: tasaBcv,
+        metodo_pago: 'Por pagar',
+        items_viejos: editFacOriginalItems,
+        items_nuevos: editFacItems
+      });
+    }
+
     const { editarFacturaProveedor, getFacturasProveedor } = await import('./actions');
     const res = await editarFacturaProveedor(facturaEditando.id, {
       concepto: editFacConcepto,
-      total: Number(editFacTotal),
+      total: Number(calculatedTotal.toFixed(2)),
       numero_factura: editFacNumero,
       fecha_emision: editFacFecha,
       fecha_vencimiento: editFacFechaVencimiento || undefined,
@@ -1692,7 +1739,7 @@ export default function ProveedoresPage() {
       ════════════════════════════════════ */}
       {showEditFacturaModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-2xl max-h-[90vh] shadow-2xl overflow-hidden flex flex-col">
             <div className="flex items-center justify-between p-6 border-b border-neutral-800 shrink-0">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <Pencil size={18} className="text-indigo-400" /> Editar Factura
@@ -1702,15 +1749,7 @@ export default function ProveedoresPage() {
               </button>
             </div>
             
-            <div className="p-6 space-y-4">
-              <div className="bg-indigo-500/10 border border-indigo-500/20 p-3 rounded-xl flex items-start gap-2 mb-4 text-indigo-300 text-sm">
-                <Info size={16} className="mt-0.5 shrink-0" />
-                <p>
-                  Si necesitas modificar los <strong>artículos del inventario</strong> asociados a esta factura, 
-                  por favor hazlo desde <Link href="/dashboard/compras" className="font-bold underline text-indigo-200">Compras / Historial</Link>.
-                </p>
-              </div>
-
+            <div className="p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
               {errorEdit && (
                 <div className="bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl text-rose-400 text-sm flex items-center gap-2">
                   <AlertCircle size={16} /> {errorEdit}
@@ -1746,14 +1785,220 @@ export default function ProveedoresPage() {
                   className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-white text-sm" placeholder="Ej. Compra de insumos" />
               </div>
 
+              {/* EDICIÓN DE ITEMS / PRODUCTOS SI LA FACTURA TIENE INSUMOS */}
+              {isLoadingEditItems ? (
+                <div className="py-4 text-center text-xs text-neutral-400 flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-indigo-500"></div> Cargando productos vinculados...
+                </div>
+              ) : (editFacItems.length > 0 || editFacCompraPuntualId) ? (
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-sm font-bold text-emerald-400 flex items-center gap-1.5">
+                      <Package size={16} /> Productos / Insumos ({editFacItems.length})
+                    </label>
+                    <span className="text-xs text-neutral-400">El inventario se sincronizará automáticamente</span>
+                  </div>
+
+                  {/* Lista de productos actuales */}
+                  <div className="bg-black/30 border border-neutral-800 rounded-xl overflow-hidden divide-y divide-neutral-800/60">
+                    {editFacItems.map((item, idx) => (
+                      <div key={idx} className="p-3 flex items-center justify-between gap-3 text-sm hover:bg-neutral-800/30">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-white truncate">
+                            {item.nombre_nuevo}
+                            {item.is_new && <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded ml-1.5 font-normal">NUEVO</span>}
+                          </p>
+                          <p className="text-xs text-neutral-400 mt-0.5">
+                            {item.cantidad} {item.unidad_nueva || 'Und'} · Total: <span className="text-white font-medium">$ {Number(item.costoTotal || 0).toFixed(2)}</span>
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newItems = editFacItems.filter((_, i) => i !== idx);
+                            setEditFacItems(newItems);
+                            const newTot = newItems.reduce((acc, i) => acc + Number(i.costoTotal || 0), 0);
+                            setEditFacTotal(newTot.toFixed(2));
+                          }}
+                          className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors flex items-center gap-1 text-xs"
+                          title="Eliminar este producto de la factura"
+                        >
+                          <Trash2 size={15} /> <span className="hidden sm:inline">Quitar</span>
+                        </button>
+                      </div>
+                    ))}
+
+                    {editFacItems.length === 0 && (
+                      <div className="p-4 text-center text-xs text-neutral-500 italic">
+                        No quedan productos en esta factura. Agrega uno abajo.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Formulario para agregar producto a la factura */}
+                  <div className="p-3 bg-neutral-950 rounded-xl border border-indigo-500/30 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1">
+                        <Plus size={13} /> Agregar Producto
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditAddIsNew(!editAddIsNew);
+                          setEditAddInsumoSearch('');
+                          setEditAddNombreNuevo('');
+                        }}
+                        className="text-xs text-neutral-400 hover:text-white underline"
+                      >
+                        {editAddIsNew ? 'Seleccionar existente' : '+ Crear nuevo'}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
+                      {editAddIsNew ? (
+                        <>
+                          <div className="sm:col-span-5">
+                            <label className="block text-[10px] font-medium text-neutral-400 mb-1">Nombre Insumo</label>
+                            <input
+                              type="text"
+                              value={editAddNombreNuevo}
+                              onChange={e => setEditAddNombreNuevo(e.target.value)}
+                              placeholder="Ej. Harina"
+                              className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2.5 py-1.5 text-xs"
+                            />
+                          </div>
+                          <div className="sm:col-span-2">
+                            <label className="block text-[10px] font-medium text-neutral-400 mb-1">Unidad</label>
+                            <select
+                              value={editAddUnidad}
+                              onChange={e => setEditAddUnidad(e.target.value)}
+                              className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2 py-1.5 text-xs"
+                            >
+                              {['Kg', 'Gr', 'Lt', 'Ml', 'Und', 'Cajas', 'Paquetes'].map(u => (
+                                <option key={u} value={u} className="bg-neutral-900">{u}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="sm:col-span-7">
+                          <label className="block text-[10px] font-medium text-neutral-400 mb-1">Insumo</label>
+                          <select
+                            value={editAddInsumoSearch}
+                            onChange={e => setEditAddInsumoSearch(e.target.value)}
+                            className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2.5 py-1.5 text-xs"
+                          >
+                            <option value="">Seleccionar insumo...</option>
+                            {insumosList.map(i => (
+                              <option key={i.id} value={i.id} className="bg-neutral-900">
+                                {i.nombre} ({i.cantidad_actual || 0} {i.unidad_medida})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-[10px] font-medium text-neutral-400 mb-1">Cantidad</label>
+                        <input
+                          type="number"
+                          step="any"
+                          min="0.01"
+                          placeholder="0"
+                          value={editAddCantidad}
+                          onChange={e => setEditAddCantidad(e.target.value)}
+                          className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2 py-1.5 text-xs text-center"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-3 flex gap-2">
+                        <div className="flex-1">
+                          <label className="block text-[10px] font-medium text-neutral-400 mb-1">Total ($)</label>
+                          <input
+                            type="number"
+                            step="any"
+                            min="0.01"
+                            placeholder="0.00"
+                            value={editAddTotal}
+                            onChange={e => setEditAddTotal(e.target.value)}
+                            className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2 py-1.5 text-xs text-center"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const qty = Number(editAddCantidad);
+                            const cost = Number(editAddTotal);
+                            if (!qty || qty <= 0 || !cost || cost <= 0) return;
+
+                            let newItem: any = null;
+                            if (editAddIsNew) {
+                              if (!editAddNombreNuevo.trim()) return;
+                              newItem = {
+                                id: Math.random().toString(),
+                                insumo_id: null,
+                                is_new: true,
+                                nombre_nuevo: editAddNombreNuevo.trim(),
+                                unidad_nueva: editAddUnidad || 'Und',
+                                cantidad: qty,
+                                costoTotal: cost,
+                                monedaItem: 'USD'
+                              };
+                            } else {
+                              if (!editAddInsumoSearch) return;
+                              const found = insumosList.find(i => i.id === editAddInsumoSearch);
+                              newItem = {
+                                id: Math.random().toString(),
+                                insumo_id: editAddInsumoSearch,
+                                is_new: false,
+                                nombre_nuevo: found?.nombre || 'Insumo',
+                                unidad_nueva: found?.unidad_medida || 'Und',
+                                cantidad: qty,
+                                costoTotal: cost,
+                                monedaItem: 'USD'
+                              };
+                            }
+
+                            const updated = [...editFacItems, newItem];
+                            setEditFacItems(updated);
+                            const newTot = updated.reduce((acc, i) => acc + Number(i.costoTotal || 0), 0);
+                            setEditFacTotal(newTot.toFixed(2));
+
+                            setEditAddInsumoSearch('');
+                            setEditAddNombreNuevo('');
+                            setEditAddIsNew(false);
+                            setEditAddCantidad('');
+                            setEditAddTotal('');
+                          }}
+                          className="self-end bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-1.5 px-3 rounded-lg transition-colors flex items-center justify-center gap-1"
+                        >
+                          <Plus size={13} /> Añadir
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
               <div>
                 <label className="block text-sm font-medium text-neutral-400 mb-1.5">Monto Total de la Factura (Divisas)</label>
                 <div className="relative">
                   <DollarSign size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
-                  <input type="number" step="any" min="0" value={editFacTotal} onChange={e => setEditFacTotal(e.target.value)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-9 pr-4 py-2 text-white text-sm" />
+                  <input
+                    type="number"
+                    step="any"
+                    min="0"
+                    value={editFacTotal}
+                    onChange={e => setEditFacTotal(e.target.value)}
+                    readOnly={editFacItems.length > 0}
+                    className={`w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-9 pr-4 py-2 text-white text-sm ${editFacItems.length > 0 ? 'opacity-80 cursor-not-allowed text-emerald-400 font-bold' : ''}`}
+                  />
                 </div>
-                <p className="text-xs text-neutral-500 mt-1">El saldo pendiente se recalculará automáticamente según los abonos ya realizados.</p>
+                <p className="text-xs text-neutral-500 mt-1">
+                  {editFacItems.length > 0
+                    ? 'El total se calcula automáticamente sumando los productos de la factura.'
+                    : 'El saldo pendiente se recalculará automáticamente según los abonos ya realizados.'}
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
