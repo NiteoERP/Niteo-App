@@ -35,7 +35,6 @@ export default function CatalogoClient({
   const [isPending, startTransition] = useTransition();
   const [copied, setCopied] = useState(false);
   const [catalogoActivo, setCatalogoActivo] = useState(empresa?.catalogo_activo ?? false);
-  const [isToggling, startToggle] = useTransition();
 
   const filtered = productos.filter(p => {
     const matchesSearch = (p.nombre?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
@@ -66,20 +65,6 @@ export default function CatalogoClient({
     navigator.clipboard.writeText(catalogUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleToggleCatalogo = () => {
-    if (!empresa?.slug_catalogo) return;
-    const newValue = !catalogoActivo;
-    setCatalogoActivo(newValue);
-    // We need the empresaId — since we don't have it here, we'll call a different approach
-    // Actually updateCatalogoConfig needs empresaId. Let's trigger a form action instead.
-    // We use a hidden form with the server action.
-    startToggle(async () => {
-      // We don't have empresaId in this component, so we call a client-side fetch
-      // to a dedicated endpoint, or use the updateCatalogoConfig via a wrapper.
-      // For simplicity, store empresaId in empresa prop.
-    });
   };
 
   return (

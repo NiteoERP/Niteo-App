@@ -5,7 +5,7 @@
 
 -- 1. Agregar columnas al catálogo público en la tabla empresas
 ALTER TABLE public.empresas
-  ADD COLUMN IF NOT EXISTS slug_catalogo       TEXT UNIQUE,
+  ADD COLUMN IF NOT EXISTS slug_catalogo       TEXT,
   ADD COLUMN IF NOT EXISTS whatsapp_catalogo   TEXT,
   ADD COLUMN IF NOT EXISTS catalogo_activo     BOOLEAN DEFAULT FALSE;
 
@@ -49,6 +49,9 @@ BEGIN
   END LOOP;
 END;
 $$;
+
+-- 2.5 Agregar la restricción UNIQUE ahora que los slugs son únicos
+ALTER TABLE public.empresas ADD CONSTRAINT empresas_slug_catalogo_key UNIQUE (slug_catalogo);
 
 -- 3. RLS: Permitir lectura pública de productos cuando el catálogo está activo
 -- Primero verificar si RLS está habilitado en productos
