@@ -436,6 +436,68 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
           </div>
         )}
       </div>
+
+      {showDuplicateModal && analysisData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 max-w-lg w-full shadow-xl">
+            <div className="flex items-center gap-3 mb-4 text-amber-600">
+              <AlertTriangle size={24} />
+              <h3 className="text-xl font-bold">Productos Existentes Detectados</h3>
+            </div>
+            
+            <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
+              Hemos detectado que <strong>{analysisData.existentesCount}</strong> de los {analysisData.total} productos que intentas importar ya existen en tu catálogo (basado en el Nombre o Código de Barras).
+            </p>
+
+            <div className="bg-neutral-50 dark:bg-neutral-950 rounded-lg p-3 mb-4 text-xs font-mono text-neutral-500">
+              Ejemplos: {analysisData.ejemplosExistentes.join(', ')}
+            </div>
+
+            <p className="text-sm font-semibold mb-3 dark:text-white">¿Qué deseas hacer con estos productos?</p>
+            
+            <div className="space-y-3 mb-6">
+              <label className="flex items-start gap-3 p-3 rounded-lg border border-neutral-200 dark:border-neutral-800 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-950/50">
+                <input type="radio" name="duplicateMode" value="actualizar" checked={duplicateMode === 'actualizar'} onChange={() => setDuplicateMode('actualizar')} className="mt-1" />
+                <div>
+                  <p className="text-sm font-bold dark:text-white">Actualizar Existentes</p>
+                  <p className="text-xs text-neutral-500">Se actualizarán los precios, costos y stock de los existentes. Los nuevos se crearán normalmente.</p>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 p-3 rounded-lg border border-neutral-200 dark:border-neutral-800 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-950/50">
+                <input type="radio" name="duplicateMode" value="omitir" checked={duplicateMode === 'omitir'} onChange={() => setDuplicateMode('omitir')} className="mt-1" />
+                <div>
+                  <p className="text-sm font-bold dark:text-white">Omitir (Ignorar)</p>
+                  <p className="text-xs text-neutral-500">Los productos existentes no se tocarán. Solo se crearán los {analysisData.nuevosCount} productos nuevos.</p>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 p-3 rounded-lg border border-neutral-200 dark:border-neutral-800 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-950/50">
+                <input type="radio" name="duplicateMode" value="duplicar" checked={duplicateMode === 'duplicar'} onChange={() => setDuplicateMode('duplicar')} className="mt-1" />
+                <div>
+                  <p className="text-sm font-bold text-red-600 dark:text-red-400">Crear Duplicados</p>
+                  <p className="text-xs text-neutral-500">Se crearán todos como productos nuevos (tendrás nombres repetidos).</p>
+                </div>
+              </label>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => setShowDuplicateModal(false)}
+                className="px-4 py-2 rounded-xl text-sm font-bold text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={() => executeImportWithMode(pendingMappedData, duplicateMode)}
+                className="px-6 py-2 rounded-xl text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white"
+              >
+                Continuar Importación
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
