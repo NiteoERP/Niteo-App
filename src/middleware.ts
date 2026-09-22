@@ -156,6 +156,7 @@ export async function middleware(request: NextRequest) {
               else if (profile.permisos.includes('clientes'))                          url.pathname = '/dashboard/clientes';
               else if (profile.permisos.includes('creditos'))                          url.pathname = '/dashboard/creditos';
               else if (profile.permisos.includes('equipo') || profile.permisos.includes('usuarios')) url.pathname = '/dashboard/equipo';
+              else if (profile.permisos.includes('mesas'))                             url.pathname = '/dashboard/mesas';
               else                                                                      url.pathname = '/dashboard';
 
               if (url.pathname !== '/dashboard') {

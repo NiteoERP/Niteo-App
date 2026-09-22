@@ -33,6 +33,12 @@ export const AVAILABLE_MODULES: ModuleDefinition[] = [
     category: 'operaciones' 
   },
   { 
+    id: 'mesas', 
+    label: 'Módulo Mesero (App Móvil)', 
+    description: 'Permite tomar pedidos de mesas desde el celular y enviarlos al terminal Niteo POS vinculado', 
+    category: 'operaciones' 
+  },
+  { 
     id: 'proveedores', 
     label: 'Proveedores', 
     description: 'Directorio de proveedores y cuentas por pagar', 
@@ -117,7 +123,7 @@ export const ROLE_PRESETS: Record<string, string[]> = {
   CAJERO: ['pos', 'caja'],
   GERENTE: [
     'dashboard', 'pos', 'caja', 'inventario', 'compras', 'proveedores',
-    'despachos', 'clientes', 'creditos', 'reportes', 'finanzas'
+    'despachos', 'clientes', 'creditos', 'reportes', 'finanzas', 'mesas'
   ],
   COMPRADOR: ['compras', 'proveedores', 'inventario'],
   MASTER: AVAILABLE_MODULES.map(m => m.id),

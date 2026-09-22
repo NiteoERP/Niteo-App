@@ -21,7 +21,8 @@ import {
   Receipt,
   BookOpen,
   ShoppingBag,
-  Building2
+  Building2,
+  UtensilsCrossed
 } from 'lucide-react';
 
 interface NavProps {
@@ -80,12 +81,13 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
       id: 'ventas',
       label: 'Ventas',
       icon: ShoppingCart,
-      visible: hasPerm('pos') || hasPerm('inventario'),
+      visible: hasPerm('pos') || hasPerm('inventario') || hasPerm('mesas'),
       items: [
         { label: 'Nueva Venta', path: '/dashboard/terminal', icon: MonitorSmartphone, perm: hasPerm('pos') },
         { label: 'Facturación', path: '/dashboard/documentos/nuevo', icon: FileText, perm: hasPerm('pos') },
         { label: 'Historial', path: '/dashboard/ventas', icon: Receipt, perm: hasPerm('pos') },
         { label: 'Catálogo de Ventas', path: '/dashboard/catalogo', icon: BookOpen, perm: hasPerm('inventario') },
+        { label: 'Módulo Mesero', path: '/dashboard/mesas', icon: UtensilsCrossed, perm: hasPerm('mesas') },
       ].filter(i => i.perm !== false),
     },
     {
@@ -339,7 +341,7 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
 
             <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-4 custom-scrollbar">
               {/* Sección Ventas */}
-              {(hasPerm('pos') || hasPerm('inventario')) && (
+              {(hasPerm('pos') || hasPerm('inventario') || hasPerm('mesas')) && (
                 <div className="space-y-1">
                   <p className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider px-2">Ventas</p>
                   {hasPerm('pos') && (
@@ -358,6 +360,11 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
                   {hasPerm('inventario') && (
                     <Link href="/dashboard/catalogo" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/catalogo')}>
                       <BookOpen size={18} /> Catálogo de Ventas
+                    </Link>
+                  )}
+                  {hasPerm('mesas') && (
+                    <Link href="/dashboard/mesas" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/mesas')}>
+                      <UtensilsCrossed size={18} /> Módulo Mesero
                     </Link>
                   )}
                 </div>
@@ -468,6 +475,7 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
 
         {(() => {
           const candidateTabs = [
+            ...(hasPerm('mesas') ? [{ path: '/dashboard/mesas', label: 'Mesero', icon: UtensilsCrossed }] : []),
             ...(hasPerm('pos') ? [{ path: '/dashboard/ventas', label: 'Ventas', icon: ShoppingCart }] : []),
             ...(hasPerm('inventario') ? [{ path: '/dashboard/inventario', label: 'Inventario', icon: Package }] : []),
             ...(hasPerm('caja') ? [{ path: '/dashboard/caja', label: 'Caja', icon: Wallet }] : []),
