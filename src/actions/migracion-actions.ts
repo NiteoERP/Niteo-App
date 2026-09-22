@@ -36,6 +36,80 @@ export async function exportarCatalogo() {
 }
 
 export type ModoDuplicados = 'actualizar' | 'omitir' | 'duplicar';
+export type ModoStock = 'reemplazar' | 'sumar';
+
+export async function sincronizarProductosReventaSinInventario(sedeId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autorizado' };
+  const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
+  if (!perfil) return { success: false, error: 'Perfil no encontrado' };
+
+  // Obtener productos que no tienen insumo vinculado
+  const { data: prods, error } = await supabase
+    .from('productos')
+    .select('id, nombre, costo, id_insumo_vinculado')
+    .eq('empresa_id', perfil.empresa_id)
+    .is('id_insumo_vinculado', null);
+
+  if (error || !prods) return { success: false, error: 'Error al consultar productos' };
+
+  // Obtener insumos existentes en la sede
+  const { data: insumosData } = await supabase
+    .from('inventario_insumos')
+    .select('id, nombre')
+    .eq('empresa_id', perfil.empresa_id)
+    .eq('sede_id', sedeId);
+
+  const insumosByName = new Map<string, string>(
+    (insumosData || []).map((i: any) => [i.nombre.trim().toLowerCase(), i.id])
+  );
+
+  let count = 0;
+  for (const p of prods) {
+    const key = p.nombre.trim().toLowerCase();
+    let insumoId = insumosByName.get(key);
+
+    if (!insumoId) {
+      const { data: newIns, error: insErr } = await supabase
+        .from('inventario_insumos')
+        .insert({
+          empresa_id: perfil.empresa_id,
+          sede_id: sedeId,
+          nombre: p.nombre,
+          unidad_medida: 'Und',
+          costo_promedio: p.costo || 0,
+          cantidad_actual: 0
+        })
+        .select('id')
+        .single();
+
+      if (!insErr && newIns && newIns.id) {
+        insumoId = newIns.id;
+        insumosByName.set(key, newIns.id);
+      }
+    }
+
+    if (insumoId) {
+      await supabase.from('productos').update({ id_insumo_vinculado: insumoId, es_reventa: true }).eq('id', p.id);
+      
+      const { data: rec } = await supabase.from('recetas').select('id').eq('producto_id', p.id).eq('insumo_id', insumoId).maybeSingle();
+      if (!rec) {
+        await supabase.from('recetas').insert({
+          empresa_id: perfil.empresa_id,
+          producto_id: p.id,
+          insumo_id: insumoId,
+          cantidad_necesaria: 1
+        });
+      }
+      count++;
+    }
+  }
+
+  revalidatePath('/dashboard/inventario');
+  revalidatePath('/dashboard/catalogo');
+  return { success: true, count };
+}
 
 export async function analizarImportacionProductos(productos: any[]) {
   const supabase = await createClient();
@@ -141,7 +215,8 @@ export async function limpiarProductosDuplicados() {
 export async function procesarImportacionUniversal(
   productos: any[],
   sedeId: string,
-  modoDuplicados: ModoDuplicados = 'actualizar'
+  modoDuplicados: ModoDuplicados = 'actualizar',
+  modoStock: ModoStock = 'reemplazar'
 ) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -262,12 +337,12 @@ export async function procesarImportacionUniversal(
 
   // A. Procesar Actualizaciones de productos existentes
   for (const { existing, item } of toUpdate) {
-    const catKey = item.categoria ? item.categoria.toString().trim().toLowerCase() : '';
+    const catKey = (item.categoria !== undefined && item.categoria !== null) ? item.categoria.toString().trim().toLowerCase() : '';
     const catId = catKey ? (categoriasMap.get(catKey) || null) : null;
-    const rawDesc = item.descripcion ? String(item.descripcion).trim() : '';
+    const rawDesc = (item.descripcion !== undefined && item.descripcion !== null) ? String(item.descripcion).trim() : undefined;
 
     let barcodeVal: string | null = null;
-    if (item.codigo_barras) {
+    if (item.codigo_barras !== undefined && item.codigo_barras !== null) {
       const rawCode = String(item.codigo_barras).trim();
       if (rawCode.length > 0) {
         if (!usedBarcodes.has(rawCode) || existing.codigo_barras === rawCode) {
@@ -278,15 +353,29 @@ export async function procesarImportacionUniversal(
     }
 
     const updates: any = {};
-    if (item.precio_venta !== undefined && item.precio_venta !== null && !isNaN(item.precio_venta) && item.precio_venta > 0) {
-      updates.precio_venta = parseFloat(item.precio_venta);
+    if (item.precio_venta !== undefined && item.precio_venta !== null && !isNaN(Number(item.precio_venta)) && Number(item.precio_venta) >= 0) {
+      updates.precio_venta = Number(item.precio_venta);
     }
-    if (item.costo !== undefined && item.costo !== null && !isNaN(item.costo) && item.costo > 0) {
-      updates.costo = parseFloat(item.costo);
+    if (item.costo !== undefined && item.costo !== null && !isNaN(Number(item.costo)) && Number(item.costo) >= 0) {
+      updates.costo = Number(item.costo);
     }
-    if (catId) updates.categoria_id = catId;
-    if (rawDesc) updates.descripcion = rawDesc;
+    if (item.categoria !== undefined && catId) updates.categoria_id = catId;
+    if (rawDesc !== undefined && rawDesc.length > 0) updates.descripcion = rawDesc;
     if (barcodeVal) updates.codigo_barras = barcodeVal;
+
+    const finalEsReventa = item.es_reventa !== undefined ? Boolean(item.es_reventa) : Boolean(existing.es_reventa);
+
+    if (item.es_reventa !== undefined && item.es_reventa !== null) {
+      updates.es_reventa = Boolean(item.es_reventa);
+    }
+
+    if (finalEsReventa === false && existing.id_insumo_vinculado) {
+      updates.id_insumo_vinculado = null;
+      // Eliminar la receta que lo vinculaba y opcionalmente el insumo
+      await supabase.from('recetas').delete().eq('producto_id', existing.id).eq('insumo_id', existing.id_insumo_vinculado);
+      // Intentamos eliminar el insumo si no tiene otros movimientos
+      await supabase.from('inventario_insumos').delete().eq('id', existing.id_insumo_vinculado);
+    }
 
     if (Object.keys(updates).length > 0) {
       await supabase.from('productos').update(updates).eq('id', existing.id);
@@ -294,34 +383,63 @@ export async function procesarImportacionUniversal(
 
     // Gestionar Stock del producto actualizado
     const tieneCantidad = item.cantidad !== null && item.cantidad !== undefined && !isNaN(Number(item.cantidad));
-    if (tieneCantidad) {
+    if (tieneCantidad && finalEsReventa === true) {
       const stockEntrante = Math.max(0, Number(item.cantidad));
       const keyNombre = (existing.nombre || '').trim().toLowerCase();
-      let existingIns = insumosMap.get(keyNombre);
+
+      let existingIns = existing.id_insumo_vinculado
+        ? (existingInsumos || []).find((ins: any) => ins.id === existing.id_insumo_vinculado)
+        : insumosMap.get(keyNombre);
+
+      if (!existingIns) {
+        const { data: dbIns } = await supabase
+          .from('inventario_insumos')
+          .select('id, nombre, cantidad_actual, costo_promedio')
+          .eq('empresa_id', perfil.empresa_id)
+          .eq('sede_id', sedeId)
+          .ilike('nombre', existing.nombre.trim())
+          .maybeSingle();
+        if (dbIns) existingIns = dbIns;
+      }
 
       if (existingIns) {
-        const nuevaCant = Number(existingIns.cantidad_actual || 0) + stockEntrante;
+        const nuevaCant = modoStock === 'sumar'
+          ? (Number(existingIns.cantidad_actual || 0) + stockEntrante)
+          : stockEntrante;
+
         await supabase
           .from('inventario_insumos')
           .update({
             cantidad_actual: nuevaCant,
-            costo_promedio: updates.costo || existingIns.costo_promedio
+            ...(updates.costo !== undefined ? { costo_promedio: updates.costo } : {})
           })
           .eq('id', existingIns.id);
         existingIns.cantidad_actual = nuevaCant;
 
-        if (stockEntrante > 0) {
-          await supabase.from('movimientos_inventario').insert({
+        if (!existing.id_insumo_vinculado) {
+          await supabase.from('productos').update({ id_insumo_vinculado: existingIns.id, es_reventa: true }).eq('id', existing.id);
+        }
+
+        const { data: rec } = await supabase.from('recetas').select('id').eq('producto_id', existing.id).eq('insumo_id', existingIns.id).maybeSingle();
+        if (!rec) {
+          await supabase.from('recetas').insert({
             empresa_id: perfil.empresa_id,
+            producto_id: existing.id,
             insumo_id: existingIns.id,
-            usuario_id: user.id,
-            tipo_movimiento: 'ENTRADA',
-            cantidad: stockEntrante,
-            costo_perdido: 0,
-            motivo: 'Actualización de stock desde migración Excel',
-            fecha_movimiento: new Date().toISOString(),
+            cantidad_necesaria: 1,
           });
         }
+
+        await supabase.from('movimientos_inventario').insert({
+          empresa_id: perfil.empresa_id,
+          insumo_id: existingIns.id,
+          usuario_id: user.id,
+          tipo_movimiento: 'AJUSTE',
+          cantidad: stockEntrante,
+          costo_perdido: 0,
+          motivo: modoStock === 'sumar' ? 'Suma de stock desde migración Excel' : 'Actualización de stock desde migración Excel',
+          fecha_movimiento: new Date().toISOString(),
+        });
       } else {
         const { data: newIns } = await supabase
           .from('inventario_insumos')
@@ -330,7 +448,7 @@ export async function procesarImportacionUniversal(
             sede_id: sedeId,
             nombre: existing.nombre,
             unidad_medida: normalizarUnidad(item.unidad_medida),
-            costo_promedio: updates.costo || existing.costo || 0,
+            costo_promedio: updates.costo !== undefined ? updates.costo : (existing.costo || 0),
             cantidad_actual: stockEntrante,
           })
           .select('id, nombre, cantidad_actual, costo_promedio')
@@ -339,7 +457,7 @@ export async function procesarImportacionUniversal(
         if (newIns) {
           insumosMap.set(keyNombre, newIns);
           await Promise.all([
-            supabase.from('productos').update({ id_insumo_vinculado: newIns.id }).eq('id', existing.id),
+            supabase.from('productos').update({ id_insumo_vinculado: newIns.id, es_reventa: true }).eq('id', existing.id),
             supabase.from('recetas').insert({
               empresa_id: perfil.empresa_id,
               producto_id: existing.id,
@@ -356,7 +474,7 @@ export async function procesarImportacionUniversal(
               tipo_movimiento: 'ENTRADA',
               cantidad: stockEntrante,
               costo_perdido: 0,
-              motivo: 'Actualización de stock desde migración Excel',
+              motivo: 'Carga inicial de stock desde migración Excel',
               fecha_movimiento: new Date().toISOString(),
             });
           }
@@ -389,6 +507,8 @@ export async function procesarImportacionUniversal(
 
       const rawDesc = p.descripcion ? String(p.descripcion).trim() : '';
 
+      const esReventa = p.es_reventa !== undefined ? Boolean(p.es_reventa) : true;
+
       return {
         empresa_id: perfil.empresa_id,
         sede_id: sedeId,
@@ -401,7 +521,7 @@ export async function procesarImportacionUniversal(
         precio_modificable: Boolean(p.precio_modificable),
         estado_activo: true,
         canal_venta: 'AMBOS',
-        es_reventa: true,
+        es_reventa: esReventa,
       };
     });
 
@@ -418,6 +538,9 @@ export async function procesarImportacionUniversal(
     for (let idx = 0; idx < insertedProds.length; idx++) {
       const prodCreated = insertedProds[idx];
       const origItem = chunk[idx];
+      const esReventa = origItem.es_reventa !== undefined ? Boolean(origItem.es_reventa) : true;
+      
+      if (!esReventa) continue;
       const tieneCantidad = origItem.cantidad !== null && origItem.cantidad !== undefined && !isNaN(Number(origItem.cantidad));
       const stockInicial = tieneCantidad ? Math.max(0, Number(origItem.cantidad)) : 0;
       const keyNombre = prodCreated.nombre.trim().toLowerCase();

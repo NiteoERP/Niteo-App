@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Download, Upload, FileSpreadsheet, Loader2, Database, AlertTriangle, Sparkles, RefreshCw, X } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { createClient } from '@/utils/supabase/client';
-import { procesarImportacionUniversal, analizarImportacionProductos, limpiarProductosDuplicados, ModoDuplicados } from '@/actions/migracion-actions';
+import { procesarImportacionUniversal, analizarImportacionProductos, limpiarProductosDuplicados, sincronizarProductosReventaSinInventario, ModoDuplicados, ModoStock } from '@/actions/migracion-actions';
 
 type TabType = 'excel' | 'db';
 
@@ -20,6 +20,8 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
   const [importingExcel, setImportingExcel] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [cleaningDuplicates, setCleaningDuplicates] = useState(false);
+  const [syncingReventa, setSyncingReventa] = useState(false);
+  const [modoStock, setModoStock] = useState<ModoStock>('reemplazar');
 
   // --- DUPLICATE RESOLUTION MODAL STATES ---
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
@@ -41,7 +43,8 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
     { key: 'codigo_barras', label: 'Código de Barras (Opcional)' },
     { key: 'precio_venta', label: 'Precio de Venta (Opcional)' },
     { key: 'costo', label: 'Costo (Opcional)' },
-    { key: 'cantidad', label: 'Cantidad en Inventario / Stock Inicial (Opcional)' }
+    { key: 'cantidad', label: 'Cantidad en Inventario / Stock Inicial (Opcional)' },
+    { key: 'tipo', label: 'Tipo (Reventa / Elaborado) (Opcional)' }
   ];
 
   const downloadTemplate = () => {
@@ -81,6 +84,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
            else if (lowH.includes('precio') || lowH.includes('price')) autoMap['precio_venta'] = h;
            else if (lowH.includes('cost')) autoMap['costo'] = h;
            else if (lowH.includes('cant') || lowH.includes('stock') || lowH.includes('existencia') || lowH.includes('inv') || lowH.includes('qty')) autoMap['cantidad'] = h;
+           else if (lowH.includes('tipo') || lowH.includes('type') || lowH.includes('reventa') || lowH.includes('elaborado')) autoMap['tipo'] = h;
         });
         setColumnMapping(autoMap);
       } catch (err) {
@@ -92,22 +96,56 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
 
   const getMappedRows = () => {
     return excelData.map(row => {
-      const rawName = row[columnMapping['nombre']];
-      const rawCat = columnMapping['categoria'] && row[columnMapping['categoria']] !== undefined ? String(row[columnMapping['categoria']]).trim() : '';
-      const rawDesc = columnMapping['descripcion'] && row[columnMapping['descripcion']] !== undefined ? String(row[columnMapping['descripcion']]).trim() : '';
-      const rawBarcode = columnMapping['codigo_barras'] && row[columnMapping['codigo_barras']] !== undefined ? String(row[columnMapping['codigo_barras']]).trim() : '';
-      const rawStock = columnMapping['cantidad'] && row[columnMapping['cantidad']] !== undefined && String(row[columnMapping['cantidad']]).trim() !== ''
+      const isNombreMapped = Boolean(columnMapping['nombre']);
+      const isCatMapped = Boolean(columnMapping['categoria']);
+      const isDescMapped = Boolean(columnMapping['descripcion']);
+      const isBarcodeMapped = Boolean(columnMapping['codigo_barras']);
+      const isPrecioMapped = Boolean(columnMapping['precio_venta']);
+      const isCostoMapped = Boolean(columnMapping['costo']);
+      const isCantidadMapped = Boolean(columnMapping['cantidad']);
+      const isTipoMapped = Boolean(columnMapping['tipo']);
+
+      const rawName = isNombreMapped ? row[columnMapping['nombre']] : null;
+      const rawCat = isCatMapped && row[columnMapping['categoria']] !== undefined && String(row[columnMapping['categoria']]).trim() !== ''
+        ? String(row[columnMapping['categoria']]).trim()
+        : undefined;
+      const rawDesc = isDescMapped && row[columnMapping['descripcion']] !== undefined && String(row[columnMapping['descripcion']]).trim() !== ''
+        ? String(row[columnMapping['descripcion']]).trim()
+        : undefined;
+      const rawBarcode = isBarcodeMapped && row[columnMapping['codigo_barras']] !== undefined && String(row[columnMapping['codigo_barras']]).trim() !== ''
+        ? String(row[columnMapping['codigo_barras']]).trim()
+        : undefined;
+      const rawPrecio = isPrecioMapped && row[columnMapping['precio_venta']] !== undefined && String(row[columnMapping['precio_venta']]).trim() !== ''
+        ? parseFloat(row[columnMapping['precio_venta']])
+        : undefined;
+      const rawCosto = isCostoMapped && row[columnMapping['costo']] !== undefined && String(row[columnMapping['costo']]).trim() !== ''
+        ? parseFloat(row[columnMapping['costo']])
+        : undefined;
+      const rawStock = isCantidadMapped && row[columnMapping['cantidad']] !== undefined && String(row[columnMapping['cantidad']]).trim() !== ''
         ? parseFloat(row[columnMapping['cantidad']])
-        : null;
+        : undefined;
+      const rawTipo = isTipoMapped && row[columnMapping['tipo']] !== undefined && String(row[columnMapping['tipo']]).trim() !== ''
+        ? String(row[columnMapping['tipo']]).trim().toLowerCase()
+        : undefined;
+
+      let es_reventa: boolean | undefined = undefined;
+      if (rawTipo) {
+        if (rawTipo.includes('reventa') || rawTipo === 'si' || rawTipo === 'sí' || rawTipo === 'true') {
+          es_reventa = true;
+        } else if (rawTipo.includes('elaborado') || rawTipo.includes('produccion') || rawTipo.includes('producción') || rawTipo === 'no' || rawTipo === 'false') {
+          es_reventa = false;
+        }
+      }
 
       return {
         nombre: rawName ? String(rawName).trim() : '',
-        categoria: rawCat || '',
-        descripcion: rawDesc || null,
-        codigo_barras: rawBarcode || null,
-        precio_venta: columnMapping['precio_venta'] && row[columnMapping['precio_venta']] !== undefined ? (parseFloat(row[columnMapping['precio_venta']]) || 0) : 0,
-        costo: columnMapping['costo'] && row[columnMapping['costo']] !== undefined ? (parseFloat(row[columnMapping['costo']]) || 0) : 0,
-        cantidad: (rawStock !== null && !isNaN(rawStock)) ? rawStock : null,
+        categoria: rawCat,
+        descripcion: rawDesc,
+        codigo_barras: rawBarcode,
+        precio_venta: (rawPrecio !== undefined && !isNaN(rawPrecio)) ? rawPrecio : undefined,
+        costo: (rawCosto !== undefined && !isNaN(rawCosto)) ? rawCosto : undefined,
+        cantidad: (rawStock !== undefined && !isNaN(rawStock)) ? rawStock : undefined,
+        es_reventa: es_reventa,
       };
     }).filter(x => x.nombre);
   };
@@ -148,7 +186,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
     setImportingExcel(true);
     setMessage(null);
     try {
-      const res = await procesarImportacionUniversal(mapped, selectedSede, mode);
+      const res = await procesarImportacionUniversal(mapped, selectedSede, mode, modoStock);
       if (res.success) {
         let msg = `¡Proceso completado exitosamente! `;
         if (res.createdCount) msg += `Nuevos creados: ${res.createdCount}. `;
@@ -163,6 +201,27 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
       setMessage({ type: 'error', text: err.message });
     } finally {
       setImportingExcel(false);
+    }
+  };
+
+  const handleSyncReventa = async () => {
+    if (!selectedSede) {
+      setMessage({ type: 'error', text: 'Selecciona una sede de destino.' });
+      return;
+    }
+    setSyncingReventa(true);
+    setMessage(null);
+    try {
+      const res = await sincronizarProductosReventaSinInventario(selectedSede);
+      if (res.success) {
+        setMessage({ type: 'success', text: `¡Se vincularon y crearon en inventario ${res.count} productos exitosamente para esta sede!` });
+      } else {
+        setMessage({ type: 'error', text: res.error || 'Error al vincular productos' });
+      }
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message });
+    } finally {
+      setSyncingReventa(false);
     }
   };
 
@@ -201,6 +260,16 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
           </div>
           
           <div className="flex flex-wrap items-center gap-3">
+            <button 
+              onClick={handleSyncReventa}
+              disabled={syncingReventa}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors"
+              title="Crea y vincula automáticamente las fichas de inventario e insumos para todos los productos de reventa que no lo tengan"
+            >
+              {syncingReventa ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+              {syncingReventa ? 'Vinculando...' : 'Vincular Productos a Inventario'}
+            </button>
+
             <button 
               onClick={handleCleanDuplicates}
               disabled={cleaningDuplicates}
@@ -306,7 +375,7 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
                  <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden">
                    <div className="bg-neutral-50 dark:bg-neutral-950 px-6 py-4 border-b border-neutral-200 dark:border-neutral-800">
                      <h3 className="font-bold text-neutral-900 dark:text-white">Mapeo de Columnas</h3>
-                     <p className="text-xs text-neutral-500">Relaciona los campos de tu archivo con los campos de Niteo.</p>
+                     <p className="text-xs text-neutral-500">Relaciona los campos de tu archivo con los campos de Niteo. Los campos marcados como <em>"-- Ignorar este campo --"</em> se conservarán intactos sin modificaciones.</p>
                    </div>
                    <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
                      {excelTargetFields.map(field => (
@@ -326,6 +395,35 @@ export default function MigracionClient({ sedes }: { sedes: any[] }) {
                          </div>
                        </div>
                      ))}
+                   </div>
+                 </div>
+
+                 {/* Opción de Modo de Stock */}
+                 <div className="bg-neutral-50 dark:bg-neutral-950 p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 space-y-3">
+                   <p className="text-xs font-bold text-neutral-900 dark:text-white uppercase tracking-wider">Comportamiento al actualizar inventario (para productos existentes):</p>
+                   <div className="flex flex-col sm:flex-row gap-6">
+                     <label className="flex items-center gap-2 cursor-pointer text-sm text-neutral-700 dark:text-neutral-300">
+                       <input
+                         type="radio"
+                         name="modoStock"
+                         value="reemplazar"
+                         checked={modoStock === 'reemplazar'}
+                         onChange={() => setModoStock('reemplazar')}
+                         className="text-indigo-600 focus:ring-indigo-500"
+                       />
+                       <span><strong>Reemplazar stock</strong> (Recomendado: fija la cantidad exacta del Excel)</span>
+                     </label>
+                     <label className="flex items-center gap-2 cursor-pointer text-sm text-neutral-700 dark:text-neutral-300">
+                       <input
+                         type="radio"
+                         name="modoStock"
+                         value="sumar"
+                         checked={modoStock === 'sumar'}
+                         onChange={() => setModoStock('sumar')}
+                         className="text-indigo-600 focus:ring-indigo-500"
+                       />
+                       <span><strong>Sumar al stock existente</strong> (Añade la cantidad del Excel a la existente)</span>
+                     </label>
                    </div>
                  </div>
 
