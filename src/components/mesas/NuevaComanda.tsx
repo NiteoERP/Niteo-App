@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Minus, Send, MessageSquare, Loader2, CheckCircle2, RefreshCw, ShoppingCart, X, Trash2 } from 'lucide-react';
+import { Plus, Minus, Send, MessageSquare, Loader2, CheckCircle2, RefreshCw, ShoppingCart, X, Trash2, User } from 'lucide-react';
 import { obtenerCatalogoMesa, enviarComanda, type ItemComanda } from '@/actions/mesas-actions';
 import type { TerminalVinculado } from './MesasHub';
 
@@ -22,6 +22,9 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
   const [cartOpen, setCartOpen] = useState(false);
   const [mesa, setMesa] = useState('');
   const [clienteNombre, setClienteNombre] = useState('');
+  const [clienteTelefono, setClienteTelefono] = useState('');
+  const [clienteCedula, setClienteCedula] = useState('');
+  const [showClienteForm, setShowClienteForm] = useState(false);
   const [comentarioGeneral, setComentarioGeneral] = useState('');
   const [loading, setLoading] = useState(true);
   const [enviando, setEnviando] = useState(false);
@@ -87,11 +90,15 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
     setError('');
     setEnviando(true);
     try {
+      let nombreFinal = clienteNombre.trim();
+      if (clienteCedula.trim()) nombreFinal += ` - CI/NIT: ${clienteCedula.trim()}`;
+      if (clienteTelefono.trim()) nombreFinal += ` - Tel: ${clienteTelefono.trim()}`;
+
       const result = await enviarComanda({
         terminalCode: terminal.terminalCode,
         tipo: 'comanda',
         mesaIdentificador: mesa.trim(),
-        clienteNombre: clienteNombre.trim() || undefined,
+        clienteNombre: nombreFinal || undefined,
         comentarioGeneral: comentarioGeneral.trim() || undefined,
         items: carrito.map(({ key, ...rest }) => rest),
       });
@@ -101,6 +108,9 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
         setEnviado(false);
         setCarrito([]);
         setClienteNombre('');
+        setClienteTelefono('');
+        setClienteCedula('');
+        setShowClienteForm(false);
         setComentarioGeneral('');
         setCartOpen(false);
       }, 1500);
@@ -125,7 +135,7 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
       {/* Datos del pedido */}
       <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 space-y-3">
         <h3 className="text-sm font-semibold text-neutral-300">Datos del Pedido</h3>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3">
           <div>
             <label className="text-xs text-neutral-500 mb-1 block">Mesa *</label>
             <input
@@ -136,16 +146,7 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
               className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
             />
           </div>
-          <div>
-            <label className="text-xs text-neutral-500 mb-1 block">Cliente (opcional)</label>
-            <input
-              type="text"
-              value={clienteNombre}
-              onChange={e => setClienteNombre(e.target.value)}
-              placeholder="Nombre"
-              className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
-            />
-          </div>
+
         </div>
         <div>
           <label className="text-xs text-neutral-500 mb-1 block">Nota general (opcional)</label>
@@ -228,12 +229,53 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
                 <ShoppingCart size={18} className="text-indigo-400" />
                 Resumen de Comanda
               </h3>
-              <button onClick={() => setCartOpen(false)} className="p-2 text-neutral-400 hover:text-white rounded-full bg-neutral-800 transition-colors">
-                <X size={18} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setShowClienteForm(!showClienteForm)} className={`p-2 rounded-full transition-colors ${showClienteForm || clienteNombre ? 'text-indigo-400 bg-indigo-500/10' : 'text-neutral-400 hover:text-white bg-neutral-800'}`}>
+                  <User size={18} />
+                </button>
+                <button onClick={() => setCartOpen(false)} className="p-2 text-neutral-400 hover:text-white rounded-full bg-neutral-800 transition-colors">
+                  <X size={18} />
+                </button>
+              </div>
             </div>
             
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {showClienteForm && (
+                <div className="bg-neutral-950/80 border border-indigo-500/30 p-4 rounded-xl mb-4 space-y-3 shadow-inner">
+                  <div>
+                    <label className="text-xs font-bold text-indigo-400/80 mb-1.5 block uppercase tracking-wider">Nombre del Cliente</label>
+                    <input
+                      type="text"
+                      value={clienteNombre}
+                      onChange={e => setClienteNombre(e.target.value)}
+                      placeholder="Ej: Juan Pérez"
+                      className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-bold text-indigo-400/80 mb-1.5 block uppercase tracking-wider">Teléfono</label>
+                      <input
+                        type="tel"
+                        value={clienteTelefono}
+                        onChange={e => setClienteTelefono(e.target.value)}
+                        placeholder="Opcional"
+                        className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-indigo-400/80 mb-1.5 block uppercase tracking-wider">Cédula / NIT</label>
+                      <input
+                        type="text"
+                        value={clienteCedula}
+                        onChange={e => setClienteCedula(e.target.value)}
+                        placeholder="Opcional"
+                        className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
               {carrito.map((item) => (
                 <div key={item.key} className="space-y-2 bg-neutral-950/50 p-3 rounded-xl border border-neutral-800/80">
                   <div className="flex items-center gap-3">
