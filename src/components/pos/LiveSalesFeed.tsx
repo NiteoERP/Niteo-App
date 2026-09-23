@@ -3,7 +3,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useEmpresa } from '@/components/providers/EmpresaProvider';
 import { VentaPOS } from '@/actions/pos-actions';
-import { Eye, EyeOff, Receipt, Clock, CheckCircle2, ChevronDown, ChevronUp, Users, CreditCard, Search } from 'lucide-react';
+import { Eye, EyeOff, Receipt, Clock, CheckCircle2, ChevronDown, ChevronUp, Users, CreditCard, Search, Contact, ConciergeBell } from 'lucide-react';
 import { normalizePaymentKey, getCanonicalPaymentMethodName, unifyPaymentMethods } from '@/utils/payment-methods';
 
 interface LiveSalesFeedProps {
