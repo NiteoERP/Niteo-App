@@ -29,6 +29,7 @@ export default function CatalogoClient({
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategoria, setSelectedCategoria] = useState('');
+  const [selectedSede, setSelectedSede] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isBulkOpen, setIsBulkOpen] = useState(false);
   const [editingProd, setEditingProd] = useState<any>(null);
@@ -165,9 +166,19 @@ export default function CatalogoClient({
           </div>
 
           <select
+            value={selectedSede}
+            onChange={(e) => setSelectedSede(e.target.value)}
+            className="bg-neutral-900 border border-neutral-800 text-sm text-indigo-300 rounded-lg px-3 py-2 focus:border-indigo-500 outline-none transition-colors shrink-0 max-w-[140px] truncate"
+          >
+            <option value="">Todas las sedes</option>
+            {sedes.map(s => (
+              <option key={s.id} value={s.id}>{s.nombre_sede}</option>
+            ))}
+          </select>
+          <select
             value={selectedCategoria}
             onChange={(e) => setSelectedCategoria(e.target.value)}
-            className="bg-neutral-900 border border-neutral-800 text-sm text-neutral-300 rounded-lg px-3 py-2 focus:border-indigo-500 outline-none transition-colors shrink-0"
+            className="bg-neutral-900 border border-neutral-800 text-sm text-neutral-300 rounded-lg px-3 py-2 focus:border-indigo-500 outline-none transition-colors shrink-0 max-w-[140px] truncate"
           >
             <option value="">Todas las categorías</option>
             {categorias.map(c => (
@@ -213,7 +224,10 @@ export default function CatalogoClient({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex flex-wrap items-center gap-2 mt-1">
+                <span className="px-2 py-0.5 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-medium truncate max-w-[100px]">
+                  {sedes.find(s => s.id === p.sede_id)?.nombre_sede || 'Desconocida'}
+                </span>
                 {p.categorias?.nombre ? (
                   <span className="px-2 py-0.5 rounded-md bg-neutral-800 border border-neutral-700 text-neutral-300 text-[10px] font-medium">
                     {p.categorias.nombre}
@@ -255,6 +269,7 @@ export default function CatalogoClient({
             <thead className="bg-neutral-950/50 text-neutral-400">
               <tr>
                 <th className="px-6 py-4 font-medium">Producto</th>
+                <th className="px-6 py-4 font-medium">Sucursal</th>
                 <th className="px-6 py-4 font-medium">Categoría</th>
                 <th className="px-6 py-4 font-medium">Tipo</th>
                 <th className="px-6 py-4 font-medium">Costo</th>
@@ -276,6 +291,11 @@ export default function CatalogoClient({
                         <p className="text-[11px] text-neutral-500">{p.codigo_barras || 'Sin código'}</p>
                       </div>
                     </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="px-2 py-1 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-medium">
+                      {sedes.find(s => s.id === p.sede_id)?.nombre_sede || 'Desconocida'}
+                    </span>
                   </td>
                   <td className="px-6 py-4">
                     {p.categorias?.nombre ? (
