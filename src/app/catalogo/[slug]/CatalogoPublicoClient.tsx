@@ -16,6 +16,7 @@ interface Producto {
   imagen_url?: string;
   categorias?: { id: string; nombre: string } | null;
   estado_activo: boolean;
+  stock_disponible?: number | null;
 }
 
 interface CartItem extends Producto {
@@ -96,7 +97,14 @@ export default function CatalogoPublicoClient({ empresa, productos: productosIni
     setCart(prev => {
       const existing = prev.find(i => i.id === prod.id);
       if (existing) {
+        if (prod.stock_disponible !== null && prod.stock_disponible !== undefined && existing.cantidad >= prod.stock_disponible) {
+          alert('¡Stock máximo alcanzado! Solo hay ' + prod.stock_disponible + ' disponibles.');
+          return prev;
+        }
         return prev.map(i => i.id === prod.id ? { ...i, cantidad: i.cantidad + 1 } : i);
+      }
+      if (prod.stock_disponible !== null && prod.stock_disponible !== undefined && prod.stock_disponible < 1) {
+         return prev;
       }
       return [...prev, { ...prod, cantidad: 1 }];
     });
@@ -107,10 +115,20 @@ export default function CatalogoPublicoClient({ empresa, productos: productosIni
   }, []);
 
   const updateQty = useCallback((id: string, delta: number) => {
-    setCart(prev => prev
-      .map(i => i.id === id ? { ...i, cantidad: i.cantidad + delta } : i)
-      .filter(i => i.cantidad > 0)
-    );
+    setCart(prev => {
+      const item = prev.find(i => i.id === id);
+      if (!item) return prev;
+      const newQty = item.cantidad + delta;
+      
+      if (delta > 0 && item.stock_disponible !== null && item.stock_disponible !== undefined && newQty > item.stock_disponible) {
+         alert('¡Stock máximo alcanzado! Solo hay ' + item.stock_disponible + ' disponibles.');
+         return prev;
+      }
+      
+      return prev
+        .map(i => i.id === id ? { ...i, cantidad: newQty } : i)
+        .filter(i => i.cantidad > 0);
+    });
   }, []);
 
   const cartCount = cart.reduce((acc, i) => acc + i.cantidad, 0);
@@ -278,6 +296,11 @@ export default function CatalogoPublicoClient({ empresa, productos: productosIni
                       {prod.categorias?.nombre && (
                         <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400/80 mb-1 block">
                           {prod.categorias.nombre}
+                        </span>
+                      )}
+                      {prod.stock_disponible !== null && prod.stock_disponible !== undefined && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400/90 mb-1 block">
+                          Solo {prod.stock_disponible} disponibles
                         </span>
                       )}
                       <h3 className="font-semibold text-white text-sm leading-tight">{prod.nombre}</h3>

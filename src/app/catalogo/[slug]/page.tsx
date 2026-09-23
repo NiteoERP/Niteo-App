@@ -80,17 +80,35 @@ export default async function CatalogoPublicoPage({ params }: Props) {
   // Un producto tiene stock si TODOS sus insumos vinculados tienen cantidad_actual > 0
   const insumosMap = new Map((insumos || []).map(i => [i.id, i.cantidad_actual]));
 
-  const productosConStock = (productos || []).filter(prod => {
-    const recetasProd = (recetas || []).filter(r => r.producto_id === prod.id);
-    if (recetasProd.length === 0) {
-      // Sin receta: consideramos disponible si tiene imagen o no es compuesto
-      return true;
+  const productosConStock = (productos || []).map(prod => {
+    let stock_disponible = null; // null = infinito / no trackeado
+
+    if (prod.es_reventa && prod.id_insumo_vinculado) {
+      stock_disponible = insumosMap.get(prod.id_insumo_vinculado) ?? 0;
+    } else if (prod.es_compuesto) {
+      const recetasProd = (recetas || []).filter(r => r.producto_id === prod.id);
+      if (recetasProd.length > 0) {
+        let maxPosible = Infinity;
+        recetasProd.forEach(r => {
+          const stock = insumosMap.get(r.insumo_id) ?? 0;
+          if (r.cantidad_necesaria > 0) {
+            const puedeHacer = Math.floor(stock / r.cantidad_necesaria);
+            if (puedeHacer < maxPosible) maxPosible = puedeHacer;
+          }
+        });
+        stock_disponible = maxPosible === Infinity ? 0 : maxPosible;
+      }
     }
-    // Tiene receta: todos los insumos deben tener stock suficiente
-    return recetasProd.every(r => {
-      const stock = insumosMap.get(r.insumo_id) ?? 0;
-      return stock >= r.cantidad_necesaria;
-    });
+
+    return {
+      ...prod,
+      stock_disponible
+    };
+  }).filter(prod => {
+    if (prod.stock_disponible !== null && prod.stock_disponible <= 0) {
+      return false; // Ocultar si definitivamente no hay stock
+    }
+    return true;
   });
 
   return (
