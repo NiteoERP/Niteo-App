@@ -197,6 +197,13 @@ export default function CatalogoClient({
             <Box size={16} /> Receta Masiva
           </button>
           <button 
+            onClick={() => setIsDuplicarOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-indigo-300 rounded-lg font-medium transition-colors text-sm border border-neutral-700/50"
+            title="Duplicar Catálogo entre sedes"
+          >
+            <Copy size={16} /> <span className="hidden sm:inline">Duplicar Catálogo</span>
+          </button>
+          <button 
             onClick={() => { setEditingProd(null); setIsFormOpen(true); }}
             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-colors text-sm"
           >
@@ -210,7 +217,7 @@ export default function CatalogoClient({
         {/* Mobile view (Cards) */}
         <div className="md:hidden divide-y divide-neutral-800/50">
           {filtered.map(p => (
-            <div key={p.id} className="p-4 hover:bg-neutral-800/20 transition-colors flex flex-col gap-3">
+            <div key={p.id} className="p-4 hover:bg-neutral-800/40 transition-colors flex flex-col gap-3 cursor-pointer" onClick={(e) => { e.stopPropagation(); handleEdit(p); }}>
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
                   {p.es_compuesto ? <PackageSearch className="text-emerald-400 w-5 h-5 shrink-0" /> : <Box className="text-blue-400 w-5 h-5 shrink-0" />}
@@ -221,8 +228,8 @@ export default function CatalogoClient({
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => handleEdit(p)} className="p-2 text-neutral-400 hover:text-indigo-400 bg-neutral-800/50 rounded-lg transition-colors"><Edit2 size={16} /></button>
-                  <button onClick={() => handleDelete(p.id)} disabled={isPending} className="p-2 text-neutral-400 hover:text-rose-400 bg-neutral-800/50 rounded-lg transition-colors"><Trash2 size={16} /></button>
+                  <button onClick={(e) => { e.stopPropagation(); handleEdit(p); }} className="p-2 text-neutral-400 hover:text-indigo-400 bg-neutral-800/50 rounded-lg transition-colors"><Edit2 size={16} /></button>
+                  <button onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }} disabled={isPending} className="p-2 text-neutral-400 hover:text-rose-400 bg-neutral-800/50 rounded-lg transition-colors"><Trash2 size={16} /></button>
                 </div>
               </div>
 
@@ -281,7 +288,7 @@ export default function CatalogoClient({
             </thead>
             <tbody className="divide-y divide-neutral-800/50 text-neutral-300">
               {filtered.map(p => (
-                <tr key={p.id} className="hover:bg-neutral-800/20 transition-colors">
+                <tr key={p.id} className="hover:bg-neutral-800/40 transition-colors cursor-pointer" onClick={(e) => { e.stopPropagation(); handleEdit(p); }}>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       {p.es_compuesto ? <PackageSearch className="text-emerald-400 w-5 h-5" /> : <Box className="text-blue-400 w-5 h-5" />}
@@ -327,8 +334,8 @@ export default function CatalogoClient({
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <button onClick={() => handleEdit(p)} className="text-neutral-500 hover:text-indigo-400 transition-colors"><Edit2 size={16} /></button>
-                      <button onClick={() => handleDelete(p.id)} disabled={isPending} className="text-neutral-500 hover:text-rose-400 transition-colors"><Trash2 size={16} /></button>
+                      <button onClick={(e) => { e.stopPropagation(); handleEdit(p); }} className="text-neutral-500 hover:text-indigo-400 transition-colors"><Edit2 size={16} /></button>
+                      <button onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }} disabled={isPending} className="text-neutral-500 hover:text-rose-400 transition-colors"><Trash2 size={16} /></button>
                     </div>
                   </td>
                 </tr>

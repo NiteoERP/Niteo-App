@@ -272,7 +272,34 @@ export default function ProductoForm({
             </div>
 
             <div>
-              <label className="text-sm font-medium text-neutral-400 block mb-1.5">Descripción (Opcional)</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="text-sm font-medium text-neutral-400 block mb-1.5">Sucursal Asociada</label>
+                <select
+                  required
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 text-indigo-300 font-medium focus:border-indigo-500 transition-colors"
+                  value={formData.sede_id}
+                  onChange={e => setFormData({...formData, sede_id: e.target.value})}
+                >
+                  {sedes.map(s => (
+                    <option key={s.id} value={s.id}>{s.nombre_sede}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-neutral-400 block mb-1.5">Código de Barras (Opcional)</label>
+                <input 
+                  type="text" 
+                  placeholder="Escanea o escribe el código"
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 text-white font-mono text-sm focus:border-indigo-500 transition-colors"
+                  value={formData.codigo_barras}
+                  onChange={e => setFormData({...formData, codigo_barras: e.target.value})}
+                />
+              </div>
+            </div>
+            
+            <label className="text-sm font-medium text-neutral-400 block mb-1.5">Descripción (Opcional)</label>
               <textarea 
                 rows={2}
                 placeholder="Detalles del producto, ingredientes principales, notas para el cajero..."
@@ -324,15 +351,7 @@ export default function ProductoForm({
               </div>
             </div>
 
-            <div>
-              <label className="text-sm font-medium text-neutral-400 block mb-1.5">Código de Barras</label>
-              <input 
-                type="text" 
-                className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 text-white font-mono focus:border-indigo-500"
-                value={formData.codigo_barras}
-                onChange={e => setFormData({...formData, codigo_barras: e.target.value})}
-              />
-            </div>
+            
 
             {formData.tipo === 'ELABORADO' && (
               <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-4 space-y-4">
