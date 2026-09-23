@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Minus, Send, MessageSquare, Loader2, CheckCircle2, RefreshCw, ShoppingCart, X, Trash2, User } from 'lucide-react';
-import { obtenerCatalogoMesa, enviarComanda, type ItemComanda } from '@/actions/mesas-actions';
+import { obtenerCatalogoMesa, enviarComanda, buscarClientePorCedula, type ItemComanda } from '@/actions/mesas-actions';
 import type { TerminalVinculado } from './MesasHub';
 
 interface CartItem extends ItemComanda {
@@ -25,6 +25,23 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
   const [clienteTelefono, setClienteTelefono] = useState('');
   const [clienteCedula, setClienteCedula] = useState('');
   const [showClienteForm, setShowClienteForm] = useState(false);
+  const [buscandoCliente, setBuscandoCliente] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      const cedula = clienteCedula.trim();
+      if (cedula.length >= 4) {
+        setBuscandoCliente(true);
+        const data = await buscarClientePorCedula(cedula);
+        if (data) {
+          if (data.nombre) setClienteNombre(data.nombre);
+          if (data.telefono) setClienteTelefono(data.telefono);
+        }
+        setBuscandoCliente(false);
+      }
+    }, 700);
+    return () => clearTimeout(timer);
+  }, [clienteCedula]);
   const [comentarioGeneral, setComentarioGeneral] = useState('');
   const [loading, setLoading] = useState(true);
   const [enviando, setEnviando] = useState(false);
@@ -264,7 +281,10 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-indigo-400/80 mb-1.5 block uppercase tracking-wider">Cédula / NIT</label>
+                      <label className="text-xs font-bold text-indigo-400/80 mb-1.5 flex items-center justify-between uppercase tracking-wider">
+                        <span>Cédula / NIT</span>
+                        {buscandoCliente && <Loader2 size={12} className="animate-spin text-indigo-400" />}
+                      </label>
                       <input
                         type="text"
                         value={clienteCedula}
