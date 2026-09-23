@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/utils/supabase/client";
 import { v4 as uuidv4 } from "uuid";
 
 interface Integracion {
@@ -31,7 +31,7 @@ export default function IntegracionesClient({
   const availableScopes = ["read_productos", "write_productos", "read_inventario", "write_pedidos"];
   const [selectedScopes, setSelectedScopes] = useState<string[]>(availableScopes);
   
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   const handleScopeToggle = (scope: string) => {
     if (selectedScopes.includes(scope)) {

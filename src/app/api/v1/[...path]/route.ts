@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
 
-async function proxy(req: NextRequest, { params }: { params: { path: string[] } }) {
-  const path = params.path.join("/");
+async function proxy(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+  const resolvedParams = await params;
+  const path = resolvedParams.path.join("/");
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const targetUrl = `${supabaseUrl}/functions/v1/api-niteo/${path}${req.nextUrl.search}`;
 

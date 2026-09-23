@@ -1,5 +1,4 @@
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
+import { createClient } from "@/utils/supabase/server";
 import IntegracionesClient from "./IntegracionesClient";
 import { redirect } from "next/navigation";
 
@@ -9,7 +8,7 @@ export const metadata = {
 };
 
 export default async function IntegracionesPage() {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = await createClient();
 
   const {
     data: { session },
