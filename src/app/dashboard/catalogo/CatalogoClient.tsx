@@ -4,6 +4,7 @@ import React, { useState, useTransition } from 'react';
 import { Plus, Search, Edit2, Trash2, PackageSearch, Box, Share2, Copy, Check, ExternalLink, ToggleLeft, ToggleRight, Link } from 'lucide-react';
 import ProductoForm from './ProductoForm';
 import BulkRecetaModal from './BulkRecetaModal';
+import DuplicarModal from './DuplicarModal';
 import { deleteProducto } from '@/actions/catalogo-actions';
 import { updateCatalogoConfig } from '@/app/dashboard/configuracion/actions';
 
@@ -32,6 +33,7 @@ export default function CatalogoClient({
   const [selectedSede, setSelectedSede] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isBulkOpen, setIsBulkOpen] = useState(false);
+  const [isDuplicarOpen, setIsDuplicarOpen] = useState(false);
   const [editingProd, setEditingProd] = useState<any>(null);
   const [isPending, startTransition] = useTransition();
   const [copied, setCopied] = useState(false);
