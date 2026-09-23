@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { HistorialVentaPOS, getHistorialVentasCompleto, toggleVentaVerificada, getResumenVerificacionMes } from '@/actions/pos-actions';
-import { Search, Calendar, ChevronDown, ChevronUp, Receipt, DollarSign, Clock, Users, CheckCircle2, Circle, Hash, ChevronLeft, ChevronRight, Printer, Ban, Sparkles, Filter, X } from 'lucide-react';
+import { Search, Calendar, ChevronDown, ChevronUp, Receipt, DollarSign, Clock, Users, CheckCircle2, Circle, Hash, ChevronLeft, ChevronRight, Printer, Ban, Sparkles, Filter, X, Contact, ConciergeBell } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { useEmpresa } from '@/components/providers/EmpresaProvider';
 import { normalizePaymentKey, getCanonicalPaymentMethodName, unifyPaymentMethods } from '@/utils/payment-methods';
@@ -474,7 +474,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                   </div>
                 </div>
 
-                <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 min-w-[300px]">
+                <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-4 min-w-[300px]">
                       <div className="flex flex-col items-start justify-center">
                         <p className="text-xs text-neutral-500 mb-1 w-full text-left">Cliente</p>
                         <div className="flex items-center justify-start gap-1.5 text-neutral-300 text-sm font-medium w-full text-left">
@@ -483,10 +483,24 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                         </div>
                       </div>
                       <div className="flex flex-col items-start justify-center">
-                        <p className="text-xs text-neutral-500 mb-1 w-full text-left">Núm. Orden / Mesa</p>
+                        <p className="text-xs text-neutral-500 mb-1 w-full text-left">Orden / Mesa</p>
                         <div className="flex items-center justify-start gap-1.5 text-neutral-300 text-sm font-medium w-full text-left">
                           <Hash size={14} className="text-neutral-500 shrink-0" />
                           <span className="truncate">{venta.numero_orden || '-'}</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-start justify-center">
+                        <p className="text-xs text-neutral-500 mb-1 w-full text-left">Cajero</p>
+                        <div className="flex items-center justify-start gap-1.5 text-neutral-300 text-sm font-medium w-full text-left">
+                          <Contact size={14} className="text-neutral-500 shrink-0" />
+                          <span className="truncate">{venta.cajero_nombre || 'Principal'}</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-start justify-center">
+                        <p className="text-xs text-neutral-500 mb-1 w-full text-left">Mesero</p>
+                        <div className="flex items-center justify-start gap-1.5 text-neutral-300 text-sm font-medium w-full text-left">
+                          <ConciergeBell size={14} className="text-neutral-500 shrink-0" />
+                          <span className="truncate">{venta.mesero_nombre || 'N/A'}</span>
                         </div>
                       </div>
                     </div>
