@@ -20,7 +20,7 @@ export default async function IntegracionesPage() {
 
   // Obtener empresa_id del usuario
   const { data: usuario } = await supabase
-    .from("usuarios")
+    .from("perfiles")
     .select("empresa_id")
     .eq("id", session.user.id)
     .single();
