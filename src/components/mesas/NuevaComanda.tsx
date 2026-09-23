@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Minus, Send, MessageSquare, Loader2, CheckCircle2, RefreshCw, ShoppingCart, X, Trash2, User } from 'lucide-react';
+import { Plus, Minus, Send, MessageSquare, Loader2, CheckCircle2, RefreshCw, ShoppingCart, X, Trash2, User, Search } from 'lucide-react';
 import { obtenerCatalogoMesa, enviarComanda, buscarClientePorCedula, type ItemComanda } from '@/actions/mesas-actions';
 import type { TerminalVinculado } from './MesasHub';
 
@@ -18,6 +18,7 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
   const [productos, setProductos] = useState<any[]>([]);
   const [categorias, setCategorias] = useState<string[]>([]);
   const [catActiva, setCatActiva] = useState<string>('Todos');
+  const [busqueda, setBusqueda] = useState('');
   const [carrito, setCarrito] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [mesa, setMesa] = useState('');
@@ -62,9 +63,18 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
 
   useEffect(() => { cargarCatalogo(); }, [cargarCatalogo]);
 
-  const prodsFiltrados = catActiva === 'Todos'
-    ? productos
-    : productos.filter((p: any) => (p.categorias?.nombre || 'Sin categoría') === catActiva);
+  const prodsFiltrados = productos.filter((p: any) => {
+    const matchCat = catActiva === 'Todos' || (p.categorias?.nombre || 'Sin categoría') === catActiva;
+    const matchSearch = p.nombre.toLowerCase().includes(busqueda.toLowerCase());
+    return matchCat && matchSearch;
+  });
+  
+  const getCartInfo = (prodId: string) => {
+    const items = carrito.filter(i => i.producto_id === prodId);
+    if (items.length === 0) return null;
+    const totalCantidad = items.reduce((s, i) => s + i.cantidad, 0);
+    return { totalCantidad };
+  };
 
   const agregarAlCarrito = (prod: any) => {
     setCarrito(prev => {
@@ -175,6 +185,23 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
             className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
           />
         </div>
+      </div>
+
+      {/* Buscador */}
+      <div className="relative mb-3">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" size={16} />
+        <input
+          type="text"
+          placeholder="Buscar productos..."
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          className="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-10 pr-4 py-2.5 text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
+        />
+        {busqueda && (
+          <button onClick={() => setBusqueda('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white">
+            <X size={14} />
+          </button>
+        )}
       </div>
 
       {/* Filtros de categoría */}
