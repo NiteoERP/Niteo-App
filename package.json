@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
-    "@supabase/supabase-js": "^2.112.3",
+    "@supabase/supabase-js": "^2.117.1",
     "babel-plugin-react-compiler": "^1.0.0",
     "consulta-dolar-venezuela": "^1.1.2",
     "date-fns": "^4.4.0",
@@ -27,6 +27,7 @@
     "recharts": "^3.10.1",
     "sql.js": "^1.14.2",
     "swr": "^2.5.1",
+    "uuid": "^14.0.2",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
@@ -35,6 +36,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/sql.js": "^1.4.11",
+    "@types/uuid": "^10.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.3.1",
     "tailwindcss": "^4",

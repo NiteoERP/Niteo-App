@@ -12,6 +12,7 @@ export default function ConfiguracionLayout({ children }: { children: React.Reac
     { name: 'General', href: '/dashboard/configuracion', icon: Layout },
     { name: 'Sedes y Master Key', href: '/dashboard/configuracion/sedes', icon: MapPin },
     { name: 'Migración de Datos', href: '/dashboard/configuracion/migracion', icon: Database },
+    { name: 'API e Integraciones', href: '/dashboard/configuracion/integraciones', icon: Settings },
   ];
 
   return (

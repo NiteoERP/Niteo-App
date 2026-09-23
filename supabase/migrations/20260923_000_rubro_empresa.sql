@@ -1,26 +1,30 @@
-const url = 'https://gqlhillifpxizbaqaagl.supabase.co/rest/v1/sql';
-const apiKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxbGhpbGxpZnB4aXpiYXFhYWdsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NjU3OTMyMywiZXhwIjoyMTAyMTU1MzIzfQ.Tifa5ERlUd8wV7x89sBd20FHr_zLYgSn-u_qmrH5wQo';
-const sql = \ALTER TABLE public.perfiles ADD COLUMN IF NOT EXISTS rubro TEXT DEFAULT 'restaurante';
+-- Agregar rubro a la tabla perfiles
+ALTER TABLE public.perfiles ADD COLUMN IF NOT EXISTS rubro TEXT DEFAULT 'restaurante';
 
+-- Actualizar la funcion de trigger para insertar el rubro desde el raw_user_meta_data
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS \\\$\\\$
+RETURNS TRIGGER AS $ $
 DECLARE
   v_empresa_id uuid;
   v_company_name text;
   v_full_name text;
   v_rubro text;
 BEGIN
+  -- Extraer nombre de empresa y usuario de los metadatos
   v_company_name := COALESCE(NEW.raw_user_meta_data->>'company_name', 'Mi Empresa');
   v_full_name := COALESCE(NEW.raw_user_meta_data->>'full_name', 'Usuario');
   v_rubro := COALESCE(NEW.raw_user_meta_data->>'rubro', 'restaurante');
 
+  -- 1. Crear el perfil de empresa principal
   INSERT INTO public.perfiles (nombre_empresa, owner_id, rubro)
   VALUES (v_company_name, NEW.id, v_rubro)
   RETURNING id INTO v_empresa_id;
 
+  -- 2. Crear la sede por defecto asociada a esta empresa
   INSERT INTO public.sedes (empresa_id, nombre_sede, direccion)
   VALUES (v_empresa_id, 'Sede Principal', 'Dirección no especificada');
 
+  -- 3. Actualizar el app_metadata del usuario con su empresa_id (para RLS)
   UPDATE auth.users
   SET raw_app_meta_data = jsonb_set(
     COALESCE(raw_app_meta_data, '{}'::jsonb),
@@ -31,7 +35,4 @@ BEGIN
 
   RETURN NEW;
 END;
-\\\$\\\$ LANGUAGE plpgsql SECURITY DEFINER;\;
-
-fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'apikey': apiKey, 'Authorization': 'Bearer ' + apiKey }, body: JSON.stringify({ query: sql }) }).then(async r => { if(!r.ok) console.error(await r.text()); else console.log('Success'); }).catch(console.error);
-
+$ $ LANGUAGE plpgsql SECURITY DEFINER;

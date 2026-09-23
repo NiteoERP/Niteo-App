@@ -18,25 +18,33 @@ export async function syncBcvDirectAction() {
     let fechaValor: string | null = null;
 
     try {
-      const res = await fetch('https://www.bcv.org.ve', {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        },
-        cache: 'no-store'
+      const html = await new Promise<string>((resolve, reject) => {
+        const https = require('https');
+        https.get('https://www.bcv.org.ve', {
+          rejectUnauthorized: false,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          }
+        }, (res: any) => {
+          if (res.statusCode !== 200) {
+            reject(new Error(`Status Code: ${res.statusCode}`));
+            return;
+          }
+          let data = '';
+          res.on('data', (chunk: any) => data += chunk);
+          res.on('end', () => resolve(data));
+        }).on('error', (err: any) => reject(err));
       });
 
-      if (res.ok) {
-        const html = await res.text();
-        const usdMatch = html.match(/<span>\s*USD\s*<\/span>[\s\S]*?<strong[^>]*>\s*([0-9.,]+)\s*<\/strong>/i);
-        const eurMatch = html.match(/<span>\s*EUR\s*<\/span>[\s\S]*?<strong[^>]*>\s*([0-9.,]+)\s*<\/strong>/i);
-        const dateMatch = html.match(/content="([0-9]{4}-[0-9]{2}-[0-9]{2})/i);
+      const usdMatch = html.match(/<span>\s*USD\s*<\/span>[\s\S]*?<strong[^>]*>\s*([0-9.,]+)\s*<\/strong>/i);
+      const eurMatch = html.match(/<span>\s*EUR\s*<\/span>[\s\S]*?<strong[^>]*>\s*([0-9.,]+)\s*<\/strong>/i);
+      const dateMatch = html.match(/content="([0-9]{4}-[0-9]{2}-[0-9]{2})/i);
 
-        if (usdMatch && usdMatch[1]) {
-          usdRate = parseFloat(usdMatch[1].trim().replace(/\./g, '').replace(',', '.'));
-          eurRate = eurMatch && eurMatch[1] ? parseFloat(eurMatch[1].trim().replace(/\./g, '').replace(',', '.')) : usdRate;
-          fechaValor = dateMatch ? dateMatch[1] : null;
-        }
+      if (usdMatch && usdMatch[1]) {
+        usdRate = parseFloat(usdMatch[1].trim().replace(/\./g, '').replace(',', '.'));
+        eurRate = eurMatch && eurMatch[1] ? parseFloat(eurMatch[1].trim().replace(/\./g, '').replace(',', '.')) : usdRate;
+        fechaValor = dateMatch ? dateMatch[1] : null;
       }
     } catch (scrapeErr) {
       console.warn('Scrape directo BCV falló, recurriendo a API de respaldo:', scrapeErr);

@@ -12,6 +12,7 @@ export async function registrarUsuario(formData: FormData) {
   const password = formData.get('password') as string;
   const fullName = (formData.get('fullName') as string)?.trim();
   const companyName = (formData.get('companyName') as string)?.trim();
+  const rubro = (formData.get('rubro') as string)?.trim() || 'restaurante';
 
   // Validación básica
   if (!email || !password || !fullName || !companyName) {
@@ -30,6 +31,7 @@ export async function registrarUsuario(formData: FormData) {
       data: {
         full_name: fullName,
         company_name: companyName,
+        rubro: rubro,
       }
     }
   });

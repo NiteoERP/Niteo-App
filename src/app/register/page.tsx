@@ -52,7 +52,7 @@ function RegisterForm() {
 
         <div className="space-y-2">
           <label className="text-sm font-medium text-neutral-300" htmlFor="companyName">
-            Nombre de tu Restaurante
+            Nombre de tu Empresa / Negocio
           </label>
           <input
             id="companyName"
@@ -62,6 +62,26 @@ function RegisterForm() {
             className="w-full px-4 py-3.5 bg-neutral-900/50 border border-neutral-800 rounded-xl text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
             required
           />
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-neutral-300" htmlFor="rubro">
+            Tipo de Negocio
+          </label>
+          <select
+            id="rubro"
+            name="rubro"
+            className="w-full px-4 py-3.5 bg-neutral-900/50 border border-neutral-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all appearance-none"
+            required
+          >
+            <option value="restaurante">Restaurante / Comida Rápida</option>
+            <option value="minimarket">Minimarket / Bodegón</option>
+            <option value="ferreteria">Ferretería / Construcción</option>
+            <option value="farmacia">Farmacia / Salud</option>
+            <option value="tienda_ropa">Tienda de Ropa / Boutique</option>
+            <option value="servicios">Servicios Generales</option>
+            <option value="otro">Otro</option>
+          </select>
         </div>
 
         <div className="space-y-2">
