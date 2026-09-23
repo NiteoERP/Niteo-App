@@ -33,7 +33,8 @@ export default function AccountSwitcher({ currentUserId, currentUserName, curren
   const handleSwitch = async (account: SavedAccount) => {
     if (account.id === currentUserId) return;
     setLoadingId(account.id);
-    const res = await switchAccount(account.id);
+    if (typeof window !== 'undefined') { localStorage.removeItem('niteo_terminal_vinculado'); }
+      const res = await switchAccount(account.id);
     if (res?.error) {
       alert(res.error);
       setLoadingId(null);
@@ -58,7 +59,8 @@ export default function AccountSwitcher({ currentUserId, currentUserName, curren
     formData.append('email', addEmail);
     formData.append('password', addPassword);
 
-    const res = await addAccountToVault(formData);
+    if (typeof window !== 'undefined') { localStorage.removeItem('niteo_terminal_vinculado'); }
+      const res = await addAccountToVault(formData);
     if (res?.error) {
       setAddError(res.error);
       setAddLoading(false);
