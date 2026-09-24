@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useTransition, useEffect } from 'react';
+import React, { useState, useTransition, useEffect, useMemo } from 'react';
 import { updateEmpresaSaaS } from '../actions';
 import { 
   getComprasMetodosPago, 
@@ -29,7 +29,12 @@ import {
   ShoppingBag,
   ArrowRight,
   ShieldCheck,
-  CheckCircle2
+  CheckCircle2,
+  X,
+  AlertTriangle,
+  RotateCcw,
+  Layers,
+  Sparkle
 } from 'lucide-react';
 
 interface MetodosPagoManagerProps {
@@ -37,126 +42,375 @@ interface MetodosPagoManagerProps {
   initialMetodosVenta: string[];
 }
 
-// Preset popular suggestions for sales
+// Preset popular suggestions for sales with clear display names and currency indicators
 const POPULAR_VENTAS_PRESETS = [
-  { name: 'Efectivo USD', category: 'Efectivo', desc: 'Dólares en efectivo' },
-  { name: 'Efectivo Bs', category: 'Efectivo', desc: 'Bolívares en efectivo' },
-  { name: 'Pago Móvil', category: 'Móvil / P2P', desc: 'Cobro interbancario móvil' },
-  { name: 'Punto de Venta', category: 'Tarjeta', desc: 'Tarjetas de débito y crédito' },
-  { name: 'Zelle', category: 'Móvil / P2P', desc: 'Transferencias en dólares USA' },
-  { name: 'Transferencia Bancaria', category: 'Bancario', desc: 'Transferencia cuenta a cuenta' },
-  { name: 'Binance Pay (USDT)', category: 'Cripto', desc: 'Criptoactivos y USDT' },
-  { name: 'Zinli', category: 'Billetera', desc: 'Billetera digital prepagada' },
-  { name: 'Crédito', category: 'Crédito', desc: 'Cuentas por cobrar a clientes' },
-  { name: 'Efectivo COP', category: 'Efectivo', desc: 'Pesos colombianos en efectivo' },
-  { name: 'Efectivo EUR', category: 'Efectivo', desc: 'Euros en efectivo' },
-  { name: 'PayPal', category: 'Billetera', desc: 'Pasarela internacional' },
+  { 
+    name: 'Efectivo USD', 
+    displayName: 'Efectivo en Dólares ($)', 
+    category: 'Efectivo Divisa', 
+    desc: 'Billetes físicos en dólares (USD)',
+    badge: 'USD $',
+    badgeClass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+  },
+  { 
+    name: 'Efectivo Bs', 
+    displayName: 'Efectivo en Bolívares (Bs)', 
+    category: 'Efectivo Nacional', 
+    desc: 'Billetes físicos en moneda nacional',
+    badge: 'Bs VES',
+    badgeClass: 'bg-sky-500/15 text-sky-300 border-sky-500/30'
+  },
+  { 
+    name: 'Pago Móvil', 
+    displayName: 'Pago Móvil Interbancario', 
+    category: 'Móvil / P2P', 
+    desc: 'Cobro interbancario inmediato (Bs)',
+    badge: 'P2P / C2P',
+    badgeClass: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30'
+  },
+  { 
+    name: 'Punto de Venta', 
+    displayName: 'Punto de Venta (POS)', 
+    category: 'Tarjetas', 
+    desc: 'Tarjetas de débito y crédito nacionales/int.',
+    badge: 'Terminal POS',
+    badgeClass: 'bg-blue-500/15 text-blue-300 border-blue-500/30'
+  },
+  { 
+    name: 'Zelle', 
+    displayName: 'Zelle (Dólares USA)', 
+    category: 'Transferencia USA', 
+    desc: 'Transferencias directas en USA (USD)',
+    badge: 'Zelle USD',
+    badgeClass: 'bg-purple-500/15 text-purple-300 border-purple-500/30'
+  },
+  { 
+    name: 'Transferencia Bancaria', 
+    displayName: 'Transferencia Bancaria', 
+    category: 'Bancario', 
+    desc: 'Transferencia directa entre cuentas',
+    badge: 'Banco',
+    badgeClass: 'bg-sky-500/15 text-sky-300 border-sky-500/30'
+  },
+  { 
+    name: 'Binance Pay (USDT)', 
+    displayName: 'Binance Pay (USDT)', 
+    category: 'Criptoactivos', 
+    desc: 'Cobro con criptoactivos y stablecoins',
+    badge: 'USDT Cripto',
+    badgeClass: 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+  },
+  { 
+    name: 'Zinli', 
+    displayName: 'Billetera Zinli', 
+    category: 'Billetera Digital', 
+    desc: 'Billetera prepagada internacional en USD',
+    badge: 'Billetera USD',
+    badgeClass: 'bg-teal-500/15 text-teal-300 border-teal-500/30'
+  },
+  { 
+    name: 'Crédito', 
+    displayName: 'Crédito a Clientes', 
+    category: 'Financiamiento', 
+    desc: 'Cuentas por cobrar / fiado',
+    badge: 'A Plazo',
+    badgeClass: 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+  },
+  { 
+    name: 'Efectivo COP', 
+    displayName: 'Efectivo en Pesos (COP)', 
+    category: 'Efectivo Divisa', 
+    desc: 'Pesos colombianos en efectivo físico',
+    badge: 'COP $',
+    badgeClass: 'bg-orange-500/15 text-orange-300 border-orange-500/30'
+  },
+  { 
+    name: 'Efectivo EUR', 
+    displayName: 'Efectivo en Euros (€)', 
+    category: 'Efectivo Divisa', 
+    desc: 'Billetes físicos en euros europeos',
+    badge: 'EUR €',
+    badgeClass: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30'
+  },
+  { 
+    name: 'PayPal', 
+    displayName: 'PayPal', 
+    category: 'Pasarela Digital', 
+    desc: 'Pagos y cobros internacionales en USD',
+    badge: 'Digital USD',
+    badgeClass: 'bg-blue-500/15 text-blue-300 border-blue-500/30'
+  },
 ];
 
 // Preset popular suggestions for supplier purchases
 const POPULAR_COMPRAS_PRESETS = [
-  { name: 'Transferencia Bancaria', category: 'Bancario', desc: 'Transferencia directa al proveedor' },
-  { name: 'Pago Móvil', category: 'Móvil / P2P', desc: 'Pago rápido interbancario' },
-  { name: 'Efectivo USD', category: 'Efectivo', desc: 'Divisa en efectivo contra entrega' },
-  { name: 'Efectivo Bs', category: 'Efectivo', desc: 'Moneda nacional en efectivo' },
-  { name: 'Zelle', category: 'Móvil / P2P', desc: 'Transferencia en dólares a proveedor' },
-  { name: 'Crédito Proveedor', category: 'Crédito', desc: 'Factura pagadera a plazo' },
-  { name: 'Binance Pay', category: 'Cripto', desc: 'Pago en stablecoin USDT' },
-  { name: 'Cheque', category: 'Bancario', desc: 'Cheque corporativo' },
+  { 
+    name: 'Transferencia Bancaria', 
+    displayName: 'Transferencia Bancaria', 
+    category: 'Bancario', 
+    desc: 'Transferencia directa al proveedor',
+    badge: 'Banco' 
+  },
+  { 
+    name: 'Pago Móvil', 
+    displayName: 'Pago Móvil Interbancario', 
+    category: 'Móvil / P2P', 
+    desc: 'Pago rápido interbancario en Bs',
+    badge: 'P2P / Bs' 
+  },
+  { 
+    name: 'Efectivo USD', 
+    displayName: 'Efectivo en Dólares (USD)', 
+    category: 'Efectivo Divisa', 
+    desc: 'Divisa en efectivo contra entrega',
+    badge: 'USD $' 
+  },
+  { 
+    name: 'Efectivo Bs', 
+    displayName: 'Efectivo en Bolívares (Bs)', 
+    category: 'Efectivo Nacional', 
+    desc: 'Moneda nacional en efectivo',
+    badge: 'Bs VES' 
+  },
+  { 
+    name: 'Zelle', 
+    displayName: 'Zelle (Dólares USA)', 
+    category: 'Transferencia USA', 
+    desc: 'Transferencia en dólares a proveedor',
+    badge: 'Zelle USD' 
+  },
+  { 
+    name: 'Crédito Proveedor', 
+    displayName: 'Crédito Proveedor', 
+    category: 'Financiamiento', 
+    desc: 'Factura pagadera a plazo / cuenta por pagar',
+    badge: 'A Plazo' 
+  },
+  { 
+    name: 'Binance Pay', 
+    displayName: 'Binance Pay (USDT)', 
+    category: 'Criptoactivos', 
+    desc: 'Pago a proveedor en stablecoin USDT',
+    badge: 'USDT' 
+  },
+  { 
+    name: 'Cheque', 
+    displayName: 'Cheque Bancario', 
+    category: 'Bancario', 
+    desc: 'Cheque corporativo emitido al proveedor',
+    badge: 'Cheque' 
+  },
 ];
 
+// Helper to determine meta styling, currency and visual badges
 function getMethodMeta(name: string) {
   const norm = name.toLowerCase().trim();
 
+  // Cortesía
   if (norm.includes('cortes') || norm.includes('regal')) {
     return {
       icon: Gift,
       category: 'Bonificado',
       badge: 'Cortesía 100%',
+      badgeClass: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
       borderClass: 'border-amber-500/30 bg-amber-500/[0.04]',
       iconClass: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
-      tagClass: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
     };
   }
+
+  // Efectivo Bolívares
+  if ((norm.includes('efectivo') || norm.includes('cash')) && (norm.includes('bs') || norm.includes('boliv') || norm.includes('ves'))) {
+    return {
+      icon: Banknote,
+      category: 'Efectivo Nacional',
+      badge: 'Bolívares (Bs)',
+      badgeClass: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
+      borderClass: 'border-sky-500/25 bg-sky-500/[0.03]',
+      iconClass: 'bg-sky-500/15 text-sky-400 border-sky-500/30',
+    };
+  }
+
+  // Efectivo Pesos COP
+  if ((norm.includes('efectivo') || norm.includes('cash')) && (norm.includes('cop') || norm.includes('peso'))) {
+    return {
+      icon: Banknote,
+      category: 'Efectivo Divisa',
+      badge: 'Pesos (COP)',
+      badgeClass: 'bg-orange-500/15 text-orange-300 border-orange-500/30',
+      borderClass: 'border-orange-500/25 bg-orange-500/[0.03]',
+      iconClass: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
+    };
+  }
+
+  // Efectivo Euros EUR
+  if ((norm.includes('efectivo') || norm.includes('cash')) && (norm.includes('eur') || norm.includes('euro') || norm.includes('€'))) {
+    return {
+      icon: Banknote,
+      category: 'Efectivo Divisa',
+      badge: 'Euros (€)',
+      badgeClass: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
+      borderClass: 'border-indigo-500/25 bg-indigo-500/[0.03]',
+      iconClass: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30',
+    };
+  }
+
+  // Efectivo Dólares USD
   if (norm.includes('efectivo') || norm.includes('cash') || norm.includes('billete')) {
     return {
       icon: Banknote,
-      category: 'Efectivo',
-      badge: norm.includes('bs') ? 'Bolívares' : norm.includes('usd') || norm.includes('$') ? 'Dólares' : 'Efectivo',
+      category: 'Efectivo Divisa',
+      badge: 'Dólares ($)',
+      badgeClass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
       borderClass: 'border-emerald-500/25 bg-emerald-500/[0.03]',
       iconClass: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-      tagClass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
     };
   }
+
+  // Pago Móvil
   if (norm.includes('pago movil') || norm.includes('pago móvil') || norm.includes('nequi') || norm.includes('bizum') || norm.includes('pix')) {
     return {
       icon: Smartphone,
       category: 'Móvil / P2P',
-      badge: 'Inmediato',
+      badge: 'Pago Móvil (Bs)',
+      badgeClass: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30',
       borderClass: 'border-cyan-500/25 bg-cyan-500/[0.03]',
       iconClass: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30',
-      tagClass: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30',
     };
   }
+
+  // Zelle
   if (norm.includes('zelle')) {
     return {
       icon: Zap,
       category: 'Transferencia USA',
-      badge: 'USD',
+      badge: 'Zelle (USD)',
+      badgeClass: 'bg-purple-500/15 text-purple-300 border-purple-500/30',
       borderClass: 'border-purple-500/25 bg-purple-500/[0.03]',
       iconClass: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
-      tagClass: 'bg-purple-500/15 text-purple-300 border-purple-500/30',
     };
   }
+
+  // Punto de Venta / POS
   if (norm.includes('punto') || norm.includes('pos') || norm.includes('debito') || norm.includes('débito') || norm.includes('tarjeta')) {
     return {
       icon: CreditCard,
       category: 'Tarjeta / POS',
-      badge: 'Terminal',
+      badge: 'Terminal POS',
+      badgeClass: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
       borderClass: 'border-blue-500/25 bg-blue-500/[0.03]',
       iconClass: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
-      tagClass: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
     };
   }
-  if (norm.includes('binance') || norm.includes('usdt') || norm.includes('cripto') || norm.includes('crypto') || norm.includes('zinli') || norm.includes('paypal')) {
+
+  // Binance / Cripto
+  if (norm.includes('binance') || norm.includes('usdt') || norm.includes('cripto') || norm.includes('crypto')) {
     return {
       icon: Coins,
-      category: 'Billetera Digital',
-      badge: 'Digital',
-      borderClass: 'border-yellow-500/25 bg-yellow-500/[0.03]',
-      iconClass: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
-      tagClass: 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30',
+      category: 'Criptoactivos',
+      badge: 'Binance (USDT)',
+      badgeClass: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+      borderClass: 'border-amber-500/25 bg-amber-500/[0.03]',
+      iconClass: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
     };
   }
+
+  // Billeteras digitales
+  if (norm.includes('zinli') || norm.includes('paypal') || norm.includes('wally')) {
+    return {
+      icon: Wallet,
+      category: 'Billetera Digital',
+      badge: 'Billetera Digital',
+      badgeClass: 'bg-teal-500/15 text-teal-300 border-teal-500/30',
+      borderClass: 'border-teal-500/25 bg-teal-500/[0.03]',
+      iconClass: 'bg-teal-500/15 text-teal-400 border-teal-500/30',
+    };
+  }
+
+  // Transferencia bancaria
   if (norm.includes('transferencia') || norm.includes('banco') || norm.includes('cheque')) {
+    const isBs = norm.includes('bs') || norm.includes('ves') || norm.includes('nacional');
     return {
       icon: Building2,
       category: 'Bancario',
-      badge: 'Transferencia',
+      badge: isBs ? 'Transferencia (Bs)' : 'Transferencia Bancaria',
+      badgeClass: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
       borderClass: 'border-sky-500/25 bg-sky-500/[0.03]',
       iconClass: 'bg-sky-500/15 text-sky-400 border-sky-500/30',
-      tagClass: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
     };
   }
+
+  // Crédito / Fiado
   if (norm.includes('crédito') || norm.includes('credito') || norm.includes('fiado')) {
     return {
       icon: Handshake,
       category: 'Financiamiento',
-      badge: 'A Plazo',
+      badge: 'Crédito a Clientes',
+      badgeClass: 'bg-rose-500/15 text-rose-300 border-rose-500/30',
       borderClass: 'border-rose-500/25 bg-rose-500/[0.03]',
       iconClass: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
-      tagClass: 'bg-rose-500/15 text-rose-300 border-rose-500/30',
     };
   }
 
   return {
     icon: Wallet,
     category: 'Otro Método',
-    badge: 'Cobro',
+    badge: 'Cobro General',
+    badgeClass: 'bg-neutral-800 text-neutral-300 border-neutral-700',
     borderClass: 'border-neutral-800 bg-neutral-900/50',
     iconClass: 'bg-neutral-800 text-neutral-300 border-neutral-700',
-    tagClass: 'bg-neutral-800 text-neutral-300 border-neutral-700',
   };
+}
+
+// Smart matching between catalog presets and registered active methods
+function findMatchingActiveMethod(presetName: string, activeMethods: string[]): string | null {
+  const pNorm = presetName.toLowerCase().trim();
+  
+  // 1. Exact match
+  const exact = activeMethods.find(m => m.toLowerCase().trim() === pNorm);
+  if (exact) return exact;
+
+  // 2. Specific matching for currencies and common names
+  if (pNorm.includes('binance')) {
+    return activeMethods.find(m => m.toLowerCase().includes('binance')) || null;
+  }
+  if (pNorm.includes('punto') || pNorm.includes('pos')) {
+    return activeMethods.find(m => {
+      const mn = m.toLowerCase();
+      return mn.includes('punto') || mn.includes('pos') || mn.includes('tarjeta');
+    }) || null;
+  }
+  if (pNorm.includes('transferencia')) {
+    return activeMethods.find(m => m.toLowerCase().includes('transferencia')) || null;
+  }
+  if (pNorm.includes('pago movil') || pNorm.includes('pago móvil')) {
+    return activeMethods.find(m => m.toLowerCase().includes('pago movil') || m.toLowerCase().includes('pago móvil')) || null;
+  }
+  if (pNorm.includes('usd') || pNorm.includes('dolar')) {
+    return activeMethods.find(m => {
+      const mn = m.toLowerCase();
+      return (mn.includes('efectivo') || mn.includes('cash')) && (mn.includes('usd') || mn.includes('dolar') || mn.includes('$'));
+    }) || null;
+  }
+  if (pNorm.includes('bs') || pNorm.includes('boliv')) {
+    return activeMethods.find(m => {
+      const mn = m.toLowerCase();
+      return (mn.includes('efectivo') || mn.includes('cash')) && (mn.includes('bs') || mn.includes('boliv') || mn.includes('ves'));
+    }) || null;
+  }
+  if (pNorm.includes('cop') || pNorm.includes('peso')) {
+    return activeMethods.find(m => {
+      const mn = m.toLowerCase();
+      return (mn.includes('efectivo') || mn.includes('cash')) && (mn.includes('cop') || mn.includes('peso'));
+    }) || null;
+  }
+  if (pNorm.includes('eur') || pNorm.includes('euro') || pNorm.includes('€')) {
+    return activeMethods.find(m => {
+      const mn = m.toLowerCase();
+      return (mn.includes('efectivo') || mn.includes('cash')) && (mn.includes('eur') || mn.includes('euro') || mn.includes('€'));
+    }) || null;
+  }
+
+  return null;
 }
 
 export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: MetodosPagoManagerProps) {
@@ -171,7 +425,7 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
   const [feedbackVentas, setFeedbackVentas] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Estado Métodos de Compras
-  const [metodosCompras, setMetodosCompras] = useState<any[]>([]);
+  const [metodosCompras, setMetodosCompras] = useState<{ id: string; nombre: string }[]>([]);
   const [loadingCompras, setLoadingCompras] = useState(true);
   const [customCompra, setCustomCompra] = useState('');
   const [isAddingCompra, setIsAddingCompra] = useState(false);
@@ -190,21 +444,91 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
     setLoadingCompras(false);
   };
 
-  // --- Handlers Ventas ---
+  // Detectar métodos duplicados en ventas
+  const duplicateVentas = useMemo(() => {
+    const counts = new Map<string, number>();
+    metodosVentas.forEach(m => {
+      const key = m.trim().toLowerCase();
+      counts.set(key, (counts.get(key) || 0) + 1);
+    });
+    return metodosVentas.filter(m => (counts.get(m.trim().toLowerCase()) || 0) > 1);
+  }, [metodosVentas]);
+
+  // Persistir cambios en Ventas inmediatamente a base de datos
+  const persistirMetodosVentas = (nuevosMetodos: string[], successMsg = 'Métodos de cobro actualizados correctamente.') => {
+    setMetodosVentas(nuevosMetodos);
+    setFeedbackVentas(null);
+    startTransitionVentas(async () => {
+      const res = await updateEmpresaSaaS(empresaId, {
+        metodos_pago: nuevosMetodos,
+      });
+      if (res.success) {
+        setFeedbackVentas({ type: 'success', message: successMsg });
+        setTimeout(() => setFeedbackVentas(null), 3500);
+      } else {
+        setFeedbackVentas({ type: 'error', message: res.error || 'Error al guardar los cambios en la base de datos.' });
+      }
+    });
+  };
+
+  // Limpiar duplicados con 1 clic
+  const limpiarDuplicadosVentas = () => {
+    const seen = new Set<string>();
+    const deduplicados: string[] = [];
+    
+    metodosVentas.forEach(m => {
+      const norm = m.trim().toLowerCase();
+      if (!norm) return;
+      if (!seen.has(norm)) {
+        seen.add(norm);
+        deduplicados.push(m.trim());
+      }
+    });
+
+    if (!deduplicados.some(m => m.toLowerCase().includes('cortes'))) {
+      deduplicados.push('Cortesía');
+    }
+
+    persistirMetodosVentas(deduplicados, 'Duplicados eliminados. Lista consolidada con éxito.');
+  };
+
+  // Handlers Ventas
   const agregarMetodoVenta = (nombre: string) => {
     const val = nombre.trim();
     if (!val) return;
-    if (metodosVentas.some(m => m.toLowerCase() === val.toLowerCase())) {
-      setFeedbackVentas({ type: 'error', message: `"${val}" ya está en la lista de cobros.` });
+
+    const existing = metodosVentas.find(m => m.toLowerCase().trim() === val.toLowerCase().trim());
+    if (existing) {
+      setFeedbackVentas({ type: 'error', message: `"${existing}" ya está activo en tus métodos de cobro.` });
       setTimeout(() => setFeedbackVentas(null), 3000);
       return;
     }
-    setMetodosVentas([...metodosVentas, val]);
+
+    const actualizados = [...metodosVentas, val];
     setCustomVenta('');
+    persistirMetodosVentas(actualizados, `"${val}" añadido y activado en cobros.`);
   };
 
-  const eliminarMetodoVenta = (index: number) => {
-    setMetodosVentas(metodosVentas.filter((_, i) => i !== index));
+  const eliminarMetodoVenta = (item: number | string) => {
+    let actualizados: string[];
+    let eliminadoNombre = '';
+
+    if (typeof item === 'number') {
+      eliminadoNombre = metodosVentas[item];
+      actualizados = metodosVentas.filter((_, i) => i !== item);
+    } else {
+      eliminadoNombre = item;
+      actualizados = metodosVentas.filter(m => m.toLowerCase().trim() !== item.toLowerCase().trim());
+    }
+
+    // Proteger Cortesía
+    if (eliminadoNombre.toLowerCase().includes('cortes')) {
+      setFeedbackVentas({ type: 'error', message: 'El método Cortesía es obligatorio por diseño para auditar consumos y mermas.' });
+      setTimeout(() => setFeedbackVentas(null), 3500);
+      return;
+    }
+
+    persistirMetodosVentas(actualizados, `"${eliminadoNombre}" eliminado de los métodos de cobro.`);
   };
 
   const moverMetodoVenta = (index: number, direction: 'up' | 'down') => {
@@ -213,30 +537,15 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
     const nuevoOrden = [...metodosVentas];
     const [movido] = nuevoOrden.splice(index, 1);
     nuevoOrden.splice(targetIndex, 0, movido);
-    setMetodosVentas(nuevoOrden);
+    persistirMetodosVentas(nuevoOrden, `Prioridad de cobro actualizada.`);
   };
 
-  const guardarMetodosVentas = () => {
-    setFeedbackVentas(null);
-    startTransitionVentas(async () => {
-      const res = await updateEmpresaSaaS(empresaId, {
-        metodos_pago: metodosVentas,
-      });
-      if (res.success) {
-        setFeedbackVentas({ type: 'success', message: 'Métodos de cobro actualizados correctamente.' });
-        setTimeout(() => setFeedbackVentas(null), 3500);
-      } else {
-        setFeedbackVentas({ type: 'error', message: res.error || 'Error al guardar.' });
-      }
-    });
-  };
-
-  // --- Handlers Compras ---
+  // Handlers Compras
   const agregarMetodoCompra = async (nombre: string) => {
     const val = nombre.trim();
     if (!val) return;
-    if (metodosCompras.some(m => m.nombre.toLowerCase() === val.toLowerCase())) {
-      setFeedbackCompras({ type: 'error', message: `"${val}" ya está registrado en compras.` });
+    if (metodosCompras.some(m => m.nombre.toLowerCase().trim() === val.toLowerCase().trim())) {
+      setFeedbackCompras({ type: 'error', message: `"${val}" ya está registrado en pagos de compras.` });
       setTimeout(() => setFeedbackCompras(null), 3000);
       return;
     }
@@ -249,10 +558,10 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
     if (res.success) {
       setCustomCompra('');
       await cargarCompras();
-      setFeedbackCompras({ type: 'success', message: `"${val}" añadido para pagos a proveedores.` });
+      setFeedbackCompras({ type: 'success', message: `"${val}" añadido para compras a proveedores.` });
       setTimeout(() => setFeedbackCompras(null), 3500);
     } else {
-      setFeedbackCompras({ type: 'error', message: res.error || 'Error al añadir.' });
+      setFeedbackCompras({ type: 'error', message: res.error || 'Error al registrar método.' });
     }
   };
 
@@ -260,10 +569,10 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
     const res = await deleteCompraMetodoPago(id);
     if (res.success) {
       await cargarCompras();
-      setFeedbackCompras({ type: 'success', message: `Método "${nombre}" desactivado.` });
+      setFeedbackCompras({ type: 'success', message: `Método "${nombre}" desactivado de compras.` });
       setTimeout(() => setFeedbackCompras(null), 3000);
     } else {
-      setFeedbackCompras({ type: 'error', message: res.error || 'Error al eliminar.' });
+      setFeedbackCompras({ type: 'error', message: res.error || 'Error al eliminar método.' });
     }
   };
 
@@ -314,7 +623,7 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
       {/* ============================================================== */}
       {activeTab === 'ventas' && (
         <div className="space-y-6">
-          {/* Feedback */}
+          {/* Banner de Feedback */}
           {feedbackVentas && (
             <div className={`p-4 rounded-xl text-xs flex items-center gap-3 animate-in fade-in border ${
               feedbackVentas.type === 'success' 
@@ -322,7 +631,33 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
                 : 'bg-red-500/10 border-red-500/20 text-red-400'
             }`}>
               {feedbackVentas.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-              <span>{feedbackVentas.message}</span>
+              <span className="font-medium">{feedbackVentas.message}</span>
+            </div>
+          )}
+
+          {/* Banner si se detectan métodos repetidos o duplicados */}
+          {duplicateVentas.length > 0 && (
+            <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
+                <div>
+                  <h4 className="text-xs font-semibold text-amber-300">
+                    Se detectaron métodos repetidos en tu lista de cobro
+                  </h4>
+                  <p className="text-[11px] text-amber-200/80 mt-0.5">
+                    Hay {duplicateVentas.length} entradas repetidas (ej. {duplicateVentas[0]}). Puedes unificarlas automáticamente con un solo clic.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={limpiarDuplicadosVentas}
+                disabled={isPendingVentas}
+                className="flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-neutral-950 text-xs font-bold px-3.5 py-2 rounded-xl transition-all shadow-md shrink-0"
+              >
+                <RotateCcw size={14} />
+                <span>Limpiar Duplicados</span>
+              </button>
             </div>
           )}
 
@@ -332,15 +667,17 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
               <div>
                 <h3 className="text-base font-semibold text-white">Métodos de Cobro Habilitados</h3>
                 <p className="text-xs text-neutral-400 mt-0.5">
-                  Aparecen en el terminal POS y facturación. Usa las flechas para ordenar su prioridad de aparición.
+                  Vías de pago activas en tu punto de venta (POS) y caja. Organiza su orden de prioridad o elimina los que no uses.
                 </p>
               </div>
-              <div className="text-xs text-neutral-500 font-medium shrink-0">
-                {metodosVentas.length} vías activas
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-neutral-300 bg-neutral-900 border border-neutral-800 px-3 py-1 rounded-lg">
+                  {metodosVentas.length} habilitados
+                </span>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5">
               {metodosVentas.map((metodo, idx) => {
                 const meta = getMethodMeta(metodo);
                 const Icon = meta.icon;
@@ -348,56 +685,60 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
 
                 return (
                   <div
-                    key={idx}
+                    key={`${metodo}-${idx}`}
                     className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${meta.borderClass}`}
                   >
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center gap-3 min-w-0 pr-2">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shrink-0 ${meta.iconClass}`}>
                         <Icon size={18} />
                       </div>
                       <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-semibold text-white text-sm truncate">{metodo}</span>
+                        {/* Nombre completo y legible sin cortes */}
+                        <p className="font-semibold text-white text-sm leading-tight break-words" title={metodo}>
+                          {metodo}
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${meta.badgeClass}`}>
+                            {meta.badge}
+                          </span>
                         </div>
-                        <span className={`inline-block text-[10px] font-bold px-1.5 py-0.2 rounded border uppercase tracking-wider mt-0.5 ${meta.tagClass}`}>
-                          {meta.badge}
-                        </span>
                       </div>
                     </div>
 
                     {/* Acciones de Orden y Eliminación */}
-                    <div className="flex items-center gap-1 shrink-0 ml-2">
+                    <div className="flex items-center gap-1 shrink-0 ml-1">
                       <button
                         type="button"
                         onClick={() => moverMetodoVenta(idx, 'up')}
-                        disabled={idx === 0}
-                        title="Subir posición"
-                        className="p-1 text-neutral-400 hover:text-white disabled:opacity-20 hover:bg-neutral-800 rounded transition-colors"
+                        disabled={idx === 0 || isPendingVentas}
+                        title="Subir prioridad"
+                        className="p-1.5 text-neutral-400 hover:text-white disabled:opacity-20 hover:bg-neutral-800 rounded-lg transition-colors"
                       >
                         <ChevronUp size={16} />
                       </button>
                       <button
                         type="button"
                         onClick={() => moverMetodoVenta(idx, 'down')}
-                        disabled={idx === metodosVentas.length - 1}
-                        title="Bajar posición"
-                        className="p-1 text-neutral-400 hover:text-white disabled:opacity-20 hover:bg-neutral-800 rounded transition-colors"
+                        disabled={idx === metodosVentas.length - 1 || isPendingVentas}
+                        title="Bajar prioridad"
+                        className="p-1.5 text-neutral-400 hover:text-white disabled:opacity-20 hover:bg-neutral-800 rounded-lg transition-colors"
                       >
                         <ChevronDown size={16} />
                       </button>
 
                       {isCortesia ? (
-                        <div className="p-1 text-amber-400" title="Método fijo para auditar mermas y regalías">
+                        <div className="p-1.5 text-amber-400 bg-amber-500/10 rounded-lg border border-amber-500/20" title="Método obligatorio para auditar mermas y consumos del personal">
                           <ShieldCheck size={16} />
                         </div>
                       ) : (
                         <button
                           type="button"
                           onClick={() => eliminarMetodoVenta(idx)}
-                          title="Eliminar de ventas"
-                          className="p-1 text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 rounded transition-colors"
+                          disabled={isPendingVentas}
+                          title="Eliminar de métodos de cobro"
+                          className="p-1.5 text-neutral-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
                         >
-                          <Trash2 size={15} />
+                          <Trash2 size={16} />
                         </button>
                       )}
                     </div>
@@ -416,54 +757,76 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
             </div>
           </div>
 
-          {/* Bloque 2: Catálogo de Métodos Frecuentes (1-Clic) */}
+          {/* Bloque 2: Catálogo de Métodos Populares (Con activación y desactivación directa) */}
           <div className="bg-neutral-950/60 border border-neutral-800/80 rounded-2xl p-5 sm:p-6 space-y-4">
-            <div className="flex items-center gap-2 border-b border-neutral-800/60 pb-3">
-              <Sparkles size={16} className="text-indigo-400" />
+            <div className="flex items-center gap-2.5 border-b border-neutral-800/60 pb-3">
+              <Sparkles size={18} className="text-indigo-400" />
               <div>
                 <h4 className="text-sm font-semibold text-white">Catálogo de Métodos Populares</h4>
-                <p className="text-[11px] text-neutral-400">Pulsa para añadir cualquiera de estos métodos frecuentes al instante.</p>
+                <p className="text-xs text-neutral-400">
+                  Agrega o quita métodos frecuentes con un solo clic. Los nombres y divisas están claramente diferenciados.
+                </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {POPULAR_VENTAS_PRESETS.map((preset) => {
-                const isActive = metodosVentas.some(m => m.toLowerCase() === preset.name.toLowerCase());
+                const matchedActive = findMatchingActiveMethod(preset.name, metodosVentas);
+                const isActive = !!matchedActive;
                 const meta = getMethodMeta(preset.name);
                 const Icon = meta.icon;
 
                 return (
                   <div
                     key={preset.name}
-                    className={`flex items-center justify-between p-2.5 rounded-xl border text-left transition-all ${
+                    className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${
                       isActive 
-                        ? 'bg-neutral-900/40 border-neutral-800/60 opacity-60' 
-                        : 'bg-neutral-900/90 hover:bg-neutral-800/80 border-neutral-800 hover:border-indigo-500/40'
+                        ? 'bg-neutral-900/60 border-neutral-800/90' 
+                        : 'bg-neutral-900/30 hover:bg-neutral-900/70 border-neutral-800/60 hover:border-indigo-500/30'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center border shrink-0 ${meta.iconClass}`}>
-                        <Icon size={14} />
+                    <div className="flex items-center gap-3 min-w-0 pr-2">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center border shrink-0 ${meta.iconClass}`}>
+                        <Icon size={16} />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold text-white truncate">{preset.name}</p>
-                        <p className="text-[10px] text-neutral-500 truncate">{preset.category}</p>
+                        <p className="text-xs font-semibold text-white leading-tight">
+                          {preset.displayName}
+                        </p>
+                        <p className="text-[11px] text-neutral-400 truncate mt-0.5">
+                          {preset.desc}
+                        </p>
                       </div>
                     </div>
 
-                    {isActive ? (
-                      <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 shrink-0 ml-1">
-                        <Check size={12} /> Activo
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => agregarMetodoVenta(preset.name)}
-                        className="text-[11px] font-bold text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-2.5 py-1 rounded-lg border border-indigo-500/20 transition-all shrink-0 ml-1"
-                      >
-                        + Agregar
-                      </button>
-                    )}
+                    <div className="shrink-0 ml-2 flex items-center gap-1.5">
+                      {isActive ? (
+                        <div className="flex items-center gap-1">
+                          <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-lg flex items-center gap-1">
+                            <Check size={12} /> Activo
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => eliminarMetodoVenta(matchedActive)}
+                            disabled={isPendingVentas}
+                            title={`Desactivar ${matchedActive}`}
+                            className="p-1 text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                          >
+                            <X size={15} />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => agregarMetodoVenta(preset.name)}
+                          disabled={isPendingVentas}
+                          className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-lg border border-indigo-500/20 transition-all flex items-center gap-1"
+                        >
+                          <Plus size={13} />
+                          <span>Agregar</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -475,14 +838,14 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
             <div>
               <h4 className="text-sm font-semibold text-white">¿Tienes otro método personalizado?</h4>
               <p className="text-xs text-neutral-400 mt-0.5">
-                Crea cualquier método propio de tu negocio (ej. Vales de Alimentación, Cashea, Gift Card, Cheques...).
+                Crea cualquier modalidad propia de tu negocio (ej. Vales de Alimentación, Cashea, Tarjeta de Regalo, Criptomoneda específica...).
               </p>
             </div>
 
             <div className="flex items-center gap-2 max-w-lg">
               <input
                 type="text"
-                placeholder="Nombre del nuevo método..."
+                placeholder="Nombre del nuevo método (ej. Cashea, Vale de Regalo...)"
                 value={customVenta}
                 onChange={(e) => setCustomVenta(e.target.value)}
                 onKeyDown={(e) => {
@@ -496,8 +859,8 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
               <button
                 type="button"
                 onClick={() => agregarMetodoVenta(customVenta)}
-                disabled={!customVenta.trim()}
-                className="flex items-center gap-1.5 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-40 text-white text-xs font-semibold px-4 py-2.5 rounded-xl border border-neutral-700 transition-all"
+                disabled={!customVenta.trim() || isPendingVentas}
+                className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-xs font-semibold px-4 py-2.5 rounded-xl border border-indigo-500 transition-all"
               >
                 <Plus size={14} />
                 <span>Añadir</span>
@@ -505,21 +868,22 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
             </div>
           </div>
 
-          {/* Botón Guardar Cambios */}
-          <div className="flex items-center justify-between pt-2">
-            <p className="text-xs text-neutral-500">
-              Recuerda guardar para aplicar el nuevo orden o métodos en tu terminal POS.
-            </p>
+          {/* Pie de guardado */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+            <div className="flex items-center gap-2 text-xs text-neutral-400">
+              <CheckCircle2 size={15} className="text-emerald-400" />
+              <span>Los cambios de agregar o eliminar se guardan y sincronizan automáticamente con Niteo POS.</span>
+            </div>
             <button
               type="button"
               disabled={isPendingVentas}
-              onClick={guardarMetodosVentas}
-              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold px-6 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-600/20"
+              onClick={() => persistirMetodosVentas(metodosVentas, 'Métodos de cobro sincronizados y guardados correctamente.')}
+              className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold px-6 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-600/20 shrink-0"
             >
               {isPendingVentas ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Guardando...</span>
+                  <span>Sincronizando...</span>
                 </>
               ) : (
                 <>
@@ -545,7 +909,7 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
                 : 'bg-red-500/10 border-red-500/20 text-red-400'
             }`}>
               {feedbackCompras.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-              <span>{feedbackCompras.message}</span>
+              <span className="font-medium">{feedbackCompras.message}</span>
             </div>
           )}
 
@@ -555,11 +919,11 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
               <div>
                 <h3 className="text-base font-semibold text-white">Métodos de Pago a Proveedores</h3>
                 <p className="text-xs text-neutral-400 mt-0.5">
-                  Vías de pago disponibles al asentar facturas y gastos de compra de mercancía.
+                  Vías de desembolso disponibles al registrar compras y gastos a proveedores.
                 </p>
               </div>
-              <div className="text-xs text-neutral-500 font-medium shrink-0">
-                {metodosCompras.length} métodos registrados
+              <div className="text-xs font-semibold text-neutral-300 bg-neutral-900 border border-neutral-800 px-3 py-1 rounded-lg shrink-0">
+                {metodosCompras.length} registrados
               </div>
             </div>
 
@@ -571,11 +935,11 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
               <div className="text-center py-8 px-4 border border-dashed border-neutral-800 rounded-xl">
                 <p className="text-neutral-400 text-sm">No tienes métodos de compra registrados.</p>
                 <p className="text-neutral-600 text-xs mt-1">
-                  Usa las sugerencias de abajo para añadir los medios con los que pagas a tus proveedores.
+                  Usa el catálogo popular de abajo para añadir los medios con los que pagas a tus proveedores.
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5">
                 {metodosCompras.map((m) => {
                   const meta = getMethodMeta(m.nombre);
                   const Icon = meta.icon;
@@ -585,13 +949,15 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
                       key={m.id}
                       className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${meta.borderClass}`}
                     >
-                      <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex items-center gap-3 min-w-0 pr-2">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shrink-0 ${meta.iconClass}`}>
                           <Icon size={18} />
                         </div>
                         <div className="min-w-0">
-                          <p className="font-semibold text-white text-sm truncate">{m.nombre}</p>
-                          <span className={`inline-block text-[10px] font-bold px-1.5 py-0.2 rounded border uppercase tracking-wider mt-0.5 ${meta.tagClass}`}>
+                          <p className="font-semibold text-white text-sm leading-tight break-words" title={m.nombre}>
+                            {m.nombre}
+                          </p>
+                          <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider mt-1 ${meta.badgeClass}`}>
                             {meta.badge}
                           </span>
                         </div>
@@ -601,7 +967,7 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
                         type="button"
                         onClick={() => eliminarMetodoCompra(m.id, m.nombre)}
                         title="Desactivar método"
-                        className="p-1.5 text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors ml-2 shrink-0"
+                        className="p-1.5 text-neutral-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors ml-2 shrink-0"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -614,53 +980,76 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
 
           {/* Bloque 2: Catálogo de Métodos Populares para Compras */}
           <div className="bg-neutral-950/60 border border-neutral-800/80 rounded-2xl p-5 sm:p-6 space-y-4">
-            <div className="flex items-center gap-2 border-b border-neutral-800/60 pb-3">
-              <Sparkles size={16} className="text-indigo-400" />
+            <div className="flex items-center gap-2.5 border-b border-neutral-800/60 pb-3">
+              <Sparkles size={18} className="text-indigo-400" />
               <div>
                 <h4 className="text-sm font-semibold text-white">Métodos de Pago Frecuentes a Proveedores</h4>
-                <p className="text-[11px] text-neutral-400">Añade con un clic las formas comunes de pago a distribuidores.</p>
+                <p className="text-xs text-neutral-400">Añade o quita con un solo clic las formas comunes de pago a proveedores.</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {POPULAR_COMPRAS_PRESETS.map((preset) => {
-                const isActive = metodosCompras.some(m => m.nombre.toLowerCase() === preset.name.toLowerCase());
+                const matchedCompra = metodosCompras.find(m => 
+                  m.nombre.toLowerCase().trim() === preset.name.toLowerCase().trim() ||
+                  (preset.name.toLowerCase().includes('binance') && m.nombre.toLowerCase().includes('binance')) ||
+                  (preset.name.toLowerCase().includes('transferencia') && m.nombre.toLowerCase().includes('transferencia')) ||
+                  (preset.name.toLowerCase().includes('pago movil') && (m.nombre.toLowerCase().includes('pago movil') || m.nombre.toLowerCase().includes('pago móvil')))
+                );
+                const isActive = !!matchedCompra;
                 const meta = getMethodMeta(preset.name);
                 const Icon = meta.icon;
 
                 return (
                   <div
                     key={preset.name}
-                    className={`flex items-center justify-between p-2.5 rounded-xl border text-left transition-all ${
+                    className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${
                       isActive 
-                        ? 'bg-neutral-900/40 border-neutral-800/60 opacity-60' 
-                        : 'bg-neutral-900/90 hover:bg-neutral-800/80 border-neutral-800 hover:border-indigo-500/40'
+                        ? 'bg-neutral-900/60 border-neutral-800/90' 
+                        : 'bg-neutral-900/30 hover:bg-neutral-900/70 border-neutral-800/60 hover:border-indigo-500/30'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center border shrink-0 ${meta.iconClass}`}>
-                        <Icon size={14} />
+                    <div className="flex items-center gap-3 min-w-0 pr-2">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center border shrink-0 ${meta.iconClass}`}>
+                        <Icon size={16} />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold text-white truncate">{preset.name}</p>
-                        <p className="text-[10px] text-neutral-500 truncate">{preset.category}</p>
+                        <p className="text-xs font-semibold text-white leading-tight">
+                          {preset.displayName}
+                        </p>
+                        <p className="text-[11px] text-neutral-400 truncate mt-0.5">
+                          {preset.desc}
+                        </p>
                       </div>
                     </div>
 
-                    {isActive ? (
-                      <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 shrink-0 ml-1">
-                        <Check size={12} /> Activo
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={isAddingCompra}
-                        onClick={() => agregarMetodoCompra(preset.name)}
-                        className="text-[11px] font-bold text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-2.5 py-1 rounded-lg border border-indigo-500/20 transition-all shrink-0 ml-1"
-                      >
-                        + Agregar
-                      </button>
-                    )}
+                    <div className="shrink-0 ml-2 flex items-center gap-1.5">
+                      {isActive && matchedCompra ? (
+                        <div className="flex items-center gap-1">
+                          <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-lg flex items-center gap-1">
+                            <Check size={12} /> Activo
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => eliminarMetodoCompra(matchedCompra.id, matchedCompra.nombre)}
+                            title={`Desactivar ${matchedCompra.nombre}`}
+                            className="p-1 text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                          >
+                            <X size={15} />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={isAddingCompra}
+                          onClick={() => agregarMetodoCompra(preset.name)}
+                          className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-lg border border-indigo-500/20 transition-all flex items-center gap-1"
+                        >
+                          <Plus size={13} />
+                          <span>Agregar</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
