@@ -1,71 +1,30 @@
 import React from 'react';
-import { createClient } from '@/utils/supabase/server';
-import SettingsForm from './SettingsForm';
-import GlobalTasaManager from '@/components/configuracion/GlobalTasaManager';
-import MetodosComprasForm from '@/components/configuracion/MetodosComprasForm';
-import TerminalesPOS from '@/components/configuracion/TerminalesPOS';
+import { getEmpresaData } from './actions';
+import GeneralForm from './GeneralForm';
 
-export default async function SettingsPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  // Obtener empresa_id desde auth metadata o perfiles
-  let empresaId = user?.app_metadata?.empresa_id;
-  
-  if (!empresaId && user) {
-    const { data: dbProfile } = await supabase
-      .from('perfiles')
-      .select('empresa_id')
-      .eq('id', user.id)
-      .single();
-    empresaId = dbProfile?.empresa_id;
-  }
+export const metadata = {
+  title: 'Perfil General | Configuración Niteo',
+};
 
-  let empresaObj = null;
-  if (empresaId) {
-    const { data: empresa } = await supabase
-      .from('empresas')
-      .select('*, slug_catalogo, whatsapp_catalogo, catalogo_activo')
-      .eq('id', empresaId)
-      .single();
-    
-    empresaObj = empresa;
-  }
+export default async function SettingsGeneralPage() {
+  const { empresa, error } = await getEmpresaData();
 
   return (
-    <div className="space-y-8 max-w-4xl animate-in fade-in duration-300">
-      
-      <div className="border-b border-neutral-800 pb-5">
-        <h1 className="text-2xl font-bold text-white">Configuración de Empresa</h1>
-        <p className="text-neutral-400 mt-1">Administra la información general y preferencias.</p>
+    <div className="space-y-6">
+      <div className="border-b border-neutral-800/80 pb-4">
+        <h2 className="text-xl font-bold text-white">Perfil General de la Empresa</h2>
+        <p className="text-xs text-neutral-400 mt-1">
+          Actualiza los datos institucionales, rubro operativo y preferencias horarias.
+        </p>
       </div>
-      
-      <section className="bg-neutral-900 border border-neutral-800 p-6 rounded-2xl shadow-xl">
-        <div className="flex items-center gap-3 border-b border-neutral-800/50 pb-4 mb-6">
-          <h2 className="text-lg font-medium text-white">Perfil de la Empresa</h2>
+
+      {empresa ? (
+        <GeneralForm empresa={empresa} />
+      ) : (
+        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+          {error || 'No se pudo cargar la información de la empresa.'}
         </div>
-
-        {empresaObj ? (
-          <SettingsForm empresa={empresaObj} />
-        ) : (
-          <p className="text-rose-400 text-sm">Error: No se encontró la empresa asociada a tu perfil.</p>
-        )}
-      </section>
-
-      <GlobalTasaManager />
-
-      <MetodosComprasForm />
-
-      <TerminalesPOS />
-
-      {/* Otras secciones (Estilos, Idioma, etc.) que se integrarán luego */}
-      <section className="bg-neutral-900 border border-neutral-800 p-6 rounded-2xl opacity-50 grayscale pointer-events-none">
-        <div className="flex items-center gap-3 border-b border-neutral-800/50 pb-4 mb-6">
-          <h2 className="text-lg font-medium text-white">Otras Preferencias (Próximamente)</h2>
-        </div>
-        <p className="text-sm text-neutral-400">Las configuraciones de estilo e idioma estarán disponibles en las próximas fases.</p>
-      </section>
-
+      )}
     </div>
   );
 }

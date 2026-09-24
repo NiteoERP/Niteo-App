@@ -129,7 +129,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
       const { getTasaBcvAction } = await import('@/actions/config-actions');
       const rateData = await getTasaBcvAction();
       
-      if (venta.id_pos === 'DOC_FORMAL') {
+      if (venta.id_pos === 'DOC_FORMAL' || venta.id_pos?.startsWith('DOC_FORMAL')) {
         const cliente = venta.cliente_nombre ? { nombre_comercial: venta.cliente_nombre } : null;
         generarDocumentoA4(venta, empresa, venta.detalles, cliente);
       } else {

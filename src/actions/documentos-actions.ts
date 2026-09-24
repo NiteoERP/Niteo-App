@@ -50,7 +50,7 @@ export async function crearDocumentoFormal(input: CrearDocumentoInput) {
       sede_id: input.sede_id,
       cliente_id: input.cliente_id || null,
       cliente_nombre: input.cliente_nombre || null,
-      id_pos: 'DOC_FORMAL',
+      id_pos: `DOC_FORMAL_${numero_documento}`,
       numero_documento,
       tipo_documento: input.tipo_documento,
       fecha_venta: input.fecha_venta,
@@ -71,11 +71,11 @@ export async function crearDocumentoFormal(input: CrearDocumentoInput) {
   }
 
   // 2. Detalles
-  const detalles = input.items.map(item => ({
+  const detalles = input.items.map((item, idx) => ({
     empresa_id: empresaId,
     factura_id: factura.id,
     producto_id: item.producto_id,
-    id_pos: 'DOC_FORMAL',
+    id_pos: `DOC_FORMAL_${numero_documento}_${idx + 1}`,
     cantidad: item.cantidad,
     precio_unitario: item.precio_unitario,
     descuento: item.descuento,

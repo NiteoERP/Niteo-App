@@ -40,7 +40,7 @@ export interface ProcesarVentaVirtualInput {
 // ─────────────────────────────────────────────────────────────────────────────
 function generarNumeroDocumento(): string {
   const ts = Date.now().toString(36).toUpperCase();
-  const rand = Math.random().toString(36).substring(2, 5).toUpperCase();
+  const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
   return `NITEO-VRT-${ts}-${rand}`;
 }
 
@@ -70,34 +70,61 @@ export async function procesarVentaVirtual(input: ProcesarVentaVirtualInput): Pr
 
   const empresaId: string = perfil.empresa_id;
 
-  // ── Crear cliente si no existe pero nos pasan nombre y cédula ────────────────
-  let finalClienteId = input.cliente_id;
-  if (!finalClienteId && input.cliente_nombre && input.cliente_cedula) {
-      // Buscar si ya existe por cédula en esta empresa
-      const { data: existingClient } = await supabase
+  // ── Gestión de Cliente (Eventual / Express o Registrado) ───────────────────
+  let finalClienteId = input.cliente_id || null;
+  let nombreLimpio = input.cliente_nombre?.trim() || null;
+  const cedulaLimpia = input.cliente_cedula?.trim() || null;
+  const telefonoLimpio = input.cliente_telefono?.trim() || null;
+
+  // Si enviaron cédula pero no tenemos cliente_id, buscamos o registramos por cédula
+  if (!finalClienteId && cedulaLimpia) {
+    const { data: existingByCedula } = await supabase
+      .from('clientes')
+      .select('id, nombre')
+      .eq('empresa_id', empresaId)
+      .eq('rif_cedula', cedulaLimpia)
+      .maybeSingle();
+
+    if (existingByCedula) {
+      finalClienteId = existingByCedula.id;
+      if (!nombreLimpio) nombreLimpio = existingByCedula.nombre;
+    } else if (nombreLimpio) {
+      // Solo registramos una nueva ficha en el directorio de clientes si tiene CÉDULA
+      const clientPosId = `VRT_CLI_${Date.now().toString(36).toUpperCase()}_${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      const { data: newClient, error: errNewClient } = await supabase
         .from('clientes')
+        .insert({
+          empresa_id: empresaId,
+          id_pos: clientPosId,
+          nombre: nombreLimpio,
+          rif_cedula: cedulaLimpia,
+          telefono: telefonoLimpio || null,
+          estado_activo: true
+        })
         .select('id')
-        .eq('empresa_id', empresaId)
-        .eq('rif_cedula', input.cliente_cedula)
         .single();
-      
-      if (existingClient) {
-         finalClienteId = existingClient.id;
-      } else {
-         const { data: newClient } = await supabase
-          .from('clientes')
-          .insert({
-             empresa_id: empresaId,
-             nombre: input.cliente_nombre,
-             rif_cedula: input.cliente_cedula,
-             telefono: input.cliente_telefono || null,
-             estado_activo: true
-          }).select('id').single();
-        if (newClient) {
-           finalClienteId = newClient.id;
-        }
+
+      if (newClient) {
+        finalClienteId = newClient.id;
+      } else if (errNewClient) {
+        console.warn('[procesarVentaVirtual] Aviso al crear cliente:', errNewClient.message);
       }
+    }
+  } else if (finalClienteId && !nombreLimpio) {
+    // Si viene ID pero no nombre, obtener el nombre del cliente para la factura
+    const { data: clientData } = await supabase
+      .from('clientes')
+      .select('nombre')
+      .eq('id', finalClienteId)
+      .maybeSingle();
+    if (clientData?.nombre) {
+      nombreLimpio = clientData.nombre;
+    }
   }
+
+  // NOTA: Si solo enviaron nombre sin cédula y sin cliente_id previo,
+  // NO se inserta nada en la tabla 'clientes' para evitar duplicados o ensuciar el directorio.
+  // El nombre queda guardado directamente en ventas_facturas.cliente_nombre como cliente eventual.
 
   // ── Validaciones básicas ───────────────────────────────────────────────────
   if (!input.sede_id) return { success: false, error: 'sede_id es requerido' };
@@ -130,9 +157,14 @@ export async function procesarVentaVirtual(input: ProcesarVentaVirtualInput): Pr
   const totalPagado = input.pagos.reduce((acc, p) => acc + p.monto, 0);
   const saldo_pendiente = Math.max(0, total - totalPagado);
   
-  // Si la venta tiene crédito (saldo_pendiente > 0), obligatoriamente debe haber un cliente_id
-  if (saldo_pendiente > 0 && !input.cliente_id) {
-    return { success: false, error: 'Para ventas a crédito (con saldo pendiente), debes seleccionar un cliente registrado en el directorio.' };
+  // Si la venta tiene crédito (saldo_pendiente > 0), requiere obligatoriamente cliente con Cédula y Teléfono
+  if (saldo_pendiente > 0) {
+    if (!finalClienteId && (!nombreLimpio || !cedulaLimpia || !telefonoLimpio)) {
+      return { 
+        success: false, 
+        error: 'Para ventas a crédito (con saldo pendiente), es obligatorio registrar el Nombre, la Cédula y el Teléfono del cliente.' 
+      };
+    }
   }
 
   const estado_pago = saldo_pendiente > 0 ? 2 : 1; // 1 = Pagado, 2 = Crédito/Pendiente
@@ -141,15 +173,17 @@ export async function procesarVentaVirtual(input: ProcesarVentaVirtualInput): Pr
   const fechaVenta = new Date().toISOString();
 
   // ── PASO 1: Insertar cabecera en ventas_facturas ───────────────────────────
+  // NOTA: id_pos DEBE ser único por cada factura para respetar la restricción
+  // unique_facturas_id_pos y ventas_facturas_id_pos_unique en la base de datos.
   const { data: factura, error: errorFactura } = await supabase
     .from('ventas_facturas')
     .insert({
       empresa_id: empresaId,
       sede_id: input.sede_id,
-      cliente_id: input.cliente_id || null,
-      cliente_nombre: input.cliente_nombre || null,
-      mesero_nombre: input.mesero_nombre || null,
-      id_pos: ID_POS_VIRTUAL,             
+      cliente_id: finalClienteId,
+      cliente_nombre: nombreLimpio,
+      mesero_nombre: input.mesero_nombre?.trim() || null,
+      id_pos: numeroDocumento,             
       numero_documento: numeroDocumento,
       tipo_documento: 'VENTA_VIRTUAL',
       fecha_venta: fechaVenta,
@@ -170,11 +204,11 @@ export async function procesarVentaVirtual(input: ProcesarVentaVirtualInput): Pr
   const facturaId: string = factura.id;
 
   // ── PASO 2: Insertar ítems en ventas_detalles ──────────────────────────────
-  const detalles = input.items.map((item) => ({
+  const detalles = input.items.map((item, idx) => ({
     empresa_id: empresaId,
     factura_id: facturaId,
     producto_id: item.producto_id,
-    id_pos: ID_POS_VIRTUAL,
+    id_pos: `${numeroDocumento}-D${idx + 1}`,
     cantidad: item.cantidad,
     precio_unitario: item.precio_unitario,
     total: item.precio_unitario * item.cantidad,
@@ -193,10 +227,10 @@ export async function procesarVentaVirtual(input: ProcesarVentaVirtualInput): Pr
 
   // ── PASO 3: Insertar pagos en ventas_pagos ─────────────────────────────────
   if (input.pagos.length > 0) {
-    const pagosToInsert = input.pagos.filter(p => p.monto > 0).map(p => ({
+    const pagosToInsert = input.pagos.filter(p => p.monto > 0).map((p, idx) => ({
       empresa_id: empresaId,
       factura_id: facturaId,
-      id_pos: ID_POS_VIRTUAL,
+      id_pos: `${numeroDocumento}-P${idx + 1}`,
       tipo_pago: p.tipo_pago,
       monto: p.monto,
       fecha_pago: fechaVenta,
@@ -224,9 +258,9 @@ export async function procesarVentaVirtual(input: ProcesarVentaVirtualInput): Pr
       fecha_venta: fechaVenta,
       total,
       saldo_pendiente,
-      cliente_nombre: input.cliente_nombre || null,
-      cliente_id: input.cliente_id || null,
-      mesero_nombre: input.mesero_nombre || null,
+      cliente_nombre: nombreLimpio,
+      cliente_id: finalClienteId,
+      mesero_nombre: input.mesero_nombre?.trim() || null,
     }
   };
 }
@@ -247,4 +281,25 @@ export async function buscarClientePorCedula(cedula: string) {
     
   if (error) return null;
   return cliente;
+}
+
+export async function buscarClientes(query: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
+  if (!perfil) return [];
+
+  const q = query.trim();
+  if (!q) return [];
+
+  const { data: clientes, error } = await supabase
+    .from('clientes')
+    .select('id, nombre, rif_cedula, telefono')
+    .eq('empresa_id', perfil.empresa_id)
+    .or(`nombre.ilike.%${q}%,rif_cedula.ilike.%${q}%`)
+    .limit(6);
+
+  if (error || !clientes) return [];
+  return clientes;
 }

@@ -2,7 +2,7 @@
 
 import React, { useState, useTransition, useMemo, useCallback } from 'react';
 import {
-  Search, Plus, Minus, Trash2, Zap, X, ShoppingCart, User, UserCircle, CreditCard, ChevronLeft, ChevronRight, CheckCircle, Receipt, Edit3, History, AlertCircle, Package, Loader2
+  Search, Plus, Minus, Trash2, Zap, X, ShoppingCart, User, UserCircle, CreditCard, ChevronLeft, ChevronRight, CheckCircle, Receipt, Edit3, History, AlertCircle, Package, Loader2, UserCheck, ChevronDown, ChevronUp
 } from 'lucide-react';
 import HistorialVentas from '@/components/pos/HistorialVentas';
 import { procesarVentaVirtual, MetodoPagoVirtual } from '@/actions/ventas-virtual-actions';
@@ -41,12 +41,57 @@ export default function TerminalVirtual({
   const [resultado, setResultado] = useState<{ ok: boolean; msg: string } | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  // Campos extras
+  // Campos extras (Cliente Express o Registrado)
   const [clienteNombre, setClienteNombre] = useState('');
   const [clienteCedula, setClienteCedula] = useState('');
   const [clienteTelefono, setClienteTelefono] = useState('');
   const [clienteId, setClienteId] = useState<string | null>(null);
   const [meseroNombre, setMeseroNombre] = useState('');
+  const [mostrarMasCampos, setMostrarMasCampos] = useState(false);
+  const [sugerenciasClientes, setSugerenciasClientes] = useState<{ id: string; nombre: string; rif_cedula?: string; telefono?: string }[]>([]);
+  const [buscandoClientes, setBuscandoClientes] = useState(false);
+  const [mostrarDropdown, setMostrarDropdown] = useState(false);
+
+  // Búsqueda en vivo mientras se escribe el nombre del cliente
+  const handleNombreChange = async (val: string) => {
+    setClienteNombre(val);
+    if (clienteId) {
+      setClienteId(null);
+    }
+    
+    if (val.trim().length >= 2) {
+      setBuscandoClientes(true);
+      try {
+        const { buscarClientes } = await import('@/actions/ventas-virtual-actions');
+        const list = await buscarClientes(val.trim());
+        setSugerenciasClientes(list);
+        setMostrarDropdown(list.length > 0);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setBuscandoClientes(false);
+      }
+    } else {
+      setSugerenciasClientes([]);
+      setMostrarDropdown(false);
+    }
+  };
+
+  const seleccionarClienteSugerido = (c: { id: string; nombre: string; rif_cedula?: string; telefono?: string }) => {
+    setClienteId(c.id);
+    setClienteNombre(c.nombre);
+    setClienteCedula(c.rif_cedula || '');
+    setClienteTelefono(c.telefono || '');
+    setMostrarDropdown(false);
+  };
+
+  const deseleccionarCliente = () => {
+    setClienteId(null);
+    setClienteNombre('');
+    setClienteCedula('');
+    setClienteTelefono('');
+    setMostrarDropdown(false);
+  };
 
   const handleCedulaBlur = async () => {
     if (!clienteCedula.trim()) return;
@@ -57,8 +102,6 @@ export default function TerminalVirtual({
         setClienteId(c.id);
         setClienteNombre(c.nombre);
         setClienteTelefono(c.telefono || '');
-      } else {
-        setClienteId(null);
       }
     } catch (e) {
       console.error(e);
@@ -168,8 +211,8 @@ export default function TerminalVirtual({
   };
 
   const handleProcesar = () => {
-    if (restante > 0 && !clienteNombre.trim()) {
-      alert("Si la orden no está pagada en su totalidad, debes ingresar el nombre del cliente para el crédito.");
+    if (restante > 0 && !clienteNombre.trim() && !clienteId) {
+      alert("Si la orden no está pagada en su totalidad, debes ingresar al menos el nombre del cliente para el crédito.");
       return;
     }
 
@@ -217,7 +260,11 @@ export default function TerminalVirtual({
         setResultado({ ok: true, msg: `Venta registrada correctamente.` });
         setCarrito([]);
         setClienteNombre('');
+        setClienteCedula('');
+        setClienteTelefono('');
+        setClienteId(null);
         setMeseroNombre('');
+        setMostrarDropdown(false);
         setModalPagoAbierto(false);
       } else {
         setResultado({ ok: false, msg: res.error || 'Error desconocido al procesar la venta.' });
@@ -245,6 +292,7 @@ export default function TerminalVirtual({
     setClienteTelefono('');
     setClienteId(null);
     setMeseroNombre('');
+    setMostrarDropdown(false);
   };
 
 
@@ -465,46 +513,119 @@ export default function TerminalVirtual({
            <>
               {/* Cliente y Mesero */}
               <div className="flex flex-col gap-2 shrink-0 bg-neutral-950/50 p-3 rounded-xl border border-neutral-800/50">
-                 <div className="flex items-center gap-2">
-                   <User size={14} className="text-neutral-500 shrink-0" />
-                   <input 
-                     type="text" 
-                     placeholder="Cédula / DNI (Enter para buscar)" 
-                     value={clienteCedula}
-                     onBlur={handleCedulaBlur}
-                     onKeyDown={e => e.key === 'Enter' && handleCedulaBlur()}
-                     onChange={e => setClienteCedula(e.target.value)}
-                     className="bg-transparent border-b border-neutral-800 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 w-full py-1"
-                   />
+                 {/* Indicador de cliente seleccionado o campo express */}
+                 {clienteId ? (
+                   <div className="flex items-center justify-between bg-indigo-500/10 border border-indigo-500/30 rounded-lg px-2.5 py-1.5">
+                     <div className="flex items-center gap-1.5 min-w-0">
+                       <UserCheck size={14} className="text-indigo-400 shrink-0" />
+                       <div className="truncate">
+                         <span className="text-xs font-semibold text-indigo-200 block truncate">{clienteNombre}</span>
+                         {clienteCedula && <span className="text-[10px] text-neutral-400 block">{clienteCedula}</span>}
+                       </div>
+                     </div>
+                     <button 
+                       type="button"
+                       onClick={deseleccionarCliente}
+                       className="p-1 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded transition-colors ml-2 shrink-0"
+                       title="Quitar cliente seleccionado"
+                     >
+                       <X size={13} />
+                     </button>
+                   </div>
+                 ) : (
+                   <div className="relative">
+                     <div className="flex items-center gap-2">
+                       <User size={14} className="text-neutral-500 shrink-0" />
+                       <input 
+                         type="text" 
+                         placeholder="Nombre del Cliente (Ocasional / Rápido)" 
+                         value={clienteNombre}
+                         onChange={e => handleNombreChange(e.target.value)}
+                         onFocus={() => { if (sugerenciasClientes.length > 0) setMostrarDropdown(true); }}
+                         className="bg-transparent border-b border-neutral-800 text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:border-indigo-500 w-full py-1"
+                       />
+                       {buscandoClientes && <Loader2 size={12} className="animate-spin text-neutral-500 shrink-0" />}
+                     </div>
+
+                     {/* Dropdown flotante con clientes sugeridos */}
+                     {mostrarDropdown && sugerenciasClientes.length > 0 && (
+                       <div className="absolute left-0 right-0 top-full mt-1 bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl z-50 overflow-hidden divide-y divide-neutral-800">
+                         <div className="px-3 py-1 text-[10px] font-bold text-neutral-500 uppercase tracking-wider bg-neutral-950/80">
+                           Clientes Registrados
+                         </div>
+                         {sugerenciasClientes.map(sug => (
+                           <button
+                             key={sug.id}
+                             type="button"
+                             onClick={() => seleccionarClienteSugerido(sug)}
+                             className="w-full text-left px-3 py-2 hover:bg-neutral-800 flex items-center justify-between text-xs text-white transition-colors"
+                           >
+                             <span className="font-medium truncate">{sug.nombre}</span>
+                             {sug.rif_cedula && <span className="text-[10px] text-neutral-400 shrink-0 ml-2">{sug.rif_cedula}</span>}
+                           </button>
+                         ))}
+                       </div>
+                     )}
+                   </div>
+                 )}
+
+                 {/* Botón para expandir/colapsar Cédula y Teléfono */}
+                 <div className="flex items-center justify-between pt-0.5">
+                   <button 
+                     type="button"
+                     onClick={() => setMostrarMasCampos(!mostrarMasCampos)}
+                     className="text-[11px] text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors"
+                   >
+                     {mostrarMasCampos ? (
+                       <>Menos datos <ChevronUp size={12} /></>
+                     ) : (
+                       <>+ Cédula / Teléfono (Opcional) <ChevronDown size={12} /></>
+                     )}
+                   </button>
+                   {clienteNombre.trim() && !clienteId && (
+                     <span className="text-[10px] text-amber-400/90 font-medium" title="Solo para este ticket, no se guardará en la base de datos">
+                       Ocasional
+                     </span>
+                   )}
                  </div>
-                 <div className="flex items-center gap-2">
-                   <div className="w-[14px] shrink-0" />
-                   <input 
-                     type="text" 
-                     placeholder="Nombre del Cliente (Opcional)" 
-                     value={clienteNombre}
-                     onChange={e => { setClienteNombre(e.target.value); setClienteId(null); }}
-                     className="bg-transparent border-b border-neutral-800 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 w-full py-1"
-                   />
-                 </div>
-                 <div className="flex items-center gap-2">
-                   <div className="w-[14px] shrink-0" />
-                   <input 
-                     type="text" 
-                     placeholder="Teléfono (Opcional)" 
-                     value={clienteTelefono}
-                     onChange={e => setClienteTelefono(e.target.value)}
-                     className="bg-transparent border-b border-neutral-800 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 w-full py-1"
-                   />
-                 </div>
-                 <div className="flex items-center gap-2 mt-1">
+
+                 {/* Campos adicionales expandibles */}
+                 {mostrarMasCampos && (
+                   <div className="flex flex-col gap-2 pt-1 border-t border-neutral-800/40 animate-in fade-in duration-150">
+                     <div className="flex items-center gap-2">
+                       <span className="w-4 text-[10px] font-mono text-neutral-500 shrink-0 text-center">ID</span>
+                       <input 
+                         type="text" 
+                         placeholder="Cédula / RIF (opcional)" 
+                         value={clienteCedula}
+                         onBlur={handleCedulaBlur}
+                         onKeyDown={e => e.key === 'Enter' && handleCedulaBlur()}
+                         onChange={e => setClienteCedula(e.target.value)}
+                         className="bg-transparent border-b border-neutral-800 text-xs text-white placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 w-full py-0.5"
+                       />
+                     </div>
+                     <div className="flex items-center gap-2">
+                       <span className="w-4 text-[10px] font-mono text-neutral-500 shrink-0 text-center">Tel</span>
+                       <input 
+                         type="text" 
+                         placeholder="Teléfono (opcional)" 
+                         value={clienteTelefono}
+                         onChange={e => setClienteTelefono(e.target.value)}
+                         className="bg-transparent border-b border-neutral-800 text-xs text-white placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 w-full py-0.5"
+                       />
+                     </div>
+                   </div>
+                 )}
+
+                 {/* Mesero / Vendedor */}
+                 <div className="flex items-center gap-2 mt-0.5 pt-1 border-t border-neutral-800/40">
                    <UserCircle size={14} className="text-neutral-500 shrink-0" />
                    <input 
                      type="text" 
                      placeholder="Mesero / Vendedor (Opcional)" 
                      value={meseroNombre}
                      onChange={e => setMeseroNombre(e.target.value)}
-                     className="bg-transparent border-b border-neutral-800 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 w-full py-1"
+                     className="bg-transparent border-b border-neutral-800 text-xs text-white placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 w-full py-0.5"
                    />
                  </div>
               </div>
@@ -701,6 +822,14 @@ export default function TerminalVirtual({
                           <span className="font-bold text-amber-400">${restante.toFixed(2)}</span>
                        </div>
                     )}
+                    {restante > 0 && !clienteId && (!clienteNombre.trim() || !clienteCedula.trim() || !clienteTelefono.trim()) && (
+                       <div className="p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs text-amber-300 flex items-start gap-2 mt-1">
+                          <AlertCircle size={15} className="shrink-0 mt-0.5 text-amber-400" />
+                          <p className="text-[11px] leading-tight">
+                             <strong>Atención:</strong> Las ventas a crédito requieren <strong>Nombre, Cédula y Teléfono</strong> del cliente para abrir su cuenta de crédito.
+                          </p>
+                       </div>
+                    )}
                     {vuelto > 0 && (
                        <div className="flex justify-between text-sm">
                           <span className="text-emerald-400 font-medium">Vuelto a entregar:</span>
@@ -712,6 +841,12 @@ export default function TerminalVirtual({
               </div>
 
               <div className="p-4 border-t border-neutral-800 bg-neutral-950/50">
+                 {resultado && !resultado.ok && (
+                   <div className="p-3 mb-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl text-xs flex items-center gap-2">
+                     <AlertCircle size={14} className="shrink-0" />
+                     <span>{resultado.msg}</span>
+                   </div>
+                 )}
                  <button
                    onClick={handleProcesar}
                    disabled={isPending}

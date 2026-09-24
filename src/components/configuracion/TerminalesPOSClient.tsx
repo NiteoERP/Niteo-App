@@ -30,8 +30,14 @@ export default function TerminalesPOSClient({ sedes }: { sedes: Sede[] }) {
         </div>
       </div>
 
-      <div className="space-y-3">
-        {sedes.map(sede => (
+      {sedes.length === 0 ? (
+        <div className="text-center py-8 px-4 border border-dashed border-neutral-800 rounded-xl">
+          <p className="text-neutral-400 text-sm">No se encontraron sedes activas registradas.</p>
+          <p className="text-neutral-600 text-xs mt-1">Crea una sede en la sección Sedes & Sucursales para poder asociar terminales POS.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {sedes.map(sede => (
           <div
             key={sede.id}
             className="flex items-center justify-between bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 gap-4"
@@ -72,9 +78,10 @@ export default function TerminalesPOSClient({ sedes }: { sedes: Sede[] }) {
             </div>
           </div>
         ))}
-      </div>
+        </div>
+      )}
 
-      <p className="text-neutral-700 text-xs mt-4">
+      <p className="text-neutral-500 text-xs mt-4">
         El código aparece cuando el Niteo POS se conecta a la nube por primera vez. Para verlo en el POS: Ajustes → Enlace Cloud.
       </p>
     </section>

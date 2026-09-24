@@ -6,6 +6,7 @@ import { DEFAULT_TIMEZONE, formatDateTimeLocal, toLocalDateKey } from '@/utils/d
 interface EmpresaContextType {
   empresa: {
     nombre_comercial: string;
+    rubro?: string;
     moneda: string;
     simbolo_moneda: string;
     zona_horaria: string;

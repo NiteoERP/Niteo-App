@@ -26,7 +26,5 @@ export default async function TerminalesPOS() {
     .eq('estado_activo', true)
     .order('nombre_sede');
 
-  if (!sedes || sedes.length === 0) return null;
-
-  return <TerminalesPOSClient sedes={sedes} />;
+  return <TerminalesPOSClient sedes={sedes || []} />;
 }

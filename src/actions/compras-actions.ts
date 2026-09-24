@@ -673,3 +673,14 @@ export async function addCompraMetodoPago(nombre: string) {
   if (error) return { success: false, error: error.message };
   return { success: true, data };
 }
+
+export async function deleteCompraMetodoPago(id: string) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('compras_metodos_pago')
+    .update({ estado_activo: false })
+    .eq('id', id);
+
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}

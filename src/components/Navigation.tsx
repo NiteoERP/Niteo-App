@@ -30,6 +30,7 @@ interface NavProps {
   userRole: string;
   modulosActivos?: string[];
   planSuscripcion?: string;
+  rubro?: string;
 }
 
 interface NavItem {
@@ -48,10 +49,16 @@ interface NavGroup {
   items: NavItem[];
 }
 
-export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscripcion = 'STARTER' }: NavProps) {
+export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscripcion = 'STARTER', rubro }: NavProps) {
   const pathname = usePathname();
 
   const hasPerm = (p: string) => {
+    if (p === 'mesas') {
+      if (userRole === 'MASTER') return false;
+      if (rubro && rubro !== 'restaurante') return false;
+      if (userRole === 'SUPERADMIN') return true;
+      return permisos.includes('mesas');
+    }
     if (userRole === 'MASTER' || userRole === 'SUPERADMIN') return true;
     if (permisos.includes(p)) return true;
     if (p === 'caja' && (permisos.includes('finanzas') || userRole === 'CAJERO')) return true;
@@ -274,11 +281,23 @@ export function SidebarBottom({ permisos, userRole }: NavProps) {
   );
 }
 
-export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscripcion = 'STARTER' }: NavProps) {
+export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscripcion = 'STARTER', rubro }: NavProps) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [ventasMenuOpen, setVentasMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMenuOpen(false);
+    setVentasMenuOpen(false);
+  }, [pathname]);
 
   const hasPerm = (p: string) => {
+    if (p === 'mesas') {
+      if (userRole === 'MASTER') return false;
+      if (rubro && rubro !== 'restaurante') return false;
+      if (userRole === 'SUPERADMIN') return true;
+      return permisos.includes('mesas');
+    }
     if (userRole === 'MASTER' || userRole === 'SUPERADMIN') return true;
     if (permisos.includes(p)) return true;
     if (p === 'caja' && (permisos.includes('finanzas') || userRole === 'CAJERO')) return true;
@@ -455,6 +474,131 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
         </>
       )}
 
+      {/* Modal Desplegable Rápido de Ventas (Mobile) */}
+      {ventasMenuOpen && (
+        <>
+          <div
+            className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={() => setVentasMenuOpen(false)}
+          />
+          <div
+            className="md:hidden fixed bottom-0 inset-x-0 z-50
+                       bg-neutral-900 border-t border-neutral-800 rounded-t-3xl
+                       animate-in slide-in-from-bottom duration-300
+                       pb-[calc(1.5rem+env(safe-area-inset-bottom))]
+                       flex flex-col shadow-2xl shadow-black"
+          >
+            <div className="flex justify-center pt-3 pb-2 shrink-0">
+              <div className="w-10 h-1 rounded-full bg-neutral-700" />
+            </div>
+
+            <div className="flex items-center justify-between px-6 pb-3 pt-1 border-b border-neutral-800/60 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                  <ShoppingCart size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Módulo de Ventas</h3>
+                  <p className="text-[11px] text-neutral-400">Selecciona una opción</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setVentasMenuOpen(false)}
+                className="p-1.5 text-neutral-400 hover:text-white rounded-lg bg-neutral-800 hover:bg-neutral-700 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-2.5 overflow-y-auto max-h-[60dvh] custom-scrollbar">
+              {hasPerm('pos') && (
+                <>
+                  <Link
+                    href="/dashboard/terminal"
+                    onClick={() => setVentasMenuOpen(false)}
+                    className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-neutral-950/70 hover:bg-neutral-800 active:bg-neutral-800 border border-neutral-800 hover:border-indigo-500/40 transition-all group"
+                  >
+                    <div className="w-11 h-11 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 group-hover:scale-105 transition-transform shrink-0">
+                      <MonitorSmartphone size={22} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-white text-[15px]">Terminal POS</span>
+                        <span className="text-[10px] bg-indigo-500/20 text-indigo-300 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                          Nueva Venta
+                        </span>
+                      </div>
+                      <p className="text-xs text-neutral-400 truncate mt-0.5">Cobro rápido táctil en caja</p>
+                    </div>
+                  </Link>
+
+                  <Link
+                    href="/dashboard/documentos/nuevo"
+                    onClick={() => setVentasMenuOpen(false)}
+                    className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-neutral-950/70 hover:bg-neutral-800 active:bg-neutral-800 border border-neutral-800 hover:border-blue-500/40 transition-all group"
+                  >
+                    <div className="w-11 h-11 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400 group-hover:scale-105 transition-transform shrink-0">
+                      <FileText size={22} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="font-semibold text-white text-[15px]">Facturación & Presupuestos</span>
+                      <p className="text-xs text-neutral-400 truncate mt-0.5">Emisión de facturas formales y notas</p>
+                    </div>
+                  </Link>
+
+                  <Link
+                    href="/dashboard/ventas"
+                    onClick={() => setVentasMenuOpen(false)}
+                    className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-neutral-950/70 hover:bg-neutral-800 active:bg-neutral-800 border border-neutral-800 hover:border-emerald-500/40 transition-all group"
+                  >
+                    <div className="w-11 h-11 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition-transform shrink-0">
+                      <Receipt size={22} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="font-semibold text-white text-[15px]">Historial de Ventas</span>
+                      <p className="text-xs text-neutral-400 truncate mt-0.5">Comprobantes emitidos y consultas</p>
+                    </div>
+                  </Link>
+                </>
+              )}
+
+              {hasPerm('inventario') && (
+                <Link
+                  href="/dashboard/catalogo"
+                  onClick={() => setVentasMenuOpen(false)}
+                  className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-neutral-950/70 hover:bg-neutral-800 active:bg-neutral-800 border border-neutral-800 hover:border-purple-500/40 transition-all group"
+                >
+                  <div className="w-11 h-11 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400 group-hover:scale-105 transition-transform shrink-0">
+                    <BookOpen size={22} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-semibold text-white text-[15px]">Catálogo de Productos</span>
+                    <p className="text-xs text-neutral-400 truncate mt-0.5">Listado comercial con fotos y precios</p>
+                  </div>
+                </Link>
+              )}
+
+              {hasPerm('mesas') && (
+                <Link
+                  href="/dashboard/mesas"
+                  onClick={() => setVentasMenuOpen(false)}
+                  className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-neutral-950/70 hover:bg-neutral-800 active:bg-neutral-800 border border-neutral-800 hover:border-amber-500/40 transition-all group"
+                >
+                  <div className="w-11 h-11 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform shrink-0">
+                    <UtensilsCrossed size={22} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-semibold text-white text-[15px]">Módulo Mesero</span>
+                    <p className="text-xs text-neutral-400 truncate mt-0.5">Atención de salón y comandas</p>
+                  </div>
+                </Link>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Barra Inferior */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-30
                       bg-neutral-900/95 backdrop-blur-md border-t border-neutral-800
@@ -465,7 +609,14 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
         {(() => {
           const { link, isActive } = navItem('/dashboard', true);
           return (
-            <Link href="/dashboard" onClick={() => setMenuOpen(false)} className={link}>
+            <Link 
+              href="/dashboard" 
+              onClick={() => {
+                setMenuOpen(false);
+                setVentasMenuOpen(false);
+              }} 
+              className={link}
+            >
               {isActive && <span className="absolute top-2 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-indigo-500" />}
               <LayoutDashboard size={20} />
               <span className="text-[10px] font-medium">Inicio</span>
@@ -475,19 +626,52 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
 
         {(() => {
           const candidateTabs = [
-            ...(hasPerm('mesas') ? [{ path: '/dashboard/mesas', label: 'Mesero', icon: UtensilsCrossed }] : []),
-            ...(hasPerm('pos') ? [{ path: '/dashboard/ventas', label: 'Ventas', icon: ShoppingCart }] : []),
-            ...(hasPerm('inventario') ? [{ path: '/dashboard/inventario', label: 'Inventario', icon: Package }] : []),
-            ...(hasPerm('caja') ? [{ path: '/dashboard/caja', label: 'Caja', icon: Wallet }] : []),
-            ...(hasPerm('compras') ? [{ path: '/dashboard/compras', label: 'Compras', icon: ShoppingBag }] : []),
-            ...(hasPerm('reportes') ? [{ path: '/dashboard/informes', label: 'Informes', icon: FileText }] : []),
+            ...(hasPerm('mesas') ? [{ id: 'mesas', path: '/dashboard/mesas', label: 'Mesero', icon: UtensilsCrossed }] : []),
+            ...(hasPerm('pos') ? [{ id: 'ventas', path: '/dashboard/ventas', label: 'Ventas', icon: ShoppingCart }] : []),
+            ...(hasPerm('inventario') ? [{ id: 'inventario', path: '/dashboard/inventario', label: 'Inventario', icon: Package }] : []),
+            ...(hasPerm('caja') ? [{ id: 'caja', path: '/dashboard/caja', label: 'Caja', icon: Wallet }] : []),
+            ...(hasPerm('compras') ? [{ id: 'compras', path: '/dashboard/compras', label: 'Compras', icon: ShoppingBag }] : []),
+            ...(hasPerm('reportes') ? [{ id: 'reportes', path: '/dashboard/informes', label: 'Informes', icon: FileText }] : []),
           ].slice(0, 3);
 
           return candidateTabs.map((tab) => {
+            if (tab.id === 'ventas') {
+              const isVentasActive = pathname.startsWith('/dashboard/terminal') ||
+                                     pathname.startsWith('/dashboard/ventas') ||
+                                     pathname.startsWith('/dashboard/documentos');
+              const isHighlighted = isVentasActive || ventasMenuOpen;
+
+              return (
+                <button
+                  key="ventas"
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setVentasMenuOpen(v => !v);
+                  }}
+                  className={`relative flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors ${
+                    isHighlighted ? 'text-indigo-400' : 'text-neutral-500 active:text-white'
+                  }`}
+                >
+                  {isHighlighted && <span className="absolute top-2 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-indigo-500" />}
+                  <ShoppingCart size={20} />
+                  <span className="text-[10px] font-medium">Ventas</span>
+                </button>
+              );
+            }
+
             const { link, isActive } = navItem(tab.path);
             const Icon = tab.icon;
             return (
-              <Link key={tab.path} href={tab.path} onClick={() => setMenuOpen(false)} className={link}>
+              <Link 
+                key={tab.path} 
+                href={tab.path} 
+                onClick={() => {
+                  setMenuOpen(false);
+                  setVentasMenuOpen(false);
+                }} 
+                className={link}
+              >
                 {isActive && <span className="absolute top-2 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-indigo-500" />}
                 <Icon size={20} />
                 <span className="text-[10px] font-medium">{tab.label}</span>
@@ -497,7 +681,10 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
         })()}
 
         <button
-          onClick={() => setMenuOpen(!menuOpen)}
+          onClick={() => {
+            setVentasMenuOpen(false);
+            setMenuOpen(!menuOpen);
+          }}
           className={`relative flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors ${
             menuOpen ? 'text-indigo-400' : 'text-neutral-500 active:text-white'
           }`}

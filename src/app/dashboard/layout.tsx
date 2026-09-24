@@ -20,7 +20,7 @@ export default async function DashboardLayout({
   }
 
   const { data: dbProfile } = await supabase
-    .from('perfiles').select('permisos, empresa_id, rol, sede_id').eq('id', user.id).single();
+    .from('perfiles').select('permisos, empresa_id, rol, sede_id, rubro').eq('id', user.id).single();
 
   const permisos = dbProfile?.permisos || [];
 
@@ -51,7 +51,7 @@ export default async function DashboardLayout({
     try {
       const { data: emp } = await supabase
         .from('empresas')
-        .select('nombre_comercial, moneda, simbolo_moneda, zona_horaria, metodos_pago')
+        .select('nombre_comercial, moneda, simbolo_moneda, zona_horaria, metodos_pago, rubro')
         .eq('id', empresa_id)
         .single();
       if (emp) empresaData = emp;
@@ -59,6 +59,8 @@ export default async function DashboardLayout({
       console.error('Error cargando empresaData:', err);
     }
   }
+
+  const empresaRubro = empresaData?.rubro || dbProfile?.rubro || 'restaurante';
 
   const { default: LicenseBanner } = await import('@/components/licencias/LicenseBanner');
   const { default: AccountSwitcher } = await import('@/components/AccountSwitcher');
@@ -80,12 +82,14 @@ export default async function DashboardLayout({
           userRole={userRole} 
           modulosActivos={licencia?.modulosActivos || []} 
           planSuscripcion={licencia?.planSuscripcion || 'STARTER'} 
+          rubro={empresaRubro}
         />
         <SidebarBottom 
           permisos={permisos} 
           userRole={userRole} 
           modulosActivos={licencia?.modulosActivos || []} 
           planSuscripcion={licencia?.planSuscripcion || 'STARTER'} 
+          rubro={empresaRubro}
         />
       </aside>
 
@@ -175,6 +179,7 @@ export default async function DashboardLayout({
           userRole={userRole} 
           modulosActivos={licencia?.modulosActivos || []} 
           planSuscripcion={licencia?.planSuscripcion || 'STARTER'} 
+          rubro={empresaRubro}
         />
       </div>
     </div>

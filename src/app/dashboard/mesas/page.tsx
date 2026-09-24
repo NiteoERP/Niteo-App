@@ -9,7 +9,7 @@ export default async function MesasPage() {
 
   const { data: perfil } = await supabase
     .from('perfiles')
-    .select('permisos, nombre_completo, rol')
+    .select('permisos, nombre_completo, rol, empresa_id, rubro')
     .eq('id', user.id)
     .single();
 
@@ -24,14 +24,17 @@ export default async function MesasPage() {
     user.email ||
     'Mesero';
 
-  const empresaId = user.app_metadata?.empresa_id as string | undefined;
+  const empresaId = (user.app_metadata?.empresa_id || perfil?.empresa_id) as string | undefined;
   let metodosPago: string[] = ['Efectivo USD', 'Efectivo Bs', 'Pago Móvil', 'Punto de Venta', 'Zelle'];
   if (empresaId) {
     const { data: emp } = await supabase
       .from('empresas')
-      .select('metodos_pago')
+      .select('metodos_pago, rubro')
       .eq('id', empresaId)
       .single();
+    if (emp?.rubro && emp.rubro !== 'restaurante') {
+      redirect('/dashboard');
+    }
     if (emp?.metodos_pago?.length) metodosPago = emp.metodos_pago;
   }
 
