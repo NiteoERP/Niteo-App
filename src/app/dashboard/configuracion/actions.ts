@@ -61,12 +61,9 @@ export async function updateEmpresaSaaS(empresaId: string, data: any) {
     updatePayload.whatsapp_catalogo = data.whatsapp_catalogo || null;
   }
 
-  // Si se envían métodos de pago, asegurar que 'Cortesía' siempre esté presente y normalizado
+  // Si se envían métodos de pago, normalizar y deduplicar respetando la decisión del usuario
   if (data.metodos_pago !== undefined) {
     let metodos: string[] = Array.isArray(data.metodos_pago) ? [...data.metodos_pago] : [];
-    if (!metodos.some(m => m.toLowerCase().includes('cortes'))) {
-      metodos.push('Cortesía');
-    }
     // Deduplicar letra por letra (case-insensitive)
     const seen = new Set<string>();
     metodos = metodos.filter(m => {

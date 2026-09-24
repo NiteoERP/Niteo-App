@@ -24,11 +24,8 @@ import {
   Check, 
   Loader2, 
   AlertCircle, 
-  Info, 
   Sparkles,
   ShoppingBag,
-  ArrowRight,
-  ShieldCheck,
   CheckCircle2,
   X,
   AlertTriangle,
@@ -257,7 +254,7 @@ function getMethodMeta(name: string) {
   }
 
   // Efectivo Dólares USD
-  if (norm.includes('efectivo') || norm.includes('cash') || norm.includes('billete')) {
+  if (norm.includes('efectivo') || norm.includes('cash')) {
     return {
       icon: Banknote,
       category: 'Efectivo Divisa',
@@ -363,7 +360,7 @@ function getMethodMeta(name: string) {
 
   return {
     icon: Wallet,
-    category: 'Otro Método',
+    category: 'Personalizado',
     desc: 'Método de cobro personalizado',
     badge: 'Cobro General',
     badgeClass: 'bg-neutral-800 text-neutral-300 border-neutral-700',
@@ -427,11 +424,10 @@ function findMatchingActiveMethod(presetName: string, activeMethods: string[]): 
 export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: MetodosPagoManagerProps) {
   const [activeTab, setActiveTab] = useState<'ventas' | 'compras'>('ventas');
 
-  // Estado Métodos de Venta
-  const hasCortesia = initialMetodosVenta.some(m => m.toLowerCase().includes('cortes'));
-  const standardizedVentas = hasCortesia ? initialMetodosVenta : [...initialMetodosVenta, 'Cortesía'];
-  const [metodosVentas, setMetodosVentas] = useState<string[]>(standardizedVentas);
+  // Estado Métodos de Venta (directo de BD sin imponer Cortesía obligatoria)
+  const [metodosVentas, setMetodosVentas] = useState<string[]>(initialMetodosVenta);
   const [customVenta, setCustomVenta] = useState('');
+  const [showCatalogVentas, setShowCatalogVentas] = useState(false);
   const [isPendingVentas, startTransitionVentas] = useTransition();
   const [feedbackVentas, setFeedbackVentas] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
@@ -439,6 +435,7 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
   const [metodosCompras, setMetodosCompras] = useState<{ id: string; nombre: string }[]>([]);
   const [loadingCompras, setLoadingCompras] = useState(true);
   const [customCompra, setCustomCompra] = useState('');
+  const [showCatalogCompras, setShowCatalogCompras] = useState(false);
   const [isAddingCompra, setIsAddingCompra] = useState(false);
   const [feedbackCompras, setFeedbackCompras] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
@@ -496,10 +493,6 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
       }
     });
 
-    if (!deduplicados.some(m => m.toLowerCase().includes('cortes'))) {
-      deduplicados.push('Cortesía');
-    }
-
     persistirMetodosVentas(deduplicados, 'Duplicados eliminados. Lista consolidada con éxito.');
   };
 
@@ -532,14 +525,7 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
       actualizados = metodosVentas.filter(m => m.toLowerCase().trim() !== item.toLowerCase().trim());
     }
 
-    // Proteger Cortesía
-    if (eliminadoNombre.toLowerCase().includes('cortes')) {
-      setFeedbackVentas({ type: 'error', message: 'El método Cortesía es obligatorio por diseño para auditar consumos y mermas.' });
-      setTimeout(() => setFeedbackVentas(null), 3500);
-      return;
-    }
-
-    persistirMetodosVentas(actualizados, `"${eliminadoNombre}" eliminado de los métodos de cobro.`);
+    persistirMetodosVentas(actualizados, `"${eliminadoNombre}" eliminado definitivamente.`);
   };
 
   const moverMetodoVenta = (index: number, direction: 'up' | 'down') => {
@@ -580,7 +566,7 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
     const res = await deleteCompraMetodoPago(id);
     if (res.success) {
       await cargarCompras();
-      setFeedbackCompras({ type: 'success', message: `Método "${nombre}" desactivado de compras.` });
+      setFeedbackCompras({ type: 'success', message: `Método "${nombre}" eliminado definitivamente de compras.` });
       setTimeout(() => setFeedbackCompras(null), 3000);
     } else {
       setFeedbackCompras({ type: 'error', message: res.error || 'Error al eliminar método.' });
@@ -656,7 +642,7 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
                     Se detectaron métodos repetidos en tu lista de cobro
                   </h4>
                   <p className="text-[11px] text-amber-200/80 mt-0.5">
-                    Hay {duplicateVentas.length} entradas repetidas (ej. {duplicateVentas[0]}). Puedes unificarlas automáticamente con un solo clic.
+                    Hay {duplicateVentas.length} entradas repetidas. Puedes unificarlas automáticamente con un solo clic.
                   </p>
                 </div>
               </div>
@@ -672,13 +658,13 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
             </div>
           )}
 
-          {/* Bloque 1: Tarjetas de Métodos Activos con Distribución Amplia y sin cortes de palabras */}
+          {/* Bloque 1: Métodos Habilitados (Solo los que tú usas) */}
           <div className="bg-neutral-950/60 border border-neutral-800/80 rounded-2xl p-5 sm:p-6 space-y-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-800/60 pb-4">
               <div>
                 <h3 className="text-base font-semibold text-white">Métodos de Cobro Habilitados</h3>
                 <p className="text-xs text-neutral-400 mt-0.5">
-                  Vías de pago activas en tu punto de venta (POS) y caja. Organiza su orden de prioridad o elimina los que no uses.
+                  Vías de cobro activas en tu punto de venta (POS) y caja. Puedes eliminar definitivamente las que no utilices.
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -688,185 +674,95 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
               </div>
             </div>
 
-            {/* Grid espacioso de 1 o 2 columnas (nunca apretado) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
-              {metodosVentas.map((metodo, idx) => {
-                const meta = getMethodMeta(metodo);
-                const Icon = meta.icon;
-                const isCortesia = metodo.toLowerCase().includes('cortes') || metodo.toLowerCase().includes('regal');
+            {metodosVentas.length === 0 ? (
+              <div className="text-center py-10 px-4 border border-dashed border-neutral-800 rounded-2xl">
+                <p className="text-neutral-400 text-sm font-medium">No tienes ningún método de cobro configurado.</p>
+                <p className="text-neutral-600 text-xs mt-1">
+                  Crea tu método abajo o abre las sugerencias populares para activar los que necesites.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
+                {metodosVentas.map((metodo, idx) => {
+                  const meta = getMethodMeta(metodo);
+                  const Icon = meta.icon;
 
-                return (
-                  <div
-                    key={`${metodo}-${idx}`}
-                    className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${meta.borderClass}`}
-                  >
-                    {/* Lado Izquierdo: Icono, Nombre Completo y Badge */}
-                    <div className="flex items-center gap-3.5 min-w-0 mr-3">
-                      <div className={`w-11 h-11 rounded-xl flex items-center justify-center border shrink-0 ${meta.iconClass}`}>
-                        <Icon size={20} />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-bold text-white text-sm whitespace-nowrap tracking-wide" title={metodo}>
-                            {metodo}
-                          </span>
-                          <span className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-md border uppercase tracking-wider whitespace-nowrap ${meta.badgeClass}`}>
-                            {meta.badge}
-                          </span>
+                  return (
+                    <div
+                      key={`${metodo}-${idx}`}
+                      className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${meta.borderClass}`}
+                    >
+                      {/* Lado Izquierdo: Icono, Nombre Completo y Badge */}
+                      <div className="flex items-center gap-3.5 min-w-0 mr-3">
+                        <div className={`w-11 h-11 rounded-xl flex items-center justify-center border shrink-0 ${meta.iconClass}`}>
+                          <Icon size={20} />
                         </div>
-                        <p className="text-xs text-neutral-400 mt-1 truncate">
-                          {meta.desc}
-                        </p>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-white text-sm whitespace-nowrap tracking-wide" title={metodo}>
+                              {metodo}
+                            </span>
+                            <span className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-md border uppercase tracking-wider whitespace-nowrap ${meta.badgeClass}`}>
+                              {meta.badge}
+                            </span>
+                          </div>
+                          <p className="text-xs text-neutral-400 mt-1 truncate">
+                            {meta.desc}
+                          </p>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Lado Derecho: Barra de Acciones de Prioridad y Eliminación */}
-                    <div className="flex items-center gap-1 shrink-0 bg-neutral-900/90 p-1 rounded-xl border border-neutral-800/80">
-                      <button
-                        type="button"
-                        onClick={() => moverMetodoVenta(idx, 'up')}
-                        disabled={idx === 0 || isPendingVentas}
-                        title="Subir prioridad"
-                        className="p-1.5 text-neutral-400 hover:text-white disabled:opacity-20 hover:bg-neutral-800 rounded-lg transition-colors"
-                      >
-                        <ChevronUp size={16} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => moverMetodoVenta(idx, 'down')}
-                        disabled={idx === metodosVentas.length - 1 || isPendingVentas}
-                        title="Bajar prioridad"
-                        className="p-1.5 text-neutral-400 hover:text-white disabled:opacity-20 hover:bg-neutral-800 rounded-lg transition-colors"
-                      >
-                        <ChevronDown size={16} />
-                      </button>
-
-                      {isCortesia ? (
-                        <div 
-                          className="flex items-center gap-1 px-2.5 py-1 text-amber-400 bg-amber-500/10 rounded-lg border border-amber-500/20 text-[11px] font-bold" 
-                          title="Método obligatorio para auditar mermas y consumos del personal"
+                      {/* Lado Derecho: Barra de Acciones de Prioridad y Eliminación Definitiva */}
+                      <div className="flex items-center gap-1 shrink-0 bg-neutral-900/90 p-1 rounded-xl border border-neutral-800/80">
+                        <button
+                          type="button"
+                          onClick={() => moverMetodoVenta(idx, 'up')}
+                          disabled={idx === 0 || isPendingVentas}
+                          title="Subir prioridad"
+                          className="p-1.5 text-neutral-400 hover:text-white disabled:opacity-20 hover:bg-neutral-800 rounded-lg transition-colors"
                         >
-                          <ShieldCheck size={14} />
-                          <span>Fijo</span>
-                        </div>
-                      ) : (
+                          <ChevronUp size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moverMetodoVenta(idx, 'down')}
+                          disabled={idx === metodosVentas.length - 1 || isPendingVentas}
+                          title="Bajar prioridad"
+                          className="p-1.5 text-neutral-400 hover:text-white disabled:opacity-20 hover:bg-neutral-800 rounded-lg transition-colors"
+                        >
+                          <ChevronDown size={16} />
+                        </button>
+
                         <button
                           type="button"
                           onClick={() => eliminarMetodoVenta(idx)}
                           disabled={isPendingVentas}
-                          title="Eliminar de métodos de cobro"
+                          title={`Eliminar definitivamente "${metodo}"`}
                           className="p-1.5 text-neutral-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
                         >
                           <Trash2 size={16} />
                         </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Aviso informativo de Cortesía */}
-            <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start gap-3">
-              <Gift className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-              <div className="text-xs text-neutral-400 leading-relaxed">
-                <span className="font-semibold text-amber-300">Auditoría fija: </span>
-                El método <strong>Cortesía</strong> está activo por diseño. No genera dinero en efectivo en cierres de caja, sino que registra las salidas bonificadas para control de mermas y consumo de cortesía.
-              </div>
-            </div>
-          </div>
-
-          {/* Bloque 2: Catálogo de Métodos Populares (Con activación y desactivación directa) */}
-          <div className="bg-neutral-950/60 border border-neutral-800/80 rounded-2xl p-5 sm:p-6 space-y-4">
-            <div className="flex items-center gap-2.5 border-b border-neutral-800/60 pb-3">
-              <Sparkles size={18} className="text-indigo-400" />
-              <div>
-                <h4 className="text-sm font-semibold text-white">Catálogo de Métodos Populares</h4>
-                <p className="text-xs text-neutral-400">
-                  Agrega o quita métodos frecuentes con un solo clic. Los nombres y divisas están claramente diferenciados.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-              {POPULAR_VENTAS_PRESETS.map((preset) => {
-                const matchedActive = findMatchingActiveMethod(preset.name, metodosVentas);
-                const isActive = !!matchedActive;
-                const meta = getMethodMeta(preset.name);
-                const Icon = meta.icon;
-
-                return (
-                  <div
-                    key={preset.name}
-                    className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${
-                      isActive 
-                        ? 'bg-neutral-900/60 border-neutral-800/90' 
-                        : 'bg-neutral-900/30 hover:bg-neutral-900/70 border-neutral-800/60 hover:border-indigo-500/30'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 min-w-0 pr-2">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center border shrink-0 ${meta.iconClass}`}>
-                        <Icon size={16} />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <p className="text-xs font-bold text-white whitespace-nowrap">
-                            {preset.displayName}
-                          </p>
-                        </div>
-                        <p className="text-[11px] text-neutral-400 truncate mt-0.5">
-                          {preset.desc}
-                        </p>
                       </div>
                     </div>
-
-                    <div className="shrink-0 ml-2 flex items-center gap-1.5">
-                      {isActive ? (
-                        <div className="flex items-center gap-1">
-                          <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-lg flex items-center gap-1 whitespace-nowrap">
-                            <Check size={12} /> Activo
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => eliminarMetodoVenta(matchedActive)}
-                            disabled={isPendingVentas}
-                            title={`Desactivar ${matchedActive}`}
-                            className="p-1 text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-                          >
-                            <X size={15} />
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => agregarMetodoVenta(preset.name)}
-                          disabled={isPendingVentas}
-                          className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-lg border border-indigo-500/20 transition-all flex items-center gap-1 whitespace-nowrap"
-                        >
-                          <Plus size={13} />
-                          <span>Agregar</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          {/* Bloque 3: Formulario para Método Personalizado */}
+          {/* Bloque 2: Formulario para Crear / Añadir Métodos */}
           <div className="bg-neutral-950/60 border border-neutral-800/80 rounded-2xl p-5 sm:p-6 space-y-4">
             <div>
-              <h4 className="text-sm font-semibold text-white">¿Tienes otro método personalizado?</h4>
+              <h4 className="text-sm font-semibold text-white">Crear nuevo método de cobro</h4>
               <p className="text-xs text-neutral-400 mt-0.5">
-                Crea cualquier modalidad propia de tu negocio (ej. Vales de Alimentación, Cashea, Tarjeta de Regalo, Criptomoneda específica...).
+                Escribe el nombre del método que quieres utilizar en tu caja y pulsa Añadir.
               </p>
             </div>
 
             <div className="flex items-center gap-2 max-w-lg">
               <input
                 type="text"
-                placeholder="Nombre del nuevo método (ej. Cashea, Vale de Regalo...)"
+                placeholder="Ej. Efectivo USD, Pago Móvil, Cashea, Zelle..."
                 value={customVenta}
                 onChange={(e) => setCustomVenta(e.target.value)}
                 onKeyDown={(e) => {
@@ -881,7 +777,7 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
                 type="button"
                 onClick={() => agregarMetodoVenta(customVenta)}
                 disabled={!customVenta.trim() || isPendingVentas}
-                className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-xs font-semibold px-4 py-2.5 rounded-xl border border-indigo-500 transition-all"
+                className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-xs font-semibold px-4 py-2.5 rounded-xl border border-indigo-500 transition-all shrink-0"
               >
                 <Plus size={14} />
                 <span>Añadir</span>
@@ -889,11 +785,99 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
             </div>
           </div>
 
+          {/* Bloque 3: Sugerencias Opcionales Desplegables (No invasivo) */}
+          <div className="bg-neutral-950/60 border border-neutral-800/80 rounded-2xl p-5 sm:p-6 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <Sparkles size={18} className="text-indigo-400" />
+                <div>
+                  <h4 className="text-sm font-semibold text-white">Plantillas y Sugerencias Frecuentes</h4>
+                  <p className="text-xs text-neutral-400">
+                    Sugerencias rápidas para añadir con un clic si las llegas a necesitar.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCatalogVentas(!showCatalogVentas)}
+                className="flex items-center justify-center gap-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-3.5 py-1.5 rounded-xl border border-indigo-500/20 transition-all shrink-0"
+              >
+                <span>{showCatalogVentas ? 'Ocultar sugerencias' : 'Ver sugerencias populares'}</span>
+                <ChevronDown size={14} className={`transition-transform duration-200 ${showCatalogVentas ? 'rotate-180' : ''}`} />
+              </button>
+            </div>
+
+            {showCatalogVentas && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 pt-3 border-t border-neutral-800/60 animate-in fade-in duration-150">
+                {POPULAR_VENTAS_PRESETS.map((preset) => {
+                  const matchedActive = findMatchingActiveMethod(preset.name, metodosVentas);
+                  const isActive = !!matchedActive;
+                  const meta = getMethodMeta(preset.name);
+                  const Icon = meta.icon;
+
+                  return (
+                    <div
+                      key={preset.name}
+                      className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${
+                        isActive 
+                          ? 'bg-neutral-900/60 border-neutral-800/90' 
+                          : 'bg-neutral-900/30 hover:bg-neutral-900/70 border-neutral-800/60 hover:border-indigo-500/30'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0 pr-2">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center border shrink-0 ${meta.iconClass}`}>
+                          <Icon size={16} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-white whitespace-nowrap">
+                            {preset.displayName}
+                          </p>
+                          <p className="text-[11px] text-neutral-400 truncate mt-0.5">
+                            {preset.desc}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="shrink-0 ml-2 flex items-center gap-1.5">
+                        {isActive ? (
+                          <div className="flex items-center gap-1">
+                            <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-lg flex items-center gap-1 whitespace-nowrap">
+                              <Check size={12} /> Activo
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => eliminarMetodoVenta(matchedActive)}
+                              disabled={isPendingVentas}
+                              title={`Eliminar definitivamente ${matchedActive}`}
+                              className="p-1 text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                            >
+                              <X size={15} />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => agregarMetodoVenta(preset.name)}
+                            disabled={isPendingVentas}
+                            className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-lg border border-indigo-500/20 transition-all flex items-center gap-1 whitespace-nowrap"
+                          >
+                            <Plus size={13} />
+                            <span>Añadir</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           {/* Pie de guardado */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
             <div className="flex items-center gap-2 text-xs text-neutral-400">
               <CheckCircle2 size={15} className="text-emerald-400" />
-              <span>Los cambios de agregar o eliminar se guardan y sincronizan automáticamente con Niteo POS.</span>
+              <span>Cualquier cambio se guarda y sincroniza automáticamente con Niteo POS.</span>
             </div>
             <button
               type="button"
@@ -956,7 +940,7 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
               <div className="text-center py-8 px-4 border border-dashed border-neutral-800 rounded-xl">
                 <p className="text-neutral-400 text-sm">No tienes métodos de compra registrados.</p>
                 <p className="text-neutral-600 text-xs mt-1">
-                  Usa el catálogo popular de abajo para añadir los medios con los que pagas a tus proveedores.
+                  Crea uno abajo o usa las sugerencias populares para añadirlo.
                 </p>
               </div>
             ) : (
@@ -992,7 +976,7 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
                       <button
                         type="button"
                         onClick={() => eliminarMetodoCompra(m.id, m.nombre)}
-                        title="Desactivar método"
+                        title="Eliminar definitivamente"
                         className="p-2 text-neutral-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl border border-neutral-800 hover:border-rose-500/30 transition-all shrink-0"
                       >
                         <Trash2 size={16} />
@@ -1004,87 +988,7 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
             )}
           </div>
 
-          {/* Bloque 2: Catálogo de Métodos Populares para Compras */}
-          <div className="bg-neutral-950/60 border border-neutral-800/80 rounded-2xl p-5 sm:p-6 space-y-4">
-            <div className="flex items-center gap-2.5 border-b border-neutral-800/60 pb-3">
-              <Sparkles size={18} className="text-indigo-400" />
-              <div>
-                <h4 className="text-sm font-semibold text-white">Métodos de Pago Frecuentes a Proveedores</h4>
-                <p className="text-xs text-neutral-400">Añade o quita con un solo clic las formas comunes de pago a proveedores.</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-              {POPULAR_COMPRAS_PRESETS.map((preset) => {
-                const matchedCompra = metodosCompras.find(m => 
-                  m.nombre.toLowerCase().trim() === preset.name.toLowerCase().trim() ||
-                  (preset.name.toLowerCase().includes('binance') && m.nombre.toLowerCase().includes('binance')) ||
-                  (preset.name.toLowerCase().includes('transferencia') && m.nombre.toLowerCase().includes('transferencia')) ||
-                  (preset.name.toLowerCase().includes('pago movil') && (m.nombre.toLowerCase().includes('pago movil') || m.nombre.toLowerCase().includes('pago móvil')))
-                );
-                const isActive = !!matchedCompra;
-                const meta = getMethodMeta(preset.name);
-                const Icon = meta.icon;
-
-                return (
-                  <div
-                    key={preset.name}
-                    className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${
-                      isActive 
-                        ? 'bg-neutral-900/60 border-neutral-800/90' 
-                        : 'bg-neutral-900/30 hover:bg-neutral-900/70 border-neutral-800/60 hover:border-indigo-500/30'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 min-w-0 pr-2">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center border shrink-0 ${meta.iconClass}`}>
-                        <Icon size={16} />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <p className="text-xs font-bold text-white whitespace-nowrap">
-                            {preset.displayName}
-                          </p>
-                        </div>
-                        <p className="text-[11px] text-neutral-400 truncate mt-0.5">
-                          {preset.desc}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="shrink-0 ml-2 flex items-center gap-1.5">
-                      {isActive && matchedCompra ? (
-                        <div className="flex items-center gap-1">
-                          <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-lg flex items-center gap-1 whitespace-nowrap">
-                            <Check size={12} /> Activo
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => eliminarMetodoCompra(matchedCompra.id, matchedCompra.nombre)}
-                            title={`Desactivar ${matchedCompra.nombre}`}
-                            className="p-1 text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-                          >
-                            <X size={15} />
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          disabled={isAddingCompra}
-                          onClick={() => agregarMetodoCompra(preset.name)}
-                          className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-lg border border-indigo-500/20 transition-all flex items-center gap-1 whitespace-nowrap"
-                        >
-                          <Plus size={13} />
-                          <span>Agregar</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Bloque 3: Formulario para Método de Compra Personalizado */}
+          {/* Bloque 2: Formulario para Crear Método de Compra */}
           <div className="bg-neutral-950/60 border border-neutral-800/80 rounded-2xl p-5 sm:p-6 space-y-4">
             <div>
               <h4 className="text-sm font-semibold text-white">Añadir otro método de compra</h4>
@@ -1117,6 +1021,96 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
                 <span>Añadir</span>
               </button>
             </div>
+          </div>
+
+          {/* Bloque 3: Sugerencias Opcionales para Compras */}
+          <div className="bg-neutral-950/60 border border-neutral-800/80 rounded-2xl p-5 sm:p-6 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <Sparkles size={18} className="text-indigo-400" />
+                <div>
+                  <h4 className="text-sm font-semibold text-white">Métodos de Pago Frecuentes a Proveedores</h4>
+                  <p className="text-xs text-neutral-400">Plantillas rápidas sugeridas para pagos a proveedores.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCatalogCompras(!showCatalogCompras)}
+                className="flex items-center justify-center gap-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-3.5 py-1.5 rounded-xl border border-indigo-500/20 transition-all shrink-0"
+              >
+                <span>{showCatalogCompras ? 'Ocultar sugerencias' : 'Ver sugerencias populares'}</span>
+                <ChevronDown size={14} className={`transition-transform duration-200 ${showCatalogCompras ? 'rotate-180' : ''}`} />
+              </button>
+            </div>
+
+            {showCatalogCompras && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 pt-3 border-t border-neutral-800/60 animate-in fade-in duration-150">
+                {POPULAR_COMPRAS_PRESETS.map((preset) => {
+                  const matchedCompra = metodosCompras.find(m => 
+                    m.nombre.toLowerCase().trim() === preset.name.toLowerCase().trim() ||
+                    (preset.name.toLowerCase().includes('binance') && m.nombre.toLowerCase().includes('binance')) ||
+                    (preset.name.toLowerCase().includes('transferencia') && m.nombre.toLowerCase().includes('transferencia')) ||
+                    (preset.name.toLowerCase().includes('pago movil') && (m.nombre.toLowerCase().includes('pago movil') || m.nombre.toLowerCase().includes('pago móvil')))
+                  );
+                  const isActive = !!matchedCompra;
+                  const meta = getMethodMeta(preset.name);
+                  const Icon = meta.icon;
+
+                  return (
+                    <div
+                      key={preset.name}
+                      className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${
+                        isActive 
+                          ? 'bg-neutral-900/60 border-neutral-800/90' 
+                          : 'bg-neutral-900/30 hover:bg-neutral-900/70 border-neutral-800/60 hover:border-indigo-500/30'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0 pr-2">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center border shrink-0 ${meta.iconClass}`}>
+                          <Icon size={16} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-white whitespace-nowrap">
+                            {preset.displayName}
+                          </p>
+                          <p className="text-[11px] text-neutral-400 truncate mt-0.5">
+                            {preset.desc}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="shrink-0 ml-2 flex items-center gap-1.5">
+                        {isActive && matchedCompra ? (
+                          <div className="flex items-center gap-1">
+                            <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-lg flex items-center gap-1 whitespace-nowrap">
+                              <Check size={12} /> Activo
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => eliminarMetodoCompra(matchedCompra.id, matchedCompra.nombre)}
+                              title={`Eliminar definitivamente ${matchedCompra.nombre}`}
+                              className="p-1 text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                            >
+                              <X size={15} />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={isAddingCompra}
+                            onClick={() => agregarMetodoCompra(preset.name)}
+                            className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-lg border border-indigo-500/20 transition-all flex items-center gap-1 whitespace-nowrap"
+                          >
+                            <Plus size={13} />
+                            <span>Añadir</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}
