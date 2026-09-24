@@ -135,6 +135,14 @@ const POPULAR_VENTAS_PRESETS = [
     badge: 'Digital USD',
     badgeClass: 'bg-blue-500/15 text-blue-300 border-blue-500/30'
   },
+  { 
+    name: 'Cortesía', 
+    displayName: 'Cortesía (Consumos / Regalías)', 
+    category: 'Bonificado', 
+    desc: 'Salidas bonificadas 100% y control de mermas',
+    badge: 'Cortesía',
+    badgeClass: 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+  },
 ];
 
 // Preset popular suggestions for supplier purchases
@@ -410,6 +418,9 @@ function findMatchingActiveMethod(presetName: string, activeMethods: string[]): 
       const mn = m.toLowerCase();
       return (mn.includes('efectivo') || mn.includes('cash')) && (mn.includes('cop') || mn.includes('peso'));
     }) || null;
+  }
+  if (pNorm.includes('cortes') || pNorm.includes('regal')) {
+    return activeMethods.find(m => m.toLowerCase().includes('cortes') || m.toLowerCase().includes('regal')) || null;
   }
   if (pNorm.includes('eur') || pNorm.includes('euro') || pNorm.includes('€')) {
     return activeMethods.find(m => {
@@ -808,7 +819,7 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
             </div>
 
             {showCatalogVentas && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 pt-3 border-t border-neutral-800/60 animate-in fade-in duration-150">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-3 border-t border-neutral-800/60 animate-in fade-in duration-150">
                 {POPULAR_VENTAS_PRESETS.map((preset) => {
                   const matchedActive = findMatchingActiveMethod(preset.name, metodosVentas);
                   const isActive = !!matchedActive;
@@ -818,18 +829,18 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
                   return (
                     <div
                       key={preset.name}
-                      className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${
+                      className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all ${
                         isActive 
                           ? 'bg-neutral-900/60 border-neutral-800/90' 
                           : 'bg-neutral-900/30 hover:bg-neutral-900/70 border-neutral-800/60 hover:border-indigo-500/30'
                       }`}
                     >
-                      <div className="flex items-center gap-3 min-w-0 pr-2">
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center border shrink-0 ${meta.iconClass}`}>
-                          <Icon size={16} />
+                      <div className="flex items-center gap-3 min-w-0 flex-1 mr-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shrink-0 ${meta.iconClass}`}>
+                          <Icon size={18} />
                         </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-white whitespace-nowrap">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-white truncate" title={preset.displayName}>
                             {preset.displayName}
                           </p>
                           <p className="text-[11px] text-neutral-400 truncate mt-0.5">
@@ -838,10 +849,10 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
                         </div>
                       </div>
 
-                      <div className="shrink-0 ml-2 flex items-center gap-1.5">
+                      <div className="shrink-0 flex items-center gap-1.5">
                         {isActive ? (
                           <div className="flex items-center gap-1">
-                            <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-lg flex items-center gap-1 whitespace-nowrap">
+                            <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg flex items-center gap-1 whitespace-nowrap">
                               <Check size={12} /> Activo
                             </span>
                             <button
@@ -849,7 +860,7 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
                               onClick={() => eliminarMetodoVenta(matchedActive)}
                               disabled={isPendingVentas}
                               title={`Eliminar definitivamente ${matchedActive}`}
-                              className="p-1 text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                              className="p-1.5 text-neutral-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg border border-neutral-800 hover:border-rose-500/20 transition-colors"
                             >
                               <X size={15} />
                             </button>
@@ -859,7 +870,7 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
                             type="button"
                             onClick={() => agregarMetodoVenta(preset.name)}
                             disabled={isPendingVentas}
-                            className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-lg border border-indigo-500/20 transition-all flex items-center gap-1 whitespace-nowrap"
+                            className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-3.5 py-1.5 rounded-lg border border-indigo-500/20 transition-all flex items-center gap-1 whitespace-nowrap"
                           >
                             <Plus size={13} />
                             <span>Añadir</span>
@@ -1044,7 +1055,7 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
             </div>
 
             {showCatalogCompras && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 pt-3 border-t border-neutral-800/60 animate-in fade-in duration-150">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-3 border-t border-neutral-800/60 animate-in fade-in duration-150">
                 {POPULAR_COMPRAS_PRESETS.map((preset) => {
                   const matchedCompra = metodosCompras.find(m => 
                     m.nombre.toLowerCase().trim() === preset.name.toLowerCase().trim() ||
@@ -1059,18 +1070,18 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
                   return (
                     <div
                       key={preset.name}
-                      className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${
+                      className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all ${
                         isActive 
                           ? 'bg-neutral-900/60 border-neutral-800/90' 
                           : 'bg-neutral-900/30 hover:bg-neutral-900/70 border-neutral-800/60 hover:border-indigo-500/30'
                       }`}
                     >
-                      <div className="flex items-center gap-3 min-w-0 pr-2">
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center border shrink-0 ${meta.iconClass}`}>
-                          <Icon size={16} />
+                      <div className="flex items-center gap-3 min-w-0 flex-1 mr-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shrink-0 ${meta.iconClass}`}>
+                          <Icon size={18} />
                         </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-white whitespace-nowrap">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-white truncate" title={preset.displayName}>
                             {preset.displayName}
                           </p>
                           <p className="text-[11px] text-neutral-400 truncate mt-0.5">
@@ -1079,17 +1090,17 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
                         </div>
                       </div>
 
-                      <div className="shrink-0 ml-2 flex items-center gap-1.5">
+                      <div className="shrink-0 flex items-center gap-1.5">
                         {isActive && matchedCompra ? (
                           <div className="flex items-center gap-1">
-                            <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-lg flex items-center gap-1 whitespace-nowrap">
+                            <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg flex items-center gap-1 whitespace-nowrap">
                               <Check size={12} /> Activo
                             </span>
                             <button
                               type="button"
                               onClick={() => eliminarMetodoCompra(matchedCompra.id, matchedCompra.nombre)}
                               title={`Eliminar definitivamente ${matchedCompra.nombre}`}
-                              className="p-1 text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                              className="p-1.5 text-neutral-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg border border-neutral-800 hover:border-rose-500/20 transition-colors"
                             >
                               <X size={15} />
                             </button>
@@ -1099,7 +1110,7 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
                             type="button"
                             disabled={isAddingCompra}
                             onClick={() => agregarMetodoCompra(preset.name)}
-                            className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-lg border border-indigo-500/20 transition-all flex items-center gap-1 whitespace-nowrap"
+                            className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-3.5 py-1.5 rounded-lg border border-indigo-500/20 transition-all flex items-center gap-1 whitespace-nowrap"
                           >
                             <Plus size={13} />
                             <span>Añadir</span>
