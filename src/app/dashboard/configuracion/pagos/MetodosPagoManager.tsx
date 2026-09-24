@@ -32,9 +32,7 @@ import {
   CheckCircle2,
   X,
   AlertTriangle,
-  RotateCcw,
-  Layers,
-  Sparkle
+  RotateCcw
 } from 'lucide-react';
 
 interface MetodosPagoManagerProps {
@@ -48,7 +46,7 @@ const POPULAR_VENTAS_PRESETS = [
     name: 'Efectivo USD', 
     displayName: 'Efectivo en Dólares ($)', 
     category: 'Efectivo Divisa', 
-    desc: 'Billetes físicos en dólares (USD)',
+    desc: 'Billetes físicos en dólares (USD $)',
     badge: 'USD $',
     badgeClass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
   },
@@ -56,7 +54,7 @@ const POPULAR_VENTAS_PRESETS = [
     name: 'Efectivo Bs', 
     displayName: 'Efectivo en Bolívares (Bs)', 
     category: 'Efectivo Nacional', 
-    desc: 'Billetes físicos en moneda nacional',
+    desc: 'Billetes físicos en moneda nacional (Bs)',
     badge: 'Bs VES',
     badgeClass: 'bg-sky-500/15 text-sky-300 border-sky-500/30'
   },
@@ -128,7 +126,7 @@ const POPULAR_VENTAS_PRESETS = [
     name: 'Efectivo EUR', 
     displayName: 'Efectivo en Euros (€)', 
     category: 'Efectivo Divisa', 
-    desc: 'Billetes físicos en euros europeos',
+    desc: 'Billetes físicos en euros europeos (€)',
     badge: 'EUR €',
     badgeClass: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30'
   },
@@ -211,6 +209,7 @@ function getMethodMeta(name: string) {
     return {
       icon: Gift,
       category: 'Bonificado',
+      desc: 'Salidas bonificadas y control de mermas',
       badge: 'Cortesía 100%',
       badgeClass: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
       borderClass: 'border-amber-500/30 bg-amber-500/[0.04]',
@@ -223,6 +222,7 @@ function getMethodMeta(name: string) {
     return {
       icon: Banknote,
       category: 'Efectivo Nacional',
+      desc: 'Billetes físicos en moneda nacional (Bs)',
       badge: 'Bolívares (Bs)',
       badgeClass: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
       borderClass: 'border-sky-500/25 bg-sky-500/[0.03]',
@@ -235,6 +235,7 @@ function getMethodMeta(name: string) {
     return {
       icon: Banknote,
       category: 'Efectivo Divisa',
+      desc: 'Pesos colombianos en efectivo físico',
       badge: 'Pesos (COP)',
       badgeClass: 'bg-orange-500/15 text-orange-300 border-orange-500/30',
       borderClass: 'border-orange-500/25 bg-orange-500/[0.03]',
@@ -247,6 +248,7 @@ function getMethodMeta(name: string) {
     return {
       icon: Banknote,
       category: 'Efectivo Divisa',
+      desc: 'Billetes físicos en euros europeos (€)',
       badge: 'Euros (€)',
       badgeClass: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
       borderClass: 'border-indigo-500/25 bg-indigo-500/[0.03]',
@@ -259,6 +261,7 @@ function getMethodMeta(name: string) {
     return {
       icon: Banknote,
       category: 'Efectivo Divisa',
+      desc: 'Billetes físicos en dólares (USD $)',
       badge: 'Dólares ($)',
       badgeClass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
       borderClass: 'border-emerald-500/25 bg-emerald-500/[0.03]',
@@ -271,6 +274,7 @@ function getMethodMeta(name: string) {
     return {
       icon: Smartphone,
       category: 'Móvil / P2P',
+      desc: 'Cobro interbancario inmediato (Bs)',
       badge: 'Pago Móvil (Bs)',
       badgeClass: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30',
       borderClass: 'border-cyan-500/25 bg-cyan-500/[0.03]',
@@ -283,6 +287,7 @@ function getMethodMeta(name: string) {
     return {
       icon: Zap,
       category: 'Transferencia USA',
+      desc: 'Transferencias directas en USA (USD)',
       badge: 'Zelle (USD)',
       badgeClass: 'bg-purple-500/15 text-purple-300 border-purple-500/30',
       borderClass: 'border-purple-500/25 bg-purple-500/[0.03]',
@@ -295,6 +300,7 @@ function getMethodMeta(name: string) {
     return {
       icon: CreditCard,
       category: 'Tarjeta / POS',
+      desc: 'Tarjetas de débito y crédito',
       badge: 'Terminal POS',
       badgeClass: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
       borderClass: 'border-blue-500/25 bg-blue-500/[0.03]',
@@ -307,6 +313,7 @@ function getMethodMeta(name: string) {
     return {
       icon: Coins,
       category: 'Criptoactivos',
+      desc: 'Cobro con criptoactivos y stablecoins',
       badge: 'Binance (USDT)',
       badgeClass: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
       borderClass: 'border-amber-500/25 bg-amber-500/[0.03]',
@@ -319,6 +326,7 @@ function getMethodMeta(name: string) {
     return {
       icon: Wallet,
       category: 'Billetera Digital',
+      desc: 'Billetera prepagada internacional',
       badge: 'Billetera Digital',
       badgeClass: 'bg-teal-500/15 text-teal-300 border-teal-500/30',
       borderClass: 'border-teal-500/25 bg-teal-500/[0.03]',
@@ -332,6 +340,7 @@ function getMethodMeta(name: string) {
     return {
       icon: Building2,
       category: 'Bancario',
+      desc: isBs ? 'Transferencia nacional en Bolívares' : 'Transferencia entre cuentas bancarias',
       badge: isBs ? 'Transferencia (Bs)' : 'Transferencia Bancaria',
       badgeClass: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
       borderClass: 'border-sky-500/25 bg-sky-500/[0.03]',
@@ -344,6 +353,7 @@ function getMethodMeta(name: string) {
     return {
       icon: Handshake,
       category: 'Financiamiento',
+      desc: 'Cuentas por cobrar a clientes (fiado)',
       badge: 'Crédito a Clientes',
       badgeClass: 'bg-rose-500/15 text-rose-300 border-rose-500/30',
       borderClass: 'border-rose-500/25 bg-rose-500/[0.03]',
@@ -354,6 +364,7 @@ function getMethodMeta(name: string) {
   return {
     icon: Wallet,
     category: 'Otro Método',
+    desc: 'Método de cobro personalizado',
     badge: 'Cobro General',
     badgeClass: 'bg-neutral-800 text-neutral-300 border-neutral-700',
     borderClass: 'border-neutral-800 bg-neutral-900/50',
@@ -661,7 +672,7 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
             </div>
           )}
 
-          {/* Bloque 1: Tarjetas de Métodos Activos con Reordenamiento */}
+          {/* Bloque 1: Tarjetas de Métodos Activos con Distribución Amplia y sin cortes de palabras */}
           <div className="bg-neutral-950/60 border border-neutral-800/80 rounded-2xl p-5 sm:p-6 space-y-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-800/60 pb-4">
               <div>
@@ -677,7 +688,8 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5">
+            {/* Grid espacioso de 1 o 2 columnas (nunca apretado) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
               {metodosVentas.map((metodo, idx) => {
                 const meta = getMethodMeta(metodo);
                 const Icon = meta.icon;
@@ -686,27 +698,30 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
                 return (
                   <div
                     key={`${metodo}-${idx}`}
-                    className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${meta.borderClass}`}
+                    className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${meta.borderClass}`}
                   >
-                    <div className="flex items-center gap-3 min-w-0 pr-2">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shrink-0 ${meta.iconClass}`}>
-                        <Icon size={18} />
+                    {/* Lado Izquierdo: Icono, Nombre Completo y Badge */}
+                    <div className="flex items-center gap-3.5 min-w-0 mr-3">
+                      <div className={`w-11 h-11 rounded-xl flex items-center justify-center border shrink-0 ${meta.iconClass}`}>
+                        <Icon size={20} />
                       </div>
                       <div className="min-w-0">
-                        {/* Nombre completo y legible sin cortes */}
-                        <p className="font-semibold text-white text-sm leading-tight break-words" title={metodo}>
-                          {metodo}
-                        </p>
-                        <div className="flex items-center gap-1.5 mt-1">
-                          <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${meta.badgeClass}`}>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-white text-sm whitespace-nowrap tracking-wide" title={metodo}>
+                            {metodo}
+                          </span>
+                          <span className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-md border uppercase tracking-wider whitespace-nowrap ${meta.badgeClass}`}>
                             {meta.badge}
                           </span>
                         </div>
+                        <p className="text-xs text-neutral-400 mt-1 truncate">
+                          {meta.desc}
+                        </p>
                       </div>
                     </div>
 
-                    {/* Acciones de Orden y Eliminación */}
-                    <div className="flex items-center gap-1 shrink-0 ml-1">
+                    {/* Lado Derecho: Barra de Acciones de Prioridad y Eliminación */}
+                    <div className="flex items-center gap-1 shrink-0 bg-neutral-900/90 p-1 rounded-xl border border-neutral-800/80">
                       <button
                         type="button"
                         onClick={() => moverMetodoVenta(idx, 'up')}
@@ -727,8 +742,12 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
                       </button>
 
                       {isCortesia ? (
-                        <div className="p-1.5 text-amber-400 bg-amber-500/10 rounded-lg border border-amber-500/20" title="Método obligatorio para auditar mermas y consumos del personal">
-                          <ShieldCheck size={16} />
+                        <div 
+                          className="flex items-center gap-1 px-2.5 py-1 text-amber-400 bg-amber-500/10 rounded-lg border border-amber-500/20 text-[11px] font-bold" 
+                          title="Método obligatorio para auditar mermas y consumos del personal"
+                        >
+                          <ShieldCheck size={14} />
+                          <span>Fijo</span>
                         </div>
                       ) : (
                         <button
@@ -769,7 +788,7 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
               {POPULAR_VENTAS_PRESETS.map((preset) => {
                 const matchedActive = findMatchingActiveMethod(preset.name, metodosVentas);
                 const isActive = !!matchedActive;
@@ -790,9 +809,11 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
                         <Icon size={16} />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold text-white leading-tight">
-                          {preset.displayName}
-                        </p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-xs font-bold text-white whitespace-nowrap">
+                            {preset.displayName}
+                          </p>
+                        </div>
                         <p className="text-[11px] text-neutral-400 truncate mt-0.5">
                           {preset.desc}
                         </p>
@@ -802,7 +823,7 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
                     <div className="shrink-0 ml-2 flex items-center gap-1.5">
                       {isActive ? (
                         <div className="flex items-center gap-1">
-                          <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-lg flex items-center gap-1">
+                          <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-lg flex items-center gap-1 whitespace-nowrap">
                             <Check size={12} /> Activo
                           </span>
                           <button
@@ -820,7 +841,7 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
                           type="button"
                           onClick={() => agregarMetodoVenta(preset.name)}
                           disabled={isPendingVentas}
-                          className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-lg border border-indigo-500/20 transition-all flex items-center gap-1"
+                          className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-lg border border-indigo-500/20 transition-all flex items-center gap-1 whitespace-nowrap"
                         >
                           <Plus size={13} />
                           <span>Agregar</span>
@@ -939,7 +960,7 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
                 {metodosCompras.map((m) => {
                   const meta = getMethodMeta(m.nombre);
                   const Icon = meta.icon;
@@ -947,19 +968,24 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
                   return (
                     <div
                       key={m.id}
-                      className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${meta.borderClass}`}
+                      className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${meta.borderClass}`}
                     >
-                      <div className="flex items-center gap-3 min-w-0 pr-2">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shrink-0 ${meta.iconClass}`}>
-                          <Icon size={18} />
+                      <div className="flex items-center gap-3.5 min-w-0 mr-3">
+                        <div className={`w-11 h-11 rounded-xl flex items-center justify-center border shrink-0 ${meta.iconClass}`}>
+                          <Icon size={20} />
                         </div>
                         <div className="min-w-0">
-                          <p className="font-semibold text-white text-sm leading-tight break-words" title={m.nombre}>
-                            {m.nombre}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-white text-sm whitespace-nowrap tracking-wide" title={m.nombre}>
+                              {m.nombre}
+                            </span>
+                            <span className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-md border uppercase tracking-wider whitespace-nowrap ${meta.badgeClass}`}>
+                              {meta.badge}
+                            </span>
+                          </div>
+                          <p className="text-xs text-neutral-400 mt-1 truncate">
+                            {meta.desc}
                           </p>
-                          <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider mt-1 ${meta.badgeClass}`}>
-                            {meta.badge}
-                          </span>
                         </div>
                       </div>
 
@@ -967,7 +993,7 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
                         type="button"
                         onClick={() => eliminarMetodoCompra(m.id, m.nombre)}
                         title="Desactivar método"
-                        className="p-1.5 text-neutral-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors ml-2 shrink-0"
+                        className="p-2 text-neutral-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl border border-neutral-800 hover:border-rose-500/30 transition-all shrink-0"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -988,7 +1014,7 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
               {POPULAR_COMPRAS_PRESETS.map((preset) => {
                 const matchedCompra = metodosCompras.find(m => 
                   m.nombre.toLowerCase().trim() === preset.name.toLowerCase().trim() ||
@@ -1014,9 +1040,11 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
                         <Icon size={16} />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold text-white leading-tight">
-                          {preset.displayName}
-                        </p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-xs font-bold text-white whitespace-nowrap">
+                            {preset.displayName}
+                          </p>
+                        </div>
                         <p className="text-[11px] text-neutral-400 truncate mt-0.5">
                           {preset.desc}
                         </p>
@@ -1026,7 +1054,7 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
                     <div className="shrink-0 ml-2 flex items-center gap-1.5">
                       {isActive && matchedCompra ? (
                         <div className="flex items-center gap-1">
-                          <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-lg flex items-center gap-1">
+                          <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-lg flex items-center gap-1 whitespace-nowrap">
                             <Check size={12} /> Activo
                           </span>
                           <button
@@ -1043,7 +1071,7 @@ export default function MetodosPagoManager({ empresaId, initialMetodosVenta }: M
                           type="button"
                           disabled={isAddingCompra}
                           onClick={() => agregarMetodoCompra(preset.name)}
-                          className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-lg border border-indigo-500/20 transition-all flex items-center gap-1"
+                          className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-lg border border-indigo-500/20 transition-all flex items-center gap-1 whitespace-nowrap"
                         >
                           <Plus size={13} />
                           <span>Agregar</span>
