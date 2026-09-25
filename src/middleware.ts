@@ -86,13 +86,25 @@ export async function middleware(request: NextRequest) {
           empresa_id = pDb.empresa_id;
           rol        = rol || pDb.rol;
           permisos   = pDb.permisos ?? [];
+        } else {
+          // Si no hay empresa_id, al menos capturamos el rol para el check de SUPERADMIN
+          rol = rol || pDb?.rol;
         }
       }
 
       const profile = empresa_id ? { empresa_id, rol: rol || 'CAJERO', permisos } : null;
 
-      // Si el perfil no existe, forzarlos al Onboarding principal
+      // Si el perfil no existe (sin empresa_id), verificar si es SUPERADMIN antes de mandar a onboarding
       if (!profile) {
+        // El SUPERADMIN (niteomaster) no tiene empresa — va al panel /admin, nunca al onboarding
+        if (rol === 'SUPERADMIN') {
+          if (!request.nextUrl.pathname.startsWith('/admin')) {
+            const url = request.nextUrl.clone();
+            url.pathname = '/admin';
+            return NextResponse.redirect(url);
+          }
+          return supabaseResponse;
+        }
         if (!request.nextUrl.pathname.startsWith('/onboarding')) {
           const url = request.nextUrl.clone();
           url.pathname = '/onboarding';
@@ -139,6 +151,16 @@ export async function middleware(request: NextRequest) {
           const url = request.nextUrl.clone();
           url.pathname = '/dashboard';
           return NextResponse.redirect(url);
+        }
+
+        // BLOQUEO ESTRICTO PARA MESEROS
+        // Si es mesero, SOLO puede estar en /dashboard/mesas
+        if (profile.rol === 'MESERO') {
+          if (request.nextUrl.pathname !== '/dashboard/mesas' && !request.nextUrl.pathname.startsWith('/dashboard/mesas/')) {
+            const url = request.nextUrl.clone();
+            url.pathname = '/dashboard/mesas';
+            return NextResponse.redirect(url);
+          }
         }
 
         // 7. Redireccionar desde /dashboard a la página por defecto del rol

@@ -53,6 +53,7 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
   const pathname = usePathname();
 
   const hasPerm = (p: string) => {
+    if (userRole === 'MESERO') return p === 'mesas';
     if (p === 'mesas') {
       if (userRole === 'MASTER') return false;
       if (rubro && rubro !== 'restaurante') return false;
@@ -173,15 +174,19 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
 
   return (
     <nav className="flex-1 px-3.5 py-4 space-y-1.5 overflow-y-auto custom-scrollbar select-none">
-      {/* 1. Inicio */}
-      <Link href="/dashboard" className={getSingleLinkClass('/dashboard', true)}>
-        <LayoutDashboard size={21} />
-        <span>Inicio</span>
-      </Link>
+      {userRole !== 'MESERO' && (
+        <>
+          {/* 1. Inicio */}
+          <Link href="/dashboard" className={getSingleLinkClass('/dashboard', true)}>
+            <LayoutDashboard size={21} />
+            <span>Inicio</span>
+          </Link>
 
-      <div className="pt-2 pb-1">
-        <div className="h-[1px] bg-neutral-800/60 mx-1" />
-      </div>
+          <div className="pt-2 pb-1">
+            <div className="h-[1px] bg-neutral-800/60 mx-1" />
+          </div>
+        </>
+      )}
 
       {/* 2. Módulos Desplegables Agrupados */}
       {groups.filter(g => g.visible && g.items.length > 0).map(group => {
@@ -292,6 +297,7 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
   }, [pathname]);
 
   const hasPerm = (p: string) => {
+    if (userRole === 'MESERO') return p === 'mesas';
     if (p === 'mesas') {
       if (userRole === 'MASTER') return false;
       if (rubro && rubro !== 'restaurante') return false;
@@ -606,7 +612,7 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
                       h-[calc(4rem+env(safe-area-inset-bottom))]
                       pb-[env(safe-area-inset-bottom)]">
 
-        {(() => {
+        {userRole !== 'MESERO' && (() => {
           const { link, isActive } = navItem('/dashboard', true);
           return (
             <Link 
