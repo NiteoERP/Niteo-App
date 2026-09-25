@@ -7,6 +7,7 @@ import AddUserModal from './AddUserModal';
 import EditUserModal from './EditUserModal';
 import ChangePasswordModal from './ChangePasswordModal';
 import { AVAILABLE_MODULES } from './modules';
+import { useEmpresa } from '@/components/providers/EmpresaProvider';
 
 export type Member = {
   id: string;
@@ -38,6 +39,12 @@ export default function TeamManager({
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ id: string, msg: string, type: 'success' | 'error' } | null>(null);
+
+  const { planSuscripcion, modulosActivos } = useEmpresa();
+  const plan = planSuscripcion.toUpperCase();
+  const baseLimit = plan === 'STARTER' ? 3 : plan === 'PRO' ? 10 : 999;
+  const maxUsuarios = baseLimit; // Puedes sumar plugins si lo deseas (ej. +modulosActivos.length * 3)
+  const canAddMore = members.length < maxUsuarios;
 
   const getRoleBadge = (rol: string) => {
     switch (rol) {
@@ -110,7 +117,14 @@ export default function TeamManager({
               </span>
             )}
             <div className="flex-1 md:flex-none">
-              <AddUserModal onUserCreated={handleUserCreated} />
+              {!canAddMore ? (
+                <div className="text-xs bg-rose-500/10 text-rose-400 border border-rose-500/20 px-4 py-2 rounded-xl flex items-center gap-2">
+                  <ShieldAlert size={16} />
+                  Límite de {maxUsuarios} usuarios alcanzado
+                </div>
+              ) : (
+                <AddUserModal onUserCreated={handleUserCreated} />
+              )}
             </div>
           </div>
         </div>

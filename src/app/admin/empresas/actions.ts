@@ -23,6 +23,7 @@ export async function getEmpresas() {
       .select(`
         id,
         nombre_comercial,
+        email_contacto,
         plan_suscripcion,
         estado_activo,
         fecha_registro,
@@ -44,8 +45,9 @@ export async function getEmpresas() {
       ...e,
       plan: e.plan_suscripcion || 'PRO',
       estado: e.estado_activo ? 'activa' : 'inactiva',
-      email_contacto: '',
+      // email_contacto viene directamente del spread de `e`
     }));
+
 
     return { success: true, empresas: formattedEmpresas };
   } catch (err: any) {

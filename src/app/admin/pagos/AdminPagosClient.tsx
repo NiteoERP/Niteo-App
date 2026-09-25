@@ -18,6 +18,28 @@ const METODO_ICON: Record<string, string> = {
   'Efectivo USD': '💵',
 };
 
+// Precios de referencia de planes (para verificar monto esperado)
+const PLAN_PRECIOS: Record<string, number> = {
+  STARTER: 10, PRO: 25, ENTERPRISE: 45,
+};
+const PLUGIN_PRECIOS: Record<string, number> = {
+  recetas: 5, 'multi-price': 5, 'virtual-pos': 8, 'caja-extra': 5,
+};
+
+function calcularMontoEsperado(planSolicitado: string | null): number {
+  if (!planSolicitado) return 0;
+  // Formato: "PRO + [recetas,multi-price]"
+  const [planParte, pluginsParte] = planSolicitado.split(' + ');
+  const planBase = PLAN_PRECIOS[planParte?.toUpperCase()] || 0;
+  const pluginsStr = pluginsParte?.replace(/[\[\]]/g, '') || '';
+  const pluginsTotal = pluginsStr
+    ? pluginsStr.split(',').reduce((acc, p) => acc + (PLUGIN_PRECIOS[p.trim()] || 0), 0)
+    : 0;
+  return planBase + pluginsTotal;
+}
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+
 function PagoCard({ pago, onAprobar, onRechazar, isPending }: {
   pago: any;
   onAprobar: (id: string) => void;
@@ -32,6 +54,21 @@ function PagoCard({ pago, onAprobar, onRechazar, isPending }: {
   const fecha = new Date(pago.fecha_registro).toLocaleDateString('es-ES', {
     day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
   });
+
+  // Fecha real del pago (puede ser fecha_pago o fecha_registro)
+  const fechaPagoReal = pago.fecha_pago
+    ? new Date(pago.fecha_pago + 'T12:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
+    : fecha;
+
+  const montoEsperado = calcularMontoEsperado(pago.plan_solicitado);
+  const montoBs = pago.monto_bs_calculado;
+  const tasaBCV = pago.tasa_bcv;
+
+  // URL del comprobante
+  const comprobanteUrl = pago.comprobante_url
+    ? `${SUPABASE_URL}/storage/v1/object/public/comprobantes/${pago.comprobante_url}`
+    : null;
+  const esImagen = comprobanteUrl && !comprobanteUrl.toLowerCase().endsWith('.pdf');
 
   return (
     <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden">
@@ -68,47 +105,108 @@ function PagoCard({ pago, onAprobar, onRechazar, isPending }: {
 
       {/* Detalle expandido */}
       {expanded && (
-        <div className="border-t border-neutral-800 p-5 space-y-4 bg-neutral-950/40">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+        <div className="border-t border-neutral-800 p-5 space-y-5 bg-neutral-950/40">
+
+          {/* ── Info del pago ── */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div>
               <p className="text-neutral-500 text-xs font-bold uppercase tracking-wider mb-1">Referencia</p>
               <p className="text-white font-mono">{pago.referencia || '—'}</p>
             </div>
             <div>
-              <p className="text-neutral-500 text-xs font-bold uppercase tracking-wider mb-1">Plan solicitado</p>
-              <p className="text-white">{pago.referencia?.includes('ENTERPRISE') ? 'Enterprise' : pago.referencia?.includes('STARTER') ? 'Starter' : 'Pro'}</p>
+              <p className="text-neutral-500 text-xs font-bold uppercase tracking-wider mb-1">Fecha del pago</p>
+              <p className="text-white">{fechaPagoReal}</p>
             </div>
             <div>
-              <p className="text-neutral-500 text-xs font-bold uppercase tracking-wider mb-1">Empresa actual</p>
+              <p className="text-neutral-500 text-xs font-bold uppercase tracking-wider mb-1">Plan solicitado</p>
+              <p className="text-white">
+                {pago.plan_solicitado
+                  ? pago.plan_solicitado
+                  : pago.referencia?.includes('ENTERPRISE') ? 'Enterprise'
+                  : pago.referencia?.includes('STARTER') ? 'Starter'
+                  : 'Pro'}
+              </p>
+            </div>
+            <div>
+              <p className="text-neutral-500 text-xs font-bold uppercase tracking-wider mb-1">Estado empresa</p>
               <p className="text-white capitalize">{empresa?.plan || '—'} / {empresa?.estado || '—'}</p>
             </div>
           </div>
 
-          {/* Comprobante */}
-          {pago.comprobante_url && (
+          {/* ── Verificación de monto ── */}
+          <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 grid grid-cols-2 md:grid-cols-3 gap-4">
             <div>
-              <p className="text-neutral-500 text-xs font-bold uppercase tracking-wider mb-2">Comprobante</p>
-              <a
-                href={`https://gqlhillifpxizbaqaagl.supabase.co/storage/v1/object/public/comprobantes/${pago.comprobante_url}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-indigo-400 hover:text-indigo-300 text-sm underline"
-              >
-                <ExternalLink size={14} /> Ver comprobante
-              </a>
+              <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider mb-1">Monto declarado</p>
+              <p className="text-xl font-black text-white">${pago.monto} <span className="text-xs font-normal text-neutral-500">USD</span></p>
+            </div>
+            {montoEsperado > 0 && (
+              <div>
+                <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider mb-1">Monto esperado</p>
+                <p className={`text-xl font-black ${pago.monto >= montoEsperado ? 'text-emerald-400' : 'text-red-400'}`}>
+                  ${montoEsperado} <span className="text-xs font-normal text-neutral-500">USD</span>
+                </p>
+                {pago.monto < montoEsperado && (
+                  <p className="text-xs text-red-400 mt-0.5">⚠ Pagó menos de lo esperado</p>
+                )}
+              </div>
+            )}
+            <div>
+              <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider mb-1">
+                Equivalente BCV {tasaBCV ? `(Bs ${tasaBCV.toLocaleString('es-VE')})` : ''}
+              </p>
+              {montoBs ? (
+                <p className="text-xl font-black text-indigo-300">
+                  Bs {montoBs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
+                </p>
+              ) : (
+                <p className="text-sm text-neutral-600">Sin tasa BCV para esta fecha</p>
+              )}
+            </div>
+          </div>
+
+          {/* ── Comprobante ── */}
+          {comprobanteUrl ? (
+            <div>
+              <p className="text-neutral-500 text-xs font-bold uppercase tracking-wider mb-2">Comprobante adjunto</p>
+              {esImagen ? (
+                <a href={comprobanteUrl} target="_blank" rel="noopener noreferrer">
+                  <img
+                    src={comprobanteUrl}
+                    alt="Comprobante de pago"
+                    className="max-h-64 w-auto rounded-xl border border-neutral-800 object-contain hover:opacity-90 transition-opacity cursor-zoom-in"
+                  />
+                  <p className="text-xs text-indigo-400 mt-1.5 flex items-center gap-1">
+                    <ExternalLink size={11} /> Abrir en pantalla completa
+                  </p>
+                </a>
+              ) : (
+                <a
+                  href={comprobanteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-indigo-400 hover:text-indigo-300 text-sm underline"
+                >
+                  <ExternalLink size={14} /> Ver comprobante (PDF)
+                </a>
+              )}
+            </div>
+          ) : (
+            <div>
+              <p className="text-neutral-500 text-xs font-bold uppercase tracking-wider mb-1">Comprobante</p>
+              <p className="text-sm text-neutral-600 italic">No adjuntó comprobante</p>
             </div>
           )}
 
-          {/* Acciones */}
+          {/* ── Acciones aprobar / rechazar ── */}
           {pago.estado === 'pendiente_aprobacion' && (
-            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <div className="flex flex-col sm:flex-row gap-3 pt-2 border-t border-neutral-800">
               <button
                 onClick={() => onAprobar(pago.id)}
                 disabled={isPending}
                 className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold rounded-xl transition-colors text-sm"
               >
                 {isPending ? <RefreshCw size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-                Aprobar y Activar
+                Aprobar y Activar — vence el 1ro
               </button>
 
               {!showRechazar ? (

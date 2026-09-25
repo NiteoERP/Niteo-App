@@ -167,6 +167,8 @@ export default async function DashboardLayout({
             userRole={userRole}
             userSedeId={dbProfile?.sede_id ?? null}
             permisos={permisos}
+            planSuscripcion={licencia?.planSuscripcion}
+            modulosActivos={licencia?.modulosActivos}
           >
             {licencia && (userRole === 'MASTER' || dbProfile?.rol === 'SUPERADMIN') && <LicenseBanner licencia={licencia} />}
             {children}

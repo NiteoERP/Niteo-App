@@ -31,7 +31,7 @@ export async function getEstadoLicencia(): Promise<EstadoLicencia | null> {
     // 1. Consultar tabla oficial suscripciones_empresas
     const { data: sub } = await supabase
       .from('suscripciones_empresas')
-      .select('plan, estado, fecha_vencimiento, fecha_registro')
+      .select('plan, estado, fecha_vencimiento, fecha_registro, modulos_activos')
       .eq('empresa_id', perfil.empresa_id)
       .maybeSingle();
 
@@ -44,6 +44,7 @@ export async function getEstadoLicencia(): Promise<EstadoLicencia | null> {
 
     // Determinar el plan activo
     const plan = (sub?.plan || 'PRO').toUpperCase();
+    const modulos = sub?.modulos_activos || [];
 
     const hoy = new Date();
 
@@ -54,7 +55,7 @@ export async function getEstadoLicencia(): Promise<EstadoLicencia | null> {
         diasRestantes: 9999,
         diasVencido: 0,
         planSuscripcion: 'LIFETIME',
-        modulosActivos: [],
+        modulosActivos: modulos,
         fechaVencimiento: '2099-12-31T23:59:59.000Z',
         bloqueoFuerte: false,
       };
@@ -126,7 +127,7 @@ export async function getEstadoLicencia(): Promise<EstadoLicencia | null> {
       diasRestantes: diasFinales,
       diasVencido: diasFinales < 0 ? Math.abs(diasFinales) : 0,
       planSuscripcion: plan,
-      modulosActivos: [],
+      modulosActivos: modulos,
       fechaVencimiento: fechaVenc.toISOString(),
       bloqueoFuerte,
     };
@@ -184,37 +185,60 @@ export async function reportarPagoSuscripcion(formData: FormData) {
   }
 
   const modulos = formData.get('modulos') as string;
-  const planCompleto = modulos ? `${plan_solicitado || 'STARTER'} + [${modulos}]` : (plan_solicitado || 'STARTER');
+  const ciclo   = (formData.get('ciclo') as string) || 'mensual'; // mensual | anual
+  // planCompleto: "PRO [ANUAL] + [recetas,multi-price]" o "PRO [MENSUAL] + [recetas]"
+  const cicloTag    = ciclo === 'anual' ? '[ANUAL]' : '[MENSUAL]';
+  const planConCiclo = `${plan_solicitado || 'STARTER'} ${cicloTag}`;
+  const planCompleto = modulos ? `${planConCiclo} + [${modulos}]` : planConCiclo;
 
-  // Intentar insertar en suscripciones_pagos primero (tabla estándar)
+  // Insertar en suscripciones_pagos con columnas dedicadas para plan y comprobante
   const { error } = await supabase.from('suscripciones_pagos').insert({
     empresa_id: perfil.empresa_id,
     monto,
     metodo_pago,
-    referencia: referencia ? `${referencia} (${planCompleto})` : `S/R (${planCompleto})`,
+    referencia: referencia || 'S/R',   // referencia original del cliente, intacta y limpia
+    plan_solicitado: planCompleto,      // columna dedicada — sin mezclar con referencia
+    comprobante_url,                    // URL del archivo en Storage
     moneda: 'USD',
     estado: 'pendiente_aprobacion',
   });
 
   if (error) {
-    // Si falla, intentar en pagos_suscripcion como fallback
-    try {
-      await supabase.from('pagos_suscripcion').insert({
-        empresa_id: perfil.empresa_id,
-        usuario_id: user.id,
-        monto,
-        metodo_pago,
-        referencia,
-        plan_solicitado: planCompleto,
-        comprobante_url,
-        estado: 'PENDIENTE'
-      });
-      revalidatePath('/dashboard');
-      revalidatePath('/dashboard/billing');
-      return { success: true };
-    } catch {
-      return { success: false, error: error.message };
+    return { success: false, error: error.message };
+  }
+
+  // ── AUTO-GRACIA O MANTENER ACTIVO ──
+  // Si el usuario reporta un pago, no queremos reducirle el tiempo si estaba haciendo un pago anticipado.
+  // Vamos a obtener su suscripción actual:
+  try {
+    const { data: subActual } = await supabase
+      .from('suscripciones_empresas')
+      .select('estado, fecha_vencimiento')
+      .eq('empresa_id', perfil.empresa_id)
+      .maybeSingle();
+
+    const ahora = new Date();
+    const vencActual = subActual?.fecha_vencimiento ? new Date(subActual.fecha_vencimiento) : null;
+    
+    // Solo le damos 5 días de gracia desde HOY si estaba vencido o le quedaban menos de 5 días.
+    // Si tenía más de 5 días (pago anticipado), le dejamos su fecha intacta.
+    const necesitaGracia = !vencActual || vencActual < new Date(ahora.getTime() + 5 * 86400000);
+    
+    if (necesitaGracia) {
+      const fechaGracia = new Date();
+      fechaGracia.setDate(fechaGracia.getDate() + 5);
+
+      await supabase
+        .from('suscripciones_empresas')
+        .upsert({
+          empresa_id: perfil.empresa_id,
+          plan: planCompleto.split(' ')[0].toUpperCase() || 'STARTER',
+          estado: 'gracia',
+          fecha_vencimiento: fechaGracia.toISOString(),
+        }, { onConflict: 'empresa_id' });
     }
+  } catch {
+    console.warn('No se pudo actualizar estado gracia — usando gracia silenciosa');
   }
 
   revalidatePath('/dashboard');

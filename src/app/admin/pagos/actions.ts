@@ -31,14 +31,43 @@ export async function getPagosPendientes() {
       return { success: false, error: error.message, pagos: [] };
     }
 
-    const formattedPagos = (data || []).map((p: any) => ({
-      ...p,
-      empresas: p.empresas ? {
-        ...p.empresas,
-        plan: p.empresas.plan_suscripcion || 'PRO',
-        estado: p.empresas.estado_activo ? 'activa' : 'inactiva'
-      } : null
-    }));
+    // Obtener tasas BCV únicas para las fechas de los pagos pendientes
+    const fechasUnicas = [...new Set(
+      (data || []).map(p => {
+        const fecha = p.fecha_pago || p.fecha_registro;
+        return fecha ? new Date(fecha).toISOString().split('T')[0] : null;
+      }).filter(Boolean)
+    )];
+
+    let tasasPorFecha: Record<string, number> = {};
+    if (fechasUnicas.length > 0) {
+      const { data: tasas } = await supabase
+        .from('tasa_cambiaria')
+        .select('fecha, tasa_bcv')
+        .in('fecha', fechasUnicas);
+      (tasas || []).forEach((t: any) => {
+        tasasPorFecha[t.fecha] = t.tasa_bcv;
+      });
+    }
+
+    const formattedPagos = (data || []).map((p: any) => {
+      const fechaRef = p.fecha_pago || p.fecha_registro;
+      const fechaStr = fechaRef ? new Date(fechaRef).toISOString().split('T')[0] : null;
+      // Tasa BCV del día del pago (o la más reciente disponible si no hay exacta)
+      const tasaBCV = fechaStr ? (tasasPorFecha[fechaStr] || null) : null;
+      const montoBs = tasaBCV ? Math.round(p.monto * tasaBCV * 100) / 100 : null;
+
+      return {
+        ...p,
+        tasa_bcv: tasaBCV,
+        monto_bs_calculado: montoBs,
+        empresas: p.empresas ? {
+          ...p.empresas,
+          plan: p.empresas.plan_suscripcion || 'PRO',
+          estado: p.empresas.estado_activo ? 'activa' : 'inactiva'
+        } : null
+      };
+    });
 
     return { success: true, pagos: formattedPagos };
   } catch (err: any) {
@@ -76,16 +105,40 @@ export async function aprobarPago(pagoId: string) {
 
     if (errPago || !pago) return { success: false, error: 'Pago no encontrado' };
 
-    // 2. Detectar plan del pago (viene en referencia como "STARTER" | "PRO" | "ENTERPRISE")
-    const referencia = pago.referencia || '';
+    // 2. Detectar plan del pago: primero de la columna dedicada, fallback a parsear referencia
+    //    (el fallback es para pagos registrados antes de la migración migrate_billing_v2.sql)
     let planDetectado = 'PRO';
-    if (referencia.toUpperCase().includes('ENTERPRISE')) planDetectado = 'ENTERPRISE';
-    else if (referencia.toUpperCase().includes('STARTER')) planDetectado = 'STARTER';
-    else if (referencia.toUpperCase().includes('PRO')) planDetectado = 'PRO';
+    if (pago.plan_solicitado) {
+      // Columna dedicada: "PRO + [recetas]" → extraemos el plan base
+      const planBase = pago.plan_solicitado.split(' ')[0].toUpperCase();
+      if (['STARTER', 'PRO', 'ENTERPRISE'].includes(planBase)) {
+        planDetectado = planBase;
+      }
+    } else {
+      // Fallback legacy: buscar en referencia
+      const referencia = pago.referencia || '';
+      if (referencia.toUpperCase().includes('ENTERPRISE')) planDetectado = 'ENTERPRISE';
+      else if (referencia.toUpperCase().includes('STARTER')) planDetectado = 'STARTER';
+      else if (referencia.toUpperCase().includes('PRO')) planDetectado = 'PRO';
+    }
 
-    // 3. Calcular nueva fecha de vencimiento (+30 días desde hoy)
-    const nuevaFecha = new Date();
-    nuevaFecha.setDate(nuevaFecha.getDate() + 30);
+    // 3. Calcular fecha de vencimiento según ciclo de facturación
+    //    Mensual: 1ro del mes siguiente a las 00:00:00
+    //    Anual:   1ro del mes actual + 12 meses (trabaja todo el año, vence el 1ro del 13vo mes)
+    const esAnual = !!(pago.plan_solicitado && pago.plan_solicitado.includes('[ANUAL]'));
+    const hoy = new Date();
+    const nuevaFecha = esAnual
+      ? new Date(hoy.getFullYear(), hoy.getMonth() + 12, 1, 0, 0, 0, 0)  // 1ro en 12 meses
+      : new Date(hoy.getFullYear(), hoy.getMonth() + 1,  1, 0, 0, 0, 0); // 1ro del próximo mes
+
+    // 3.5. Extraer módulos adicionales (plugins) de plan_solicitado
+    let modulosDetectados: string[] = [];
+    if (pago.plan_solicitado && pago.plan_solicitado.includes('+ [')) {
+      const match = pago.plan_solicitado.match(/\+ \[([^\]]+)\]/);
+      if (match && match[1]) {
+        modulosDetectados = match[1].split(',').map((m: string) => m.trim());
+      }
+    }
 
     // 4. Aprobar el pago
     const { error: errUpdate } = await supabase
@@ -107,6 +160,7 @@ export async function aprobarPago(pagoId: string) {
         plan: planDetectado,
         estado: 'activa',
         fecha_vencimiento: nuevaFecha.toISOString(),
+        modulos_activos: modulosDetectados,
       }, { onConflict: 'empresa_id' });
 
     if (errSub) return { success: false, error: errSub.message };
@@ -140,9 +194,8 @@ export async function rechazarPago(pagoId: string, motivo: string) {
         estado: 'rechazado',
         fecha_revision: new Date().toISOString(),
         revisado_por: user.id,
-        referencia: motivo
-          ? `[RECHAZADO: ${motivo}]`
-          : '[RECHAZADO]',
+        // Guardamos el motivo en notas_admin para no destruir la referencia original del cliente
+        notas_admin: motivo ? `Rechazado: ${motivo}` : 'Rechazado por administrador',
       })
       .eq('id', pagoId);
 

@@ -121,23 +121,73 @@ export async function middleware(request: NextRequest) {
       }
 
       if (profile) {
-        // 5. Validación de Suscripción
+        // 5. Validación de Suscripción — leer plan, estado y fecha de vencimiento
         const { data: sub } = await supabase
           .from('suscripciones_empresas')
-          .select('plan, estado')
+          .select('plan, estado, fecha_vencimiento')
           .eq('empresa_id', profile.empresa_id)
           .maybeSingle();
         const plan   = (sub?.plan  || '').toUpperCase();
         const estado = (sub?.estado || 'ACTIVA').toUpperCase();
 
         const isLifetime = plan === 'LIFETIME';
-        const isActiva   = !sub || estado === 'ACTIVA' || estado === 'TRIAL' || estado === 'ACTIVO';
 
-        // Si NO es LIFETIME y tampoco está ACTIVA/TRIAL, lo bloqueamos al billing
+        // Verificar si la fecha de vencimiento ya pasó (independiente del estado en DB)
+        const ahora = new Date();
+        const fechaVenc = sub?.fecha_vencimiento ? new Date(sub.fecha_vencimiento) : null;
+        const haVencido = fechaVenc ? fechaVenc < ahora : false;
+
+        // Estado activo: sin suscripción (trial inicial), activa/activo, o no ha vencido
+        const isActiva = !sub
+          || estado === 'ACTIVA'
+          || estado === 'ACTIVO'
+          || estado === 'TRIAL'
+          || !haVencido;
+
         if (!isLifetime && !isActiva) {
-          const url = request.nextUrl.clone();
-          url.pathname = '/dashboard/billing';
-          return NextResponse.redirect(url);
+          // Verificar gracia silenciosa: pago reportado en los últimos 5 días
+          let enGracia = false;
+          try {
+            const { data: pagoPendiente } = await supabase
+              .from('suscripciones_pagos')
+              .select('fecha_registro')
+              .eq('empresa_id', profile.empresa_id)
+              .eq('estado', 'pendiente_aprobacion')
+              .order('fecha_registro', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            if (pagoPendiente?.fecha_registro) {
+              const diasDesdePago = Math.floor(
+                (ahora.getTime() - new Date(pagoPendiente.fecha_registro).getTime()) / 86400000
+              );
+              enGracia = diasDesdePago <= 5;
+            }
+          } catch { /* ignorar error — no bloquear por esto */ }
+
+          // Con gracia activa: acceso completo
+          if (enGracia) {
+            // Continúa normalmente
+          } else {
+            // SIN gracia: solo permitir rutas mínimas de POS
+            // ventas, terminal, caja → para que pueda seguir facturando
+            // billing → para que pueda pagar
+            // dashboard home → para no quedar atrapado
+            const rutasPOS = [
+              '/dashboard/ventas',
+              '/dashboard/terminal',
+              '/dashboard/caja',
+              '/dashboard/billing',
+            ];
+            const esPOS   = rutasPOS.some(r => request.nextUrl.pathname.startsWith(r));
+            const esHome  = request.nextUrl.pathname === '/dashboard';
+
+            if (!esPOS && !esHome) {
+              const url = request.nextUrl.clone();
+              url.pathname = '/dashboard/billing';
+              return NextResponse.redirect(url);
+            }
+          }
         }
 
         // 6. HARDENING DE ROLES EN FRONTEND

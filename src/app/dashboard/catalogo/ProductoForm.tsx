@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, useTransition, useEffect } from 'react';
-import { X, Loader2, PackageSearch, Box, Trash2, Plus, Beaker } from 'lucide-react';
+import { X, Loader2, PackageSearch, Box, Trash2, Plus, Beaker, Lock } from 'lucide-react';
 import { createProducto, updateProducto } from '@/actions/catalogo-actions';
+import { useEmpresa } from '@/components/providers/EmpresaProvider';
+import Link from 'next/link';
 
 export default function ProductoForm({ 
   initialData, 
@@ -21,6 +23,9 @@ export default function ProductoForm({
   recetas?: any[], 
   onClose: () => void 
 }) {
+  const { hasModulo } = useEmpresa();
+  const canUseRecetas = hasModulo('recetas');
+
   const isEditing = !!initialData;
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState('');
@@ -182,9 +187,17 @@ export default function ProductoForm({
               <label className="text-sm font-medium text-neutral-400 block">Tipo de Producto</label>
               <div className="grid grid-cols-2 gap-3">
                 <div 
-                  onClick={() => setFormData({...formData, tipo: 'ELABORADO'})}
-                  className={`p-4 rounded-xl border cursor-pointer flex flex-col items-center text-center gap-2 transition-all ${formData.tipo === 'ELABORADO' ? 'border-indigo-500 bg-indigo-500/10 text-white' : 'border-neutral-800 text-neutral-400 hover:border-neutral-700'}`}
+                  onClick={() => {
+                    if (!canUseRecetas) return;
+                    setFormData({...formData, tipo: 'ELABORADO'});
+                  }}
+                  className={`relative p-4 rounded-xl border flex flex-col items-center text-center gap-2 transition-all ${!canUseRecetas ? 'opacity-50 cursor-not-allowed border-neutral-800 text-neutral-500' : formData.tipo === 'ELABORADO' ? 'border-indigo-500 bg-indigo-500/10 text-white cursor-pointer' : 'border-neutral-800 text-neutral-400 hover:border-neutral-700 cursor-pointer'}`}
                 >
+                  {!canUseRecetas && (
+                    <div className="absolute top-2 right-2 text-rose-400" title="Requiere módulo de recetas">
+                      <Lock size={14} />
+                    </div>
+                  )}
                   <PackageSearch size={24} />
                   <div>
                     <p className="font-bold text-sm">Elaborado</p>

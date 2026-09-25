@@ -18,6 +18,9 @@ interface EmpresaContextType {
   userSedeId: string | null;
   permisos: string[];
   timeZone: string;
+  planSuscripcion: string;
+  modulosActivos: string[];
+  hasModulo: (modulo: string) => boolean;
   formatCurrency: (amount: number) => string;
   formatDateTime: (iso?: string | null) => string;
   formatDate: (iso?: string | null) => string;
@@ -30,6 +33,9 @@ const EmpresaContext = createContext<EmpresaContextType>({
   userSedeId: null,
   permisos: [],
   timeZone: DEFAULT_TIMEZONE,
+  planSuscripcion: 'STARTER',
+  modulosActivos: [],
+  hasModulo: () => false,
   formatCurrency: (amount: number) =>
     `${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`,
   formatDateTime: (iso?: string | null) => formatDateTimeLocal(iso, DEFAULT_TIMEZONE),
@@ -44,6 +50,8 @@ export default function EmpresaProvider({
   userRole,
   userSedeId,
   permisos = [],
+  planSuscripcion = 'STARTER',
+  modulosActivos = [],
   children,
 }: {
   empresa: any;
@@ -51,6 +59,8 @@ export default function EmpresaProvider({
   userRole: string;
   userSedeId: string | null;
   permisos?: string[];
+  planSuscripcion?: string;
+  modulosActivos?: string[];
   children: React.ReactNode;
 }) {
   const timeZone = empresa?.zona_horaria || DEFAULT_TIMEZONE;
@@ -66,6 +76,13 @@ export default function EmpresaProvider({
   const formatDateTime = (iso?: string | null) => formatDateTimeLocal(iso, timeZone);
   const formatDate = (iso?: string | null) => toLocalDateKey(iso, timeZone);
 
+  const hasModulo = (modulo: string) => {
+    const plan = planSuscripcion.toUpperCase();
+    if (plan === 'LIFETIME' || plan === 'ENTERPRISE') return true;
+    if (modulo === 'recetas' && plan === 'PRO') return true;
+    return modulosActivos.includes(modulo);
+  };
+
   return (
     <EmpresaContext.Provider
       value={{
@@ -75,6 +92,9 @@ export default function EmpresaProvider({
         userSedeId,
         permisos,
         timeZone,
+        planSuscripcion,
+        modulosActivos,
+        hasModulo,
         formatCurrency,
         formatDateTime,
         formatDate,

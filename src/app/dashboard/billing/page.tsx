@@ -107,11 +107,13 @@ export default async function BillingPage() {
 
         {/* Columna Derecha: Reportar Pago */}
         <div className="lg:col-span-2">
-          <BillingClientForm 
-            historialPagos={historialPagos || []} 
+          <BillingClientForm
+            historialPagos={historialPagos || []}
             planActual={licencia.planSuscripcion}
             modulosActuales={licencia.modulosActivos || []}
             metodosPago={metodosPago}
+            licenciaEstado={licencia.estado}
+            diasRestantes={licencia.diasRestantes}
           />
         </div>
 

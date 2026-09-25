@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, useTransition } from 'react';
-import { X, Loader2, Search, Trash2, Plus, Beaker, CheckSquare, Square } from 'lucide-react';
+import { X, Loader2, Search, Trash2, Plus, Beaker, CheckSquare, Square, Lock } from 'lucide-react';
 import { bulkAssignReceta } from '@/actions/catalogo-actions';
+import { useEmpresa } from '@/components/providers/EmpresaProvider';
+import Link from 'next/link';
 
 export default function BulkRecetaModal({ 
   productos, 
@@ -13,6 +15,9 @@ export default function BulkRecetaModal({
   insumos: any[], 
   onClose: () => void 
 }) {
+  const { hasModulo } = useEmpresa();
+  const canUseRecetas = hasModulo('recetas');
+
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -110,7 +115,21 @@ export default function BulkRecetaModal({
           <button onClick={onClose} className="text-neutral-500 hover:text-white transition-colors"><X size={24} /></button>
         </div>
 
-        <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+        {!canUseRecetas ? (
+          <div className="flex flex-col items-center justify-center p-12 text-center h-[400px]">
+            <div className="w-16 h-16 rounded-full bg-neutral-800 flex items-center justify-center text-neutral-400 mb-4">
+              <Lock size={32} />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">Módulo de Recetas Bloqueado</h3>
+            <p className="text-sm text-neutral-400 max-w-md mb-6">
+              Esta funcionalidad requiere el plan PRO o el plugin Motor de Recetas para costear inventario por ingredientes.
+            </p>
+            <Link href="/dashboard/billing" className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-lg font-medium transition-colors">
+              Mejorar Plan
+            </Link>
+          </div>
+        ) : (
+          <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
           {/* Left panel: Products selection */}
           <div className="w-full md:w-1/2 border-r border-neutral-800 flex flex-col">
             <div className="p-4 border-b border-neutral-800 bg-neutral-950/30">
@@ -276,6 +295,7 @@ export default function BulkRecetaModal({
             </button>
           </div>
         </div>
+        )}
       </div>
     </div>
   );
