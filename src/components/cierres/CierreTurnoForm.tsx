@@ -182,10 +182,11 @@ export default function CierreTurnoForm() {
             <div className="flex gap-2">
               <select value={nuevoTx.metodo} onChange={(e) => setNuevoTx({...nuevoTx, metodo: e.target.value})} className="h-10 bg-white border rounded-lg px-2 text-sm flex-1">
                 <option value="PAGO_MOVIL">Pago Móvil</option>
-                <option value="TRANSFERENCIA_BS">Transferencia Bs</option>
                 <option value="PUNTO_VENTA">Punto de Venta</option>
                 <option value="ZELLE">Zelle</option>
-                <option value="TRANSFERENCIA_USD">Transferencia USD</option>
+                <option value="BINANCE_PAY">Binance Pay (USDT)</option>
+                <option value="PAYPAL">PayPal</option>
+                <option value="VZLA_NORBIS">VZLA NORBIS</option>
               </select>
               <select value={nuevoTx.moneda} onChange={(e) => setNuevoTx({...nuevoTx, moneda: e.target.value})} className="h-10 bg-white border rounded-lg px-2 text-sm w-24">
                 <option value="BS">Bs.</option>

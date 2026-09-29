@@ -9,6 +9,7 @@ interface Props {
   terminal: TerminalVinculado;
   meseroNombre: string;
   metodosPago: string[];
+  onMesasLoaded?: (count: number) => void;
 }
 
 interface AlertaEnviada {
@@ -16,13 +17,20 @@ interface AlertaEnviada {
   expiresAt: number;
 }
 
-export default function MesasAbiertas({ terminal, meseroNombre, metodosPago }: Props) {
+export default function MesasAbiertas({ terminal, meseroNombre, metodosPago, onMesasLoaded }: Props) {
   const [mesas, setMesas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [alertasEnviadas, setAlertasEnviadas] = useState<AlertaEnviada[]>([]);
   const [enviandoAlerta, setEnviandoAlerta] = useState<string | null>(null);
   const [metodoPagoModal, setMetodoPagoModal] = useState<string | null>(null);
+
+  const borderColorMesa = (iso: string) => {
+    const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+    if (diff < 30) return 'border-emerald-500/40';
+    if (diff < 60) return 'border-amber-500/40';
+    return 'border-red-500/40';
+  };
 
   const cargar = useCallback(async (showRefresh = false) => {
     if (showRefresh) setRefreshing(true);
@@ -40,6 +48,7 @@ export default function MesasAbiertas({ terminal, meseroNombre, metodosPago }: P
       setMesas(Object.values(porMesa).sort((a: any, b: any) =>
         String(a.mesa_identificador).localeCompare(String(b.mesa_identificador))
       ));
+      onMesasLoaded?.(Object.values(porMesa).length);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -127,7 +136,7 @@ export default function MesasAbiertas({ terminal, meseroNombre, metodosPago }: P
           const enviando = enviandoAlerta === mesa.mesa_identificador;
 
           return (
-            <div key={mesa.id} className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 space-y-3">
+            <div key={mesa.id} className={`bg-neutral-900 border ${borderColorMesa(mesa.created_at)} rounded-2xl p-4 space-y-3`}>
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2">
@@ -190,7 +199,7 @@ export default function MesasAbiertas({ terminal, meseroNombre, metodosPago }: P
                   <button
                     onClick={() => setMetodoPagoModal(mesa.mesa_identificador)}
                     disabled={enviando}
-                    className="w-full bg-emerald-600/15 hover:bg-emerald-600/25 border border-emerald-500/25 text-emerald-400 font-semibold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+                    className="w-full bg-emerald-600/15 hover:bg-emerald-600/25 border border-emerald-500/25 text-emerald-400 font-semibold py-3.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
                   >
                     {enviando ? (
                       <><Loader2 size={15} className="animate-spin" /> Enviando alerta...</>
@@ -226,7 +235,7 @@ export default function MesasAbiertas({ terminal, meseroNombre, metodosPago }: P
                     const mesaObj = mesas.find((x: any) => x.mesa_identificador === metodoPagoModal);
                     if (mesaObj) handleEnviarAlerta(mesaObj, m);
                   }}
-                  className="bg-neutral-800 hover:bg-indigo-600 border border-neutral-700 hover:border-indigo-500 text-neutral-300 hover:text-white font-medium py-3 rounded-xl text-sm transition-all flex items-center justify-center gap-2"
+                  className="bg-neutral-800 hover:bg-indigo-600 border border-neutral-700 hover:border-indigo-500 text-neutral-300 hover:text-white font-medium py-4 rounded-xl text-sm transition-all flex items-center justify-center gap-2"
                 >
                   <CreditCard size={15} /> {m}
                 </button>

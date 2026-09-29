@@ -95,20 +95,24 @@ function appendReportTotals(reportId: string, rawData: any[]): any[] {
   }
 
   if (reportId === 'ventas_usuarios') {
-    let sumFacturas = 0;
-    let sumVentas = 0;
+    let sumFacCaj = 0;
+    let sumVenCaj = 0;
+    let sumFacVen = 0;
+    let sumVenVen = 0;
     for (const r of rawData) {
-      sumFacturas += Number(r.cantidad_facturas || 0);
-      sumVentas += Number(r.total_ventas || 0);
+      sumFacCaj += Number(r.facturas_cajero || 0);
+      sumVenCaj += Number(r.ventas_cajero || 0);
+      sumFacVen += Number(r.facturas_vendedor || 0);
+      sumVenVen += Number(r.ventas_vendedor || 0);
     }
-    const avgTicket = sumFacturas > 0 ? sumVentas / sumFacturas : 0;
     return [
       ...rawData,
       {
-        nombre_cajero: 'TOTALES',
-        cantidad_facturas: sumFacturas,
-        total_ventas: sumVentas,
-        promedio_por_factura: avgTicket,
+        nombre_empleado: 'TOTALES',
+        facturas_cajero: sumFacCaj,
+        ventas_cajero: sumVenCaj,
+        facturas_vendedor: sumFacVen,
+        ventas_vendedor: sumVenVen,
       },
     ];
   }

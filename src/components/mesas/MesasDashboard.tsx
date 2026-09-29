@@ -18,6 +18,7 @@ type Tab = 'nueva' | 'abiertas';
 
 export default function MesasDashboard({ terminal, meseroNombre, meseroId, metodosPago, onDesvincular }: Props) {
   const [tab, setTab] = useState<Tab>('nueva');
+  const [mesasCount, setMesasCount] = useState(0);
 
   return (
     <div className="max-w-lg mx-auto">
@@ -41,7 +42,7 @@ export default function MesasDashboard({ terminal, meseroNombre, meseroId, metod
       <div className="flex bg-neutral-900 rounded-xl p-1 mb-4 border border-neutral-800">
         <button
           onClick={() => setTab('nueva')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
+          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-medium transition-all ${
             tab === 'nueva'
               ? 'bg-indigo-600 text-white shadow-sm'
               : 'text-neutral-400 hover:text-white'
@@ -52,7 +53,7 @@ export default function MesasDashboard({ terminal, meseroNombre, meseroId, metod
         </button>
         <button
           onClick={() => setTab('abiertas')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
+          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-medium transition-all ${
             tab === 'abiertas'
               ? 'bg-indigo-600 text-white shadow-sm'
               : 'text-neutral-400 hover:text-white'
@@ -60,13 +61,18 @@ export default function MesasDashboard({ terminal, meseroNombre, meseroId, metod
         >
           <TableProperties size={16} />
           Mesas Abiertas
+          {mesasCount > 0 && (
+            <span className="bg-indigo-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
+              {mesasCount}
+            </span>
+          )}
         </button>
       </div>
 
       {tab === 'nueva' ? (
         <NuevaComanda terminal={terminal} meseroNombre={meseroNombre} />
       ) : (
-        <MesasAbiertas terminal={terminal} meseroNombre={meseroNombre} metodosPago={metodosPago} />
+        <MesasAbiertas terminal={terminal} meseroNombre={meseroNombre} metodosPago={metodosPago} onMesasLoaded={setMesasCount} />
       )}
     </div>
   );

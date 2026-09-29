@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Minus, Send, MessageSquare, Loader2, CheckCircle2, RefreshCw, ShoppingCart, X, Trash2, User, Search } from 'lucide-react';
+import { Plus, Minus, Send, MessageSquare, Loader2, CheckCircle2, RefreshCw, ShoppingCart, X, Trash2, User, Search, Hash } from 'lucide-react';
 import { obtenerCatalogoMesa, enviarComanda, buscarClientePorCedula, type ItemComanda } from '@/actions/mesas-actions';
 import type { TerminalVinculado } from './MesasHub';
 
@@ -159,24 +159,28 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
 
   return (
     <div className="space-y-4 pb-24">
-      {/* Datos del pedido */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 space-y-3">
-        <h3 className="text-sm font-semibold text-neutral-300">Datos del Pedido</h3>
-        <div className="grid grid-cols-1 gap-3">
-          <div>
-            <label className="text-xs text-neutral-500 mb-1 block">Mesa *</label>
-            <input
-              type="text"
-              value={mesa}
-              onChange={e => setMesa(e.target.value)}
-              placeholder="Ej: 5, A3"
-              className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
-            />
-          </div>
-
+      {/* Selector de Mesa */}
+      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4">
+        <label className="text-xs text-neutral-500 mb-2 block uppercase tracking-wider font-semibold">Mesa / Identificador *</label>
+        <div className="relative flex items-center">
+          <Hash size={18} className="absolute left-3.5 text-neutral-500" />
+          <input
+            type="text"
+            inputMode="numeric"
+            value={mesa}
+            onChange={e => setMesa(e.target.value)}
+            placeholder="Ej: 5, A3, Barra"
+            className="w-full h-14 bg-neutral-800 border border-neutral-700 rounded-xl pl-10 pr-10 text-white text-lg font-semibold placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
+          />
+          {mesa && (
+            <button onClick={() => setMesa('')} className="absolute right-3 text-neutral-500 hover:text-white transition-colors">
+              <X size={18} />
+            </button>
+          )}
         </div>
-        <div>
-          <label className="text-xs text-neutral-500 mb-1 block">Nota general (opcional)</label>
+        {/* Nota general debajo */}
+        <div className="mt-3">
+          <label className="text-xs text-neutral-500 mb-1.5 block">Nota general (opcional)</label>
           <input
             type="text"
             value={comentarioGeneral}
@@ -195,7 +199,7 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
           placeholder="Buscar productos..."
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
-          className="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-10 pr-4 py-2.5 text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
+          className="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-10 pr-4 py-3.5 text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
         />
         {busqueda && (
           <button onClick={() => setBusqueda('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white">
@@ -210,7 +214,7 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
           <button
             key={cat}
             onClick={() => setCatActiva(cat)}
-            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+            className={`shrink-0 px-4 py-2.5 rounded-full text-sm font-medium transition-colors ${
               catActiva === cat
                 ? 'bg-indigo-600 text-white'
                 : 'bg-neutral-800 text-neutral-400 hover:text-white border border-neutral-700'
@@ -221,7 +225,7 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
         ))}
         <button
           onClick={cargarCatalogo}
-          className="shrink-0 px-3 py-1.5 rounded-full text-xs font-medium bg-neutral-800 text-neutral-400 hover:text-white border border-neutral-700 flex items-center gap-1 transition-colors"
+          className="shrink-0 px-4 py-2.5 rounded-full text-sm font-medium bg-neutral-800 text-neutral-400 hover:text-white border border-neutral-700 flex items-center gap-1 transition-colors"
         >
           <RefreshCw size={12} />
         </button>
@@ -233,7 +237,7 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
           {productos.length === 0 ? 'Este terminal no tiene productos configurados' : 'No hay productos en esta categoría'}
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-3">
             {prodsFiltrados.map((prod: any) => {
               const cartInfo = getCartInfo(prod.id);
               const inCart = !!cartInfo;
@@ -241,32 +245,40 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
                 <div key={prod.id} className="relative h-full">
                   <button
                     onClick={() => agregarAlCarrito(prod)}
-                    className={`w-full h-full bg-neutral-900 border p-3 rounded-xl flex flex-col items-start justify-between min-h-[90px] text-left active:scale-95 transition-all group ${
-                      inCart ? 'border-indigo-500 bg-indigo-500/10 shadow-[0_0_15px_rgba(99,102,241,0.15)]' : 'border-neutral-800 hover:border-indigo-500/50'
+                    className={`w-full h-full bg-neutral-900 border p-3 rounded-xl flex flex-col items-start justify-between min-h-[130px] text-left active:scale-95 transition-all group relative overflow-hidden ${
+                      inCart ? 'border-indigo-500 bg-indigo-500/10 shadow-[0_0_15px_rgba(99,102,241,0.15)] pb-14' : 'border-neutral-800 hover:border-indigo-500/50'
                     }`}
                   >
                     <p className={`text-sm font-medium line-clamp-2 leading-snug transition-colors ${inCart ? 'text-white' : 'text-white group-hover:text-indigo-300'}`}>
                       {prod.nombre}
                     </p>
                     <p className="text-indigo-400 text-sm font-bold mt-1.5">${Number(prod.precio_venta).toFixed(2)}</p>
-                  </button>
-                  
-                  {inCart && (
-                    <div className="absolute -top-2 -right-2 flex items-center bg-indigo-600 rounded-lg shadow-lg overflow-hidden border border-indigo-500 z-10">
-                      <span className="px-2 py-1 text-xs font-bold text-white bg-indigo-600 select-none">
-                        {cartInfo.totalCantidad}
-                      </span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setCarrito(prev => prev.filter(i => i.producto_id !== prod.id));
-                        }}
-                        className="p-1.5 bg-rose-500 hover:bg-rose-400 transition-colors border-l border-indigo-500/30"
+                    {inCart && (
+                      <div
+                        className="absolute bottom-0 left-0 right-0 flex items-center justify-between bg-indigo-600/90 backdrop-blur-sm rounded-b-xl px-3 py-2.5"
+                        onClick={e => e.stopPropagation()}
                       >
-                        <Trash2 size={12} className="text-white" />
-                      </button>
-                    </div>
-                  )}
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            const prodId = prod.id_pos || prod.id;
+                            setCarrito(prev =>
+                              prev.map(i => i.producto_id === prodId && i.comentario === ''
+                                ? { ...i, cantidad: i.cantidad - 1 }
+                                : i
+                              ).filter(i => i.cantidad > 0)
+                            );
+                          }}
+                          className="w-9 h-9 rounded-full bg-white/20 text-white text-xl font-bold flex items-center justify-center active:scale-90 transition-transform"
+                        >−</button>
+                        <span className="text-white font-bold text-base">{cartInfo?.totalCantidad}</span>
+                        <button
+                          onClick={e => { e.stopPropagation(); agregarAlCarrito(prod); }}
+                          className="w-9 h-9 rounded-full bg-white/20 text-white text-xl font-bold flex items-center justify-center active:scale-90 transition-transform"
+                        >+</button>
+                      </div>
+                    )}
+                  </button>
                 </div>
               );
             })}
@@ -276,13 +288,16 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
       {/* Carrito Sticky Footer y Modal */}
       {carrito.length > 0 && !cartOpen && (
         <div className="fixed bottom-0 left-0 right-0 bg-neutral-950 border-t border-neutral-800 p-4 pb-[env(safe-area-inset-bottom,16px)] z-40 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-          <button 
-            onClick={() => setCartOpen(true)} 
-            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl py-3.5 px-5 font-bold flex justify-between items-center transition-all shadow-lg shadow-indigo-600/20"
+          {mesa.trim() && (
+            <p className="text-indigo-300 text-xs text-center mb-2 font-medium">📍 Mesa {mesa.trim()}</p>
+          )}
+          <button
+            onClick={() => setCartOpen(true)}
+            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl py-4 px-5 font-bold flex justify-between items-center transition-all shadow-lg shadow-indigo-600/20 text-base"
           >
             <div className="flex gap-2 items-center">
-              <ShoppingCart size={18} />
-              <span>Ver Comanda ({carrito.length})</span>
+              <ShoppingCart size={20} />
+              <span>Ver Comanda ({carrito.reduce((s, i) => s + i.cantidad, 0)} ítems)</span>
             </div>
             <span>${total.toFixed(2)} USD</span>
           </button>
@@ -294,6 +309,7 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
         <div className="fixed inset-0 z-50 flex flex-col justify-end">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setCartOpen(false)} />
           <div className="relative bg-neutral-900 rounded-t-3xl w-full max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
+            <div className="w-10 h-1.5 rounded-full bg-neutral-700 mx-auto mt-3 mb-2" />
             <div className="p-4 border-b border-neutral-800 flex justify-between items-center">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <ShoppingCart size={18} className="text-indigo-400" />
@@ -308,6 +324,12 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
                 </button>
               </div>
             </div>
+            {mesa.trim() && (
+              <div className="mx-4 mt-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-4 py-2.5 flex items-center gap-2">
+                <span className="text-indigo-400 text-sm font-semibold">Mesa {mesa.trim()}</span>
+                {meseroNombre && <span className="text-neutral-500 text-xs">· Mesero: {meseroNombre}</span>}
+              </div>
+            )}
             
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {showClienteForm && (
@@ -358,11 +380,11 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
                     </div>
                     
                     <div className="flex items-center gap-1.5 bg-neutral-900 p-1 rounded-lg border border-neutral-800">
-                      <button onClick={() => cambiarCantidad(item.key, -1)} className="w-8 h-8 rounded-md text-neutral-400 hover:bg-neutral-800 hover:text-white flex items-center justify-center transition-colors">
+                      <button onClick={() => cambiarCantidad(item.key, -1)} className="w-10 h-10 rounded-xl text-neutral-400 hover:bg-neutral-800 hover:text-white flex items-center justify-center transition-colors">
                         <Minus size={14} />
                       </button>
                       <span className="text-white text-sm font-black w-6 text-center">{item.cantidad}</span>
-                      <button onClick={() => cambiarCantidad(item.key, 1)} className="w-8 h-8 rounded-md text-neutral-400 hover:bg-neutral-800 hover:text-white flex items-center justify-center transition-colors">
+                      <button onClick={() => cambiarCantidad(item.key, 1)} className="w-10 h-10 rounded-xl text-neutral-400 hover:bg-neutral-800 hover:text-white flex items-center justify-center transition-colors">
                         <Plus size={14} />
                       </button>
                     </div>
@@ -427,6 +449,9 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
                   <><Send size={20} /> Confirmar y Enviar</>
                 )}
               </button>
+              <p className="text-neutral-600 text-xs text-center mt-2">
+                Se enviará al Terminal POS · {terminal.terminalCode}
+              </p>
               {!mesa.trim() && (
                 <p className="text-rose-400 text-xs text-center mt-3 font-medium">Debes ingresar el número de mesa para enviar</p>
               )}

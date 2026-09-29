@@ -129,7 +129,8 @@ export default function BulkRecetaModal({
             </Link>
           </div>
         ) : (
-          <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+          <>
+            <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
           {/* Left panel: Products selection */}
           <div className="w-full md:w-1/2 border-r border-neutral-800 flex flex-col">
             <div className="p-4 border-b border-neutral-800 bg-neutral-950/30">
@@ -295,6 +296,7 @@ export default function BulkRecetaModal({
             </button>
           </div>
         </div>
+        </>
         )}
       </div>
     </div>

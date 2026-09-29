@@ -5,7 +5,7 @@ import { getSedes } from "@/actions/dashboard-actions";
 import { getInsumos } from "@/actions/compras-actions";
 import {
   getProveedoresConDeuda, getFacturasProveedor, registrarPagoProveedor,
-  getHistoricoProveedores, getTodosProveedores, crearFacturaProveedor, crearProveedor,
+  getHistoricoProveedores, getTodosProveedores, crearFacturaProveedor, crearProveedor, eliminarProveedor,
   crearFacturaProveedorConInsumos, registrarPagoGeneralProveedor, eliminarFacturaProveedor
 } from "./actions";
 import { getTasaBcvAction } from "@/actions/config-actions";
@@ -13,7 +13,7 @@ import { useEmpresa } from "@/components/providers/EmpresaProvider";
 import {
   Store, Wallet, Search, Check, FileText, ChevronDown, ChevronUp,
   Clock, PlusCircle, X, Plus, User, Phone, MapPin, Hash,
-  CreditCard, Building2, AlertCircle, History, DollarSign, Package, CheckCircle2, Pencil, Info, Edit2, Trash2
+  CreditCard, Building2, AlertCircle, History, DollarSign, Package, CheckCircle2, Pencil, Info, Edit2, Trash2, Loader2, Eye
 } from "lucide-react";
 import { format } from "date-fns";
 import MobileCompraForm from "@/components/compras/MobileCompraForm";
@@ -63,6 +63,22 @@ export default function ProveedoresPage() {
   const [loadingFacturas, setLoadingFacturas] = useState(false);
 
   // ── Tab: solo con deuda vs todos ──────────────────────────
+  
+  const [eliminandoId, setEliminandoId] = useState<string | null>(null);
+
+  const handleEliminarProveedor = async (e: React.MouseEvent, provId: string, nombre: string) => {
+    e.stopPropagation();
+    if (!confirm(`¿Estás seguro que deseas eliminar el proveedor "${nombre}"? Si tiene facturas asociadas, se ocultará en lugar de eliminarse por completo.`)) return;
+    setEliminandoId(provId);
+    const res = await eliminarProveedor(provId);
+    if (res.success) {
+        fetchInit();
+    } else {
+        alert(res.error || 'Error al eliminar proveedor');
+    }
+    setEliminandoId(null);
+  };
+
   const [soloConDeuda, setSoloConDeuda] = useState(true);
   const [todosProveedores, setTodosProveedores] = useState<any[]>([]);
 

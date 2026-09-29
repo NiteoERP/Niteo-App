@@ -12,7 +12,8 @@ import {
   Globe, 
   MapPin, 
   Database, 
-  Sliders 
+  Sliders,
+  Tag
 } from 'lucide-react';
 
 interface NavGroup {
@@ -40,6 +41,7 @@ const navGroups: NavGroup[] = [
     items: [
       { name: 'Terminales POS', href: '/dashboard/configuracion/terminales', icon: MonitorSmartphone, desc: 'Cajas físicas y terminales' },
       { name: 'Catálogo Online', href: '/dashboard/configuracion/catalogo', icon: Globe, desc: 'Catálogo público y WhatsApp' },
+      { name: 'Listas de Precios', href: '/dashboard/configuracion/listas-precios', icon: Tag, desc: 'Gestión de precios dinámicos' },
     ],
   },
   {

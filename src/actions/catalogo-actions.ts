@@ -53,6 +53,7 @@ export async function createProducto(data: any) {
       precio_venta: parseFloat(data.precio_venta) || 0,
       costo: parseFloat(data.costo) || 0,
       precio_modificable: !!data.precio_modificable,
+        aplica_listas_precios: data.aplica_listas_precios !== undefined ? !!data.aplica_listas_precios : true,
       estado_activo: true,
       canal_venta: 'AMBOS',
       es_compuesto: data.tipo === 'ELABORADO', // Si es elaborado requiere receta

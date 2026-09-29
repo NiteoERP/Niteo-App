@@ -40,6 +40,8 @@ export interface ProductoPOS {
   precio_venta: number;
   costo: number;
   precio_modificable?: boolean;
+  aplica_listas_precios?: boolean;
+  precios_dinamicos?: Record<string, number>;
 }
 
 export async function getVentasRecientes(sedeId: string): Promise<VentaPOS[]> {
@@ -133,7 +135,7 @@ export async function getProductosCatalogoVirtual(empresaId: string): Promise<Pr
 
   const { data: productos, error } = await supabase
     .from('productos')
-    .select('id, codigo_barras, nombre, precio_venta, costo, precio_modificable')
+    .select('id, codigo_barras, nombre, precio_venta, costo, precio_modificable, aplica_listas_precios, productos_precios(lista_precio_id, precio)')
     .eq('empresa_id', empresaId)
     .eq('estado_activo', true)
     .in('canal_venta', ['SOLO_NITEO', 'AMBOS'])
@@ -144,14 +146,24 @@ export async function getProductosCatalogoVirtual(empresaId: string): Promise<Pr
     return [];
   }
 
-  return (productos || []).map((p: any) => ({
-    producto_id: p.id,
-    codigo_barras: p.codigo_barras,
-    nombre: p.nombre,
-    precio_venta: p.precio_venta,
-    costo: p.costo,
-    precio_modificable: p.precio_modificable,
-  }));
+  return (productos || []).map((p: any) => {
+    const pd: Record<string, number> = {};
+    if (p.productos_precios && Array.isArray(p.productos_precios)) {
+      p.productos_precios.forEach((pp: any) => {
+        pd[pp.lista_precio_id] = pp.precio;
+      });
+    }
+    return {
+      producto_id: p.id,
+      codigo_barras: p.codigo_barras,
+      nombre: p.nombre,
+      precio_venta: p.precio_venta,
+      costo: p.costo,
+      precio_modificable: p.precio_modificable,
+      aplica_listas_precios: p.aplica_listas_precios,
+      precios_dinamicos: pd
+    };
+  });
 }
 
 export interface HistorialVentaPOS extends VentaPOS {

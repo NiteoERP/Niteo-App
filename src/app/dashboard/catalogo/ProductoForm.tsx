@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useTransition, useEffect } from 'react';
-import { X, Loader2, PackageSearch, Box, Trash2, Plus, Beaker, Lock } from 'lucide-react';
+import { X, Loader2, PackageSearch, Box, Trash2, Plus, Beaker, Lock, ToggleLeft, ToggleRight } from 'lucide-react';
 import { createProducto, updateProducto } from '@/actions/catalogo-actions';
+import { getListasPrecios, getPreciosPorProducto } from '@/actions/listas-precios-actions';
 import { useEmpresa } from '@/components/providers/EmpresaProvider';
 import Link from 'next/link';
 
@@ -28,6 +29,29 @@ export default function ProductoForm({
 
   const isEditing = !!initialData;
   const [isPending, startTransition] = useTransition();
+  const [listasPrecios, setListasPrecios] = useState<any[]>([]);
+  const [preciosDinamicos, setPreciosDinamicos] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const res = await getListasPrecios();
+      if (res.success && res.data) {
+        setListasPrecios(res.data.filter((l: any) => l.estado_activo));
+      }
+      if (isEditing && initialData?.id) {
+        const pricesRes = await getPreciosPorProducto(initialData.id);
+        if (pricesRes.success && pricesRes.data) {
+          const map: Record<string, number> = {};
+          pricesRes.data.forEach((p: any) => {
+            map[p.lista_precio_id] = p.precio;
+          });
+          setPreciosDinamicos(map);
+        }
+      }
+    };
+    fetchData();
+  }, [isEditing, initialData]);
+
   const [error, setError] = useState('');
   const [catsList, setCatsList] = useState<any[]>(categorias);
   const [creatingCat, setCreatingCat] = useState(false);
@@ -62,6 +86,7 @@ export default function ProductoForm({
     costo: initialData?.costo || 0,
     porcentaje_ganancia: initialData?.porcentaje_ganancia || 0,
     precio_modificable: initialData?.precio_modificable || false,
+      aplica_listas_precios: initialData?.aplica_listas_precios !== undefined ? initialData.aplica_listas_precios : true,
     tipo: initialData?.es_compuesto ? 'ELABORADO' : 'REVENTA',
     sede_id: sedes[0]?.id || '',
     receta_items: existingRecipes
@@ -367,6 +392,21 @@ export default function ProductoForm({
             
 
             {formData.tipo === 'ELABORADO' && (
+              <>
+                <div className="flex items-center justify-between bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-3">
+                  <div>
+                    <label className="text-sm font-medium text-white">Aplicar Precios Dinámicos</label>
+                    <p className="text-[10px] text-neutral-500 mt-0.5">Permitir que las listas de porcentaje afecten este producto</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, aplica_listas_precios: !prev.aplica_listas_precios }))}
+                    className="text-neutral-400 hover:text-white transition-colors"
+                  >
+                    {formData.aplica_listas_precios ? <ToggleRight size={32} className="text-emerald-500" /> : <ToggleLeft size={32} />}
+                  </button>
+                </div>
+  
               <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-4 space-y-4">
                 <h4 className="text-sm font-medium text-white flex items-center gap-2">
                   <Beaker size={16} className="text-indigo-400" /> Receta / Escandallo
@@ -434,6 +474,7 @@ export default function ProductoForm({
                   </button>
                 </div>
               </div>
+            </>
             )}
 
             <label className="flex items-center gap-3 p-4 bg-neutral-950 border border-neutral-800 rounded-lg cursor-pointer">

@@ -812,3 +812,30 @@ export async function getHistorialAbonosGlobales(proveedorId: string, sedeId: st
 
   return { success: true, data: result };
 }
+
+export async function eliminarProveedor(proveedorId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autenticado' };
+
+  // Verificar si tiene facturas (para no romper integridad referencial)
+  const { count } = await supabase.from('compras_facturas')
+    .select('*', { count: 'exact', head: true })
+    .eq('proveedor_id', proveedorId);
+
+  if (count && count > 0) {
+    // Soft delete if has invoices
+    const { error } = await supabase.from('proveedores')
+      .update({ estado_activo: false })
+      .eq('id', proveedorId);
+    if (error) return { success: false, error: error.message };
+    return { success: true, message: 'Proveedor desactivado (tiene facturas)' };
+  } else {
+    // Hard delete if no invoices
+    const { error } = await supabase.from('proveedores')
+      .delete()
+      .eq('id', proveedorId);
+    if (error) return { success: false, error: error.message };
+    return { success: true, message: 'Proveedor eliminado permanentemente' };
+  }
+}
