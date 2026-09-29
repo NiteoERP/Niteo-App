@@ -134,7 +134,7 @@ export default function DashboardPage() {
                 className="bg-transparent border-none text-sm font-semibold focus:ring-0 text-gray-700 dark:text-gray-300 pr-8 cursor-pointer outline-none"
               >
                 <option value="ALL" className="bg-neutral-900 text-white">Todas las Sedes</option>
-                {sedes.map(s => (
+                {sedes.map((s: any) => (
                   <option key={s.id} value={s.id} className="bg-neutral-900 text-white">{s.nombre}</option>
                 ))}
               </select>

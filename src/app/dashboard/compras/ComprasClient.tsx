@@ -36,7 +36,7 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
 
   const [activeTab, setActiveTab] = useState<'insumos' | 'puntual' | 'factura' | 'historial'>('insumos');
 
-  const liveTableFilter = empresa?.id ? `id_empresa=eq.${empresa.id}` : undefined;
+  const liveTableFilter = (empresa as any)?.id ? `id_empresa=eq.${(empresa as any).id}` : undefined;
 
   useLiveTable('compras_puntuales', () => {
     if (activeTab === 'historial') {

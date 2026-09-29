@@ -35,7 +35,7 @@ export default function CuentasAbiertasWidget({ sedeId }: { sedeId: string }) {
     const { data: sedesData } = await supabase.from('sedes').select('id, nombre_sede');
     if (sedesData) {
       const sMap: Record<string, string> = {};
-      sedesData.forEach(s => sMap[s.id] = s.nombre_sede);
+      sedesData.forEach((s: any) => sMap[s.id] = s.nombre_sede);
       setSedesMap(sMap);
     }
 
@@ -75,7 +75,7 @@ export default function CuentasAbiertasWidget({ sedeId }: { sedeId: string }) {
           table: 'pos_cuentas_abiertas',
           filter: filterStr
         },
-        (payload) => {
+        (payload: any) => {
           if (payload.eventType === 'INSERT') {
             setCuentas((prev) => {
               const exists = prev.find((c) => c.id === payload.new.id);

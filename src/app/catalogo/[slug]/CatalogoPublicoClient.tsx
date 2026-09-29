@@ -62,7 +62,7 @@ export default function CatalogoPublicoClient({ empresa, productos: productosIni
           table: 'productos',
           filter: `empresa_id=eq.${empresa.id}`,
         },
-        (payload) => {
+        (payload: any) => {
           if (payload.eventType === 'INSERT') {
             const newProd = payload.new as Producto;
             if (newProd.estado_activo) {

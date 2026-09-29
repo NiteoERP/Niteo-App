@@ -22,7 +22,7 @@ export default function ShrinkageContainer() {
     }
 
     // Recalcular métricas de forma optimista
-    const totalLoss = optimisticShrinkages.reduce((acc, curr) => acc + (Number(curr.total_loss) || 0), 0);
+    const totalLoss = optimisticShrinkages.reduce((acc: any, curr: any) => acc + (Number(curr.total_loss) || 0), 0);
 
     return (
         <div className="space-y-6">

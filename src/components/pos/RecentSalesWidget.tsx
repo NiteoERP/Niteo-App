@@ -56,7 +56,7 @@ export default function RecentSalesWidget() {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'ventas_facturas', filter: `id_sede=eq.${sedeId}` },
-        (payload) => {
+        (payload: any) => {
           const newVentaRaw = payload.new;
           
           const newVenta: VentaPOS = {

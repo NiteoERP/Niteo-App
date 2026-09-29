@@ -53,7 +53,7 @@ const fetchSedes = async (empresaId: string) => {
     .from('sedes')
     .select('id, nombre_sede, direccion')
     .eq('empresa_id', empresaId);
-  return data?.map(s => ({ id: s.id, nombre: s.nombre_sede, direccion: s.direccion })) || [];
+  return data?.map((s: any) => ({ id: s.id, nombre: s.nombre_sede, direccion: s.direccion })) || [];
 };
 
 export function useSedes(empresaId: string, userRole: string, userSedeId: string | null) {

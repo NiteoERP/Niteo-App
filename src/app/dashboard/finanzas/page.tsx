@@ -139,7 +139,7 @@ export default function FinanzasPage() {
               <option value="ALL" className="bg-neutral-900 text-white">
                 Todas las Sedes (Consolidado)
               </option>
-              {sedes.map(s => (
+              {sedes.map((s: any) => (
                 <option key={s.id} value={s.id} className="bg-neutral-900 text-white">
                   {s.nombre}
                 </option>

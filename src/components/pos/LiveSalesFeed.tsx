@@ -35,7 +35,7 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
   };
 
   const isCortesiaVenta = (v: VentaPOS) => {
-    const hasCortesiaPago = v.pagos?.some(p => p.tipo_pago?.toLowerCase().includes('cortes'));
+    const hasCortesiaPago = v.pagos?.some((p: any) => p.tipo_pago?.toLowerCase().includes('cortes'));
     const isZeroTotalWithItems = Number(v.total) === 0 && (Number(v.descuento) > 0 || (v.detalles && v.detalles.length > 0));
     const isDocCortesia = v.tipo_documento?.toLowerCase().includes('cortes') || v.numero_orden?.toLowerCase().includes('cortes');
     return Boolean(hasCortesiaPago || isZeroTotalWithItems || isDocCortesia);
@@ -44,7 +44,7 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
   const metodosDisponibles = useMemo(() => {
     const rawMethods: string[] = [];
     sales.forEach(s => {
-      s.pagos?.forEach(p => {
+      s.pagos?.forEach((p: any) => {
         if (p.tipo_pago) rawMethods.push(p.tipo_pago);
       });
     });
@@ -66,11 +66,11 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
       if (filtroMetodo === 'CORTESIA') {
         if (!isCortesiaVenta(v)) return false;
       } else if (filtroMetodo === 'CREDITO') {
-        const hasCredito = v.pagos?.some(p => normalizePaymentKey(p.tipo_pago).includes('credit'));
+        const hasCredito = v.pagos?.some((p: any) => normalizePaymentKey(p.tipo_pago).includes('credit'));
         if (v.esta_pagado && !hasCredito) return false;
       } else if (filtroMetodo !== 'TODOS') {
         const targetKey = normalizePaymentKey(filtroMetodo);
-        const hasPago = v.pagos?.some(p => normalizePaymentKey(p.tipo_pago) === targetKey);
+        const hasPago = v.pagos?.some((p: any) => normalizePaymentKey(p.tipo_pago) === targetKey);
         if (!hasPago) return false;
       }
 
@@ -108,7 +108,7 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'ventas_facturas', filter: `sede_id=eq.${sedeId}` },
-        async (payload) => {
+        async (payload: any) => {
           const newVentaRaw = payload.new;
           
           // Fetch detalles, cliente y pagos para la nueva venta
@@ -144,7 +144,7 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
             tipo_documento: newVentaRaw.tipo_documento,
             esta_pagado: newVentaRaw.esta_pagado,
             cliente_nombre: (clienteRes as any).data?.nombre,
-            pagos: (pagosRes.data || []).map(p => ({ tipo_pago: p.tipo_pago, monto: p.monto })),
+            pagos: (pagosRes.data || []).map((p: any) => ({ tipo_pago: p.tipo_pago, monto: p.monto })),
             detalles: mappedDetalles,
           };
 

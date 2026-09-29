@@ -18,7 +18,7 @@ export function useLiveTable(tableName: string, onUpdate: () => void, filter?: s
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: tableName, filter: filter },
-        (payload) => {
+        (payload: any) => {
           console.log(`[Realtime] Cambio detectado en ${tableName}`, payload);
           if (onUpdateRef.current) onUpdateRef.current();
         }

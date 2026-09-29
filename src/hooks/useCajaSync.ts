@@ -44,7 +44,7 @@ export function useCajaSync(
         // Contar el número de clientes únicos
         setOnlineCount(Object.keys(newState).length);
       })
-      .on('broadcast', { event: 'state_update' }, (payload) => {
+      .on('broadcast', { event: 'state_update' }, (payload: any) => {
         isRemoteRef.current = true;
         if (payload.payload.transacciones) {
           setTransacciones(payload.payload.transacciones);
@@ -64,7 +64,7 @@ export function useCajaSync(
           });
         }
       })
-      .subscribe(async (status) => {
+      .subscribe(async (status: any) => {
         if (status === 'SUBSCRIBED') {
           setStatus('connected');
           // Reportamos nuestra presencia

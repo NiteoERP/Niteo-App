@@ -19,11 +19,11 @@ export default function ActualizarPasswordPage() {
 
   useEffect(() => {
     // Verificar si el usuario realmente viene de un link de recuperación (tiene sesión)
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }: any) => {
       if (!session) {
         // En caso de que el fragmento en la URL (Hash) tarde un poco en procesarse, 
         // supabase.auth.onAuthStateChange lo detectará.
-        supabase.auth.onAuthStateChange((event, session) => {
+        supabase.auth.onAuthStateChange((event: any, session: any) => {
           if (event === 'PASSWORD_RECOVERY' || session) {
             setSessionChecked(true);
           } else {
