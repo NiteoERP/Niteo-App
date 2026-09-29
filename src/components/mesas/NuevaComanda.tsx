@@ -239,45 +239,46 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
       ) : (
         <div className="grid grid-cols-2 gap-3">
             {prodsFiltrados.map((prod: any) => {
-              const cartInfo = getCartInfo(prod.id);
+              const prodId = prod.id_pos || prod.id;
+              const cartInfo = getCartInfo(prodId);
               const inCart = !!cartInfo;
               return (
                 <div key={prod.id} className="relative h-full">
                   <button
                     onClick={() => agregarAlCarrito(prod)}
-                    className={`w-full h-full bg-neutral-900 border p-3 rounded-xl flex flex-col items-start justify-between min-h-[130px] text-left active:scale-95 transition-all group relative overflow-hidden ${
-                      inCart ? 'border-indigo-500 bg-indigo-500/10 shadow-[0_0_15px_rgba(99,102,241,0.15)] pb-14' : 'border-neutral-800 hover:border-indigo-500/50'
+                    className={`w-full h-full border p-3.5 rounded-2xl flex flex-col items-start justify-between min-h-[120px] text-left active:scale-[0.97] transition-all group relative overflow-hidden touch-manipulation ${
+                      inCart
+                        ? 'border-indigo-500 bg-indigo-500/15 shadow-[0_0_18px_rgba(99,102,241,0.22)] ring-1 ring-indigo-500/50'
+                        : 'bg-neutral-900 border-neutral-800 hover:border-indigo-500/50 active:bg-neutral-800/80'
                     }`}
                   >
-                    <p className={`text-sm font-medium line-clamp-2 leading-snug transition-colors ${inCart ? 'text-white' : 'text-white group-hover:text-indigo-300'}`}>
-                      {prod.nombre}
-                    </p>
-                    <p className="text-indigo-400 text-sm font-bold mt-1.5">${Number(prod.precio_venta).toFixed(2)}</p>
                     {inCart && (
-                      <div
-                        className="absolute bottom-0 left-0 right-0 flex items-center justify-between bg-indigo-600/90 backdrop-blur-sm rounded-b-xl px-3 py-2.5"
-                        onClick={e => e.stopPropagation()}
-                      >
-                        <button
-                          onClick={e => {
+                      <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-20 animate-in zoom-in-75 duration-150">
+                        <span
+                          role="button"
+                          onClick={(e) => {
                             e.stopPropagation();
-                            const prodId = prod.id_pos || prod.id;
-                            setCarrito(prev =>
-                              prev.map(i => i.producto_id === prodId && i.comentario === ''
-                                ? { ...i, cantidad: i.cantidad - 1 }
-                                : i
-                              ).filter(i => i.cantidad > 0)
-                            );
+                            setCarrito(prev => prev.filter(i => i.producto_id !== prodId));
                           }}
-                          className="w-9 h-9 rounded-full bg-white/20 text-white text-xl font-bold flex items-center justify-center active:scale-90 transition-transform"
-                        >−</button>
-                        <span className="text-white font-bold text-base">{cartInfo?.totalCantidad}</span>
-                        <button
-                          onClick={e => { e.stopPropagation(); agregarAlCarrito(prod); }}
-                          className="w-9 h-9 rounded-full bg-white/20 text-white text-xl font-bold flex items-center justify-center active:scale-90 transition-transform"
-                        >+</button>
+                          className="w-7 h-7 bg-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white rounded-full flex items-center justify-center transition-all active:scale-75 border border-rose-500/30 cursor-pointer shadow-sm"
+                          title="Quitar"
+                        >
+                          <X size={14} strokeWidth={2.5} />
+                        </span>
+                        <span className="bg-indigo-600 text-white text-xs font-black min-w-[26px] h-7 px-2 rounded-full flex items-center justify-center shadow-lg shadow-indigo-600/40 pointer-events-none">
+                          {cartInfo.totalCantidad}
+                        </span>
                       </div>
                     )}
+
+                    <p className={`text-sm font-semibold line-clamp-2 leading-snug transition-colors pr-14 ${inCart ? 'text-white' : 'text-neutral-200 group-hover:text-white'}`}>
+                      {prod.nombre}
+                    </p>
+                    <div className="mt-3 flex items-baseline gap-1">
+                      <span className={`text-base font-extrabold ${inCart ? 'text-indigo-400' : 'text-neutral-300'}`}>
+                        ${Number(prod.precio_venta).toFixed(2)}
+                      </span>
+                    </div>
                   </button>
                 </div>
               );
