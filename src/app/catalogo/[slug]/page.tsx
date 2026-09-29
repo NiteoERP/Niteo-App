@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import CatalogoPublicoClient from './CatalogoPublicoClient';
 import type { Metadata } from 'next';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60; // Cache for 60 seconds (ISR) to reduce Vercel/Supabase usage
 
 interface Props {
   params: Promise<{ slug: string }>;

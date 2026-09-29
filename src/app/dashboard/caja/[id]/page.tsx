@@ -16,13 +16,13 @@ export default async function CierreDetallePage(props: { params: Promise<{ id: s
 
   const { data: cierre, error } = await supabase
     .from('cierres_caja')
-    .select('*, sedes(nombre_sede)')
+    .select('id, fecha_cierre, sistema_total_esperado, real_efectivo_usd, real_bancos_usd, real_efectivo_bs, real_bancos_bs, tasa_cambio, diferencia_total, observaciones, sedes(nombre_sede)')
     .eq('id', params.id)
     .single();
 
   const { data: transacciones } = await supabase
     .from('cierres_transacciones')
-    .select('*')
+    .select('id, metodo, moneda, monto, banco, referencia')
     .eq('cierre_id', params.id);
 
   if (error || !cierre) {
@@ -46,7 +46,7 @@ export default async function CierreDetallePage(props: { params: Promise<{ id: s
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-white">Detalle de Cierre</h1>
-            <p className="text-neutral-400">{new Date(cierre.fecha_cierre + 'T12:00:00Z').toLocaleDateString('es-VE')} - {cierre.sedes?.nombre_sede}</p>
+            <p className="text-neutral-400">{new Date(cierre.fecha_cierre + 'T12:00:00Z').toLocaleDateString('es-VE')} - {Array.isArray(cierre.sedes) ? (cierre.sedes[0] as any)?.nombre_sede : (cierre.sedes as any)?.nombre_sede}</p>
           </div>
         </div>
         <CierreBotonesControl cierreId={cierre.id} isMaster={isMaster} />

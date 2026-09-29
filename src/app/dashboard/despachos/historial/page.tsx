@@ -27,11 +27,16 @@ export default async function HistorialDespachosPage() {
   let query = supabase
     .from('despachos')
     .select(`
-      *,
+      id,
+      created_at,
+      estado,
+      notas,
+      sede_origen_id,
+      sede_destino_id,
       origen:sedes!despachos_sede_origen_id_fkey(nombre_sede),
       destino:sedes!despachos_sede_destino_id_fkey(nombre_sede),
       creador:perfiles!despachos_usuario_id_fkey(nombre_completo),
-      items:despachos_items(*)
+      items:despachos_items(id, nombre, cantidad, unidad_medida, cantidad_recibida)
     `)
     .eq('empresa_id', empresaId)
     .order('created_at', { ascending: false });

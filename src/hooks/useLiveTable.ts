@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 
-export function useLiveTable(tableName: string, onUpdate: () => void) {
+export function useLiveTable(tableName: string, onUpdate: () => void, filter?: string) {
   const supabase = createClient();
   const onUpdateRef = useRef(onUpdate);
 
@@ -12,10 +12,12 @@ export function useLiveTable(tableName: string, onUpdate: () => void) {
   useEffect(() => {
     if (!tableName) return;
 
-    const channel = supabase.channel(`live-${tableName}`)
+    const channelName = filter ? `live-${tableName}-${filter}` : `live-${tableName}`;
+
+    const channel = supabase.channel(channelName)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: tableName },
+        { event: '*', schema: 'public', table: tableName, filter: filter },
         (payload) => {
           console.log(`[Realtime] Cambio detectado en ${tableName}`, payload);
           if (onUpdateRef.current) onUpdateRef.current();
@@ -26,5 +28,5 @@ export function useLiveTable(tableName: string, onUpdate: () => void) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [tableName]);
+  }, [tableName, filter]);
 }

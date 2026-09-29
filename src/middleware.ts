@@ -35,6 +35,17 @@ export async function middleware(request: NextRequest) {
     }
   );
 
+  // Rutas públicas y APIs sin autenticación de usuario (evita consulta innecesaria a Supabase)
+  if (
+    request.nextUrl.pathname.startsWith('/catalogo') ||
+    request.nextUrl.pathname.startsWith('/api/webhooks') ||
+    request.nextUrl.pathname.startsWith('/api/sync-bcv') ||
+    request.nextUrl.pathname.startsWith('/api/vincular') ||
+    request.nextUrl.pathname.startsWith('/api/v1')
+  ) {
+    return supabaseResponse;
+  }
+
   // 3. Verificar Sesión Activa
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -46,11 +57,6 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';
     return NextResponse.redirect(url);
-  }
-
-  // Rutas públicas — sin verificación de auth (catálogo compartido)
-  if (request.nextUrl.pathname.startsWith('/catalogo')) {
-    return supabaseResponse;
   }
 
   // Proteger rutas /dashboard
@@ -249,12 +255,12 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
+     * Ignorar estáticos de Next.js, imágenes, iconos y rutas API que no requieren autenticación:
+     * - /api/webhooks/*
+     * - /api/sync-bcv
+     * - /api/vincular
+     * - /api/v1/*
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js|woff|woff2|ttf|otf)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/webhooks|api/sync-bcv|api/vincular|api/v1|.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js|woff|woff2|ttf|otf)$).*)',
   ],
 };

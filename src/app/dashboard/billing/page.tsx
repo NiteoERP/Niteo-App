@@ -25,7 +25,7 @@ export default async function BillingPage() {
   try {
     const { data: pagos } = await supabase
       .from('suscripciones_pagos')
-      .select('*')
+      .select('id, monto, metodo_pago, plan_solicitado, referencia, fecha_reporte, fecha_registro, estado')
       .eq('empresa_id', perfil?.empresa_id)
       .order('fecha_registro', { ascending: false });
     historialPagos = pagos || [];

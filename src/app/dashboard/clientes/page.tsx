@@ -21,7 +21,7 @@ export default async function ClientesPage() {
   // Fetch customers
   const { data: clientes, error } = await supabase
     .from('clientes')
-    .select('*')
+    .select('id, nombre, identificacion, email, telefono, direccion, creado_en')
     .eq('empresa_id', empresaId)
     .order('nombre', { ascending: true })
     .limit(100);

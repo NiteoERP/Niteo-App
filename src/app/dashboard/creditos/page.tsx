@@ -276,9 +276,9 @@ export default function CreditosPage() {
           <td style="padding: 10px 8px; border-bottom: 1px solid #e2e8f0;">${safeFormatDate(fac.fecha_venta, "dd/MM/yyyy")}</td>
           <td style="padding: 10px 8px; border-bottom: 1px solid #e2e8f0;">${fac.sede_nombre || '-'}</td>
           <td style="padding: 10px 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px; color: #475569;">${prods || 'Sin items detallados'}</td>
-          <td style="padding: 10px 8px; border-bottom: 1px solid #e2e8f0; text-align: right;">${formatCurrency(fac.total_factura || 0)}</td>
-          <td style="padding: 10px 8px; border-bottom: 1px solid #e2e8f0; text-align: right; color: #059669;">${formatCurrency(totalAbonado)}</td>
-          <td style="padding: 10px 8px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold; color: #e11d48;">${formatCurrency(fac.saldo_pendiente || 0)}</td>
+          <td style="padding: 10px 8px; border-bottom: 1px solid #e2e8f0; text-align: right;">{formatCurrency(fac.total_factura || 0)}</td>
+          <td style="padding: 10px 8px; border-bottom: 1px solid #e2e8f0; text-align: right; color: #059669;">{formatCurrency(totalAbonado)}</td>
+          <td style="padding: 10px 8px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold; color: #e11d48;">{formatCurrency(fac.saldo_pendiente || 0)}</td>
         </tr>
       `;
     }).join('');
@@ -311,7 +311,7 @@ export default function CreditosPage() {
           <div class="summary">
             <div class="card">
               <div style="font-size: 11px; color: #64748b; font-weight: bold;">TOTAL DEUDA PENDIENTE</div>
-              <div style="font-size: 20px; font-weight: bold; color: #e11d48;">${formatCurrency(clienteSeleccionado.monto_adeudado || 0)}</div>
+              <div style="font-size: 20px; font-weight: bold; color: #e11d48;">{formatCurrency(clienteSeleccionado.monto_adeudado || 0)}</div>
             </div>
             <div class="card">
               <div style="font-size: 11px; color: #64748b; font-weight: bold;">FACTURAS PENDIENTES</div>

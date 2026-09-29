@@ -34,7 +34,7 @@ export default async function IntegracionesPage() {
   // Cargar integraciones existentes
   const { data: integraciones } = await supabase
     .from("integraciones_api")
-    .select("*")
+    .select("id, nombre, plataforma, api_key, api_secret, estado_activo, webhook_url, scopes")
     .eq("empresa_id", empresaId)
     .order("fecha_creacion", { ascending: false });
 

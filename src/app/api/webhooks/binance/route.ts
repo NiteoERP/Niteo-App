@@ -13,9 +13,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing headers' }, { status: 400 });
     }
 
-    // OMITIMOS VERIFICACIN ESTRICTA DE FIRMA PARA EL MVP 
-    // (En produccin se requiere la llave pblica de Binance Pay)
-    
+    const secretKey = process.env.BINANCE_PAY_API_SECRET || process.env.BINANCE_PAY_API_KEY;
+    if (!secretKey) {
+      console.error('Missing Binance API key or secret in environment variables');
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
+
+    const payloadString = `${timestamp}\n${nonce}\n${rawBody}\n`;
+    const expectedSignature = crypto
+      .createHmac('sha512', secretKey)
+      .update(payloadString)
+      .digest('hex')
+      .toUpperCase();
+
+    if (signature.toUpperCase() !== expectedSignature) {
+      console.error('Invalid Binance Pay webhook signature');
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+    }
+
     const payload = JSON.parse(rawBody);
 
     if (payload.bizType === 'PAY' && payload.bizStatus === 'PAY_SUCCESS') {

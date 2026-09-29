@@ -36,7 +36,9 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
 
   const [activeTab, setActiveTab] = useState<'insumos' | 'puntual' | 'factura' | 'historial'>('insumos');
 
-      useLiveTable('compras_puntuales', () => {
+  const liveTableFilter = empresa?.id ? `id_empresa=eq.${empresa.id}` : undefined;
+
+  useLiveTable('compras_puntuales', () => {
     if (activeTab === 'historial') {
       cargarHistorialCompleto();
     } else if (activeTab === 'puntual' || activeTab === 'insumos') {
@@ -44,7 +46,7 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
         if (res.success) setUltimasCompras(res.compras || []);
       });
     }
-  });
+  }, liveTableFilter);
   
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
