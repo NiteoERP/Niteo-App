@@ -135,7 +135,7 @@ export async function getProductosCatalogoVirtual(empresaId: string): Promise<Pr
 
   const { data: productos, error } = await supabase
     .from('productos')
-    .select('id, codigo_barras, nombre, precio_venta, costo, precio_modificable, aplica_listas_precios, productos_precios(lista_precio_id, precio)')
+    .select('id, codigo_barras, nombre, precio_venta, costo, precio_modificable, productos_precios(lista_precio_id, precio)')
     .eq('empresa_id', empresaId)
     .eq('estado_activo', true)
     .in('canal_venta', ['SOLO_NITEO', 'AMBOS'])
