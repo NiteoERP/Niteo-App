@@ -436,8 +436,8 @@ export default function MobileCompraForm() {
                     </select>
                   </div>
                   {unidadCompra !== 'Base' && (
-                    <div className="animate-in fade-in slide-in-from-right-4">
-                      <label className="block text-[11px] leading-tight font-medium text-indigo-400 mb-1">
+                    <div className="animate-in fade-in slide-in-from-right-4 flex flex-col justify-end">
+                      <label className="block text-[13px] font-medium text-indigo-400 mb-1 truncate" title={`¿Cuántos ${isNewInsumo ? newInsumoUnit : selectedInsumo?.unidad_medida} trae el ${unidadCompra}?`}>
                         ¿Cuántos {isNewInsumo ? newInsumoUnit : selectedInsumo?.unidad_medida} trae?
                       </label>
                       <input 
