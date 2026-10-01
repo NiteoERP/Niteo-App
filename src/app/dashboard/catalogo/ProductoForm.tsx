@@ -113,6 +113,7 @@ export default function ProductoForm({
 
   const [selectedItem, setSelectedItem] = useState('');
   const [selectedCantidad, setSelectedCantidad] = useState('');
+  const [selectedUnidadReceta, setSelectedUnidadReceta] = useState('Base');
 
   // Two way binding
   const handleCostoChange = (val: number) => {
@@ -148,12 +149,26 @@ export default function ProductoForm({
     const itemData = tipo === 'insumo' ? insumos.find(i => i.id === id) : productos.find(p => p.id === id);
     if (!itemData) return;
 
+    let rawQty = parseFloat(selectedCantidad);
+    const baseU = itemData.unidad_medida || 'Unidades';
+    let finalQty = rawQty;
+
+    if (selectedUnidadReceta === 'Oz' && (baseU === 'Ml' || baseU === 'Lt')) {
+       finalQty = baseU === 'Lt' ? (rawQty * 29.5735) / 1000 : (rawQty * 29.5735);
+    } else if (selectedUnidadReceta === 'Lb' && (baseU === 'Kg' || baseU === 'Gr')) {
+       finalQty = baseU === 'Kg' ? (rawQty * 453.592) / 1000 : (rawQty * 453.592);
+    }
+
+    const displayName = selectedUnidadReceta !== 'Base' 
+      ? `${itemData.nombre} (${rawQty} ${selectedUnidadReceta})`
+      : itemData.nombre;
+
     const newItem = {
       id,
       tipo,
-      cantidad: parseFloat(selectedCantidad),
-      nombre: itemData.nombre,
-      unidad_medida: itemData.unidad_medida || 'Unidades',
+      cantidad: parseFloat(finalQty.toFixed(4)),
+      nombre: displayName,
+      unidad_medida: baseU,
       costo_promedio: itemData.costo_promedio || 0
     };
 
@@ -163,6 +178,7 @@ export default function ProductoForm({
     }));
     setSelectedItem('');
     setSelectedCantidad('');
+    setSelectedUnidadReceta('Base');
   };
 
   const removeRecetaItem = (idx: number) => {
@@ -447,7 +463,10 @@ export default function ProductoForm({
                     <select 
                       className="w-full bg-neutral-900 border border-neutral-800 text-white rounded-lg px-3 py-2 text-sm focus:border-indigo-500"
                       value={selectedItem}
-                      onChange={e => setSelectedItem(e.target.value)}
+                      onChange={e => {
+                        setSelectedItem(e.target.value);
+                        setSelectedUnidadReceta('Base');
+                      }}
                     >
                       <option value="">Selecciona...</option>
                       <optgroup label="Insumos (Almacén)">
@@ -460,7 +479,7 @@ export default function ProductoForm({
                       </optgroup>
                     </select>
                   </div>
-                  <div className="w-24">
+                  <div className="w-20">
                     <label className="block text-xs font-medium text-neutral-400 mb-1">Cant.</label>
                     <input 
                       type="number" step="0.001" min="0" 
@@ -469,6 +488,20 @@ export default function ProductoForm({
                       onChange={e => setSelectedCantidad(e.target.value)}
                     />
                   </div>
+                  {selectedItem?.startsWith('insumo||') && (
+                    <div className="w-24">
+                      <label className="block text-xs font-medium text-neutral-400 mb-1">Unidad</label>
+                      <select 
+                        className="w-full bg-neutral-900 border border-neutral-800 text-white rounded-lg px-2 py-2 text-sm focus:border-indigo-500"
+                        value={selectedUnidadReceta}
+                        onChange={e => setSelectedUnidadReceta(e.target.value)}
+                      >
+                        <option value="Base">Base</option>
+                        <option value="Oz">Onza (Oz)</option>
+                        <option value="Lb">Libra (Lb)</option>
+                      </select>
+                    </div>
+                  )}
                   <button type="button" onClick={addRecetaItem} className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg px-3 py-2 h-[38px]">
                     <Plus size={16} />
                   </button>
