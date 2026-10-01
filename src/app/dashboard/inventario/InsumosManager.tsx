@@ -396,7 +396,7 @@ export default function InsumosManager({
   // ── Handlers ────────────────────────────────────────────────────────────────
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nombre || !costo || !stock) return;
+    if (!nombre) return;
     if (!sedeId) {
       setError('Debes tener o seleccionar una sede activa para registrar insumos.');
       return;
@@ -703,14 +703,14 @@ export default function InsumosManager({
                 </select>
               </div>
               <div className="w-full lg:w-32">
-                <label className="block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wider">Existencia Base</label>
-                <input required type="number" step="any" min="0" value={stock} onChange={e => setStock(e.target.value)}
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wider">Existencia Base (Opc.)</label>
+                <input type="number" step="any" min="0" value={stock} onChange={e => setStock(e.target.value)}
                   placeholder="0.00" className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-emerald-500" />
               </div>
               {canSeeCosts && (
                 <div className="w-full lg:w-32">
-                  <label className="block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wider">Costo (USD)</label>
-                  <input required type="number" step="any" min="0" value={costo} onChange={e => setCosto(e.target.value)}
+                  <label className="block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wider">Costo (USD) (Opc.)</label>
+                  <input type="number" step="any" min="0" value={costo} onChange={e => setCosto(e.target.value)}
                     placeholder="0.00" className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-emerald-500" />
                 </div>
               )}

@@ -534,10 +534,18 @@ async function handleMermasYRegaliasReport(
         notes,
         created_at,
         shrinkage_reasons (name),
-        productos (nombre, precio_venta)
+        productos (nombre, precio_venta),
+        inventario_insumos (nombre)
       `)
       .gte('created_at', start)
       .lte('created_at', end);
+
+    if (empresaId) {
+      shrinkagesQuery = shrinkagesQuery.eq('empresa_id', empresaId);
+    }
+    if (sedeId) {
+      shrinkagesQuery = shrinkagesQuery.eq('sede_id', sedeId);
+    }
 
     const { data: shrinkData } = await shrinkagesQuery;
 
@@ -622,7 +630,7 @@ async function handleMermasYRegaliasReport(
       rows.push({
         'Fecha': fechaStr,
         'Tipo': s.shrinkage_reasons?.name || 'Merma',
-        'Lo Que Se Regaló': s.productos?.nombre || 'Insumo / Producto',
+        'Lo Que Se Regaló': s.inventario_insumos?.nombre || s.productos?.nombre || 'Insumo / Producto',
         'Cantidad': cant,
         'A Quién Se Regaló': s.notes || 'Ajuste de inventario',
         'Precio Coste Unitario ($)': `$ ${costoUnit.toFixed(2)}`,

@@ -2,9 +2,11 @@ import React from 'react';
 import { createClient } from '@/utils/supabase/server';
 import InsumosManager from './InsumosManager';
 import TransformacionesManager from './TransformacionesManager';
-import { ArrowRightLeft, Package, FileBox, Store, AlertTriangle } from 'lucide-react';
+import MermasManager from './MermasManager';
+import { ArrowRightLeft, Package, FileBox, Store, AlertTriangle, Trash2 } from 'lucide-react';
 import SedeSelector from '@/components/inventario/SedeSelector';
 import { getMovimientosInventario } from './actions';
+import { getMermasInventario, fetchShrinkageReasonsAction } from '@/actions/mermas-actions';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
@@ -55,10 +57,11 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
 
   let insumos: any[] = [];
   let productos: any[] = [];
-  let recetas: any[] = [];
   let movimientos: any[] = [];
+  let mermas: any[] = [];
+  let reasons: any[] = [];
 
-  if (currentTab === 'insumos' || currentTab === 'transformaciones') {
+  if (currentTab === 'insumos' || currentTab === 'transformaciones' || currentTab === 'mermas') {
     let queryInsumos = supabase
       .from('inventario_insumos')
       .select('id, nombre, unidad_medida, costo_promedio, cantidad_actual, empresa_id, sede_id')
@@ -72,9 +75,22 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
     const { data: insumosData } = await queryInsumos;
     insumos = insumosData || [];
 
-    // Movimientos solo para usuarios con acceso financiero
+    // Movimientos solo para usuarios con acceso financiero en pestaña insumos
     if (currentTab === 'insumos' && canSeeCosts) {
       movimientos = await getMovimientosInventario(empresaId, activeSedeId || undefined);
+    }
+
+    // Datos para pestaña mermas
+    if (currentTab === 'mermas') {
+      mermas = await getMermasInventario(empresaId, activeSedeId || undefined);
+      reasons = await fetchShrinkageReasonsAction();
+      const { data: prodsData } = await supabase
+        .from('productos')
+        .select('id, nombre, precio_venta, costo, id_insumo_vinculado')
+        .eq('empresa_id', empresaId)
+        .eq('estado_activo', true)
+        .order('nombre');
+      productos = prodsData || [];
     }
   }
 
@@ -135,6 +151,10 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${currentTab === 'transformaciones' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:border-neutral-700'}`}>
           <ArrowRightLeft size={16} /> Transformaciones
         </a>
+        <a href={`?tab=mermas${activeSedeId ? `&sede=${activeSedeId}` : ''}`}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${currentTab === 'mermas' ? 'border-rose-500 text-rose-400 font-semibold' : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:border-neutral-700'}`}>
+          <Trash2 size={16} /> Mermas y Pérdidas
+        </a>
       </div>
 
       {/* Contenido */}
@@ -151,6 +171,17 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
         )}
         {currentTab === 'transformaciones' && (
           <TransformacionesManager insumos={insumos} activeSedeId={activeSedeId || ''} />
+        )}
+        {currentTab === 'mermas' && (
+          <MermasManager
+            initialMermas={mermas}
+            insumos={insumos}
+            productos={productos}
+            reasons={reasons}
+            empresaId={empresaId}
+            activeSedeId={activeSedeId || ''}
+            canSeeCosts={canSeeCosts}
+          />
         )}
       </div>
 

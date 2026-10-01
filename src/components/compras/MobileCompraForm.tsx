@@ -19,6 +19,9 @@ type CartItem = {
   nombre_nuevo: string;
   unidad_nueva: string;
   cantidad: number;
+  unidad_compra: string;
+  factor_compra: number;
+  cantidad_base: number;
   costoTotal: number;
   monedaItem: 'USD' | 'VES';
 };
@@ -55,6 +58,8 @@ export default function MobileCompraForm() {
   const [cantidad, setCantidad] = useState('');
   const [costoUnitario, setCostoUnitario] = useState('');
   const [costoTotal, setCostoTotal] = useState('');
+  const [unidadCompra, setUnidadCompra] = useState('Und');
+  const [factorCompra, setFactorCompra] = useState('1');
 
 
   const handleCantidadChange = (val: string) => {
@@ -117,14 +122,20 @@ export default function MobileCompraForm() {
 
     const finalCostoTotal = parseFloat(costoTotal);
     const qty = parseFloat(cantidad);
+    const factor = parseFloat(factorCompra) || 1;
+    const baseUnit = isNewInsumo ? newInsumoUnit : selectedInsumo!.unidad_medida;
+    const finalBase = qty * factor;
 
     const newItem: CartItem = {
       id: Math.random().toString(),
       insumo_id: isNewInsumo ? null : selectedInsumo!.id,
       is_new: isNewInsumo,
       nombre_nuevo: isNewInsumo ? newInsumoName : selectedInsumo!.nombre,
-      unidad_nueva: isNewInsumo ? newInsumoUnit : selectedInsumo!.unidad_medida,
+      unidad_nueva: baseUnit,
       cantidad: qty,
+      unidad_compra: unidadCompra === 'Base' ? baseUnit : unidadCompra,
+      factor_compra: factor,
+      cantidad_base: finalBase,
       costoTotal: finalCostoTotal,
       monedaItem: monedaGlobal
     };
@@ -162,7 +173,8 @@ export default function MobileCompraForm() {
 
         return {
           ...item,
-          costoTotal: finalCosto
+          costoTotal: finalCosto,
+          cantidad: item.cantidad_base
         };
       });
 
@@ -343,6 +355,8 @@ export default function MobileCompraForm() {
                         setSelectedInsumo(ins);
                         setSearchTerm(ins.nombre);
                         setIsDropdownOpen(false);
+                        setUnidadCompra('Base');
+                        setFactorCompra('1');
                       }}
                       className="w-full text-left px-4 py-3 text-white hover:bg-neutral-700 flex justify-between items-center"
                     >
@@ -399,6 +413,48 @@ export default function MobileCompraForm() {
                     </select>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Unidad de Compra (Dinámico) */}
+            {(selectedInsumo || isNewInsumo) && (
+              <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 mb-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-400 mb-1">Unidad Compra</label>
+                    <select 
+                      value={unidadCompra}
+                      onChange={e => setUnidadCompra(e.target.value)}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2.5 text-white outline-none focus:border-indigo-500"
+                    >
+                      <option value="Base">{isNewInsumo ? newInsumoUnit : selectedInsumo?.unidad_medida} (Und. Base)</option>
+                      <option value="Bulto">Bulto</option>
+                      <option value="Caja">Caja</option>
+                      <option value="Paquete">Paquete</option>
+                      <option value="Saco">Saco</option>
+                      <option value="Galon">Galón</option>
+                    </select>
+                  </div>
+                  {unidadCompra !== 'Base' && (
+                    <div className="animate-in fade-in slide-in-from-right-4">
+                      <label className="block text-[11px] leading-tight font-medium text-indigo-400 mb-1">
+                        ¿Cuántos {isNewInsumo ? newInsumoUnit : selectedInsumo?.unidad_medida} trae?
+                      </label>
+                      <input 
+                        type="number" 
+                        min="1" step="any"
+                        value={factorCompra}
+                        onChange={e => setFactorCompra(e.target.value)}
+                        className="w-full bg-indigo-500/10 border border-indigo-500/30 rounded-xl px-3 py-2.5 text-white outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                  )}
+                </div>
+                {unidadCompra !== 'Base' && parseFloat(factorCompra) > 0 && parseFloat(cantidad) > 0 && (
+                  <p className="mt-3 text-xs text-indigo-300 bg-indigo-500/10 p-2 rounded-lg">
+                    El sistema sumará matemáticamente <strong>{(parseFloat(cantidad) * parseFloat(factorCompra)).toFixed(2)} {isNewInsumo ? newInsumoUnit : selectedInsumo?.unidad_medida}</strong> a tu inventario.
+                  </p>
+                )}
               </div>
             )}
 
@@ -466,7 +522,11 @@ export default function MobileCompraForm() {
                   <div key={item.id} className="bg-neutral-950 border border-neutral-800 rounded-lg p-3 flex justify-between items-center">
                     <div>
                       <p className="text-white font-medium text-sm">{item.nombre_nuevo} {item.is_new && <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded ml-1">NUEVO</span>}</p>
-                      <p className="text-neutral-500 text-xs">{item.cantidad} {item.unidad_nueva} • {item.monedaItem} {item.costoTotal.toFixed(2)} Total <span className="text-[10px] opacity-60">({(item.costoTotal / item.cantidad).toFixed(2)} c/u)</span></p>
+                      <p className="text-neutral-500 text-xs">
+                        {item.cantidad} {item.unidad_compra} 
+                        {item.unidad_compra !== item.unidad_nueva && ` (Ingresa: ${item.cantidad_base.toFixed(2)} ${item.unidad_nueva}) `}
+                        • {item.monedaItem} {item.costoTotal.toFixed(2)} Total <span className="text-[10px] opacity-60">({(item.costoTotal / item.cantidad_base).toFixed(2)} c/{item.unidad_nueva})</span>
+                      </p>
                     </div>
                     <button onClick={() => removeFromCart(item.id)} className="text-rose-400 hover:bg-rose-500/20 p-2 rounded-lg">
                       <Trash2 size={16} />

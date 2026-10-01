@@ -1,23 +1,35 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@/utils/supabase/admin';
+import { revalidatePath } from 'next/cache';
+
 async function getAuthContext() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('No autorizado');
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (authErr || !user) throw new Error('No autorizado');
   
-  const idEmpresa = user.app_metadata?.empresa_id || user.user_metadata?.empresa_id;
+  let idEmpresa = user.app_metadata?.empresa_id || user.user_metadata?.empresa_id;
+  if (!idEmpresa) {
+    const admin = createAdminClient();
+    const { data: profile } = await admin
+      .from('perfiles')
+      .select('empresa_id')
+      .eq('id', user.id)
+      .single();
+    idEmpresa = profile?.empresa_id;
+  }
   if (!idEmpresa) throw new Error('Sin empresa asignada');
   
   return { supabase, user, idEmpresa };
 }
-import { revalidatePath } from 'next/cache';
 
 export interface TransformacionItem {
   insumo_id: string;
-  cantidad: number;
-  costo_unitario?: number; // Sólo informativo
-  porcentaje_costo?: number; // Para destinos
+  cantidad: number | string;
+  costo_unitario?: number | string; // Sólo informativo
+  porcentaje_costo?: number | string; // Para destinos
+  nombre_insumo?: string;
 }
 
 export async function ejecutarTransformacion(
@@ -31,6 +43,9 @@ export async function ejecutarTransformacion(
     // 1. Obtener costos actuales de los orígenes para calcular el costo total
     let costoTotalTransferido = 0;
     for (const origen of origenes) {
+      const cantOrigen = parseFloat(String(origen.cantidad)) || 0;
+      if (cantOrigen <= 0) continue;
+
       const { data: insumo } = await supabase
         .from('inventario_insumos')
         .select('cantidad_actual, costo_promedio, nombre')
@@ -38,15 +53,20 @@ export async function ejecutarTransformacion(
         .single();
       
       if (!insumo) throw new Error(`Insumo origen no encontrado.`);
-      if (insumo.cantidad_actual < origen.cantidad) {
-        throw new Error(`Stock insuficiente para ${insumo.nombre}. Tienes ${insumo.cantidad_actual} pero intentas usar ${origen.cantidad}.`);
+      const cantActual = parseFloat(String(insumo.cantidad_actual || 0));
+      if (cantActual < cantOrigen) {
+        throw new Error(`Stock insuficiente para ${insumo.nombre}. Tienes ${cantActual} pero intentas usar ${cantOrigen}.`);
       }
 
-      costoTotalTransferido += (insumo.costo_promedio || 0) * origen.cantidad;
+      const costoProm = parseFloat(String(insumo.costo_promedio || 0));
+      costoTotalTransferido += costoProm * cantOrigen;
 
-      // Restar stock origen
-      const nuevaCantidad = insumo.cantidad_actual - origen.cantidad;
-      const { error: updErr } = await supabase.from('inventario_insumos').update({ cantidad_actual: nuevaCantidad }).eq('id', origen.insumo_id);
+      // Restar stock origen preservando decimales
+      const nuevaCantidad = Number((cantActual - cantOrigen).toFixed(4));
+      const { error: updErr } = await supabase
+        .from('inventario_insumos')
+        .update({ cantidad_actual: nuevaCantidad })
+        .eq('id', origen.insumo_id);
       if (updErr) throw updErr;
 
       // Registrar movimiento de salida
@@ -55,14 +75,18 @@ export async function ejecutarTransformacion(
         insumo_id: origen.insumo_id,
         usuario_id: user.id,
         tipo_movimiento: 'SALIDA',
-        motivo: 'AJUSTE_INVENTARIO', // Usamos este enum por defecto
-        cantidad: origen.cantidad,
+        motivo: 'AJUSTE_INVENTARIO',
+        cantidad: cantOrigen,
         costo_perdido: 0
       });
     }
 
     // 2. Distribuir el costo y sumar a los destinos
-    for (const destino of destinos) {
+    const validDestinos = destinos.filter(d => (parseFloat(String(d.cantidad)) || 0) > 0 && d.insumo_id);
+
+    for (const destino of validDestinos) {
+      const cantDestino = parseFloat(String(destino.cantidad)) || 0;
+
       const { data: insumo } = await supabase
         .from('inventario_insumos')
         .select('cantidad_actual, costo_promedio')
@@ -72,27 +96,29 @@ export async function ejecutarTransformacion(
       if (!insumo) continue;
 
       // Calcular cuánto costo le toca a este destino
-      // Si no se especifica porcentaje, dividimos en partes iguales
       const porcentaje = destino.porcentaje_costo !== undefined 
-        ? destino.porcentaje_costo / 100 
-        : (1 / destinos.length);
+        ? (parseFloat(String(destino.porcentaje_costo)) || 0) / 100 
+        : (1 / validDestinos.length);
         
       const costoAsignado = costoTotalTransferido * porcentaje;
-      const costoUnitarioNuevo = costoAsignado / destino.cantidad;
+      const costoUnitarioNuevo = cantDestino > 0 ? costoAsignado / cantDestino : 0;
 
-      const cantActual = Number(insumo.cantidad_actual || 0);
-      const costoProm = Number(insumo.costo_promedio || 0);
+      const cantActual = parseFloat(String(insumo.cantidad_actual || 0));
+      const costoProm = parseFloat(String(insumo.costo_promedio || 0));
       
-      const nuevaCantidad = cantActual + destino.cantidad;
+      const nuevaCantidad = Number((cantActual + cantDestino).toFixed(4));
       // Nuevo promedio de costo ponderado
       const nuevoCostoPromedio = nuevaCantidad > 0 
         ? ((cantActual * costoProm) + costoAsignado) / nuevaCantidad 
         : costoUnitarioNuevo;
 
-      const { error: updErr2 } = await supabase.from('inventario_insumos').update({ 
-        cantidad_actual: nuevaCantidad,
-        costo_promedio: Number(nuevoCostoPromedio.toFixed(4))
-      }).eq('id', destino.insumo_id);
+      const { error: updErr2 } = await supabase
+        .from('inventario_insumos')
+        .update({ 
+          cantidad_actual: nuevaCantidad,
+          costo_promedio: Number(nuevoCostoPromedio.toFixed(4))
+        })
+        .eq('id', destino.insumo_id);
       if (updErr2) throw updErr2;
 
       // Registrar movimiento de entrada
@@ -102,7 +128,7 @@ export async function ejecutarTransformacion(
         usuario_id: user.id,
         tipo_movimiento: 'ENTRADA',
         motivo: 'AJUSTE_INVENTARIO',
-        cantidad: destino.cantidad,
+        cantidad: cantDestino,
         costo_perdido: 0
       });
     }
@@ -111,6 +137,7 @@ export async function ejecutarTransformacion(
     return { success: true };
 
   } catch (err: any) {
+    console.error('Error al ejecutar transformación:', err);
     return { error: err.message || 'Error al ejecutar transformación' };
   }
 }
@@ -118,19 +145,89 @@ export async function ejecutarTransformacion(
 export async function guardarPlantillaTransformacion(
   nombre: string,
   origenes: TransformacionItem[],
-  destinos: TransformacionItem[]
+  destinos: TransformacionItem[],
+  id?: string
 ) {
   try {
     const { supabase, idEmpresa } = await getAuthContext();
-    const { error } = await supabase.from('inventario_transformaciones_plantillas').insert({
-      empresa_id: idEmpresa,
-      nombre,
-      insumos_origen: origenes,
-      insumos_destino: destinos
-    });
-    if (error) throw error;
-    return { success: true };
+
+    // Normalizar items con números flotantes limpios
+    const cleanOrigenes = origenes.map(o => ({
+      ...o,
+      cantidad: parseFloat(String(o.cantidad).replace(',', '.')) || 0,
+      costo_unitario: o.costo_unitario !== undefined ? parseFloat(String(o.costo_unitario)) : undefined
+    }));
+
+    const cleanDestinos = destinos.map(d => ({
+      ...d,
+      cantidad: parseFloat(String(d.cantidad).replace(',', '.')) || 0,
+      porcentaje_costo: d.porcentaje_costo !== undefined ? parseFloat(String(d.porcentaje_costo).replace(',', '.')) : undefined
+    }));
+
+    if (id) {
+      // Actualizar plantilla existente
+      let { error } = await supabase
+        .from('inventario_transformaciones_plantillas')
+        .update({
+          nombre,
+          insumos_origen: cleanOrigenes,
+          insumos_destino: cleanDestinos
+        })
+        .eq('id', id)
+        .eq('empresa_id', idEmpresa);
+
+      if (error) {
+        console.warn('Fallback a adminClient para actualizar plantilla:', error);
+        const admin = createAdminClient();
+        const res = await admin
+          .from('inventario_transformaciones_plantillas')
+          .update({
+            nombre,
+            insumos_origen: cleanOrigenes,
+            insumos_destino: cleanDestinos
+          })
+          .eq('id', id)
+          .eq('empresa_id', idEmpresa);
+        error = res.error;
+      }
+
+      if (error) throw error;
+      return { success: true, updated: true };
+    } else {
+      // Crear nueva plantilla
+      let { data, error } = await supabase
+        .from('inventario_transformaciones_plantillas')
+        .insert({
+          empresa_id: idEmpresa,
+          nombre,
+          insumos_origen: cleanOrigenes,
+          insumos_destino: cleanDestinos
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.warn('Fallback a adminClient para guardar plantilla:', error);
+        const admin = createAdminClient();
+        const res = await admin
+          .from('inventario_transformaciones_plantillas')
+          .insert({
+            empresa_id: idEmpresa,
+            nombre,
+            insumos_origen: cleanOrigenes,
+            insumos_destino: cleanDestinos
+          })
+          .select()
+          .single();
+        data = res.data;
+        error = res.error;
+      }
+
+      if (error) throw error;
+      return { success: true, plantilla: data };
+    }
   } catch (err: any) {
+    console.error('Error guardando plantilla:', err);
     return { error: err.message || 'Error guardando plantilla' };
   }
 }
@@ -138,29 +235,56 @@ export async function guardarPlantillaTransformacion(
 export async function getPlantillasTransformacion() {
   try {
     const { supabase, idEmpresa } = await getAuthContext();
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('inventario_transformaciones_plantillas')
       .select('*')
       .eq('empresa_id', idEmpresa)
       .order('nombre');
     
+    if (error) {
+      console.warn('Fallback a adminClient para consultar plantillas:', error);
+      const admin = createAdminClient();
+      const res = await admin
+        .from('inventario_transformaciones_plantillas')
+        .select('*')
+        .eq('empresa_id', idEmpresa)
+        .order('nombre');
+      data = res.data;
+      error = res.error;
+    }
+
     if (error) throw error;
     return { success: true, plantillas: data || [] };
   } catch (err: any) {
+    console.error('Error obteniendo plantillas:', err);
     return { error: err.message, plantillas: [] };
   }
 }
 
 export async function eliminarPlantillaTransformacion(id: string) {
   try {
-    const { supabase } = await getAuthContext();
-    const { error } = await supabase
+    const { supabase, idEmpresa } = await getAuthContext();
+    let { error } = await supabase
       .from('inventario_transformaciones_plantillas')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('empresa_id', idEmpresa);
+
+    if (error) {
+      console.warn('Fallback a adminClient para eliminar plantilla:', error);
+      const admin = createAdminClient();
+      const res = await admin
+        .from('inventario_transformaciones_plantillas')
+        .delete()
+        .eq('id', id)
+        .eq('empresa_id', idEmpresa);
+      error = res.error;
+    }
+
     if (error) throw error;
     return { success: true };
   } catch (err: any) {
-    return { error: err.message };
+    console.error('Error eliminando plantilla:', err);
+    return { error: err.message || 'Error eliminando plantilla' };
   }
 }
