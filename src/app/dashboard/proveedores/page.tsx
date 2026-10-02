@@ -794,7 +794,7 @@ export default function ProveedoresPage() {
                             <div className="flex items-center gap-4">
                               <div className="text-right">
                                 <p className="text-xs text-neutral-500">
-                                  Total: {formatCurrency(fac.total)}
+                                 - Total: {formatCurrency(fac.total)}
                                 </p>
                                 <p className={`font-black text-lg ${saldado ? 'text-emerald-400' : 'text-rose-400'}`}>{formatCurrency(fac.saldo_pendiente)}</p>
                                 <p className="text-xs text-neutral-600">{saldado ? 'saldada' : 'pendiente'}</p>
@@ -1404,7 +1404,7 @@ export default function ProveedoresPage() {
                               {item.is_new && <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded ml-1">Nuevo</span>}
                             </p>
                             <p className="text-xs text-neutral-400 mt-0.5">
-                              {item.cantidad} {item.unidad_nueva} Ã— {facMoneda === 'VES' ? 'Bs. ' : '$ '} {(item.precioUnitario || item.costoTotal / item.cantidad).toFixed(2)} = <span className="text-white font-semibold">{facMoneda === 'VES' ? 'Bs. ' : '$ '} {item.costoTotal.toFixed(2)}</span>
+                              {item.cantidad} {item.unidad_nueva} x {facMoneda === 'VES' ? 'Bs. ' : '$ '} {(item.precioUnitario || item.costoTotal / item.cantidad).toFixed(2)} = <span className="text-white font-semibold">{facMoneda === 'VES' ? 'Bs. ' : '$ '} {item.costoTotal.toFixed(2)}</span>
                             </p>
                           </div>
                           <button
@@ -1539,7 +1539,7 @@ export default function ProveedoresPage() {
                 <p className="text-sm text-neutral-400 mb-1">{facturaPagar.concepto || 'Factura'}</p>
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-neutral-500">
-                    Total: {formatCurrency(facturaPagar.total)}
+                   - Total: {formatCurrency(facturaPagar.total)}
                     {tasaBcv > 0 && ` (~ Bs. ${(facturaPagar.total * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`}
                   </span>
                   <div className="text-right">
@@ -1954,7 +1954,7 @@ export default function ProveedoresPage() {
                             {item.is_new && <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded ml-1.5 font-normal">NUEVO</span>}
                           </p>
                           <p className="text-xs text-neutral-400 mt-0.5">
-                            {item.cantidad} {item.unidad_nueva || 'Und'} Â· Total: <span className="text-white font-medium">$ {Number(item.costoTotal || 0).toFixed(2)}</span>
+                              {item.cantidad} {item.unidad_nueva || 'Und'} - Total: <span className="text-white font-medium">$ {Number(item.costoTotal || 0).toFixed(2)}</span>
                           </p>
                         </div>
                         <button
@@ -2205,7 +2205,7 @@ export default function ProveedoresPage() {
                 <p className="text-sm text-neutral-400 mb-1">{facturaPagar.concepto || 'Factura'}</p>
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-neutral-500">
-                    Total: {formatCurrency(facturaPagar.total)}
+                   - Total: {formatCurrency(facturaPagar.total)}
                     {tasaBcv > 0 && ` (~ Bs. ${(facturaPagar.total * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`}
                   </span>
                   <div className="text-right">
@@ -2620,7 +2620,7 @@ export default function ProveedoresPage() {
                             {item.is_new && <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded ml-1.5 font-normal">NUEVO</span>}
                           </p>
                           <p className="text-xs text-neutral-400 mt-0.5">
-                            {item.cantidad} {item.unidad_nueva || 'Und'} Â· Total: <span className="text-white font-medium">$ {Number(item.costoTotal || 0).toFixed(2)}</span>
+                              {item.cantidad} {item.unidad_nueva || 'Und'} - Total: <span className="text-white font-medium">$ {Number(item.costoTotal || 0).toFixed(2)}</span>
                           </p>
                         </div>
                         <button
@@ -2871,7 +2871,7 @@ export default function ProveedoresPage() {
                 <p className="text-sm text-neutral-400 mb-1">{facturaPagar.concepto || 'Factura'}</p>
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-neutral-500">
-                    Total: {formatCurrency(facturaPagar.total)}
+                   - Total: {formatCurrency(facturaPagar.total)}
                     {tasaBcv > 0 && ` (~ Bs. ${(facturaPagar.total * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`}
                   </span>
                   <div className="text-right">
@@ -3286,7 +3286,7 @@ export default function ProveedoresPage() {
                             {item.is_new && <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded ml-1.5 font-normal">NUEVO</span>}
                           </p>
                           <p className="text-xs text-neutral-400 mt-0.5">
-                            {item.cantidad} {item.unidad_nueva || 'Und'} Â· Total: <span className="text-white font-medium">$ {Number(item.costoTotal || 0).toFixed(2)}</span>
+                              {item.cantidad} {item.unidad_nueva || 'Und'} - Total: <span className="text-white font-medium">$ {Number(item.costoTotal || 0).toFixed(2)}</span>
                           </p>
                         </div>
                         <button
