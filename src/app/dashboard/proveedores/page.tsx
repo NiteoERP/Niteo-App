@@ -189,6 +189,8 @@ export default function ProveedoresPage() {
   const [facItems, setFacItems] = useState<any[]>([]);
   const [insumosList, setInsumosList] = useState<any[]>([]);
   const [insumoSearch, setInsumoSearch] = useState('');
+  const [showInsumoDropdown, setShowInsumoDropdown] = useState(false);
+  const [insumoFilterText, setInsumoFilterText] = useState('');
   const [insumoQty, setInsumoQty] = useState('');
   const [insumoPrecioUnitario, setInsumoPrecioUnitario] = useState('');
   const [insumoCostoTotal, setInsumoCostoTotal] = useState('');
@@ -263,6 +265,8 @@ export default function ProveedoresPage() {
   const [editFacCompraPuntualId, setEditFacCompraPuntualId] = useState<string | null>(null);
   const [isLoadingEditItems, setIsLoadingEditItems] = useState(false);
   const [editAddInsumoSearch, setEditAddInsumoSearch] = useState('');
+  const [showEditAddInsumoDropdown, setShowEditAddInsumoDropdown] = useState(false);
+  const [editAddInsumoFilterText, setEditAddInsumoFilterText] = useState('');
   const [editAddIsNew, setEditAddIsNew] = useState(false);
   const [editAddNombreNuevo, setEditAddNombreNuevo] = useState('');
   const [editAddUnidad, setEditAddUnidad] = useState('Kg');
@@ -1264,29 +1268,56 @@ export default function ProveedoresPage() {
                       </div>
                     ) : (
                       <div>
-                        <select 
-                          value={insumoSearch} 
-                          onChange={(e) => {
-                            const selId = e.target.value;
-                            setInsumoSearch(selId);
-                            const ins = insumosList.find(i => i.id === selId);
-                            if (ins?.costo_promedio && ins.costo_promedio > 0) {
-                              setInsumoPrecioUnitario(ins.costo_promedio.toString());
-                              const q = parseFloat(insumoQty);
-                              if (!isNaN(q) && q > 0) {
-                                setInsumoCostoTotal((q * ins.costo_promedio).toFixed(2));
-                              }
-                            }
-                          }}
-                          className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
-                        >
-                          <option value="">Selecciona un insumo...</option>
-                          {insumosList.map(i => (
-                            <option key={i.id} value={i.id}>
-                              {i.nombre} ({i.cantidad_actual || 0} {i.unidad_medida})
-                            </option>
-                          ))}
-                        </select>
+                        <div className="relative">
+                          <div 
+                            className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-3 py-2.5 text-sm cursor-pointer flex justify-between items-center hover:bg-neutral-900 transition-colors"
+                            onClick={() => setShowInsumoDropdown(!showInsumoDropdown)}
+                          >
+                            <span className="truncate">{insumoSearch ? insumosList.find(i => i.id === insumoSearch)?.nombre : 'Selecciona un insumo...'}</span>
+                            <ChevronDown size={14} className="text-neutral-500 flex-shrink-0 ml-2" />
+                          </div>
+                          
+                          {showInsumoDropdown && (
+                            <div className="absolute z-[70] w-full mt-2 bg-neutral-900 border border-neutral-800 rounded-xl shadow-2xl overflow-hidden">
+                              <div className="p-2 border-b border-neutral-800">
+                                <input 
+                                  type="text" 
+                                  placeholder="Buscar insumo..." 
+                                  value={insumoFilterText}
+                                  onChange={e => setInsumoFilterText(e.target.value)}
+                                  className="w-full bg-black/50 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                                  autoFocus
+                                />
+                              </div>
+                              <div className="max-h-48 overflow-y-auto">
+                                {(() => {
+                                  const filteredInsumos = insumosList.filter(i => (i.nombre || '').toLowerCase().includes(insumoFilterText.toLowerCase()));
+                                  if (filteredInsumos.length === 0) return <div className="px-4 py-3 text-sm text-neutral-500 text-center">No hay resultados</div>;
+                                  return filteredInsumos.map(i => (
+                                    <div 
+                                      key={i.id}
+                                      className="px-4 py-2.5 text-sm text-white hover:bg-neutral-800 cursor-pointer"
+                                      onClick={() => {
+                                        setInsumoSearch(i.id);
+                                        setShowInsumoDropdown(false);
+                                        setInsumoFilterText('');
+                                        if (i.costo_promedio && i.costo_promedio > 0) {
+                                          setInsumoPrecioUnitario(i.costo_promedio.toString());
+                                          const q = parseFloat(insumoQty);
+                                          if (!isNaN(q) && q > 0) {
+                                            setInsumoCostoTotal((q * i.costo_promedio).toFixed(2));
+                                          }
+                                        }
+                                      }}
+                                    >
+                                      {i.nombre} <span className="text-neutral-500 text-xs ml-1">({i.cantidad_actual || 0} {i.unidad_medida})</span>
+                                    </div>
+                                  ));
+                                })()}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
 
@@ -2065,18 +2096,49 @@ export default function ProveedoresPage() {
                       ) : (
                         <div className="sm:col-span-7">
                           <label className="block text-[10px] font-medium text-neutral-400 mb-1">Insumo</label>
-                          <select
-                            value={editAddInsumoSearch}
-                            onChange={e => setEditAddInsumoSearch(e.target.value)}
-                            className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2.5 py-1.5 text-xs"
-                          >
-                            <option value="">Seleccionar insumo...</option>
-                            {insumosList.map(i => (
-                              <option key={i.id} value={i.id} className="bg-neutral-900">
-                                {i.nombre} ({i.cantidad_actual || 0} {i.unidad_medida})
-                              </option>
-                            ))}
-                          </select>
+                          <div className="relative">
+                            <div 
+                              className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2.5 py-1.5 text-xs cursor-pointer flex justify-between items-center"
+                              onClick={() => setShowEditAddInsumoDropdown(!showEditAddInsumoDropdown)}
+                            >
+                              <span className="truncate">{editAddInsumoSearch ? insumosList.find(i => i.id === editAddInsumoSearch)?.nombre : 'Seleccionar insumo...'}</span>
+                              <ChevronDown size={12} className="text-neutral-500 flex-shrink-0 ml-1" />
+                            </div>
+                            
+                            {showEditAddInsumoDropdown && (
+                              <div className="absolute z-[80] w-full mt-1 bg-neutral-900 border border-neutral-700 rounded-lg shadow-xl overflow-hidden">
+                                <div className="p-1 border-b border-neutral-700">
+                                  <input 
+                                    type="text" 
+                                    placeholder="Buscar..." 
+                                    value={editAddInsumoFilterText}
+                                    onChange={e => setEditAddInsumoFilterText(e.target.value)}
+                                    className="w-full bg-black/50 border border-neutral-700 rounded text-xs px-2 py-1 text-white focus:outline-none"
+                                    autoFocus
+                                  />
+                                </div>
+                                <div className="max-h-40 overflow-y-auto">
+                                  {(() => {
+                                    const filtered = insumosList.filter(i => (i.nombre || '').toLowerCase().includes(editAddInsumoFilterText.toLowerCase()));
+                                    if (filtered.length === 0) return <div className="p-2 text-xs text-neutral-500 text-center">Sin resultados</div>;
+                                    return filtered.map(i => (
+                                      <div 
+                                        key={i.id}
+                                        className="px-2 py-1.5 text-xs text-white hover:bg-neutral-800 cursor-pointer"
+                                        onClick={() => {
+                                          setEditAddInsumoSearch(i.id);
+                                          setShowEditAddInsumoDropdown(false);
+                                          setEditAddInsumoFilterText('');
+                                        }}
+                                      >
+                                        {i.nombre} <span className="text-neutral-500 ml-1">({i.cantidad_actual || 0} {i.unidad_medida})</span>
+                                      </div>
+                                    ));
+                                  })()}
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
 
@@ -2731,18 +2793,49 @@ export default function ProveedoresPage() {
                       ) : (
                         <div className="sm:col-span-7">
                           <label className="block text-[10px] font-medium text-neutral-400 mb-1">Insumo</label>
-                          <select
-                            value={editAddInsumoSearch}
-                            onChange={e => setEditAddInsumoSearch(e.target.value)}
-                            className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2.5 py-1.5 text-xs"
-                          >
-                            <option value="">Seleccionar insumo...</option>
-                            {insumosList.map(i => (
-                              <option key={i.id} value={i.id} className="bg-neutral-900">
-                                {i.nombre} ({i.cantidad_actual || 0} {i.unidad_medida})
-                              </option>
-                            ))}
-                          </select>
+                          <div className="relative">
+                            <div 
+                              className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2.5 py-1.5 text-xs cursor-pointer flex justify-between items-center"
+                              onClick={() => setShowEditAddInsumoDropdown(!showEditAddInsumoDropdown)}
+                            >
+                              <span className="truncate">{editAddInsumoSearch ? insumosList.find(i => i.id === editAddInsumoSearch)?.nombre : 'Seleccionar insumo...'}</span>
+                              <ChevronDown size={12} className="text-neutral-500 flex-shrink-0 ml-1" />
+                            </div>
+                            
+                            {showEditAddInsumoDropdown && (
+                              <div className="absolute z-[80] w-full mt-1 bg-neutral-900 border border-neutral-700 rounded-lg shadow-xl overflow-hidden">
+                                <div className="p-1 border-b border-neutral-700">
+                                  <input 
+                                    type="text" 
+                                    placeholder="Buscar..." 
+                                    value={editAddInsumoFilterText}
+                                    onChange={e => setEditAddInsumoFilterText(e.target.value)}
+                                    className="w-full bg-black/50 border border-neutral-700 rounded text-xs px-2 py-1 text-white focus:outline-none"
+                                    autoFocus
+                                  />
+                                </div>
+                                <div className="max-h-40 overflow-y-auto">
+                                  {(() => {
+                                    const filtered = insumosList.filter(i => (i.nombre || '').toLowerCase().includes(editAddInsumoFilterText.toLowerCase()));
+                                    if (filtered.length === 0) return <div className="p-2 text-xs text-neutral-500 text-center">Sin resultados</div>;
+                                    return filtered.map(i => (
+                                      <div 
+                                        key={i.id}
+                                        className="px-2 py-1.5 text-xs text-white hover:bg-neutral-800 cursor-pointer"
+                                        onClick={() => {
+                                          setEditAddInsumoSearch(i.id);
+                                          setShowEditAddInsumoDropdown(false);
+                                          setEditAddInsumoFilterText('');
+                                        }}
+                                      >
+                                        {i.nombre} <span className="text-neutral-500 ml-1">({i.cantidad_actual || 0} {i.unidad_medida})</span>
+                                      </div>
+                                    ));
+                                  })()}
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
 
@@ -3397,18 +3490,49 @@ export default function ProveedoresPage() {
                       ) : (
                         <div className="sm:col-span-7">
                           <label className="block text-[10px] font-medium text-neutral-400 mb-1">Insumo</label>
-                          <select
-                            value={editAddInsumoSearch}
-                            onChange={e => setEditAddInsumoSearch(e.target.value)}
-                            className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2.5 py-1.5 text-xs"
-                          >
-                            <option value="">Seleccionar insumo...</option>
-                            {insumosList.map(i => (
-                              <option key={i.id} value={i.id} className="bg-neutral-900">
-                                {i.nombre} ({i.cantidad_actual || 0} {i.unidad_medida})
-                              </option>
-                            ))}
-                          </select>
+                          <div className="relative">
+                            <div 
+                              className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2.5 py-1.5 text-xs cursor-pointer flex justify-between items-center"
+                              onClick={() => setShowEditAddInsumoDropdown(!showEditAddInsumoDropdown)}
+                            >
+                              <span className="truncate">{editAddInsumoSearch ? insumosList.find(i => i.id === editAddInsumoSearch)?.nombre : 'Seleccionar insumo...'}</span>
+                              <ChevronDown size={12} className="text-neutral-500 flex-shrink-0 ml-1" />
+                            </div>
+                            
+                            {showEditAddInsumoDropdown && (
+                              <div className="absolute z-[80] w-full mt-1 bg-neutral-900 border border-neutral-700 rounded-lg shadow-xl overflow-hidden">
+                                <div className="p-1 border-b border-neutral-700">
+                                  <input 
+                                    type="text" 
+                                    placeholder="Buscar..." 
+                                    value={editAddInsumoFilterText}
+                                    onChange={e => setEditAddInsumoFilterText(e.target.value)}
+                                    className="w-full bg-black/50 border border-neutral-700 rounded text-xs px-2 py-1 text-white focus:outline-none"
+                                    autoFocus
+                                  />
+                                </div>
+                                <div className="max-h-40 overflow-y-auto">
+                                  {(() => {
+                                    const filtered = insumosList.filter(i => (i.nombre || '').toLowerCase().includes(editAddInsumoFilterText.toLowerCase()));
+                                    if (filtered.length === 0) return <div className="p-2 text-xs text-neutral-500 text-center">Sin resultados</div>;
+                                    return filtered.map(i => (
+                                      <div 
+                                        key={i.id}
+                                        className="px-2 py-1.5 text-xs text-white hover:bg-neutral-800 cursor-pointer"
+                                        onClick={() => {
+                                          setEditAddInsumoSearch(i.id);
+                                          setShowEditAddInsumoDropdown(false);
+                                          setEditAddInsumoFilterText('');
+                                        }}
+                                      >
+                                        {i.nombre} <span className="text-neutral-500 ml-1">({i.cantidad_actual || 0} {i.unidad_medida})</span>
+                                      </div>
+                                    ));
+                                  })()}
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
 
