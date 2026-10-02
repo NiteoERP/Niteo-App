@@ -33,6 +33,7 @@ export default function MobileCompraForm() {
   const [proveedor, setProveedor] = useState('');
   const [monedaGlobal, setMonedaGlobal] = useState<'USD' | 'VES'>('USD');
   const [metodoPago, setMetodoPago] = useState('Efectivo USD');
+  const [montoAbonado, setMontoAbonado] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [descuento, setDescuento] = useState('');
   const [iva, setIva] = useState('');

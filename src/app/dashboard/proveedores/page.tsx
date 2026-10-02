@@ -106,6 +106,7 @@ export default function ProveedoresPage() {
   const [tasaBcv, setTasaBcv] = useState<number>(804.81);
   const [facTasa, setFacTasa] = useState<number>(804.81);
   const [facMetodoPago, setFacMetodoPago] = useState('Por pagar');
+  const [facMontoAbonado, setFacMontoAbonado] = useState('');
         const [facDescuento, setFacDescuento] = useState('');
     const [facIva, setFacIva] = useState('');
   const [enviandoFactura, setEnviandoFactura] = useState(false);
@@ -512,7 +513,7 @@ export default function ProveedoresPage() {
     if (res.success) {
       setShowFacturaModal(false);
       setFacProveedorId(''); setFacConcepto(''); setFacTotal(''); setFacNumero('');
-      setFacFecha(new Date().toISOString().split('T')[0]); setFacFechaVencimiento(''); setFacMetodoPago('Por pagar');
+      setFacFecha(new Date().toISOString().split('T')[0]); setFacFechaVencimiento(''); setFacMetodoPago('Por pagar'); setFacMontoAbonado('');
       setFacItems([]);
                 setFacDescuento(''); setFacIva('');
       fetchInit();

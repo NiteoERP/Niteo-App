@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 import { getTasaBcvAction } from './config-actions';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers'; 
@@ -173,6 +173,7 @@ export async function registrarFacturaInsumos(factura: {
   numero_factura?: string;
   fecha_emision?: string;
   fecha_vencimiento?: string;
+  monto_abonado?: number;
   sede_id?: string;
   es_compra_rapida?: boolean;
   items: Array<{     

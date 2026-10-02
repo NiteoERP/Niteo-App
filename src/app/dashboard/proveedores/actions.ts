@@ -1,4 +1,4 @@
-'use server';
+﻿'use server';
 
 import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
@@ -236,7 +236,8 @@ export async function crearFacturaProveedor(
   metodoPago?: string,
   moneda?: string,
   tasa?: number,
-  fechaVencimiento?: string
+  fechaVencimiento?: string,
+  montoAbonado?: number
 ) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -258,7 +259,15 @@ export async function crearFacturaProveedor(
   const montoBs = monedaFinal === 'USD' ? (total * tasaActual) : total;
 
   const isDeuda = !metodoPago || metodoPago.toLowerCase().includes('por pagar');
-  const saldoPendiente = isDeuda ? Number(totalUSD.toFixed(2)) : 0;
+  const totalInvoice = Number(totalUSD.toFixed(2));
+  
+  let pagoFinal = isDeuda ? 0 : totalInvoice;
+  if (typeof montoAbonado === 'number') {
+    pagoFinal = montoAbonado;
+  }
+  pagoFinal = Math.min(Math.max(pagoFinal, 0), totalInvoice);
+  
+  const saldoPendiente = Number((totalInvoice - pagoFinal).toFixed(2));
 
   let conceptoFinal = concepto || 'Compra registrada manualmente';
   if (monedaFinal === 'VES') {
@@ -288,11 +297,11 @@ export async function crearFacturaProveedor(
 
   if (facError) return { success: false, error: facError.message };
 
-  if (!isDeuda && factura?.id) {
+  if (pagoFinal > 0 && factura?.id) {
     await supabase.from('compras_pagos').insert({
       factura_id: factura.id,
-      monto: Number(totalUSD.toFixed(2)),
-      metodo_pago: metodoPago,
+      monto: Number(pagoFinal.toFixed(2)),
+      metodo_pago: metodoPago === 'Por pagar' ? 'Efectivo' : metodoPago,
       referencia: 'Pago al contado / registro inicial',
       fecha_pago: safeFechaEmision,
       usuario_id: user.id
@@ -331,7 +340,8 @@ export async function crearFacturaProveedorConInsumos(
   fechaVencimiento: string,
   items: any[],
   descuento: number = 0,
-  iva: number = 0
+  iva: number = 0,
+  montoAbonado?: number
 ) {
   const supabase = await createClient();
   const { data: prov } = await supabase.from('proveedores').select('nombre_comercial').eq('id', proveedorId).single();
@@ -355,7 +365,8 @@ export async function crearFacturaProveedorConInsumos(
     numero_factura: numeroFactura,
     fecha_emision: fechaEmision,
     fecha_vencimiento: fechaVencimiento || undefined,
-    items
+    items,
+    monto_abonado: montoAbonado
   });
 
   return res;
