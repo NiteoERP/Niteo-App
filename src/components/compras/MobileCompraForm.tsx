@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useTransition } from 'react';
 import { getInsumos, getTasaDelDia } from '@/actions/compras-actions';
-import { registrarFacturaInsumos, getComprasMetodosPago, addCompraMetodoPago } from '@/actions/compras-actions';
+import { registrarFacturaInsumos, getComprasMetodosPago, addCompraMetodoPago, getTiendasFrecuentes } from '@/actions/compras-actions';
 import { Loader2, CheckCircle2, ShoppingCart, Search, Plus, Trash2, Building2 } from 'lucide-react';
 import CreatableSelect from 'react-select/creatable';
 
@@ -36,11 +36,16 @@ export default function MobileCompraForm() {
   const [metodoPago, setMetodoPago] = useState('Efectivo USD');
   const [descripcion, setDescripcion] = useState('');
   const [dbMetodos, setDbMetodos] = useState<any[]>([]);
+  const [tiendasFrecuentes, setTiendasFrecuentes] = useState<string[]>([]);
   
   useEffect(() => {
     const fetchM = async () => {
-      const res = await getComprasMetodosPago();
-      if (res.success && res.data) setDbMetodos(res.data);
+      const [resMetodos, resTiendas] = await Promise.all([
+        getComprasMetodosPago(),
+        getTiendasFrecuentes()
+      ]);
+      if (resMetodos.success && resMetodos.data) setDbMetodos(resMetodos.data);
+      if (resTiendas.success && resTiendas.data) setTiendasFrecuentes(resTiendas.data);
     };
     fetchM();
   }, []);
@@ -181,9 +186,10 @@ export default function MobileCompraForm() {
       const res = await registrarFacturaInsumos({
         proveedor: proveedor || 'Proveedor General',
         moneda: monedaGlobal,
-          tasa: tasaDelDia,
-          metodo_pago: metodoPago,
-          descripcion: descripcion,
+        tasa: tasaDelDia,
+        metodo_pago: metodoPago,
+        descripcion: descripcion,
+        es_compra_rapida: true,
         items: normalizedItems
       });
 
@@ -246,17 +252,37 @@ export default function MobileCompraForm() {
                     {/* Factura Header */}
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 bg-neutral-950/50 p-4 rounded-xl border border-neutral-800/50">
             <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-neutral-400 mb-1">Proveedor / Tienda</label>
-              <div className="relative">
-                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" size={18} />
-                <input 
-                  type="text" 
-                  value={proveedor}
-                  onChange={(e) => setProveedor(e.target.value)}
-                  placeholder="Ej. Distribuidora XYZ"
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-10 pr-4 py-2.5 text-white outline-none focus:border-indigo-500"
-                />
-              </div>
+              <label className="flex items-center gap-1.5 text-sm font-medium text-neutral-400 mb-1">
+                <Building2 size={16} className="text-neutral-500" /> Proveedor / Tienda
+              </label>
+              <CreatableSelect
+                options={tiendasFrecuentes.map(t => ({value: t, label: t}))}
+                value={proveedor ? {value: proveedor, label: proveedor} : null}
+                onChange={(s) => setProveedor(s ? s.value : '')}
+                formatCreateLabel={(val) => `Usar "${val}"`}
+                placeholder="Escribe o selecciona..."
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                    backgroundColor: '#171717',
+                    borderColor: '#262626',
+                    borderRadius: '0.75rem',
+                    padding: '2px',
+                    color: 'white',
+                    boxShadow: 'none',
+                    '&:hover': { borderColor: '#4F46E5' }
+                  }),
+                  singleValue: (base) => ({ ...base, color: 'white' }),
+                  input: (base) => ({ ...base, color: 'white' }),
+                  menu: (base) => ({ ...base, backgroundColor: '#171717', border: '1px solid #262626', zIndex: 50 }),
+                  option: (base, state) => ({
+                    ...base,
+                    backgroundColor: state.isFocused ? '#262626' : '#171717',
+                    color: 'white',
+                    '&:active': { backgroundColor: '#4F46E5' }
+                  })
+                }}
+              />
             </div>
             
             <div className="sm:col-span-2">

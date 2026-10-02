@@ -410,28 +410,51 @@ async function handleComprasReports(supabase: any, reportId: string, empresaId: 
   if (reportId === 'compras_proveedores') {
     const query = supabase
       .from('compras_puntuales')
-      .select('id, proveedor, fecha_registro, monto_divisas, monto_bs, tasa_cambio, detalles, metodo_pago')
+      .select('proveedor, monto_divisas, monto_bs')
       .eq('id_empresa', empresaId)
       .gte('fecha_registro', start)
-      .lte('fecha_registro', end)
-      .order('fecha_registro', { ascending: false });
+      .lte('fecha_registro', end);
 
     if (sedeId) query.eq('id_sede', sedeId);
     
     const { data, error } = await query;
     if (error) return { success: false, error: error.message };
 
-    const mappedData = data.map((d: any) => ({
-      fecha_registro: d.fecha_registro,
-      proveedor: d.proveedor || 'Sin Nombre',
-      monto_divisas: d.monto_divisas,
-      monto_bs: d.monto_bs,
-      tasa_cambio: d.tasa_cambio,
-      metodo_pago: d.metodo_pago,
-      detalles: typeof d.detalles === 'string' && d.detalles.includes('{') 
-        ? JSON.parse(d.detalles).texto 
-        : d.detalles
-    }));
+    const summary: Record<string, { proveedor: string; total_divisas: number; total_bs: number; cantidad: number }> = {};
+    for (const d of data) {
+      const p = (d.proveedor || 'Sin Nombre').trim();
+      if (!summary[p]) summary[p] = { proveedor: p, total_divisas: 0, total_bs: 0, cantidad: 0 };
+      summary[p].total_divisas += Number(d.monto_divisas || 0);
+      summary[p].total_bs += Number(d.monto_bs || 0);
+      summary[p].cantidad += 1;
+    }
+
+    const arr = Object.values(summary).sort((a, b) => b.total_divisas - a.total_divisas);
+
+    let sumDivisas = 0;
+    let sumBs = 0;
+    let sumCant = 0;
+
+    const mappedData = arr.map(d => {
+      sumDivisas += d.total_divisas;
+      sumBs += d.total_bs;
+      sumCant += d.cantidad;
+      return {
+        'PROVEEDOR / TIENDA': d.proveedor,
+        'VECES COMPRADO': d.cantidad,
+        'TOTAL DOLARES': `$ ${d.total_divisas.toFixed(2)}`,
+        'TOTAL Bs.': `Bs.S ${d.total_bs.toFixed(2)}`
+      };
+    });
+
+    if (mappedData.length > 0) {
+      mappedData.push({
+        'PROVEEDOR / TIENDA': 'TOTAL GENERAL',
+        'VECES COMPRADO': sumCant,
+        'TOTAL DOLARES': `$ ${sumDivisas.toFixed(2)}`,
+        'TOTAL Bs.': `Bs.S ${sumBs.toFixed(2)}`
+      });
+    }
 
     return { success: true, data: mappedData };
   }

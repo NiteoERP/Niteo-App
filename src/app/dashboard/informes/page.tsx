@@ -145,6 +145,7 @@ const REPORT_CATALOG: ReportGroup[] = [
         badge: 'Financiero',
       },
       { id: 'compras_insumos',    name: 'Informe Compras Insumos', desc: 'Detalle de compras para producción (Fecha, Proveedor, Montos, Operador)', icon: Tag, extraFilters: ['cajero'] },
+      { id: 'compras_proveedores',name: 'Ranking por Proveedor/Tienda', desc: 'Estudio de mercado: dónde compras más y cuánto gastas por tienda', icon: Star },
       { id: 'compras_operador',   name: 'Compras por Operador',    desc: 'Quién compró más, veces compradas y monto total', icon: Users, extraFilters: ['cajero'] },
       { id: 'gastos_operativos',  name: 'Gastos Operativos',       desc: 'Desglose de gastos operativos por fecha y motivo', icon: Receipt, extraFilters: ['cajero'] },
     ],

@@ -323,11 +323,11 @@ export default function ProveedoresPage() {
 
   useEffect(() => {
     if (showFacturaModal && insumosList.length === 0) {
-      getInsumos().then(res => {
+      getInsumos(facSede).then(res => {
         if (Array.isArray(res)) setInsumosList(res);
       });
     }
-  }, [showFacturaModal]);
+  }, [showFacturaModal, facSede]);
 
   // ── Crear Proveedor ───────────────────────────────────────
   const handleCrearProveedor = async () => {
@@ -348,13 +348,17 @@ export default function ProveedoresPage() {
   const openNuevaFacturaModal = (targetProvId?: string) => {
     if (targetProvId) setFacProveedorId(targetProvId);
     else setFacProveedorId('');
-    const initialSede = (sedeId && sedeId !== 'ALL') ? sedeId : (sedes[0]?.id || '');
-    setFacSede(initialSede);
-    if (initialSede && initialSede !== 'ALL') {
-      getInsumos(initialSede).then(res => {
-        if (Array.isArray(res)) setInsumosList(res);
-      });
+    
+    let initialSede = (sedeId && sedeId !== 'ALL') ? sedeId : (sedes[0]?.id || '');
+    const lastSede = typeof window !== 'undefined' ? localStorage.getItem('last_fac_sede') : null;
+    if (lastSede && sedes.find(s => s.id === lastSede)) {
+      initialSede = lastSede;
     }
+    
+    setFacSede(initialSede);
+    getInsumos(initialSede).then(res => {
+      if (Array.isArray(res)) setInsumosList(res);
+    });
     setFacturaTab('insumos');
     setErrorFactura('');
     setShowFacturaModal(true);
@@ -999,11 +1003,10 @@ export default function ProveedoresPage() {
                     onChange={e => {
                       const sId = e.target.value;
                       setFacSede(sId);
-                      if (sId && sId !== 'ALL') {
-                        getInsumos(sId).then(res => {
-                          if (Array.isArray(res)) setInsumosList(res);
-                        });
-                      }
+                      if (typeof window !== 'undefined') localStorage.setItem('last_fac_sede', sId);
+                      getInsumos(sId).then(res => {
+                        if (Array.isArray(res)) setInsumosList(res);
+                      });
                     }}
                     className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 appearance-none font-medium"
                   >

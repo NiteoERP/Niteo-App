@@ -174,6 +174,7 @@ export async function registrarFacturaInsumos(factura: {
   fecha_emision?: string;
   fecha_vencimiento?: string;
   sede_id?: string;
+  es_compra_rapida?: boolean;
   items: Array<{     
     insumo_id: string | null;     
     is_new: boolean;     
@@ -246,7 +247,7 @@ export async function registrarFacturaInsumos(factura: {
   if (headErr) return { error: 'Error guardando factura: ' + headErr.message };    
 
     // == LÓGICA DE PROVEEDORES Y DEUDAS ==
-    if (factura.proveedor_id || factura.proveedor) {
+    if (!factura.es_compra_rapida && (factura.proveedor_id || factura.proveedor)) {
       let provId = factura.proveedor_id || null;
       if (!provId && factura.proveedor) {
         const { data: existProv } = await supabase.from('proveedores')
@@ -683,4 +684,24 @@ export async function deleteCompraMetodoPago(id: string) {
 
   if (error) return { success: false, error: error.message };
   return { success: true };
+}
+
+export async function getTiendasFrecuentes() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, data: [] };
+  const { data: profile } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
+  if (!profile) return { success: false, data: [] };
+
+  const { data, error } = await supabase
+    .from('compras_puntuales')
+    .select('proveedor')
+    .eq('id_empresa', profile.empresa_id)
+    .order('fecha_registro', { ascending: false })
+    .limit(300);
+
+  if (error) return { success: false, data: [] };
+
+  const unicos = Array.from(new Set((data || []).map(d => (d.proveedor || '').trim()).filter(Boolean))).sort();
+  return { success: true, data: unicos };
 }
