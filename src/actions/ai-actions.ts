@@ -1,4 +1,4 @@
-﻿'use server';
+'use server';
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
@@ -9,10 +9,14 @@ export async function scanInvoice(base64Image: string, mimeType: string, invento
 
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ 
-      model: 'gemini-3.8-flash', 
-      generationConfig: { responseMimeType: 'application/json' } 
-    });
+    
+    // Lista de modelos a intentar en orden de preferencia
+    const modelsToTry = [
+      'gemini-3.5-flash',
+      'gemini-flash-lite-latest',
+      'gemini-3.7-flash',
+      'gemini-flash-latest'
+    ];
 
     const inventoryContext = inventory.map(i => `{"id": "${i.id}", "nombre": "${i.nombre}", "unidad": "${i.unidad_medida}"}`).join('\n');
 
@@ -59,15 +63,32 @@ Estructura JSON requerida (devuelve SOLO el objeto JSON):
 }
 `;
 
-    const result = await model.generateContent([
-      prompt,
-      { inlineData: { data: base64Image, mimeType } }
-    ]);
+    let lastError: any;
+    for (const modelName of modelsToTry) {
+      try {
+        console.log(`Intentando escanear con modelo: ${modelName}`);
+        const model = genAI.getGenerativeModel({ 
+          model: modelName, 
+          generationConfig: { responseMimeType: 'application/json' } 
+        });
 
-    const responseText = result.response.text();
-    const parsed = JSON.parse(responseText);
+        const result = await model.generateContent([
+          prompt,
+          { inlineData: { data: base64Image, mimeType } }
+        ]);
+
+        const responseText = result.response.text();
+        const parsed = JSON.parse(responseText);
+        
+        return { success: true, data: parsed, usedModel: modelName };
+      } catch (error: any) {
+        console.warn(`[Fallback IA] Falló el modelo ${modelName}:`, error.message);
+        lastError = error;
+      }
+    }
     
-    return { success: true, data: parsed };
+    // Si todos fallaron, lanzamos el último error
+    throw lastError;
   } catch (error: any) {
     console.error('Error procesando factura con IA:', error);
     return { error: 'Error procesando la imagen con IA: ' + error.message };
