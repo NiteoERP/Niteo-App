@@ -329,7 +329,9 @@ export async function crearFacturaProveedorConInsumos(
   moneda: 'USD' | 'VES',
   tasa: number,
   fechaVencimiento: string,
-  items: any[]
+  items: any[],
+  descuento: number = 0,
+  iva: number = 0
 ) {
   const supabase = await createClient();
   const { data: prov } = await supabase.from('proveedores').select('nombre_comercial').eq('id', proveedorId).single();
@@ -839,3 +841,4 @@ export async function eliminarProveedor(proveedorId: string) {
     return { success: true, message: 'Proveedor eliminado permanentemente' };
   }
 }
+

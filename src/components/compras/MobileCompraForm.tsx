@@ -33,6 +33,8 @@ export default function MobileCompraForm() {
   // Header
   const [proveedor, setProveedor] = useState('');
   const [monedaGlobal, setMonedaGlobal] = useState<'USD'|'VES'>('USD');
+        const [descuento, setDescuento] = useState('');
+    const [iva, setIva] = useState('');
   const [metodoPago, setMetodoPago] = useState('Efectivo USD');
   const [descripcion, setDescripcion] = useState('');
     const [dbMetodos, setDbMetodos] = useState<any[]>([]);
@@ -60,8 +62,10 @@ export default function MobileCompraForm() {
           alert(res.error);
         } else if (res.data) {
           const d = res.data;
-          if (d.moneda === 'VES' || d.moneda === 'USD') setMonedaGlobal(d.moneda);
+                    if (d.moneda === 'VES' || d.moneda === 'USD') setMonedaGlobal(d.moneda);
           if (d.proveedor_nombre && d.proveedor_nombre !== 'Desconocido') setProveedor(d.proveedor_nombre);
+          if (d.descuento_total) setDescuento(d.descuento_total.toString());
+          if (d.monto_iva) setIva(d.monto_iva.toString());
 
           const newCart = (d.items || []).map((item: any, i: number) => {
             const isNew = !item.insumo_id_recomendado;
@@ -259,14 +263,16 @@ export default function MobileCompraForm() {
     });
   };
 
-  const getTotalGlobal = () => {
+    const getTotalGlobal = () => {
     let usd = 0;
     cart.forEach(item => {
       if (item.monedaItem === 'USD') usd += item.costoTotal;
       else usd += item.costoTotal / tasaDelDia;
     });
-    if (monedaGlobal === 'USD') return usd.toFixed(2);
-    return (usd * tasaDelDia).toFixed(2);
+    
+    let baseTotal = monedaGlobal === 'USD' ? usd : (usd * tasaDelDia);
+    let finalTotal = baseTotal - (Number(descuento) || 0) + (Number(iva) || 0);
+    return finalTotal.toFixed(2);
   };
 
   return (
@@ -629,11 +635,110 @@ export default function MobileCompraForm() {
                 ))}
               </div>
 
-              <div className="bg-indigo-600/10 border border-indigo-500/30 rounded-xl p-4 flex justify-between items-center mb-6">
-                <span className="text-indigo-200 font-medium">Total Factura:</span>
-                <span className="text-2xl font-bold text-white">
-                  {monedaGlobal === 'USD' ? '$' : 'Bs'} {getTotalGlobal()}
-                </span>
+                            <div className="bg-indigo-600/10 border border-indigo-500/30 rounded-xl p-4 flex flex-col gap-3 mb-6">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-indigo-200/70">Subtotal Items:</span>
+                  <span className="text-white">
+                    {monedaGlobal === 'USD' ? '
+
+              <button
+                onClick={handleRegistrarFactura}
+                disabled={isPending}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 text-lg"
+              >
+                {isPending ? <><Loader2 className="animate-spin" /> Procesando...</> : 'Procesar Factura'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+
+ : 'Bs'} {cart.reduce((acc, i) => acc + (i.monedaItem === monedaGlobal ? i.costoTotal : (monedaGlobal === 'USD' ? i.costoTotal / tasaDelDia : i.costoTotal * tasaDelDia)), 0).toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-indigo-200/70">Descuento:</span>
+                  <div className="flex items-center gap-1 w-24">
+                    <span className="text-neutral-500 text-xs">{monedaGlobal === 'VES' ? 'Bs.' : '
+
+              <button
+                onClick={handleRegistrarFactura}
+                disabled={isPending}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 text-lg"
+              >
+                {isPending ? <><Loader2 className="animate-spin" /> Procesando...</> : 'Procesar Factura'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+
+}</span>
+                    <input type="number" className="w-full bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-right text-rose-400 focus:border-indigo-500" value={descuento} onChange={e => setDescuento(e.target.value)} placeholder="0.00" />
+                  </div>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-indigo-200/70">IVA / Impuestos:</span>
+                  <div className="flex items-center gap-1 w-24">
+                    <span className="text-neutral-500 text-xs">{monedaGlobal === 'VES' ? 'Bs.' : '
+
+              <button
+                onClick={handleRegistrarFactura}
+                disabled={isPending}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 text-lg"
+              >
+                {isPending ? <><Loader2 className="animate-spin" /> Procesando...</> : 'Procesar Factura'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+
+}</span>
+                    <input type="number" className="w-full bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-right text-amber-400 focus:border-indigo-500" value={iva} onChange={e => setIva(e.target.value)} placeholder="0.00" />
+                  </div>
+                </div>
+                <div className="h-px bg-indigo-500/20 w-full my-1"></div>
+                <div className="flex justify-between items-center">
+                  <span className="text-indigo-200 font-medium">Total a Pagar:</span>
+                  <span className="text-2xl font-bold text-white">
+                    {monedaGlobal === 'USD' ? '
+
+              <button
+                onClick={handleRegistrarFactura}
+                disabled={isPending}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 text-lg"
+              >
+                {isPending ? <><Loader2 className="animate-spin" /> Procesando...</> : 'Procesar Factura'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+
+ : 'Bs'} {getTotalGlobal()}
+                  </span>
+                </div>
               </div>
 
               <button
@@ -650,6 +755,7 @@ export default function MobileCompraForm() {
     </div>
   );
 }
+
 
 
 

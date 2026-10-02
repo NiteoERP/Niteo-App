@@ -210,7 +210,7 @@ export async function registrarFacturaInsumos(factura: {
     tasaEfectiva = bcv.tasa || 804.81;
   }
 
-  let montoTotalDivisas = 0;   
+    let montoTotalDivisas = 0;   
   let montoTotalBs = 0;    
   for (const item of factura.items) {     
     let costoUSD = item.costoTotal;     
@@ -219,8 +219,21 @@ export async function registrarFacturaInsumos(factura: {
     }     
     montoTotalDivisas += costoUSD;   
   }   
+
+  // Apply discount and IVA (assumed to be in the same currency as factura.moneda)
+  if ((factura as any).descuento > 0) {
+    let descUSD = (factura as any).descuento;
+    if (factura.moneda === 'VES') descUSD = descUSD / tasaEfectiva;
+    montoTotalDivisas -= descUSD;
+  }
+  if ((factura as any).iva > 0) {
+    let ivaUSD = (factura as any).iva;
+    if (factura.moneda === 'VES') ivaUSD = ivaUSD / tasaEfectiva;
+    montoTotalDivisas += ivaUSD;
+  }
+
   montoTotalBs = factura.moneda === 'VES'
-    ? factura.items.reduce((acc, it) => acc + (Number(it.costoTotal) || 0), 0)
+    ? (factura.items.reduce((acc, it) => acc + (Number(it.costoTotal) || 0), 0) - ((factura as any).descuento || 0) + ((factura as any).iva || 0))
     : (montoTotalDivisas * tasaEfectiva);
 
   const safeFechaEmision = toSafeIsoDate(factura.fecha_emision);
@@ -705,3 +718,4 @@ export async function getTiendasFrecuentes() {
   const unicos = Array.from(new Set((data || []).map(d => (d.proveedor || '').trim()).filter(Boolean))).sort();
   return { success: true, data: unicos };
 }
+

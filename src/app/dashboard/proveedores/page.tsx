@@ -104,6 +104,8 @@ export default function ProveedoresPage() {
   const [tasaBcv, setTasaBcv] = useState<number>(804.81);
   const [facTasa, setFacTasa] = useState<number>(804.81);
   const [facMetodoPago, setFacMetodoPago] = useState('Por pagar');
+        const [facDescuento, setFacDescuento] = useState('');
+    const [facIva, setFacIva] = useState('');
   const [enviandoFactura, setEnviandoFactura] = useState(false);
   const [errorFactura, setErrorFactura] = useState('');
   const [facturaTab, setFacturaTab] = useState<'gastos'|'insumos'>('insumos');
@@ -422,10 +424,10 @@ export default function ProveedoresPage() {
         totalToSubmit, facFecha, facMetodoPago, facMoneda, tasaFinal, facFechaVencimiento
       );
     } else {
-      res = await crearFacturaProveedorConInsumos(
-        facProveedorId, targetSede, facNumero, facConcepto,
-        facFecha, facMetodoPago, facMoneda, tasaFinal, facFechaVencimiento, facItems
-      );
+              res = await crearFacturaProveedorConInsumos(
+          facProveedorId, targetSede, facNumero, facConcepto,
+          facFecha, facMetodoPago, facMoneda, tasaFinal, facFechaVencimiento, facItems, Number(facDescuento || 0), Number(facIva || 0)
+        );
     }
 
     if (res.success) {
@@ -433,6 +435,7 @@ export default function ProveedoresPage() {
       setFacProveedorId(''); setFacConcepto(''); setFacTotal(''); setFacNumero('');
       setFacFecha(new Date().toISOString().split('T')[0]); setFacFechaVencimiento(''); setFacMetodoPago('Por pagar');
       setFacItems([]);
+                setFacDescuento(''); setFacIva('');
       fetchInit();
       if (expandedId) {
         const r2 = await getFacturasProveedor(expandedId, sedeId);
@@ -1341,21 +1344,18 @@ export default function ProveedoresPage() {
                           </button>
                         </div>
                       ))}
-                      <div className="p-3 bg-neutral-900/50 flex flex-col sm:flex-row justify-between sm:items-center gap-2 text-sm font-bold">
-                        <span className="text-neutral-300">Total Factura:</span>
-                        <div className="text-right">
-                          <span className="text-emerald-400 text-base">
-                            {facMoneda === 'VES' ? 'Bs. ' : '$ '}
-                            {facItems.reduce((acc, i) => acc + i.costoTotal, 0).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </span>
-                          {facMoneda === 'VES' && facTasa > 0 && (
-                            <span className="block text-xs text-neutral-400 font-normal">
-                              ≈ $ {(facItems.reduce((acc, i) => acc + i.costoTotal, 0) / facTasa).toFixed(2)} USD (Tasa: {facTasa} Bs/$)
+                                              <div className="p-3 bg-neutral-900/50 flex flex-col gap-2 text-sm">
+                          <div className="flex items-center justify-between">
+                            <span className="text-neutral-400">Subtotal Items:</span>
+                            <span className="text-neutral-300 font-medium">
+                              {facMoneda === 'VES' ? 'Bs. ' : '$ '}
+                              {facItems.reduce((acc, i) => acc + i.costoTotal, 0).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-neutral-400">Descuento:</span>
+                            <div className="flex items-center gap-1 w-24">
+                              <span className="text-neutral-500 text-xs">{facMoneda === 'VES' ? 'Bs.' : '
                   ) : (
                     <p className="text-xs text-neutral-500 italic text-center py-2">
                       No has agregado insumos todavía. Selecciona uno arriba y haz clic en &quot;Agregar&quot;.
@@ -2081,5 +2081,1504 @@ export default function ProveedoresPage() {
     </div>
   );
 }
+
+
+
+}</span>
+                              <input 
+                                type="number" 
+                                className="w-full bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-right text-rose-400 focus:border-indigo-500"
+                                value={facDescuento}
+                                onChange={e => setFacDescuento(e.target.value)}
+                                placeholder="0.00"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-neutral-400">IVA / Otros Impuestos:</span>
+                            <div className="flex items-center gap-1 w-24">
+                              <span className="text-neutral-500 text-xs">{facMoneda === 'VES' ? 'Bs.' : '
+                  ) : (
+                    <p className="text-xs text-neutral-500 italic text-center py-2">
+                      No has agregado insumos todavía. Selecciona uno arriba y haz clic en &quot;Agregar&quot;.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm text-neutral-400 mb-1.5 mt-2">Estado / Método de Pago</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    list="lista-metodos-factura"
+                    value={facMetodoPago}
+                    onChange={e => setFacMetodoPago(e.target.value)}
+                    placeholder="Ej. Por pagar, Transferencia, Zelle..."
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 text-sm"
+                  />
+                  <datalist id="lista-metodos-factura">
+                    <option value="Por pagar" />
+                    {metodosDisponibles.map(m => (
+                      <option key={m} value={m} />
+                    ))}
+                  </datalist>
+                </div>
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {['Por pagar', ...metodosDisponibles.slice(0, 5)].map(m => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setFacMetodoPago(m)}
+                      className={`text-[10px] px-2 py-0.5 rounded-lg border transition-colors ${
+                        facMetodoPago === m
+                          ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-400 font-semibold'
+                          : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {errorFactura && <p className="text-rose-400 text-sm flex items-center gap-2"><AlertCircle size={14} /> {errorFactura}</p>}
+            </div>
+              <div className="p-6 border-t border-neutral-800 flex gap-3 justify-end">
+                <button onClick={() => setShowFacturaModal(false)} className="px-5 py-2.5 rounded-xl text-neutral-300 hover:bg-neutral-800 text-sm">Cancelar</button>
+                <button onClick={handleCrearFactura} disabled={enviandoFactura}
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50">
+                  {enviandoFactura ? 'Registrando...' : <><FileText size={16} /> Registrar Factura</>}
+                </button>
+              </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════
+          MODAL: Registrar Pago / Abono
+      ════════════════════════════════════ */}
+      {showPagoModal && facturaPagar && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-between p-6 border-b border-neutral-800">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2"><Wallet size={18} className="text-emerald-400" /> Registrar Abono</h3>
+              <button onClick={() => setShowPagoModal(false)} className="text-neutral-400 hover:text-white"><X size={22} /></button>
+            </div>
+            <div className="p-6 space-y-4">
+              {/* Factura info */}
+              <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-4">
+                <p className="text-sm text-neutral-400 mb-1">{facturaPagar.concepto || 'Factura'}</p>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-neutral-500">
+                    Total: {formatCurrency(facturaPagar.total)}
+                    {tasaBcv > 0 && ` (~ Bs. ${(facturaPagar.total * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`}
+                  </span>
+                  <div className="text-right">
+                    <span className="text-rose-400 font-bold block">
+                      Pendiente: {formatCurrency(facturaPagar.saldo_pendiente)}
+                    </span>
+                    {tasaBcv > 0 && facturaPagar.saldo_pendiente > 0 && (
+                      <span className="text-[11px] text-rose-400/80">
+                        ≈ Bs. {(facturaPagar.saldo_pendiente * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm text-neutral-400 mb-1.5">Monto a Abonar (USD) *</label>
+                <input type="number" min="0.01" step="any" value={montoAbonar} onChange={e => setMontoAbonar(e.target.value)}
+                  className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-lg font-semibold" />
+                {tasaBcv > 0 && Number(montoAbonar) > 0 && (
+                  <p className="text-xs text-emerald-400/90 mt-1">
+                    ≈ Bs. {(Number(montoAbonar) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
+                  </p>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Método de Pago</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      list="lista-metodos-abono"
+                      value={metodoPago}
+                      onChange={e => setMetodoPago(e.target.value)}
+                      placeholder="Ej. Transferencia, Zelle..."
+                      className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
+                    />
+                    <datalist id="lista-metodos-abono">
+                      {metodosDisponibles.map(m => (
+                        <option key={m} value={m} />
+                      ))}
+                    </datalist>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {metodosDisponibles.slice(0, 5).map(m => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setMetodoPago(m)}
+                        className={`text-[10px] px-2 py-0.5 rounded-lg border transition-colors ${
+                          metodoPago === m
+                            ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 font-semibold'
+                            : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:text-white'
+                        }`}
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Fecha del Pago</label>
+                  <input type="date" value={fechaPago} onChange={e => setFechaPago(e.target.value)}
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 [color-scheme:dark] text-sm" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Banco Origen</label>
+                  <input type="text" value={bancoOrigen} onChange={e => setBancoOrigen(e.target.value)}
+                    placeholder="Ej. Banesco"
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">N° Referencia</label>
+                  <input type="text" value={referencia} onChange={e => setReferencia(e.target.value)}
+                    placeholder="Opcional"
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm" />
+                </div>
+              </div>
+              {errorPago && <p className="text-rose-400 text-sm flex items-center gap-2"><AlertCircle size={14} /> {errorPago}</p>}
+            </div>
+            <div className="p-6 border-t border-neutral-800 flex gap-3 justify-end">
+              <button onClick={() => setShowPagoModal(false)} className="px-5 py-2.5 rounded-xl text-neutral-300 hover:bg-neutral-800 text-sm">Cancelar</button>
+              <button onClick={handlePagar} disabled={isPagarLoading}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50">
+                {isPagarLoading ? 'Registrando...' : <><Wallet size={16} /> Registrar Pago</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════
+          MODAL: Pago General / Cascada FIFO
+      ════════════════════════════════════ */}
+      {showPagoGeneralModal && proveedorPagarGeneral && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-lg shadow-2xl">
+            <div className="flex items-center justify-between p-6 border-b border-neutral-800">
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Wallet size={18} className="text-emerald-400" /> Abono General a Proveedor
+                </h3>
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  {proveedorPagarGeneral.nombre_proveedor || proveedorPagarGeneral.nombre_comercial}
+                </p>
+              </div>
+              <button onClick={() => setShowPagoGeneralModal(false)} className="text-neutral-400 hover:text-white">
+                <X size={22} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              {/* Resumen Deuda y Regla FIFO */}
+              <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-semibold uppercase text-neutral-400">Deuda Total Acumulada</span>
+                  <div className="text-right">
+                    <span className="text-xl font-black text-rose-400">
+                      {formatCurrency(proveedorPagarGeneral.monto_adeudado)}
+                    </span>
+                    {tasaBcv > 0 && proveedorPagarGeneral.monto_adeudado > 0 && (
+                      <span className="block text-xs text-neutral-400 font-medium">
+                        ≈ Bs. {(proveedorPagarGeneral.monto_adeudado * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                </div>
+
+              <div>
+                <label className="block text-sm text-neutral-400 mb-1.5">Monto a Abonar (USD) *</label>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="any"
+                  value={montoAbonoGeneral}
+                  onChange={e => setMontoAbonoGeneral(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-lg font-bold"
+                />
+                {tasaBcv > 0 && Number(montoAbonoGeneral) > 0 && (
+                  <p className="text-xs text-emerald-400/90 mt-1">
+                    ≈ Bs. {(Number(montoAbonoGeneral) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
+                  </p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Método de Pago</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      list="lista-metodos-abono-general"
+                      value={metodoPagoGeneral}
+                      onChange={e => setMetodoPagoGeneral(e.target.value)}
+                      placeholder="Ej. Transferencia, Zelle..."
+                      className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
+                    />
+                    <datalist id="lista-metodos-abono-general">
+                      {metodosDisponibles.map(m => (
+                        <option key={m} value={m} />
+                      ))}
+                    </datalist>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {metodosDisponibles.slice(0, 5).map(m => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setMetodoPagoGeneral(m)}
+                        className={`text-[10px] px-2 py-0.5 rounded-lg border transition-colors ${
+                          metodoPagoGeneral === m
+                            ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 font-semibold'
+                            : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:text-white'
+                        }`}
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Fecha del Pago</label>
+                  <input
+                    type="date"
+                    value={fechaPagoGeneral}
+                    onChange={e => setFechaPagoGeneral(e.target.value)}
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 [color-scheme:dark] text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Banco Origen</label>
+                  <input
+                    type="text"
+                    value={bancoOrigenGeneral}
+                    onChange={e => setBancoOrigenGeneral(e.target.value)}
+                    placeholder="Ej. Banesco, Chase"
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">N° Referencia</label>
+                  <input
+                    type="text"
+                    value={referenciaGeneral}
+                    onChange={e => setReferenciaGeneral(e.target.value)}
+                    placeholder="Opcional"
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
+                  />
+                </div>
+              </div>
+
+              {errorPagoGeneral && (
+                <p className="text-rose-400 text-sm flex items-center gap-2">
+                  <AlertCircle size={14} /> {errorPagoGeneral}
+                </p>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-neutral-800 flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => setShowPagoGeneralModal(false)}
+                className="px-5 py-2.5 rounded-xl text-neutral-300 hover:bg-neutral-800 text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handlePagarGeneral}
+                disabled={isPagarGeneralLoading}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-emerald-600/20"
+              >
+                {isPagarGeneralLoading ? 'Aplicando pago...' : <><Wallet size={16} /> Aplicar Abono</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════
+          MODAL: Detalles de Factura (Insumos)
+      ════════════════════════════════════ */}
+      {detallesModalData && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between p-6 border-b border-neutral-800 shrink-0">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Package size={18} className="text-indigo-400" /> 
+                Detalles de Factura 
+                {detallesModalData.factura?.numero_factura ? `Nº ${detallesModalData.factura.numero_factura}` : ''}
+              </h3>
+              <button onClick={() => setDetallesModalData(null)} className="text-neutral-400 hover:text-white">
+                <X size={22} />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+              {detallesModalData.isLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
+                </div>
+              ) : detallesModalData.error ? (
+                <div className="text-center py-8">
+                  <AlertCircle size={40} className="text-rose-400 mx-auto mb-3" />
+                  <p className="text-neutral-400">{detallesModalData.error}</p>
+                </div>
+              ) : detallesModalData.detalles?.items ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-sm text-neutral-400 font-medium">Concepto: <span className="text-white">{detallesModalData.detalles.texto || detallesModalData.factura?.concepto}</span></p>
+                    <Badge label={`${detallesModalData.detalles.items.length} items`} color="indigo" />
+                  </div>
+                  
+                  <div className="rounded-xl border border-neutral-800 overflow-hidden bg-black/30">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-neutral-900/50">
+                        <tr>
+                          <th className="px-4 py-3 text-neutral-400 font-medium border-b border-neutral-800">Insumo</th>
+                          <th className="px-4 py-3 text-neutral-400 font-medium border-b border-neutral-800 text-right">Cant.</th>
+                          <th className="px-4 py-3 text-neutral-400 font-medium border-b border-neutral-800 text-right">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-neutral-800/50">
+                        {detallesModalData.detalles.items.map((it: any, idx: number) => (
+                          <tr key={idx} className="hover:bg-neutral-800/30">
+                            <td className="px-4 py-3 text-neutral-200">
+                              {it.nombre_nuevo || 'Item'}
+                              {it.is_new && <span className="ml-2 text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded">NUEVO</span>}
+                            </td>
+                            <td className="px-4 py-3 text-right text-neutral-300">
+                              {it.cantidad} <span className="text-xs text-neutral-500">{it.unidad_nueva}</span>
+                            </td>
+                            <td className="px-4 py-3 text-right text-white font-medium">
+                              {formatCurrency(
+                                it.monedaItem === 'VES' 
+                                  ? (it.costoTotal / (detallesModalData.detalles.tasaCambio || 1)) 
+                                  : it.costoTotal
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-neutral-500">No hay detalles estructurados para mostrar.</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="p-6 border-t border-neutral-800 flex justify-end gap-3 bg-neutral-900 shrink-0">
+              {detallesModalData?.compraPuntualId && (
+                <Link 
+                  href={`/dashboard/compras?tab=historial&edit=${detallesModalData.compraPuntualId}`}
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-xl transition-colors text-sm font-medium flex items-center gap-2"
+                >
+                  <Edit2 size={16} />
+                  Modificar Ítems
+                </Link>
+              )}
+              <button 
+                onClick={() => setDetallesModalData(null)}
+                className="bg-neutral-800 hover:bg-neutral-700 text-white px-6 py-2 rounded-xl transition-colors text-sm font-medium"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════
+          MODAL: Editar Factura
+      ════════════════════════════════════ */}
+      {showEditFacturaModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-2xl max-h-[90vh] shadow-2xl overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-neutral-800 shrink-0">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Pencil size={18} className="text-indigo-400" /> Editar Factura
+              </h3>
+              <button onClick={() => setShowEditFacturaModal(false)} className="text-neutral-400 hover:text-white">
+                <X size={22} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
+              {errorEdit && (
+                <div className="bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl text-rose-400 text-sm flex items-center gap-2">
+                  <AlertCircle size={16} /> {errorEdit}
+                </div>
+              )}
+              
+              <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-400 mb-1.5">Sede</label>
+                    <select value={editFacSede} onChange={e => setEditFacSede(e.target.value)}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-white text-sm appearance-none focus:outline-none focus:border-indigo-500">
+                      <option className="bg-neutral-900" value="">Seleccionar Sede...</option>
+                      {sedes.map(s => (
+                        <option key={s.id} value={s.id} className="bg-neutral-900">{s.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-400 mb-1.5">Número de Factura</label>
+                    <div className="relative">
+                      <Hash size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                      <input type="text" value={editFacNumero} onChange={e => setEditFacNumero(e.target.value)}
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-9 pr-4 py-2 text-white text-sm" placeholder="S/N" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-400 mb-1.5">Concepto</label>
+                <input type="text" value={editFacConcepto} onChange={e => setEditFacConcepto(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-white text-sm" placeholder="Ej. Compra de insumos" />
+              </div>
+
+              {/* EDICIÓN DE ITEMS / PRODUCTOS SI LA FACTURA TIENE INSUMOS */}
+              {isLoadingEditItems ? (
+                <div className="py-4 text-center text-xs text-neutral-400 flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-indigo-500"></div> Cargando productos vinculados...
+                </div>
+              ) : (editFacItems.length > 0 || editFacCompraPuntualId) ? (
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-sm font-bold text-emerald-400 flex items-center gap-1.5">
+                      <Package size={16} /> Productos / Insumos ({editFacItems.length})
+                    </label>
+                    <span className="text-xs text-neutral-400">El inventario se sincronizará automáticamente</span>
+                  </div>
+
+                  {/* Lista de productos actuales */}
+                  <div className="bg-black/30 border border-neutral-800 rounded-xl overflow-hidden divide-y divide-neutral-800/60">
+                    {editFacItems.map((item, idx) => (
+                      <div key={idx} className="p-3 flex items-center justify-between gap-3 text-sm hover:bg-neutral-800/30">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-white truncate">
+                            {item.nombre_nuevo}
+                            {item.is_new && <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded ml-1.5 font-normal">NUEVO</span>}
+                          </p>
+                          <p className="text-xs text-neutral-400 mt-0.5">
+                            {item.cantidad} {item.unidad_nueva || 'Und'} · Total: <span className="text-white font-medium">$ {Number(item.costoTotal || 0).toFixed(2)}</span>
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newItems = editFacItems.filter((_, i) => i !== idx);
+                            setEditFacItems(newItems);
+                            const newTot = newItems.reduce((acc, i) => acc + Number(i.costoTotal || 0), 0);
+                            setEditFacTotal(newTot.toFixed(2));
+                          }}
+                          className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors flex items-center gap-1 text-xs"
+                          title="Eliminar este producto de la factura"
+                        >
+                          <Trash2 size={15} /> <span className="hidden sm:inline">Quitar</span>
+                        </button>
+                      </div>
+                    ))}
+
+                    {editFacItems.length === 0 && (
+                      <div className="p-4 text-center text-xs text-neutral-500 italic">
+                        No quedan productos en esta factura. Agrega uno abajo.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Formulario para agregar producto a la factura */}
+                  <div className="p-3 bg-neutral-950 rounded-xl border border-indigo-500/30 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1">
+                        <Plus size={13} /> Agregar Producto
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditAddIsNew(!editAddIsNew);
+                          setEditAddInsumoSearch('');
+                          setEditAddNombreNuevo('');
+                        }}
+                        className="text-xs text-neutral-400 hover:text-white underline"
+                      >
+                        {editAddIsNew ? 'Seleccionar existente' : '+ Crear nuevo'}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
+                      {editAddIsNew ? (
+                        <>
+                          <div className="sm:col-span-5">
+                            <label className="block text-[10px] font-medium text-neutral-400 mb-1">Nombre Insumo</label>
+                            <input
+                              type="text"
+                              value={editAddNombreNuevo}
+                              onChange={e => setEditAddNombreNuevo(e.target.value)}
+                              placeholder="Ej. Harina"
+                              className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2.5 py-1.5 text-xs"
+                            />
+                          </div>
+                          <div className="sm:col-span-2">
+                            <label className="block text-[10px] font-medium text-neutral-400 mb-1">Unidad</label>
+                            <select
+                              value={editAddUnidad}
+                              onChange={e => setEditAddUnidad(e.target.value)}
+                              className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2 py-1.5 text-xs"
+                            >
+                              {['Kg', 'Gr', 'Lt', 'Ml', 'Und', 'Cajas', 'Paquetes'].map(u => (
+                                <option key={u} value={u} className="bg-neutral-900">{u}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="sm:col-span-7">
+                          <label className="block text-[10px] font-medium text-neutral-400 mb-1">Insumo</label>
+                          <select
+                            value={editAddInsumoSearch}
+                            onChange={e => setEditAddInsumoSearch(e.target.value)}
+                            className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2.5 py-1.5 text-xs"
+                          >
+                            <option value="">Seleccionar insumo...</option>
+                            {insumosList.map(i => (
+                              <option key={i.id} value={i.id} className="bg-neutral-900">
+                                {i.nombre} ({i.cantidad_actual || 0} {i.unidad_medida})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-[10px] font-medium text-neutral-400 mb-1">Cantidad</label>
+                        <input
+                          type="number"
+                          step="any"
+                          min="0.01"
+                          placeholder="0"
+                          value={editAddCantidad}
+                          onChange={e => setEditAddCantidad(e.target.value)}
+                          className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2 py-1.5 text-xs text-center"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-3 flex gap-2">
+                        <div className="flex-1">
+                          <label className="block text-[10px] font-medium text-neutral-400 mb-1">Total ($)</label>
+                          <input
+                            type="number"
+                            step="any"
+                            min="0.01"
+                            placeholder="0.00"
+                            value={editAddTotal}
+                            onChange={e => setEditAddTotal(e.target.value)}
+                            className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2 py-1.5 text-xs text-center"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const qty = Number(editAddCantidad);
+                            const cost = Number(editAddTotal);
+                            if (!qty || qty <= 0 || !cost || cost <= 0) return;
+
+                            let newItem: any = null;
+                            if (editAddIsNew) {
+                              if (!editAddNombreNuevo.trim()) return;
+                              newItem = {
+                                id: Math.random().toString(),
+                                insumo_id: null,
+                                is_new: true,
+                                nombre_nuevo: editAddNombreNuevo.trim(),
+                                unidad_nueva: editAddUnidad || 'Und',
+                                cantidad: qty,
+                                costoTotal: cost,
+                                monedaItem: 'USD'
+                              };
+                            } else {
+                              if (!editAddInsumoSearch) return;
+                              const found = insumosList.find(i => i.id === editAddInsumoSearch);
+                              newItem = {
+                                id: Math.random().toString(),
+                                insumo_id: editAddInsumoSearch,
+                                is_new: false,
+                                nombre_nuevo: found?.nombre || 'Insumo',
+                                unidad_nueva: found?.unidad_medida || 'Und',
+                                cantidad: qty,
+                                costoTotal: cost,
+                                monedaItem: 'USD'
+                              };
+                            }
+
+                            const updated = [...editFacItems, newItem];
+                            setEditFacItems(updated);
+                            const newTot = updated.reduce((acc, i) => acc + Number(i.costoTotal || 0), 0);
+                            setEditFacTotal(newTot.toFixed(2));
+
+                            setEditAddInsumoSearch('');
+                            setEditAddNombreNuevo('');
+                            setEditAddIsNew(false);
+                            setEditAddCantidad('');
+                            setEditAddTotal('');
+                          }}
+                          className="self-end bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-1.5 px-3 rounded-lg transition-colors flex items-center justify-center gap-1"
+                        >
+                          <Plus size={13} /> Añadir
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-400 mb-1.5">Monto Total de la Factura (Divisas)</label>
+                <div className="relative">
+                  <DollarSign size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                  <input
+                    type="number"
+                    step="any"
+                    min="0"
+                    value={editFacTotal}
+                    onChange={e => setEditFacTotal(e.target.value)}
+                    readOnly={editFacItems.length > 0}
+                    className={`w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-9 pr-4 py-2 text-white text-sm ${editFacItems.length > 0 ? 'opacity-80 cursor-not-allowed text-emerald-400 font-bold' : ''}`}
+                  />
+                </div>
+                <p className="text-xs text-neutral-500 mt-1">
+                  {editFacItems.length > 0
+                    ? 'El total se calcula automáticamente sumando los productos de la factura.'
+                    : 'El saldo pendiente se recalculará automáticamente según los abonos ya realizados.'}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-400 mb-1.5">Fecha de Emisión</label>
+                  <input type="date" value={editFacFecha} onChange={e => setEditFacFecha(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-white text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-400 mb-1.5">Vencimiento (Opcional)</label>
+                  <input type="date" value={editFacFechaVencimiento} onChange={e => setEditFacFechaVencimiento(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-white text-sm" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-6 border-t border-neutral-800 flex justify-end gap-3 shrink-0">
+              <button 
+                onClick={() => setShowEditFacturaModal(false)}
+                className="bg-neutral-800 hover:bg-neutral-700 text-white px-5 py-2.5 rounded-xl transition-colors text-sm font-medium"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleGuardarEdicionFactura}
+                disabled={isEditLoading}
+                className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl transition-colors text-sm font-medium disabled:opacity-50 flex items-center gap-2"
+              >
+                {isEditLoading ? 'Guardando...' : <><Check size={16} /> Guardar Cambios</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL HISTORIAL DE ABONOS GLOBALES */}
+      {abonosProvInfo && (
+        <AbonosGlobalesHistorial
+          proveedorId={abonosProvInfo.id}
+          proveedorNombre={abonosProvInfo.nombre}
+          sedeId={sedeId}
+          onClose={() => setAbonosProvInfo(null)}
+        />
+      )}
+
+    </div>
+  );
+}
+
+
+
+}</span>
+                              <input 
+                                type="number" 
+                                className="w-full bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-right text-amber-400 focus:border-indigo-500"
+                                value={facIva}
+                                onChange={e => setFacIva(e.target.value)}
+                                placeholder="0.00"
+                              />
+                            </div>
+                          </div>
+                          <div className="h-px bg-neutral-800 w-full my-1"></div>
+                          <div className="flex items-center justify-between font-bold">
+                            <span className="text-neutral-300">Total Factura:</span>
+                            <div className="text-right">
+                              <span className="text-emerald-400 text-base">
+                                {facMoneda === 'VES' ? 'Bs. ' : '$ '}
+                                {(facItems.reduce((acc, i) => acc + i.costoTotal, 0) - Number(facDescuento || 0) + Number(facIva || 0)).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
+                              {facMoneda === 'VES' && facTasa > 0 && (
+                                <span className="block text-xs text-neutral-400 font-normal">
+                                  � $ {((facItems.reduce((acc, i) => acc + i.costoTotal, 0) - Number(facDescuento || 0) + Number(facIva || 0)) / facTasa).toFixed(2)} USD (Tasa: {facTasa} Bs/$)
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                  ) : (
+                    <p className="text-xs text-neutral-500 italic text-center py-2">
+                      No has agregado insumos todavía. Selecciona uno arriba y haz clic en &quot;Agregar&quot;.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm text-neutral-400 mb-1.5 mt-2">Estado / Método de Pago</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    list="lista-metodos-factura"
+                    value={facMetodoPago}
+                    onChange={e => setFacMetodoPago(e.target.value)}
+                    placeholder="Ej. Por pagar, Transferencia, Zelle..."
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 text-sm"
+                  />
+                  <datalist id="lista-metodos-factura">
+                    <option value="Por pagar" />
+                    {metodosDisponibles.map(m => (
+                      <option key={m} value={m} />
+                    ))}
+                  </datalist>
+                </div>
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {['Por pagar', ...metodosDisponibles.slice(0, 5)].map(m => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setFacMetodoPago(m)}
+                      className={`text-[10px] px-2 py-0.5 rounded-lg border transition-colors ${
+                        facMetodoPago === m
+                          ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-400 font-semibold'
+                          : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {errorFactura && <p className="text-rose-400 text-sm flex items-center gap-2"><AlertCircle size={14} /> {errorFactura}</p>}
+            </div>
+              <div className="p-6 border-t border-neutral-800 flex gap-3 justify-end">
+                <button onClick={() => setShowFacturaModal(false)} className="px-5 py-2.5 rounded-xl text-neutral-300 hover:bg-neutral-800 text-sm">Cancelar</button>
+                <button onClick={handleCrearFactura} disabled={enviandoFactura}
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50">
+                  {enviandoFactura ? 'Registrando...' : <><FileText size={16} /> Registrar Factura</>}
+                </button>
+              </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════
+          MODAL: Registrar Pago / Abono
+      ════════════════════════════════════ */}
+      {showPagoModal && facturaPagar && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-between p-6 border-b border-neutral-800">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2"><Wallet size={18} className="text-emerald-400" /> Registrar Abono</h3>
+              <button onClick={() => setShowPagoModal(false)} className="text-neutral-400 hover:text-white"><X size={22} /></button>
+            </div>
+            <div className="p-6 space-y-4">
+              {/* Factura info */}
+              <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-4">
+                <p className="text-sm text-neutral-400 mb-1">{facturaPagar.concepto || 'Factura'}</p>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-neutral-500">
+                    Total: {formatCurrency(facturaPagar.total)}
+                    {tasaBcv > 0 && ` (~ Bs. ${(facturaPagar.total * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`}
+                  </span>
+                  <div className="text-right">
+                    <span className="text-rose-400 font-bold block">
+                      Pendiente: {formatCurrency(facturaPagar.saldo_pendiente)}
+                    </span>
+                    {tasaBcv > 0 && facturaPagar.saldo_pendiente > 0 && (
+                      <span className="text-[11px] text-rose-400/80">
+                        ≈ Bs. {(facturaPagar.saldo_pendiente * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm text-neutral-400 mb-1.5">Monto a Abonar (USD) *</label>
+                <input type="number" min="0.01" step="any" value={montoAbonar} onChange={e => setMontoAbonar(e.target.value)}
+                  className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-lg font-semibold" />
+                {tasaBcv > 0 && Number(montoAbonar) > 0 && (
+                  <p className="text-xs text-emerald-400/90 mt-1">
+                    ≈ Bs. {(Number(montoAbonar) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
+                  </p>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Método de Pago</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      list="lista-metodos-abono"
+                      value={metodoPago}
+                      onChange={e => setMetodoPago(e.target.value)}
+                      placeholder="Ej. Transferencia, Zelle..."
+                      className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
+                    />
+                    <datalist id="lista-metodos-abono">
+                      {metodosDisponibles.map(m => (
+                        <option key={m} value={m} />
+                      ))}
+                    </datalist>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {metodosDisponibles.slice(0, 5).map(m => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setMetodoPago(m)}
+                        className={`text-[10px] px-2 py-0.5 rounded-lg border transition-colors ${
+                          metodoPago === m
+                            ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 font-semibold'
+                            : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:text-white'
+                        }`}
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Fecha del Pago</label>
+                  <input type="date" value={fechaPago} onChange={e => setFechaPago(e.target.value)}
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 [color-scheme:dark] text-sm" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Banco Origen</label>
+                  <input type="text" value={bancoOrigen} onChange={e => setBancoOrigen(e.target.value)}
+                    placeholder="Ej. Banesco"
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">N° Referencia</label>
+                  <input type="text" value={referencia} onChange={e => setReferencia(e.target.value)}
+                    placeholder="Opcional"
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm" />
+                </div>
+              </div>
+              {errorPago && <p className="text-rose-400 text-sm flex items-center gap-2"><AlertCircle size={14} /> {errorPago}</p>}
+            </div>
+            <div className="p-6 border-t border-neutral-800 flex gap-3 justify-end">
+              <button onClick={() => setShowPagoModal(false)} className="px-5 py-2.5 rounded-xl text-neutral-300 hover:bg-neutral-800 text-sm">Cancelar</button>
+              <button onClick={handlePagar} disabled={isPagarLoading}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50">
+                {isPagarLoading ? 'Registrando...' : <><Wallet size={16} /> Registrar Pago</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════
+          MODAL: Pago General / Cascada FIFO
+      ════════════════════════════════════ */}
+      {showPagoGeneralModal && proveedorPagarGeneral && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-lg shadow-2xl">
+            <div className="flex items-center justify-between p-6 border-b border-neutral-800">
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Wallet size={18} className="text-emerald-400" /> Abono General a Proveedor
+                </h3>
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  {proveedorPagarGeneral.nombre_proveedor || proveedorPagarGeneral.nombre_comercial}
+                </p>
+              </div>
+              <button onClick={() => setShowPagoGeneralModal(false)} className="text-neutral-400 hover:text-white">
+                <X size={22} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              {/* Resumen Deuda y Regla FIFO */}
+              <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-semibold uppercase text-neutral-400">Deuda Total Acumulada</span>
+                  <div className="text-right">
+                    <span className="text-xl font-black text-rose-400">
+                      {formatCurrency(proveedorPagarGeneral.monto_adeudado)}
+                    </span>
+                    {tasaBcv > 0 && proveedorPagarGeneral.monto_adeudado > 0 && (
+                      <span className="block text-xs text-neutral-400 font-medium">
+                        ≈ Bs. {(proveedorPagarGeneral.monto_adeudado * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                </div>
+
+              <div>
+                <label className="block text-sm text-neutral-400 mb-1.5">Monto a Abonar (USD) *</label>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="any"
+                  value={montoAbonoGeneral}
+                  onChange={e => setMontoAbonoGeneral(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-lg font-bold"
+                />
+                {tasaBcv > 0 && Number(montoAbonoGeneral) > 0 && (
+                  <p className="text-xs text-emerald-400/90 mt-1">
+                    ≈ Bs. {(Number(montoAbonoGeneral) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
+                  </p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Método de Pago</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      list="lista-metodos-abono-general"
+                      value={metodoPagoGeneral}
+                      onChange={e => setMetodoPagoGeneral(e.target.value)}
+                      placeholder="Ej. Transferencia, Zelle..."
+                      className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
+                    />
+                    <datalist id="lista-metodos-abono-general">
+                      {metodosDisponibles.map(m => (
+                        <option key={m} value={m} />
+                      ))}
+                    </datalist>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {metodosDisponibles.slice(0, 5).map(m => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setMetodoPagoGeneral(m)}
+                        className={`text-[10px] px-2 py-0.5 rounded-lg border transition-colors ${
+                          metodoPagoGeneral === m
+                            ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 font-semibold'
+                            : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:text-white'
+                        }`}
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Fecha del Pago</label>
+                  <input
+                    type="date"
+                    value={fechaPagoGeneral}
+                    onChange={e => setFechaPagoGeneral(e.target.value)}
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 [color-scheme:dark] text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Banco Origen</label>
+                  <input
+                    type="text"
+                    value={bancoOrigenGeneral}
+                    onChange={e => setBancoOrigenGeneral(e.target.value)}
+                    placeholder="Ej. Banesco, Chase"
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">N° Referencia</label>
+                  <input
+                    type="text"
+                    value={referenciaGeneral}
+                    onChange={e => setReferenciaGeneral(e.target.value)}
+                    placeholder="Opcional"
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
+                  />
+                </div>
+              </div>
+
+              {errorPagoGeneral && (
+                <p className="text-rose-400 text-sm flex items-center gap-2">
+                  <AlertCircle size={14} /> {errorPagoGeneral}
+                </p>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-neutral-800 flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => setShowPagoGeneralModal(false)}
+                className="px-5 py-2.5 rounded-xl text-neutral-300 hover:bg-neutral-800 text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handlePagarGeneral}
+                disabled={isPagarGeneralLoading}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-emerald-600/20"
+              >
+                {isPagarGeneralLoading ? 'Aplicando pago...' : <><Wallet size={16} /> Aplicar Abono</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════
+          MODAL: Detalles de Factura (Insumos)
+      ════════════════════════════════════ */}
+      {detallesModalData && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between p-6 border-b border-neutral-800 shrink-0">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Package size={18} className="text-indigo-400" /> 
+                Detalles de Factura 
+                {detallesModalData.factura?.numero_factura ? `Nº ${detallesModalData.factura.numero_factura}` : ''}
+              </h3>
+              <button onClick={() => setDetallesModalData(null)} className="text-neutral-400 hover:text-white">
+                <X size={22} />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+              {detallesModalData.isLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
+                </div>
+              ) : detallesModalData.error ? (
+                <div className="text-center py-8">
+                  <AlertCircle size={40} className="text-rose-400 mx-auto mb-3" />
+                  <p className="text-neutral-400">{detallesModalData.error}</p>
+                </div>
+              ) : detallesModalData.detalles?.items ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-sm text-neutral-400 font-medium">Concepto: <span className="text-white">{detallesModalData.detalles.texto || detallesModalData.factura?.concepto}</span></p>
+                    <Badge label={`${detallesModalData.detalles.items.length} items`} color="indigo" />
+                  </div>
+                  
+                  <div className="rounded-xl border border-neutral-800 overflow-hidden bg-black/30">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-neutral-900/50">
+                        <tr>
+                          <th className="px-4 py-3 text-neutral-400 font-medium border-b border-neutral-800">Insumo</th>
+                          <th className="px-4 py-3 text-neutral-400 font-medium border-b border-neutral-800 text-right">Cant.</th>
+                          <th className="px-4 py-3 text-neutral-400 font-medium border-b border-neutral-800 text-right">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-neutral-800/50">
+                        {detallesModalData.detalles.items.map((it: any, idx: number) => (
+                          <tr key={idx} className="hover:bg-neutral-800/30">
+                            <td className="px-4 py-3 text-neutral-200">
+                              {it.nombre_nuevo || 'Item'}
+                              {it.is_new && <span className="ml-2 text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded">NUEVO</span>}
+                            </td>
+                            <td className="px-4 py-3 text-right text-neutral-300">
+                              {it.cantidad} <span className="text-xs text-neutral-500">{it.unidad_nueva}</span>
+                            </td>
+                            <td className="px-4 py-3 text-right text-white font-medium">
+                              {formatCurrency(
+                                it.monedaItem === 'VES' 
+                                  ? (it.costoTotal / (detallesModalData.detalles.tasaCambio || 1)) 
+                                  : it.costoTotal
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-neutral-500">No hay detalles estructurados para mostrar.</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="p-6 border-t border-neutral-800 flex justify-end gap-3 bg-neutral-900 shrink-0">
+              {detallesModalData?.compraPuntualId && (
+                <Link 
+                  href={`/dashboard/compras?tab=historial&edit=${detallesModalData.compraPuntualId}`}
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-xl transition-colors text-sm font-medium flex items-center gap-2"
+                >
+                  <Edit2 size={16} />
+                  Modificar Ítems
+                </Link>
+              )}
+              <button 
+                onClick={() => setDetallesModalData(null)}
+                className="bg-neutral-800 hover:bg-neutral-700 text-white px-6 py-2 rounded-xl transition-colors text-sm font-medium"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════
+          MODAL: Editar Factura
+      ════════════════════════════════════ */}
+      {showEditFacturaModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-2xl max-h-[90vh] shadow-2xl overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-neutral-800 shrink-0">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Pencil size={18} className="text-indigo-400" /> Editar Factura
+              </h3>
+              <button onClick={() => setShowEditFacturaModal(false)} className="text-neutral-400 hover:text-white">
+                <X size={22} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
+              {errorEdit && (
+                <div className="bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl text-rose-400 text-sm flex items-center gap-2">
+                  <AlertCircle size={16} /> {errorEdit}
+                </div>
+              )}
+              
+              <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-400 mb-1.5">Sede</label>
+                    <select value={editFacSede} onChange={e => setEditFacSede(e.target.value)}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-white text-sm appearance-none focus:outline-none focus:border-indigo-500">
+                      <option className="bg-neutral-900" value="">Seleccionar Sede...</option>
+                      {sedes.map(s => (
+                        <option key={s.id} value={s.id} className="bg-neutral-900">{s.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-400 mb-1.5">Número de Factura</label>
+                    <div className="relative">
+                      <Hash size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                      <input type="text" value={editFacNumero} onChange={e => setEditFacNumero(e.target.value)}
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-9 pr-4 py-2 text-white text-sm" placeholder="S/N" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-400 mb-1.5">Concepto</label>
+                <input type="text" value={editFacConcepto} onChange={e => setEditFacConcepto(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-white text-sm" placeholder="Ej. Compra de insumos" />
+              </div>
+
+              {/* EDICIÓN DE ITEMS / PRODUCTOS SI LA FACTURA TIENE INSUMOS */}
+              {isLoadingEditItems ? (
+                <div className="py-4 text-center text-xs text-neutral-400 flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-indigo-500"></div> Cargando productos vinculados...
+                </div>
+              ) : (editFacItems.length > 0 || editFacCompraPuntualId) ? (
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-sm font-bold text-emerald-400 flex items-center gap-1.5">
+                      <Package size={16} /> Productos / Insumos ({editFacItems.length})
+                    </label>
+                    <span className="text-xs text-neutral-400">El inventario se sincronizará automáticamente</span>
+                  </div>
+
+                  {/* Lista de productos actuales */}
+                  <div className="bg-black/30 border border-neutral-800 rounded-xl overflow-hidden divide-y divide-neutral-800/60">
+                    {editFacItems.map((item, idx) => (
+                      <div key={idx} className="p-3 flex items-center justify-between gap-3 text-sm hover:bg-neutral-800/30">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-white truncate">
+                            {item.nombre_nuevo}
+                            {item.is_new && <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded ml-1.5 font-normal">NUEVO</span>}
+                          </p>
+                          <p className="text-xs text-neutral-400 mt-0.5">
+                            {item.cantidad} {item.unidad_nueva || 'Und'} · Total: <span className="text-white font-medium">$ {Number(item.costoTotal || 0).toFixed(2)}</span>
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newItems = editFacItems.filter((_, i) => i !== idx);
+                            setEditFacItems(newItems);
+                            const newTot = newItems.reduce((acc, i) => acc + Number(i.costoTotal || 0), 0);
+                            setEditFacTotal(newTot.toFixed(2));
+                          }}
+                          className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors flex items-center gap-1 text-xs"
+                          title="Eliminar este producto de la factura"
+                        >
+                          <Trash2 size={15} /> <span className="hidden sm:inline">Quitar</span>
+                        </button>
+                      </div>
+                    ))}
+
+                    {editFacItems.length === 0 && (
+                      <div className="p-4 text-center text-xs text-neutral-500 italic">
+                        No quedan productos en esta factura. Agrega uno abajo.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Formulario para agregar producto a la factura */}
+                  <div className="p-3 bg-neutral-950 rounded-xl border border-indigo-500/30 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1">
+                        <Plus size={13} /> Agregar Producto
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditAddIsNew(!editAddIsNew);
+                          setEditAddInsumoSearch('');
+                          setEditAddNombreNuevo('');
+                        }}
+                        className="text-xs text-neutral-400 hover:text-white underline"
+                      >
+                        {editAddIsNew ? 'Seleccionar existente' : '+ Crear nuevo'}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
+                      {editAddIsNew ? (
+                        <>
+                          <div className="sm:col-span-5">
+                            <label className="block text-[10px] font-medium text-neutral-400 mb-1">Nombre Insumo</label>
+                            <input
+                              type="text"
+                              value={editAddNombreNuevo}
+                              onChange={e => setEditAddNombreNuevo(e.target.value)}
+                              placeholder="Ej. Harina"
+                              className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2.5 py-1.5 text-xs"
+                            />
+                          </div>
+                          <div className="sm:col-span-2">
+                            <label className="block text-[10px] font-medium text-neutral-400 mb-1">Unidad</label>
+                            <select
+                              value={editAddUnidad}
+                              onChange={e => setEditAddUnidad(e.target.value)}
+                              className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2 py-1.5 text-xs"
+                            >
+                              {['Kg', 'Gr', 'Lt', 'Ml', 'Und', 'Cajas', 'Paquetes'].map(u => (
+                                <option key={u} value={u} className="bg-neutral-900">{u}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="sm:col-span-7">
+                          <label className="block text-[10px] font-medium text-neutral-400 mb-1">Insumo</label>
+                          <select
+                            value={editAddInsumoSearch}
+                            onChange={e => setEditAddInsumoSearch(e.target.value)}
+                            className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2.5 py-1.5 text-xs"
+                          >
+                            <option value="">Seleccionar insumo...</option>
+                            {insumosList.map(i => (
+                              <option key={i.id} value={i.id} className="bg-neutral-900">
+                                {i.nombre} ({i.cantidad_actual || 0} {i.unidad_medida})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-[10px] font-medium text-neutral-400 mb-1">Cantidad</label>
+                        <input
+                          type="number"
+                          step="any"
+                          min="0.01"
+                          placeholder="0"
+                          value={editAddCantidad}
+                          onChange={e => setEditAddCantidad(e.target.value)}
+                          className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2 py-1.5 text-xs text-center"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-3 flex gap-2">
+                        <div className="flex-1">
+                          <label className="block text-[10px] font-medium text-neutral-400 mb-1">Total ($)</label>
+                          <input
+                            type="number"
+                            step="any"
+                            min="0.01"
+                            placeholder="0.00"
+                            value={editAddTotal}
+                            onChange={e => setEditAddTotal(e.target.value)}
+                            className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2 py-1.5 text-xs text-center"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const qty = Number(editAddCantidad);
+                            const cost = Number(editAddTotal);
+                            if (!qty || qty <= 0 || !cost || cost <= 0) return;
+
+                            let newItem: any = null;
+                            if (editAddIsNew) {
+                              if (!editAddNombreNuevo.trim()) return;
+                              newItem = {
+                                id: Math.random().toString(),
+                                insumo_id: null,
+                                is_new: true,
+                                nombre_nuevo: editAddNombreNuevo.trim(),
+                                unidad_nueva: editAddUnidad || 'Und',
+                                cantidad: qty,
+                                costoTotal: cost,
+                                monedaItem: 'USD'
+                              };
+                            } else {
+                              if (!editAddInsumoSearch) return;
+                              const found = insumosList.find(i => i.id === editAddInsumoSearch);
+                              newItem = {
+                                id: Math.random().toString(),
+                                insumo_id: editAddInsumoSearch,
+                                is_new: false,
+                                nombre_nuevo: found?.nombre || 'Insumo',
+                                unidad_nueva: found?.unidad_medida || 'Und',
+                                cantidad: qty,
+                                costoTotal: cost,
+                                monedaItem: 'USD'
+                              };
+                            }
+
+                            const updated = [...editFacItems, newItem];
+                            setEditFacItems(updated);
+                            const newTot = updated.reduce((acc, i) => acc + Number(i.costoTotal || 0), 0);
+                            setEditFacTotal(newTot.toFixed(2));
+
+                            setEditAddInsumoSearch('');
+                            setEditAddNombreNuevo('');
+                            setEditAddIsNew(false);
+                            setEditAddCantidad('');
+                            setEditAddTotal('');
+                          }}
+                          className="self-end bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-1.5 px-3 rounded-lg transition-colors flex items-center justify-center gap-1"
+                        >
+                          <Plus size={13} /> Añadir
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-400 mb-1.5">Monto Total de la Factura (Divisas)</label>
+                <div className="relative">
+                  <DollarSign size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                  <input
+                    type="number"
+                    step="any"
+                    min="0"
+                    value={editFacTotal}
+                    onChange={e => setEditFacTotal(e.target.value)}
+                    readOnly={editFacItems.length > 0}
+                    className={`w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-9 pr-4 py-2 text-white text-sm ${editFacItems.length > 0 ? 'opacity-80 cursor-not-allowed text-emerald-400 font-bold' : ''}`}
+                  />
+                </div>
+                <p className="text-xs text-neutral-500 mt-1">
+                  {editFacItems.length > 0
+                    ? 'El total se calcula automáticamente sumando los productos de la factura.'
+                    : 'El saldo pendiente se recalculará automáticamente según los abonos ya realizados.'}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-400 mb-1.5">Fecha de Emisión</label>
+                  <input type="date" value={editFacFecha} onChange={e => setEditFacFecha(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-white text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-400 mb-1.5">Vencimiento (Opcional)</label>
+                  <input type="date" value={editFacFechaVencimiento} onChange={e => setEditFacFechaVencimiento(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-white text-sm" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-6 border-t border-neutral-800 flex justify-end gap-3 shrink-0">
+              <button 
+                onClick={() => setShowEditFacturaModal(false)}
+                className="bg-neutral-800 hover:bg-neutral-700 text-white px-5 py-2.5 rounded-xl transition-colors text-sm font-medium"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleGuardarEdicionFactura}
+                disabled={isEditLoading}
+                className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl transition-colors text-sm font-medium disabled:opacity-50 flex items-center gap-2"
+              >
+                {isEditLoading ? 'Guardando...' : <><Check size={16} /> Guardar Cambios</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL HISTORIAL DE ABONOS GLOBALES */}
+      {abonosProvInfo && (
+        <AbonosGlobalesHistorial
+          proveedorId={abonosProvInfo.id}
+          proveedorNombre={abonosProvInfo.nombre}
+          sedeId={sedeId}
+          onClose={() => setAbonosProvInfo(null)}
+        />
+      )}
+
+    </div>
+  );
+}
+
+
 
 
