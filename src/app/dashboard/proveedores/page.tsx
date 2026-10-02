@@ -131,6 +131,23 @@ export default function ProveedoresPage() {
           alert(res.error);
         } else if (res.data) {
           const d = res.data;
+          
+          // Auto-matchear o crear proveedor al vuelo
+          if (d.proveedor_nombre && d.proveedor_nombre !== 'Desconocido' && d.proveedor_nombre !== '⚠️ Ilegible') {
+            const provMatches = todosProveedores.filter(p => { const pName = (p.nombre_comercial || p.nombre_proveedor || p.nombre || '').toLowerCase(); const aiName = d.proveedor_nombre.toLowerCase(); return pName.includes(aiName) || aiName.includes(pName); });
+            if (provMatches.length > 0) {
+              setFacProveedorId(provMatches[0].id);
+            } else {
+              // Si no existe, crearlo al vuelo
+              const { crearProveedorRapido } = await import('@/app/dashboard/proveedores/actions');
+              const resProv = await crearProveedorRapido(d.proveedor_nombre);
+              if (resProv.success && resProv.data) {
+                setTodosProveedores(prev => [resProv.data, ...prev]); setProveedores(prev => [resProv.data, ...prev]);
+                setFacProveedorId(resProv.data.id);
+              }
+            }
+          }
+
           if (d.moneda === 'VES' || d.moneda === 'USD') setFacMoneda(d.moneda);
           if (d.descuento_total) setFacDescuento(d.descuento_total.toString());
           if (d.monto_iva) setFacIva(d.monto_iva.toString());
