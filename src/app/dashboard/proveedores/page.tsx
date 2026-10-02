@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect, useRef, useCallback, startTransition } from "react";
 import { getSedes } from "@/actions/dashboard-actions";
@@ -151,6 +151,7 @@ export default function ProveedoresPage() {
           if (d.moneda === 'VES' || d.moneda === 'USD') setFacMoneda(d.moneda);
           if (d.descuento_total) setFacDescuento(d.descuento_total.toString());
           if (d.monto_iva) setFacIva(d.monto_iva.toString());
+          if (d.fecha) setFacFecha(d.fecha);
           if (d.fecha_vencimiento) setFacFechaVencimiento(d.fecha_vencimiento);
 
           const newCart = (d.items || []).map((item: any, i: number) => {
