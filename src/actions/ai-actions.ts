@@ -35,6 +35,7 @@ Reglas de extracción y degradación (MUY IMPORTANTE):
 8. Extrae el IVA y el Descuento (si los hay). Si no hay, usa 0.
 9. MATCHEA CON EL INVENTARIO: Busca el insumo semánticamente más cercano. Si el producto es "Harina Pan" pero en inventario está "Harina de Maíz Pan", úsalo. Si no hay nada parecido, pon null.
 10. DETECTA BULTOS: Si indica caja, bulto o empaque múltiple (ej. "Bulto x 12"), pon "es_bulto": true, y extrae "unidades_por_bulto_estimado" (ej. 12). Si es unidad, false.
+11. UNIDAD DE MEDIDA: Extrae la unidad en la que se mide (ej. "Kg", "Litros", "Caja", "Galón"). Si no dice nada explícito, usa "Unidad".
 
 Inventario disponible:
 ?${inventoryContext}
@@ -54,6 +55,7 @@ Estructura JSON requerida (devuelve SOLO el objeto JSON):
       "nombre_original_factura": "String | ⚠️ Nombre Ilegible",
       "insumo_id_recomendado": "String | null",
       "cantidad": Number | null,
+      "unidad_medida_sugerida": "String (Ej: Kg, Litros, Unidad)",
       "es_bulto": Boolean,
       "unidades_por_bulto_estimado": Number | null,
       "precio_unitario": Number | null,

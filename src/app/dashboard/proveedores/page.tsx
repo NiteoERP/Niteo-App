@@ -163,7 +163,7 @@ export default function ProveedoresPage() {
               insumo_id: item.insumo_id_recomendado || null,
               is_new: isNew,
               nombre_nuevo: isNew ? (item.nombre_original_factura || '') : '',
-              unidad_nueva: isNew ? (item.es_bulto ? 'Bulto' : 'Unidad') : '',
+              unidad_nueva: isNew ? (item.es_bulto ? 'Bulto' : (item.unidad_medida_sugerida || 'Unidad')) : '',
               cantidad: qty,
               precioUnitario: costo / qty,
               costoTotal: costo,

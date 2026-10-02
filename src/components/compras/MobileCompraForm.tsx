@@ -86,7 +86,7 @@ export default function MobileCompraForm() {
               // Si el nombre está marcado como ilegible, lo dejamos en blanco
               // para que aparezca el badge rojo y el usuario lo complete
               nombre_nuevo: isNew ? (item.nombre_original_factura || '') : '',
-              unidad_nueva: isNew ? (item.es_bulto ? 'Bulto' : 'Unidad') : '',
+              unidad_nueva: isNew ? (item.es_bulto ? 'Bulto' : (item.unidad_medida_sugerida || 'Unidad')) : '',
               cantidad: qty,
               unidad_compra: item.es_bulto ? 'Bulto' : 'Unidad',
               factor_compra: factor,
