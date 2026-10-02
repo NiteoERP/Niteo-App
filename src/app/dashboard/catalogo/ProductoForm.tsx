@@ -88,7 +88,9 @@ export default function ProductoForm({
     precio_modificable: initialData?.precio_modificable || false,
       aplica_listas_precios: initialData?.aplica_listas_precios !== undefined ? initialData.aplica_listas_precios : true,
     tipo: initialData?.es_compuesto ? 'ELABORADO' : 'REVENTA',
-    sede_id: sedes[0]?.id || '',
+    sede_id: null,
+      sedes_ids: initialData?.sedes_ids || (initialData?.sede_id ? [initialData.sede_id] : []),
+      sede_dropdown_open: false,
     receta_items: existingRecipes
   });
 
@@ -193,15 +195,18 @@ export default function ProductoForm({
     setError('');
     
     startTransition(async () => {
-      const payload = {
-        ...formData,
-        codigo_barras: formData.codigo_barras ? formData.codigo_barras.trim() : null,
-        descripcion: formData.descripcion ? formData.descripcion.trim() : null,
-        categoria_id: formData.categoria_id ? formData.categoria_id : null,
-        notas_preparacion: formData.notas_preparacion_str ? formData.notas_preparacion_str.split(',').map((s: string) => s.trim()).filter((s: string) => s !== '') : [],
-      };
-      // Remove the UI-only string field from payload
-      delete (payload as any).notas_preparacion_str;
+              const payload = {
+          ...formData,
+          sede_id: formData.sedes_ids.length === 1 ? formData.sedes_ids[0] : null,
+          sedes_ids: formData.sedes_ids.length > 0 ? formData.sedes_ids : null,
+          codigo_barras: formData.codigo_barras ? formData.codigo_barras.trim() : null,
+          descripcion: formData.descripcion ? formData.descripcion.trim() : null,
+          categoria_id: formData.categoria_id ? formData.categoria_id : null,
+          notas_preparacion: formData.notas_preparacion_str ? formData.notas_preparacion_str.split(',').map((s: string) => s.trim()).filter((s: string) => s !== '') : [],
+        };
+        // Remove UI-only fields
+        delete (payload as any).notas_preparacion_str;
+        delete (payload as any).sede_dropdown_open;
       const action = isEditing ? updateProducto(initialData.id, payload) : createProducto(payload);
       const res = await action;
       if (res.success) {
@@ -327,18 +332,63 @@ export default function ProductoForm({
 
             <div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-              <div>
+                            <div className="relative">
                 <label className="text-sm font-medium text-neutral-400 block mb-1.5">Sucursal Asociada</label>
-                <select
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 text-indigo-300 font-medium focus:border-indigo-500 transition-colors"
-                  value={formData.sede_id || ''}
-                  onChange={e => setFormData({...formData, sede_id: e.target.value})}
+                <div 
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 text-indigo-300 font-medium cursor-pointer flex justify-between items-center"
+                  onClick={() => setFormData({...formData, sede_dropdown_open: !formData.sede_dropdown_open})}
                 >
-                  <option value="">Global / Todas las Sedes</option>
-                  {sedes.map(s => (
-                    <option key={s.id} value={s.id}>{s.nombre_sede}</option>
-                  ))}
-                </select>
+                  <span className="truncate text-sm">
+                    {formData.sedes_ids.length === 0 ? 'Global / Todas las Sedes' : formData.sedes_ids.length === 1 ? sedes.find(s => s.id === formData.sedes_ids[0])?.nombre_sede : formData.sedes_ids.length === sedes.length ? 'Todas (Específicas)' : ${formData.sedes_ids.length} sedes seleccionadas}
+                  </span>
+                  <span className="text-xs text-neutral-500">?</span>
+                </div>
+                {formData.sede_dropdown_open && (
+                  <>
+                  <div className="fixed inset-0 z-40" onClick={() => setFormData({...formData, sede_dropdown_open: false})}></div>
+                  <div className="absolute top-full mt-1 w-full bg-neutral-900 border border-neutral-800 rounded-lg shadow-xl z-50 p-2 flex flex-col gap-1 max-h-60 overflow-auto">
+                    <label className="flex items-center gap-2 p-2 hover:bg-neutral-800 rounded cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded border-neutral-700 bg-neutral-950 text-indigo-500"
+                        checked={formData.sedes_ids.length === 0}
+                        onChange={() => setFormData({...formData, sedes_ids: []})}
+                      />
+                      <span className="text-sm text-white font-medium">Global / Todas las Sedes</span>
+                    </label>
+                    <div className="h-px bg-neutral-800 my-1"></div>
+                    <label className="flex items-center gap-2 p-2 hover:bg-neutral-800 rounded cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded border-neutral-700 bg-neutral-950 text-indigo-500"
+                        checked={formData.sedes_ids.length === sedes.length && sedes.length > 0}
+                        onChange={(e) => {
+                          if (e.target.checked) setFormData({...formData, sedes_ids: sedes.map(s => s.id)});
+                          else setFormData({...formData, sedes_ids: []});
+                        }}
+                      />
+                      <span className="text-sm text-indigo-300 font-medium">Seleccionar todas específicas</span>
+                    </label>
+                    {sedes.map(s => (
+                      <label key={s.id} className="flex items-center gap-2 p-2 hover:bg-neutral-800 rounded cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="w-4 h-4 rounded border-neutral-700 bg-neutral-950 text-indigo-500"
+                          checked={formData.sedes_ids.includes(s.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData({...formData, sedes_ids: [...formData.sedes_ids, s.id]});
+                            } else {
+                              setFormData({...formData, sedes_ids: formData.sedes_ids.filter(id => id !== s.id)});
+                            }
+                          }}
+                        />
+                        <span className="text-sm text-neutral-300">{s.nombre_sede}</span>
+                      </label>
+                    ))}
+                  </div>
+                  </>
+                )}
               </div>
 
               <div>
@@ -537,3 +587,6 @@ export default function ProductoForm({
     </div>
   );
 }
+
+
+

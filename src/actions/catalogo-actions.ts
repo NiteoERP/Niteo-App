@@ -355,8 +355,11 @@ export async function bulkUpdateProductos(ids: string[], updates: any) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: 'No autorizado' };
 
-  if (updates.sede_id === 'GLOBAL') {
+    if (updates.sede_id === 'GLOBAL') {
     updates.sede_id = null;
+    updates.sedes_ids = null;
+  } else if (updates.sede_id) {
+    updates.sedes_ids = [updates.sede_id];
   }
 
   const { error } = await supabase.from('productos').update(updates).in('id', ids);
@@ -377,3 +380,4 @@ export async function bulkDeleteProductos(ids: string[]) {
   revalidatePath('/dashboard/catalogo');
   return { success: true };
 }
+

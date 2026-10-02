@@ -45,7 +45,11 @@ export default function CatalogoClient({
       (p.codigo_barras?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
       (p.descripcion?.toLowerCase() || '').includes(searchTerm.toLowerCase());
     const matchesCat = !selectedCategoria || p.categoria_id === selectedCategoria;
-    const matchesSede = !selectedSede || (selectedSede === 'GLOBAL' ? !p.sede_id : p.sede_id === selectedSede);
+        const matchesSede = !selectedSede || 
+      (selectedSede === 'GLOBAL' 
+        ? (!p.sede_id && (!p.sedes_ids || p.sedes_ids.length === 0)) 
+        : (p.sede_id === selectedSede || (p.sedes_ids && p.sedes_ids.includes(selectedSede)))
+      );
     return matchesSearch && matchesCat && matchesSede;
   });
 
@@ -346,7 +350,7 @@ export default function CatalogoClient({
 
               <div className="flex flex-wrap items-center gap-2 mt-1">
                 <span className="px-2 py-0.5 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-medium truncate max-w-[100px]">
-                  {sedes.find(s => s.id === p.sede_id)?.nombre_sede || 'Global / Todas'}
+                  {p.sedes_ids?.length > 1 ? p.sedes_ids.length + ' sedes' : sedes.find(s => s.id === (p.sede_id || p.sedes_ids?.[0]))?.nombre_sede || 'Global / Todas'}
                 </span>
                 {p.categorias?.nombre ? (
                   <span className="px-2 py-0.5 rounded-md bg-neutral-800 border border-neutral-700 text-neutral-300 text-[10px] font-medium">
@@ -430,7 +434,7 @@ export default function CatalogoClient({
                   </td>
                   <td className="px-6 py-4">
                     <span className="px-2 py-1 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-medium">
-                      {sedes.find(s => s.id === p.sede_id)?.nombre_sede || 'Global / Todas'}
+                      {p.sedes_ids?.length > 1 ? p.sedes_ids.length + ' sedes' : sedes.find(s => s.id === (p.sede_id || p.sedes_ids?.[0]))?.nombre_sede || 'Global / Todas'}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -499,6 +503,8 @@ export default function CatalogoClient({
     </div>
   );
 }
+
+
 
 
 
