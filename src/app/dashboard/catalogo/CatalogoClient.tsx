@@ -202,40 +202,42 @@ export default function CatalogoClient({
       )}
 
       {/* ── Barra de búsqueda + botones ── */}
-      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
-        <div className="flex flex-1 items-center gap-3">
-          <div className="relative w-full max-w-sm">
+            <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4">
+        <div className="flex flex-col sm:flex-row flex-1 items-stretch sm:items-center gap-3">
+          <div className="relative w-full sm:max-w-sm shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 w-4 h-4" />
             <input
               type="text"
-              placeholder="Buscar producto o código..."
+              placeholder="Buscar producto o c�digo..."
               className="w-full bg-neutral-900 border border-neutral-800 text-sm text-white rounded-lg pl-9 pr-4 py-2 focus:border-indigo-500 transition-colors"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
-          <select
-            value={selectedSede}
-            onChange={(e) => setSelectedSede(e.target.value)}
-            className="bg-neutral-900 border border-neutral-800 text-sm text-indigo-300 rounded-lg px-3 py-2 focus:border-indigo-500 outline-none transition-colors shrink-0 max-w-[140px] truncate"
-          >
-            <option value="">Cualquier Sede</option>
-            <option value="GLOBAL">Global / Todas (Sin sede)</option>
-            {sedes.map(s => (
-              <option key={s.id} value={s.id}>{s.nombre_sede}</option>
-            ))}
-          </select>
-          <select
-            value={selectedCategoria}
-            onChange={(e) => setSelectedCategoria(e.target.value)}
-            className="bg-neutral-900 border border-neutral-800 text-sm text-neutral-300 rounded-lg px-3 py-2 focus:border-indigo-500 outline-none transition-colors shrink-0 max-w-[140px] truncate"
-          >
-            <option value="">Todas las categorías</option>
-            {categorias.map(c => (
-              <option key={c.id} value={c.id}>{c.nombre}</option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2 flex-1 sm:flex-none">
+            <select
+              value={selectedSede}
+              onChange={(e) => setSelectedSede(e.target.value)}
+              className="bg-neutral-900 border border-neutral-800 text-sm text-indigo-300 rounded-lg px-3 py-2 focus:border-indigo-500 outline-none transition-colors flex-1 sm:flex-none sm:w-[140px] truncate"
+            >
+              <option value="">Cualquier Sede</option>
+              <option value="GLOBAL">Global / Todas (Sin sede)</option>
+              {sedes.map(s => (
+                <option key={s.id} value={s.id}>{s.nombre_sede}</option>
+              ))}
+            </select>
+            <select
+              value={selectedCategoria}
+              onChange={(e) => setSelectedCategoria(e.target.value)}
+              className="bg-neutral-900 border border-neutral-800 text-sm text-neutral-300 rounded-lg px-3 py-2 focus:border-indigo-500 outline-none transition-colors flex-1 sm:flex-none sm:w-[140px] truncate"
+            >
+              <option value="">Todas las categor�as</option>
+              {categorias.map(c => (
+                <option key={c.id} value={c.id}>{c.nombre}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="flex gap-2 shrink-0">
@@ -497,6 +499,8 @@ export default function CatalogoClient({
     </div>
   );
 }
+
+
 
 
 
