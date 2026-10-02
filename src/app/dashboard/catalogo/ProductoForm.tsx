@@ -330,11 +330,11 @@ export default function ProductoForm({
               <div>
                 <label className="text-sm font-medium text-neutral-400 block mb-1.5">Sucursal Asociada</label>
                 <select
-                  required
                   className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 text-indigo-300 font-medium focus:border-indigo-500 transition-colors"
-                  value={formData.sede_id}
+                  value={formData.sede_id || ''}
                   onChange={e => setFormData({...formData, sede_id: e.target.value})}
                 >
+                  <option value="">Global / Todas las Sedes</option>
                   {sedes.map(s => (
                     <option key={s.id} value={s.id}>{s.nombre_sede}</option>
                   ))}

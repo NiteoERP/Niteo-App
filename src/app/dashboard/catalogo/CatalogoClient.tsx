@@ -38,14 +38,62 @@ export default function CatalogoClient({
   const [isPending, startTransition] = useTransition();
   const [copied, setCopied] = useState(false);
   const [catalogoActivo, setCatalogoActivo] = useState(empresa?.catalogo_activo ?? false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const filtered = productos.filter(p => {
     const matchesSearch = (p.nombre?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
       (p.codigo_barras?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
       (p.descripcion?.toLowerCase() || '').includes(searchTerm.toLowerCase());
     const matchesCat = !selectedCategoria || p.categoria_id === selectedCategoria;
-    return matchesSearch && matchesCat;
+    const matchesSede = !selectedSede || (selectedSede === 'GLOBAL' ? !p.sede_id : p.sede_id === selectedSede);
+    return matchesSearch && matchesCat && matchesSede;
   });
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedIds.length === filtered.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filtered.map(p => p.id));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!confirm(`Â¿Eliminar ${selectedIds.length} productos seleccionados?`)) return;
+    startTransition(async () => {
+      const { bulkDeleteProductos } = await import('@/actions/catalogo-actions');
+      const res = await bulkDeleteProductos(selectedIds);
+      if (res.error) alert(res.error);
+      else setSelectedIds([]);
+    });
+  };
+
+    const handleBulkAssignSede = async (sId: string) => {
+    startTransition(async () => {
+      const { bulkUpdateProductos } = await import('@/actions/catalogo-actions');
+      const res = await bulkUpdateProductos(selectedIds, { sede_id: sId === 'GLOBAL' ? null : sId });
+      if (res.error) alert(res.error);
+      else setSelectedIds([]);
+    });
+  };
+
+  const handleBulkAssignCat = async (cId: string) => {
+    startTransition(async () => {
+      const { bulkUpdateProductos } = await import('@/actions/catalogo-actions');
+      const res = await bulkUpdateProductos(selectedIds, { categoria_id: cId === 'NULL' ? null : cId });
+      if (res.error) alert(res.error);
+      else setSelectedIds([]);
+    });
+  }; = await import('@/actions/catalogo-actions');
+      const res = await bulkUpdateProductos(selectedIds, { categoria_id: cId.trim() || null });
+      if (res.error) alert(res.error);
+      else setSelectedIds([]);
+    });
+  };
+
 
   const handleEdit = (p: any) => {
     setEditingProd(p);
@@ -172,7 +220,8 @@ export default function CatalogoClient({
             onChange={(e) => setSelectedSede(e.target.value)}
             className="bg-neutral-900 border border-neutral-800 text-sm text-indigo-300 rounded-lg px-3 py-2 focus:border-indigo-500 outline-none transition-colors shrink-0 max-w-[140px] truncate"
           >
-            <option value="">Todas las sedes</option>
+            <option value="">Cualquier Sede</option>
+            <option value="GLOBAL">Global / Todas (Sin sede)</option>
             {sedes.map(s => (
               <option key={s.id} value={s.id}>{s.nombre_sede}</option>
             ))}
@@ -212,14 +261,74 @@ export default function CatalogoClient({
         </div>
       </div>
 
+      {selectedIds.length > 0 && (
+        <div className="bg-indigo-600/10 border border-indigo-500/20 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in zoom-in-95 duration-200">
+          <div className="flex items-center gap-3">
+            <div className="bg-indigo-500/20 text-indigo-400 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm">
+              {selectedIds.length}
+            </div>
+            <span className="text-sm text-indigo-200 font-medium">Productos seleccionados</span>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button 
+              onClick={handleSelectAll}
+              className="px-3 py-1.5 text-xs font-medium bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg transition-colors"
+            >
+              Seleccionar Todos
+            </button>
+                        <select 
+              className="px-3 py-1.5 text-xs font-medium bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg transition-colors cursor-pointer outline-none"
+              onChange={(e) => {
+                if (!e.target.value) return;
+                handleBulkAssignCat(e.target.value);
+                e.target.value = "";
+              }}
+              disabled={isPending}
+            >
+              <option value="">Asignar Categoría...</option>
+              <option value="NULL">Sin Categoría</option>
+              {categorias.map(c => <option key={ulk-cat-} value={c.id}>{c.nombre}</option>)}
+            </select>
+            <select 
+              className="px-3 py-1.5 text-xs font-medium bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg transition-colors cursor-pointer outline-none"
+              onChange={(e) => {
+                if (!e.target.value) return;
+                handleBulkAssignSede(e.target.value);
+                e.target.value = "";
+              }}
+              disabled={isPending}
+            >
+              <option value="">Asignar Sede...</option>
+              <option value="GLOBAL">Global / Todas</option>
+              {sedes.map(s => <option key={ulk-sede-} value={s.id}>{s.nombre_sede}</option>)}
+            </select>
+            <button 
+              onClick={handleBulkDelete}
+              disabled={isPending}
+              className="px-3 py-1.5 text-xs font-medium bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors flex items-center gap-1.5"
+            >
+              <Trash2 size={14} /> Eliminar
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden">
         
         {/* Mobile view (Cards) */}
         <div className="md:hidden divide-y divide-neutral-800/50">
           {filtered.map(p => (
-            <div key={p.id} className="p-4 hover:bg-neutral-800/40 transition-colors flex flex-col gap-3 cursor-pointer" onClick={(e) => { e.stopPropagation(); handleEdit(p); }}>
+                        <div key={p.id} className="p-4 hover:bg-neutral-800/40 transition-colors flex flex-col gap-3 cursor-pointer" onClick={(e) => { e.stopPropagation(); handleEdit(p); }}>
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
+                  <div onClick={e => e.stopPropagation()}>
+                    <input 
+                      type="checkbox" 
+                      className="w-4 h-4 rounded border-neutral-700 bg-neutral-900 text-indigo-500 cursor-pointer"
+                      checked={selectedIds.includes(p.id)}
+                      onChange={() => handleToggleSelect(p.id)}
+                    />
+                  </div>
                   {p.es_compuesto ? <PackageSearch className="text-emerald-400 w-5 h-5 shrink-0" /> : <Box className="text-blue-400 w-5 h-5 shrink-0" />}
                   <div>
                     <p className="font-medium text-white">{p.nombre}</p>
@@ -235,7 +344,7 @@ export default function CatalogoClient({
 
               <div className="flex flex-wrap items-center gap-2 mt-1">
                 <span className="px-2 py-0.5 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-medium truncate max-w-[100px]">
-                  {sedes.find(s => s.id === p.sede_id)?.nombre_sede || 'Desconocida'}
+                  {sedes.find(s => s.id === p.sede_id)?.nombre_sede || 'Global / Todas'}
                 </span>
                 {p.categorias?.nombre ? (
                   <span className="px-2 py-0.5 rounded-md bg-neutral-800 border border-neutral-700 text-neutral-300 text-[10px] font-medium">
@@ -275,11 +384,19 @@ export default function CatalogoClient({
         {/* Desktop view (Table) */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-sm whitespace-nowrap">
-            <thead className="bg-neutral-950/50 text-neutral-400">
+                        <thead className="bg-neutral-950/50 text-neutral-400">
               <tr>
+                <th className="px-6 py-4 w-12 text-center">
+                  <input 
+                    type="checkbox" 
+                    className="w-4 h-4 rounded border-neutral-700 bg-neutral-900 text-indigo-500 cursor-pointer"
+                    checked={selectedIds.length === filtered.length && filtered.length > 0}
+                    onChange={handleSelectAll}
+                  />
+                </th>
                 <th className="px-6 py-4 font-medium">Producto</th>
                 <th className="px-6 py-4 font-medium">Sucursal</th>
-                <th className="px-6 py-4 font-medium">CategorÃ­a</th>
+                <th className="px-6 py-4 font-medium">Categoría</th>
                 <th className="px-6 py-4 font-medium">Tipo</th>
                 <th className="px-6 py-4 font-medium">Costo</th>
                 <th className="px-6 py-4 font-medium">P. Venta</th>
@@ -288,7 +405,15 @@ export default function CatalogoClient({
             </thead>
             <tbody className="divide-y divide-neutral-800/50 text-neutral-300">
               {filtered.map(p => (
-                <tr key={p.id} className="hover:bg-neutral-800/40 transition-colors cursor-pointer" onClick={(e) => { e.stopPropagation(); handleEdit(p); }}>
+                                <tr key={p.id} className="hover:bg-neutral-800/40 transition-colors cursor-pointer" onClick={(e) => { e.stopPropagation(); handleEdit(p); }}>
+                  <td className="px-6 py-4 w-12 text-center" onClick={e => e.stopPropagation()}>
+                    <input 
+                      type="checkbox" 
+                      className="w-4 h-4 rounded border-neutral-700 bg-neutral-900 text-indigo-500 cursor-pointer"
+                      checked={selectedIds.includes(p.id)}
+                      onChange={() => handleToggleSelect(p.id)}
+                    />
+                  </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       {p.es_compuesto ? <PackageSearch className="text-emerald-400 w-5 h-5" /> : <Box className="text-blue-400 w-5 h-5" />}
@@ -303,7 +428,7 @@ export default function CatalogoClient({
                   </td>
                   <td className="px-6 py-4">
                     <span className="px-2 py-1 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-medium">
-                      {sedes.find(s => s.id === p.sede_id)?.nombre_sede || 'Desconocida'}
+                      {sedes.find(s => s.id === p.sede_id)?.nombre_sede || 'Global / Todas'}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -372,3 +497,7 @@ export default function CatalogoClient({
     </div>
   );
 }
+
+
+
+

@@ -13,6 +13,28 @@ export default function SedesClient({ initialSedes }: { initialSedes: Sede[] }) 
   const [loadingHistorial, setLoadingHistorial] = useState(false);
   const formRef = React.useRef<HTMLFormElement>(null);
 
+  const handleRename = (sede: Sede) => {
+    let cleanName = sede.nombre_sede.replace('1. ', '').replace('⭐ ', '').trim();
+    const newName = prompt(`Nuevo nombre para la sede (actual: ${cleanName}):`, cleanName);
+    if (!newName || newName.trim() === cleanName) return;
+    startTransition(async () => {
+      const { updateSedeNombre } = await import('@/actions/sedes-actions');
+      const res = await updateSedeNombre(sede.id, newName.trim());
+      if (res.error) alert(res.error);
+    });
+  };
+
+  const handleSetPrincipal = (sede: Sede) => {
+    if (confirm(`¿Marcar "${sede.nombre_sede}" como Sede Principal? Esto le pondrá un "1. ⭐" al inicio para que aparezca primera en todas tus listas.`)) {
+      startTransition(async () => {
+        const { updateSedeNombre } = await import('@/actions/sedes-actions');
+        let cleanName = sede.nombre_sede.replace('1. ', '').replace('⭐ ', '').trim();
+        const res = await updateSedeNombre(sede.id, `1. ⭐ ${cleanName}`);
+        if (res.error) alert(res.error);
+      });
+    }
+  };
+
   const handleRevealKey = (sedeId: string, key: string) => { setNewKeyVisible({ id: sedeId, key }); };
   const handleGenerateKey = async (sedeId: string) => {
     startTransition(async () => {
@@ -99,6 +121,22 @@ export default function SedesClient({ initialSedes }: { initialSedes: Sede[] }) 
                         <span className="px-2.5 py-1 text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg">
                           Activa
                         </span>
+                        <button
+                          onClick={() => handleSetPrincipal(sede)}
+                          disabled={isPending}
+                          className="p-1.5 text-neutral-500 hover:text-amber-400 hover:bg-amber-400/10 rounded-lg transition-colors disabled:opacity-50"
+                          title="Fijar como Sede Principal"
+                        >
+                          <Star size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleRename(sede)}
+                          disabled={isPending}
+                          className="p-1.5 text-neutral-500 hover:text-indigo-400 hover:bg-indigo-400/10 rounded-lg transition-colors disabled:opacity-50"
+                          title="Renombrar Sede"
+                        >
+                          <Edit2 size={16} />
+                        </button>
                         <button
                           onClick={() => handleDelete(sede.id, sede.nombre_sede)}
                           disabled={isPending}

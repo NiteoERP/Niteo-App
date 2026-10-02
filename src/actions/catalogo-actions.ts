@@ -349,3 +349,31 @@ export async function duplicarCatalogoSede(origenSedeId: string, destinoSedeId: 
   // Let's just import it locally inside the function if needed, or rely on client router.refresh
   return { success: true, totalDuplicados: copias.length };
 }
+
+export async function bulkUpdateProductos(ids: string[], updates: any) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'No autorizado' };
+
+  if (updates.sede_id === 'GLOBAL') {
+    updates.sede_id = null;
+  }
+
+  const { error } = await supabase.from('productos').update(updates).in('id', ids);
+  if (error) return { error: error.message };
+
+  revalidatePath('/dashboard/catalogo');
+  return { success: true };
+}
+
+export async function bulkDeleteProductos(ids: string[]) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'No autorizado' };
+
+  const { error } = await supabase.from('productos').delete().in('id', ids);
+  if (error) return { error: error.message };
+
+  revalidatePath('/dashboard/catalogo');
+  return { success: true };
+}

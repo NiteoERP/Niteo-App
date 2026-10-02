@@ -436,3 +436,35 @@ export async function activarSede(sedeId: string) {
 
 
 
+export async function updateSede(sedeId: string, nombre: string, direccion: string, esPrincipal: boolean = false) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'No autorizado' };
+
+  // Update logic: we can just update nombre and direccion.
+  // "Es principal" logic could be handled by a meta field, but simplest is order by created_at.
+  // Wait, if Supabase has no es_principal column, let's just update the name and let the user put '1. Principal'
+  
+  const { error } = await supabase.from('sedes').update({
+    nombre_sede: nombre.trim(),
+    direccion: direccion.trim() || null
+  }).eq('id', sedeId);
+
+  if (error) return { error: error.message };
+  revalidatePath('/dashboard/configuracion/sedes');
+  return { success: true };
+}
+
+export async function updateSedeNombre(sedeId: string, nuevoNombre: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'No autorizado' };
+
+  const { error } = await supabase.from('sedes').update({
+    nombre_sede: nuevoNombre.trim()
+  }).eq('id', sedeId);
+
+  if (error) return { error: error.message };
+  revalidatePath('/dashboard/configuracion/sedes');
+  return { success: true };
+}
