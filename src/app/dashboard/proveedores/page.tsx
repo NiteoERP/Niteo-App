@@ -115,6 +115,7 @@ export default function ProveedoresPage() {
   
   const [isScanningFac, setIsScanningFac] = useState(false);
   const fileInputRefFac = React.useRef<HTMLInputElement>(null);
+  const fileInputRefFacCam = React.useRef<HTMLInputElement>(null);
 
   const handleScanInvoiceFac = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -179,6 +180,7 @@ export default function ProveedoresPage() {
         }
         setIsScanningFac(false);
         if (fileInputRefFac.current) fileInputRefFac.current.value = '';
+      if (fileInputRefFacCam.current) fileInputRefFacCam.current.value = '';
       };
       reader.readAsDataURL(file);
     } catch (err) {
@@ -193,6 +195,7 @@ export default function ProveedoresPage() {
   const [showInsumoDropdown, setShowInsumoDropdown] = useState(false);
   const [insumoFilterText, setInsumoFilterText] = useState('');
   const [insumoQty, setInsumoQty] = useState('');
+  const [insumoFactor, setInsumoFactor] = useState('1');
   const [insumoPrecioUnitario, setInsumoPrecioUnitario] = useState('');
   const [insumoCostoTotal, setInsumoCostoTotal] = useState('');
   const [insumoMoneda, setInsumoMoneda] = useState<'USD'|'VES'>('USD');
@@ -1326,7 +1329,7 @@ export default function ProveedoresPage() {
                       const sel = insumosList.find(i => i.id === insumoSearch);
                       const unit = crearInsumoNuevo ? unidadInsumoNueva : (sel?.unidad_medida || '');
                       return (
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        <div className={`grid grid-cols-1 gap-2.5 ${!crearInsumoNuevo ? 'sm:grid-cols-4' : 'sm:grid-cols-3'}`}>
                           <div>
                             <label className="block text-[11px] font-medium text-neutral-400 mb-1">
                               Cantidad {unit ? `(${unit})` : ''}
@@ -1409,7 +1412,7 @@ export default function ProveedoresPage() {
                       <button 
                         type="button"
                         onClick={() => {
-                          const qty = parseFloat(insumoQty);
+                          const baseQty = parseFloat(insumoQty); const factor = !crearInsumoNuevo ? (parseFloat(insumoFactor) || 1) : 1; const qty = baseQty * factor;
                           let cost = parseFloat(insumoCostoTotal);
                           const unitPrice = parseFloat(insumoPrecioUnitario);
 

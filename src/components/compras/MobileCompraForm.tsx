@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useTransition } from 'react';
 import { getInsumos, getTasaDelDia, registrarFacturaInsumos, getComprasMetodosPago, addCompraMetodoPago, getTiendasFrecuentes } from '@/actions/compras-actions';
-import { Loader2, CheckCircle2, ShoppingCart, Search, Plus, Trash2, Building2, Camera } from 'lucide-react';
+import { Loader2, CheckCircle2, ShoppingCart, Search, Plus, Trash2, Building2, Camera, Edit2 } from 'lucide-react';
 import CreatableSelect from 'react-select/creatable';
 
 type Insumo = {
@@ -45,6 +45,7 @@ export default function MobileCompraForm() {
   // ── Escaneo con IA ───────────────────────────────────────────────────────
   const [isScanning, setIsScanning] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const fileInputRefCam = React.useRef<HTMLInputElement>(null);
 
   const handleScanInvoice = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -102,6 +103,7 @@ export default function MobileCompraForm() {
         setIsScanning(false);
         // Resetear el input para que el usuario pueda escanear otra foto
         if (fileInputRef.current) fileInputRef.current.value = '';
+      if (fileInputRefCam.current) fileInputRefCam.current.value = '';
       };
       reader.readAsDataURL(file);
     } catch (err) {
