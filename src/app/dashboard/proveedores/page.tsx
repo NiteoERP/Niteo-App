@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useRef, useCallback, startTransition } from "react";
 import { getSedes } from "@/actions/dashboard-actions";
@@ -94,6 +94,8 @@ export default function ProveedoresPage() {
   // â”€â”€ Modal: Nueva Factura â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [showFacturaModal, setShowFacturaModal] = useState(false);
   const [facProveedorId, setFacProveedorId] = useState('');
+  const [showProvDropdown, setShowProvDropdown] = useState(false);
+  const [provSearch, setProvSearch] = useState('');
   const [facSede, setFacSede] = useState('');
   const [facConcepto, setFacConcepto] = useState('');
   const [facTotal, setFacTotal] = useState('');
@@ -1074,11 +1076,45 @@ export default function ProveedoresPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm text-neutral-400 mb-1.5">Proveedor *</label>
-                  <select value={facProveedorId} onChange={e => setFacProveedorId(e.target.value)}
-                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 appearance-none">
-                    <option className="bg-neutral-900 text-white" value="">Selecciona un proveedor...</option>
-                    {todosProveedores.map(p => <option key={p.id} value={p.id} className="bg-neutral-900 text-white">{p.nombre_comercial}{p.rif_cedula ? ` (${p.rif_cedula})` : ''}</option>)}
-                  </select>
+                  <div className="relative">
+                    <div 
+                      className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 text-sm cursor-pointer flex justify-between items-center hover:bg-neutral-900 transition-colors"
+                      onClick={() => setShowProvDropdown(!showProvDropdown)}
+                    >
+                      <span>{facProveedorId ? todosProveedores.find(p => p.id === facProveedorId)?.nombre_comercial : 'Selecciona un proveedor...'}</span>
+                      <ChevronDown size={14} className="text-neutral-500" />
+                    </div>
+                    
+                    {showProvDropdown && (
+                      <div className="absolute z-[60] w-full mt-2 bg-neutral-900 border border-neutral-800 rounded-xl shadow-2xl overflow-hidden">
+                        <div className="p-2 border-b border-neutral-800">
+                          <input 
+                            type="text" 
+                            placeholder="Buscar proveedor..." 
+                            value={provSearch}
+                            onChange={e => setProvSearch(e.target.value)}
+                            className="w-full bg-black/50 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
+                            autoFocus
+                          />
+                        </div>
+                        <div className="max-h-48 overflow-y-auto">
+                          {(() => {
+                            const filteredProvs = todosProveedores.filter(p => (p.nombre_comercial || '').toLowerCase().includes(provSearch.toLowerCase()) || (p.rif_cedula || '').toLowerCase().includes(provSearch.toLowerCase()));
+                            if (filteredProvs.length === 0) return <div className="px-4 py-3 text-sm text-neutral-500 text-center">No hay resultados</div>;
+                            return filteredProvs.map(p => (
+                              <div 
+                                key={p.id}
+                                className="px-4 py-2.5 text-sm text-white hover:bg-neutral-800 cursor-pointer"
+                                onClick={() => { setFacProveedorId(p.id); setShowProvDropdown(false); setProvSearch(''); }}
+                              >
+                                {p.nombre_comercial} {p.rif_cedula && <span className="text-neutral-500 text-xs ml-1">({p.rif_cedula})</span>}
+                              </div>
+                            ));
+                          })()}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   <button onClick={() => { setShowFacturaModal(false); setShowCrearModal(true); }}
                     className="text-xs text-indigo-400 hover:text-indigo-300 mt-1.5 flex items-center gap-1">
                     <Plus size={12} /> Crear nuevo proveedor
