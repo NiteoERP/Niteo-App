@@ -1,13 +1,13 @@
-'use server';
+﻿'use server';
 
 import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 
-export async function createInsumo(empresaId: string, sedeId: string, nombre: string, unidad_medida: string, costo_promedio: number, cantidad_actual: number) {
+export async function createInsumo(empresaId: string, sedeId: string, nombre: string, unidad_medida: string, costo_promedio: number, cantidad_actual: number, categoria: string = 'General') {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   
-  const { data, error } = await supabase.from('inventario_insumos').insert([{ empresa_id: empresaId, sede_id: sedeId, nombre, unidad_medida, costo_promedio, cantidad_actual }]).select().single();
+  const { data, error } = await supabase.from('inventario_insumos').insert([{ empresa_id: empresaId, sede_id: sedeId, nombre, unidad_medida, costo_promedio, cantidad_actual, categoria }]).select().single();
   if (error) return { success: false, error: error.message };
   
   // Registrar movimiento si hay cantidad inicial
@@ -293,3 +293,20 @@ export async function registrarVentaAlCosto(insumoId: string, cantidad: number, 
   };
 }
 
+
+export async function updateInsumo(id: string, nombre: string, categoria: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autorizado' };
+  
+  const { data, error } = await supabase
+    .from('inventario_insumos')
+    .update({ nombre, categoria })
+    .eq('id', id)
+    .select()
+    .single();
+    
+  if (error) return { success: false, error: error.message };
+  revalidatePath('/dashboard/inventario');
+  return { success: true, data };
+}

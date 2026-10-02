@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import React, { useOptimistic, useTransition, useState, useMemo } from 'react';
-import { createInsumo, deleteInsumo, ajustarInventarioBatch, registrarVentaAlCosto } from './actions';
+import { createInsumo, deleteInsumo, ajustarInventarioBatch, registrarVentaAlCosto, updateInsumo } from './actions';
 import {
   PackageOpen, Plus, Trash2, Loader2, AlertCircle, FileText,
   Save, X, Edit3, DollarSign, Boxes,
@@ -27,6 +27,7 @@ type Insumo = {
   cantidad_actual: number;
   empresa_id?: string;
   sede_id?: string;
+  categoria?: string;
   isOptimistic?: boolean;
 };
 
@@ -312,6 +313,11 @@ export default function InsumosManager({
   const [unidad, setUnidad] = useState('Kg');
   const [costo, setCosto] = useState('');
   const [stock, setStock] = useState('');
+  const [categoria, setCategoria] = useState('General');
+  const [filterCategoria, setFilterCategoria] = useState('TODOS');
+  const [editModalInsumo, setEditModalInsumo] = useState<Insumo | null>(null);
+  const [editNombre, setEditNombre] = useState('');
+  const [editCategoria, setEditCategoria] = useState('');
 
   // Internal tab
   const [activeTab, setActiveTab] = useState<'inventario' | 'movimientos'>('inventario');
@@ -355,9 +361,10 @@ export default function InsumosManager({
   // Optimistic UI
   const [optimisticInsumos, addOptimisticInsumo] = useOptimistic(
     initialInsumos,
-    (state, action: { type: 'add' | 'delete' | 'update'; payload: any }) => {
+    (state, action: { type: 'add' | 'delete' | 'update' | 'edit'; payload: any }) => {
       if (action.type === 'add') return [{ ...action.payload, id: Math.random().toString(), isOptimistic: true }, ...state];
       if (action.type === 'delete') return state.filter(i => i.id !== action.payload);
+      if (action.type === 'edit') return state.map(i => i.id === action.payload.id ? { ...i, nombre: action.payload.nombre, categoria: action.payload.categoria, isOptimistic: true } : i);
       if (action.type === 'update') return state.map(i => {
         const adj = action.payload.find((a: any) => a.id === i.id);
         return adj ? { ...i, cantidad_actual: adj.cantidad_actual } : i;
@@ -367,6 +374,16 @@ export default function InsumosManager({
   );
 
   // ── Metrics ─────────────────────────────────────────────────────────────────
+    const allCategorias = useMemo(() => {
+    const set = new Set(optimisticInsumos.map((i: Insumo) => i.categoria || 'General'));
+    return ['TODOS', ...Array.from(set)];
+  }, [optimisticInsumos]);
+  
+  const filteredInsumos = useMemo(() => {
+    if (filterCategoria === 'TODOS') return optimisticInsumos;
+    return optimisticInsumos.filter((i: Insumo) => (i.categoria || 'General') === filterCategoria);
+  }, [optimisticInsumos, filterCategoria]);
+
   const totalValue = useMemo(
     () => optimisticInsumos.reduce((s, i) => s + (Number(i.costo_promedio) || 0) * (Number(i.cantidad_actual) || 0), 0),
     [optimisticInsumos]
@@ -402,12 +419,26 @@ export default function InsumosManager({
       return;
     }
     setError('');
-    const newInsumo = { empresa_id: empresaId, nombre, unidad_medida: unidad, costo_promedio: parseFloat(costo) || 0, cantidad_actual: parseFloat(stock) || 0 };
-    setNombre(''); setCosto(''); setStock('');
+    const newInsumo = { empresa_id: empresaId, nombre, unidad_medida: unidad, costo_promedio: parseFloat(costo) || 0, cantidad_actual: parseFloat(stock) || 0, categoria: categoria || 'General' };
+    setNombre(''); setCosto(''); setStock(''); setCategoria('General');
     startTransition(async () => {
       addOptimisticInsumo({ type: 'add', payload: newInsumo });
-      const res = await createInsumo(empresaId, sedeId, newInsumo.nombre, newInsumo.unidad_medida, newInsumo.costo_promedio, newInsumo.cantidad_actual);
+      const res = await createInsumo(empresaId, sedeId, newInsumo.nombre, newInsumo.unidad_medida, newInsumo.costo_promedio, newInsumo.cantidad_actual, newInsumo.categoria);
       if (!res.success) setError(res.error || 'Error desconocido');
+    });
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editModalInsumo || !editNombre) return;
+    const { id } = editModalInsumo;
+    const newNombre = editNombre;
+    const newCat = editCategoria || 'General';
+    setEditModalInsumo(null);
+    startTransition(async () => {
+      addOptimisticInsumo({ type: 'edit', payload: { id, nombre: newNombre, categoria: newCat } });
+      const res = await updateInsumo(id, newNombre, newCat);
+      if (!res.success) alert(res.error);
     });
   };
 
@@ -690,7 +721,16 @@ export default function InsumosManager({
                   className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-emerald-500" />
               </div>
               <div className="w-full lg:w-48">
-                <label className="block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wider">Unidad de Medida</label>
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wider">Categoría</label>
+                <input type="text" list="categorias-datalist" value={categoria} onChange={e => setCategoria(e.target.value)}
+                  placeholder="Ej: Pizzería, Vegetales"
+                  className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+                <datalist id="categorias-datalist">
+                  {allCategorias.filter(c => c !== 'TODOS').map(c => <option key={c} value={c} />)}
+                </datalist>
+              </div>
+              <div className="w-full lg:w-40">
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wider">Unidad Medida</label>
                 <select value={unidad} onChange={e => setUnidad(e.target.value)}
                   className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-emerald-500 appearance-none">
                   <option value="Kg">Kilogramos (Kg)</option>
@@ -726,6 +766,21 @@ export default function InsumosManager({
             )}
           </div>
 
+          {/* Filters */}
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar">
+              {allCategorias.map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setFilterCategoria(cat)}
+                  className={`px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${filterCategoria === cat ? 'bg-indigo-600 text-white shadow-md' : 'bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700'}`}
+                >
+                  {cat === 'TODOS' ? 'Todas las Categorías' : cat}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Table */}
           <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
@@ -741,15 +796,17 @@ export default function InsumosManager({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-800/50">
-                  {optimisticInsumos.length === 0 ? (
+                  {filteredInsumos.length === 0 ? (
                     <tr><td colSpan={canSeeCosts ? 6 : 4} className="py-12 text-center text-neutral-500">No hay insumos registrados. Agrega el primero arriba.</td></tr>
-                  ) : optimisticInsumos.map(insumo => {
+                  ) : filteredInsumos.map(insumo => {
                     const valorTotal = (Number(insumo.costo_promedio) || 0) * (Number(insumo.cantidad_actual) || 0);
                     return (
                       <tr key={insumo.id} onClick={() => handleInsumoClick(insumo)} className="hover:bg-white/5 transition-colors text-neutral-300 cursor-pointer group">
                         <td className="py-4 px-6 font-medium text-neutral-200 group-hover:text-indigo-400 transition-colors">
-                          {insumo.nombre}
-                          {insumo.isOptimistic && <span className="ml-2 text-xs text-emerald-400 opacity-70">(Guardando...)</span>}
+                          <div className="flex flex-col">
+                            <span>{insumo.nombre} {insumo.isOptimistic && <span className="ml-2 text-xs text-emerald-400 opacity-70">(Guardando...)</span>}</span>
+                            <span className="text-[10px] text-neutral-500 mt-0.5">{insumo.categoria || 'General'}</span>
+                          </div>
                         </td>
                         <td className="py-4 px-6">
                           <span className="bg-neutral-800 text-neutral-300 px-2.5 py-1 rounded-md text-xs font-medium border border-neutral-700">{insumo.unidad_medida}</span>
@@ -763,7 +820,18 @@ export default function InsumosManager({
                             <span className={`font-semibold ${valorTotal > 0 ? 'text-emerald-400' : 'text-neutral-500'}`}>${valorTotal.toFixed(2)}</span>
                           </td>
                         )}
-                        <td className="py-4 px-6 text-center" onClick={(e) => e.stopPropagation()}>
+                        <td className="py-4 px-6 text-center flex items-center justify-center gap-1" onClick={(e) => e.stopPropagation()}>
+                          <button 
+                            onClick={() => {
+                              setEditModalInsumo(insumo);
+                              setEditNombre(insumo.nombre);
+                              setEditCategoria(insumo.categoria || 'General');
+                            }} 
+                            disabled={insumo.isOptimistic}
+                            className="text-neutral-500 hover:text-indigo-400 p-1.5 rounded-lg hover:bg-indigo-500/10 transition-colors disabled:opacity-50"
+                          >
+                            <Edit3 size={16} />
+                          </button>
                           <button onClick={() => handleDelete(insumo.id)} disabled={insumo.isOptimistic}
                             className="text-neutral-500 hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-500/10 transition-colors disabled:opacity-50">
                             <Trash2 size={18} />
@@ -773,7 +841,7 @@ export default function InsumosManager({
                     );
                   })}
                 </tbody>
-                {canSeeCosts && optimisticInsumos.length > 0 && (
+                {canSeeCosts && filteredInsumos.length > 0 && (
                   <tfoot className="border-t border-neutral-800 bg-black/30">
                     <tr>
                       <td colSpan={4} className="py-3 px-6 text-right text-neutral-400 font-medium">Total del Inventario:</td>
@@ -1322,6 +1390,59 @@ export default function InsumosManager({
         </div>
       )}
 
+
+      {/* Edit Insumo Modal */}
+      {editModalInsumo && (
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
+            <div className="flex items-center justify-between p-5 border-b border-neutral-800 bg-neutral-900/50">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2"><Edit3 size={18} className="text-indigo-400" /> Editar Insumo</h2>
+              <button onClick={() => setEditModalInsumo(null)} className="text-neutral-500 hover:text-white p-1 rounded-lg hover:bg-neutral-800 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdate} className="p-5 flex flex-col gap-4">
+              <div>
+                <label className="block text-xs font-medium text-neutral-400 mb-1.5 uppercase tracking-wider">Nombre del Insumo</label>
+                <input
+                  required
+                  type="text"
+                  value={editNombre}
+                  onChange={e => setEditNombre(e.target.value)}
+                  className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-neutral-400 mb-1.5 uppercase tracking-wider">Categoría</label>
+                <input
+                  type="text"
+                  list="edit-categorias-datalist"
+                  value={editCategoria}
+                  onChange={e => setEditCategoria(e.target.value)}
+                  placeholder="Ej: Coctelería, Pizzería"
+                  className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500"
+                />
+                <datalist id="edit-categorias-datalist">
+                  {allCategorias.filter(c => c !== 'TODOS').map(c => <option key={c} value={c} />)}
+                </datalist>
+                <p className="text-[10px] text-neutral-500 mt-1.5">Si escribes una categoría nueva, se creará automáticamente.</p>
+              </div>
+
+              <div className="pt-2 mt-2 border-t border-neutral-800/50 flex justify-end gap-3">
+                <button type="button" onClick={() => setEditModalInsumo(null)} className="px-5 py-2.5 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800 text-sm transition-colors">
+                  Cancelar
+                </button>
+                <button type="submit" disabled={isPending || !editNombre} className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 transition-colors disabled:opacity-50">
+                  {isPending ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                  Guardar Cambios
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
