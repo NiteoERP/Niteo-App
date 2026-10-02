@@ -13,7 +13,7 @@ import { useEmpresa } from "@/components/providers/EmpresaProvider";
 import {
   Store, Wallet, Search, Check, FileText, ChevronDown, ChevronUp,
   Clock, PlusCircle, X, Plus, User, Phone, MapPin, Hash,
-  CreditCard, Building2, AlertCircle, History, DollarSign, Package, CheckCircle2, Pencil, Info, Edit2, Trash2, Loader2, Eye
+  CreditCard, Building2, AlertCircle, History, DollarSign, Package, CheckCircle2, Pencil, Info, Edit2, Trash2, Loader2, Eye, Camera
 } from "lucide-react";
 import { format } from "date-fns";
 import MobileCompraForm from "@/components/compras/MobileCompraForm";
@@ -948,10 +948,24 @@ export default function ProveedoresPage() {
       {showFacturaModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <div className="flex items-center justify-between p-6 border-b border-neutral-800">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2"><FileText size={18} className="text-indigo-400" /> Nueva Factura / Deuda</h3>
-              <button onClick={() => setShowFacturaModal(false)} className="text-neutral-400 hover:text-white"><X size={22} /></button>
-            </div>
+                          <div className="flex items-center justify-between p-6 border-b border-neutral-800">
+                <div className="flex flex-col gap-1">
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2"><FileText size={18} className="text-indigo-400" /> Nueva Factura / Deuda</h3>
+                  <div className="flex items-center gap-2 mt-2">
+                    <input type="file" accept="image/*" className="hidden" ref={fileInputRefFac} onChange={handleScanInvoiceFac} />
+                    <button 
+                      onClick={() => fileInputRefFac.current?.click()}
+                      disabled={isScanningFac}
+                      className="bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 border border-indigo-500/30 px-3 py-1.5 rounded-xl flex items-center gap-2 transition-colors disabled:opacity-50 text-xs"
+                      title="Autocompletar con Foto (IA)"
+                    >
+                      {isScanningFac ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
+                      <span className="font-medium">{isScanningFac ? 'Analizando...' : 'Escanear Foto'}</span>
+                    </button>
+                  </div>
+                </div>
+                <button onClick={() => setShowFacturaModal(false)} className="text-neutral-400 hover:text-white self-start"><X size={22} /></button>
+              </div>
             <div className="px-6 pt-4">
               <div className="grid grid-cols-2 p-1 bg-black/40 border border-neutral-800 rounded-2xl">
                 <button
@@ -2067,3 +2081,5 @@ export default function ProveedoresPage() {
     </div>
   );
 }
+
+

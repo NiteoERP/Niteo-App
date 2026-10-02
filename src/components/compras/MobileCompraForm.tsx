@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useTransition } from 'react';
 import { getInsumos, getTasaDelDia } from '@/actions/compras-actions';
 import { registrarFacturaInsumos, getComprasMetodosPago, addCompraMetodoPago, getTiendasFrecuentes } from '@/actions/compras-actions';
-import { Loader2, CheckCircle2, ShoppingCart, Search, Plus, Trash2, Building2 } from 'lucide-react';
+import { Loader2, CheckCircle2, ShoppingCart, Search, Plus, Trash2, Building2, Camera } from 'lucide-react';
 import CreatableSelect from 'react-select/creatable';
 
 type Insumo = {
@@ -35,8 +35,62 @@ export default function MobileCompraForm() {
   const [monedaGlobal, setMonedaGlobal] = useState<'USD'|'VES'>('USD');
   const [metodoPago, setMetodoPago] = useState('Efectivo USD');
   const [descripcion, setDescripcion] = useState('');
-  const [dbMetodos, setDbMetodos] = useState<any[]>([]);
+    const [dbMetodos, setDbMetodos] = useState<any[]>([]);
   const [tiendasFrecuentes, setTiendasFrecuentes] = useState<string[]>([]);
+
+  // AI Scan
+  const [isScanning, setIsScanning] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleScanInvoice = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsScanning(true);
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Str = (reader.result as string).split(',')[1];
+        const { scanInvoice } = await import('@/actions/ai-actions');
+        
+        const invContext = insumos.map(i => ({ id: i.id, nombre: i.nombre, unidad_medida: i.unidad_medida }));
+        const res = await scanInvoice(base64Str, file.type, invContext);
+        
+        if (res.error) {
+          alert(res.error);
+        } else if (res.data) {
+          const d = res.data;
+          if (d.moneda === 'VES' || d.moneda === 'USD') setMonedaGlobal(d.moneda);
+          if (d.proveedor_nombre && d.proveedor_nombre !== 'Desconocido') setProveedor(d.proveedor_nombre);
+
+          const newCart = (d.items || []).map((item: any, i: number) => {
+            const isNew = !item.insumo_id_recomendado;
+            const factor = item.es_bulto ? (item.unidades_por_bulto_estimado || 1) : 1;
+            return {
+              id: Date.now().toString() + i,
+              insumo_id: item.insumo_id_recomendado || null,
+              is_new: isNew,
+              nombre_nuevo: isNew ? item.nombre_original_factura : '',
+              unidad_nueva: isNew ? (item.es_bulto ? 'Bulto' : 'Unidad') : '',
+              cantidad: item.cantidad || 1,
+              unidad_compra: item.es_bulto ? 'Bulto' : 'Unidad',
+              factor_compra: factor,
+              cantidad_base: (item.cantidad || 1) * factor,
+              costoTotal: item.precio_total || ((item.precio_unitario || 0) * (item.cantidad || 1)),
+              monedaItem: d.moneda
+            };
+          });
+          
+          setCart(prev => [...prev, ...newCart]);
+        }
+        setIsScanning(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error(err);
+      setIsScanning(false);
+    }
+  };
   
   useEffect(() => {
     const fetchM = async () => {
@@ -217,18 +271,32 @@ export default function MobileCompraForm() {
 
   return (
     <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 md:p-8 max-w-4xl mx-auto shadow-2xl relative">
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <div className="bg-indigo-500/20 p-2.5 rounded-xl border border-indigo-500/30">
-            <ShoppingCart className="text-indigo-400" size={24} />
+              <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="bg-indigo-500/20 p-2.5 rounded-xl border border-indigo-500/30">
+              <ShoppingCart className="text-indigo-400" size={24} />
+            </div>
+            <h2 className="text-xl font-bold text-white">Factura de Compra</h2>
           </div>
-          <h2 className="text-xl font-bold text-white">Factura de Compra</h2>
+          <div className="flex items-center gap-2">
+            <input 
+              type="file" 
+              accept="image/*" 
+              className="hidden" 
+              ref={fileInputRef} 
+              onChange={handleScanInvoice} 
+            />
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isScanning}
+              className="bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 border border-indigo-500/30 px-3 py-2 rounded-xl flex items-center gap-2 transition-colors disabled:opacity-50"
+              title="Autocompletar con Foto (IA)"
+            >
+              {isScanning ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
+              <span className="hidden sm:inline font-medium text-sm">{isScanning ? 'Analizando...' : 'Escanear Foto'}</span>
+            </button>
+          </div>
         </div>
-        <div className="bg-neutral-950 px-4 py-2 rounded-xl border border-neutral-800 flex items-center gap-2">
-          <span className="text-neutral-400 text-sm">Tasa BCV:</span>
-          <span className="text-emerald-400 font-bold">{tasaDelDia.toFixed(2)} Bs</span>
-        </div>
-      </div>
 
       {success ? (
         <div className="flex flex-col items-center justify-center py-12 animate-in fade-in zoom-in">
@@ -582,5 +650,6 @@ export default function MobileCompraForm() {
     </div>
   );
 }
+
 
 
