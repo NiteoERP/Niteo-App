@@ -1,4 +1,4 @@
-﻿'use server';
+'use server';
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
@@ -14,9 +14,9 @@ export async function scanInvoice(base64Image: string, mimeType: string, invento
       generationConfig: { responseMimeType: 'application/json' } 
     });
 
-    const inventoryContext = inventory.map(i => {"id": " + i.id + ", "nombre": " + i.nombre + ", "unidad": " + i.unidad_medida + "}).join('\n');
+    const inventoryContext = inventory.map(i => `{"id": "${i.id}", "nombre": "${i.nombre}", "unidad": "${i.unidad_medida}"}`).join('\n');
 
-    const prompt = \
+    const prompt = `
 Eres un asistente experto en contabilidad y gestión de inventarios para un negocio en Venezuela.
 Analiza esta imagen de una factura o ticket de compra y extrae los datos en formato JSON estricto.
 
@@ -33,7 +33,7 @@ Reglas de extracción y degradación (MUY IMPORTANTE):
 10. DETECTA BULTOS: Si indica caja, bulto o empaque múltiple (ej. "Bulto x 12"), pon "es_bulto": true, y extrae "unidades_por_bulto_estimado" (ej. 12). Si es unidad, false.
 
 Inventario disponible:
-\
+?${inventoryContext}
 
 Estructura JSON requerida (devuelve SOLO el objeto JSON):
 {
@@ -57,7 +57,7 @@ Estructura JSON requerida (devuelve SOLO el objeto JSON):
     }
   ]
 }
-\;
+`;
 
     const result = await model.generateContent([
       prompt,
