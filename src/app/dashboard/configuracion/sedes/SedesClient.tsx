@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useTransition } from 'react';
 import { Sede, generarMasterKey, crearSede, eliminarSede, activarSede, getHistorialSede, HistorialSedeInfo } from '@/actions/sedes-actions';
-import { Key, Plus, MapPin, MonitorSmartphone, CheckCircle2, Clock, AlertCircle, Trash2, Power, Eye, X, FileText, Users, ShoppingCart, Package, DollarSign, Store, Edit2, Archive } from 'lucide-react';
+import { Key, Plus, Star, MapPin, MonitorSmartphone, CheckCircle2, Clock, AlertCircle, Trash2, Power, Eye, X, FileText, Users, ShoppingCart, Package, DollarSign, Store, Edit2, Archive } from 'lucide-react';
 
 export default function SedesClient({ initialSedes }: { initialSedes: Sede[] }) {
   const [isPending, startTransition] = useTransition();

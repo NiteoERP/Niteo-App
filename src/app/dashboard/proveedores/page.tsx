@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useRef, useCallback, startTransition } from "react";
 import { getSedes } from "@/actions/dashboard-actions";
@@ -21,7 +21,7 @@ import Link from "next/link";
 import { formatFecha } from "@/utils/date-utils";
 import AbonosGlobalesHistorial from "./AbonosGlobalesHistorial";
 
-// ── Helpers ────────────────────────────────────────────────
+// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Badge({ label, color = 'neutral' }: { label: string; color?: string }) {
   const map: Record<string, string> = {
     emerald: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
@@ -36,7 +36,7 @@ function Badge({ label, color = 'neutral' }: { label: string; color?: string }) 
   );
 }
 
-// ── Main Component ─────────────────────────────────────────
+// â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function ProveedoresPage() {
   const { formatCurrency, empresa, userRole, permisos } = useEmpresa();
   const roleUpper = (userRole || '').toUpperCase();
@@ -62,13 +62,13 @@ export default function ProveedoresPage() {
   const [facturasProveedor, setFacturasProveedor] = useState<any[]>([]);
   const [loadingFacturas, setLoadingFacturas] = useState(false);
 
-  // ── Tab: solo con deuda vs todos ──────────────────────────
+  // â”€â”€ Tab: solo con deuda vs todos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   
   const [eliminandoId, setEliminandoId] = useState<string | null>(null);
 
   const handleEliminarProveedor = async (e: React.MouseEvent, provId: string, nombre: string) => {
     e.stopPropagation();
-    if (!confirm(`¿Estás seguro que deseas eliminar el proveedor "${nombre}"? Si tiene facturas asociadas, se ocultará en lugar de eliminarse por completo.`)) return;
+    if (!confirm(`Â¿EstÃ¡s seguro que deseas eliminar el proveedor "${nombre}"? Si tiene facturas asociadas, se ocultarÃ¡ en lugar de eliminarse por completo.`)) return;
     setEliminandoId(provId);
     const res = await eliminarProveedor(provId);
     if (res.success) {
@@ -82,7 +82,7 @@ export default function ProveedoresPage() {
   const [soloConDeuda, setSoloConDeuda] = useState(true);
   const [todosProveedores, setTodosProveedores] = useState<any[]>([]);
 
-  // ── Modal: Crear Proveedor ────────────────────────────────
+  // â”€â”€ Modal: Crear Proveedor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [showCrearModal, setShowCrearModal] = useState(false);
   const [nuevoNombre, setNuevoNombre] = useState('');
   const [nuevoRif, setNuevoRif] = useState('');
@@ -91,7 +91,7 @@ export default function ProveedoresPage() {
   const [creandoProveedor, setCreandoProveedor] = useState(false);
   const [errorCrear, setErrorCrear] = useState('');
 
-  // ── Modal: Nueva Factura ──────────────────────────────────
+  // â”€â”€ Modal: Nueva Factura â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [showFacturaModal, setShowFacturaModal] = useState(false);
   const [facProveedorId, setFacProveedorId] = useState('');
   const [facSede, setFacSede] = useState('');
@@ -110,6 +110,61 @@ export default function ProveedoresPage() {
   const [errorFactura, setErrorFactura] = useState('');
   const [facturaTab, setFacturaTab] = useState<'gastos'|'insumos'>('insumos');
   
+  const [isScanningFac, setIsScanningFac] = useState(false);
+  const fileInputRefFac = React.useRef<HTMLInputElement>(null);
+
+  const handleScanInvoiceFac = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsScanningFac(true);
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Str = (reader.result as string).split(',')[1];
+        const { scanInvoice } = await import('@/actions/ai-actions');
+        
+        const invContext = insumosList.map(i => ({ id: i.id, nombre: i.nombre, unidad_medida: i.unidad_medida }));
+        const res = await scanInvoice(base64Str, file.type, invContext);
+        
+        if (res.error) {
+          alert(res.error);
+        } else if (res.data) {
+          const d = res.data;
+          if (d.moneda === 'VES' || d.moneda === 'USD') setFacMoneda(d.moneda);
+          if (d.descuento_total) setFacDescuento(d.descuento_total.toString());
+          if (d.monto_iva) setFacIva(d.monto_iva.toString());
+          if (d.fecha_vencimiento) setFacFechaVencimiento(d.fecha_vencimiento);
+
+          const newCart = (d.items || []).map((item: any, i: number) => {
+            const isNew = !item.insumo_id_recomendado;
+            const factor = item.es_bulto ? (item.unidades_por_bulto_estimado || 1) : 1;
+            const qty = item.cantidad || 1;
+            const costo = item.precio_total ?? ((item.precio_unitario ?? 0) * qty);
+            return {
+              id: Date.now().toString() + i,
+              insumo_id: item.insumo_id_recomendado || null,
+              is_new: isNew,
+              nombre_nuevo: isNew ? (item.nombre_original_factura || '') : '',
+              unidad_nueva: isNew ? (item.es_bulto ? 'Bulto' : 'Unidad') : '',
+              cantidad: qty,
+              precioUnitario: costo / qty,
+              costoTotal: costo,
+              monedaItem: d.moneda
+            };
+          });
+          
+          setFacItems(prev => [...prev, ...newCart]);
+        }
+        setIsScanningFac(false);
+        if (fileInputRefFac.current) fileInputRefFac.current.value = '';
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error(err);
+      setIsScanningFac(false);
+    }
+  };
   // Cart para insumos en factura
   const [facItems, setFacItems] = useState<any[]>([]);
   const [insumosList, setInsumosList] = useState<any[]>([]);
@@ -122,7 +177,7 @@ export default function ProveedoresPage() {
   const [nombreInsumoNuevo, setNombreInsumoNuevo] = useState('');
   const [unidadInsumoNueva, setUnidadInsumoNueva] = useState('Kg');
 
-  // ── Modal: Pago ───────────────────────────────────────────
+  // â”€â”€ Modal: Pago â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [showPagoModal, setShowPagoModal] = useState(false);
   const [facturaPagar, setFacturaPagar] = useState<any>(null);
   const [montoAbonar, setMontoAbonar] = useState('');
@@ -133,13 +188,13 @@ export default function ProveedoresPage() {
   const [isPagarLoading, setIsPagarLoading] = useState(false);
   const [errorPago, setErrorPago] = useState('');
 
-  // ── Historial de pagos minimizado por factura ──────────────
+  // â”€â”€ Historial de pagos minimizado por factura â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [expandedPagos, setExpandedPagos] = useState<Record<string, boolean>>({});
   const togglePagos = (facId: string) => {
     setExpandedPagos(prev => ({ ...prev, [facId]: !prev[facId] }));
   };
 
-  // ── Ver historial de facturas saldadas por proveedor ───────
+  // â”€â”€ Ver historial de facturas saldadas por proveedor â”€â”€â”€â”€â”€â”€â”€
   const [mostrarHistorialPagadas, setMostrarHistorialPagadas] = useState<Record<string, boolean>>({});
   const toggleHistorialPagadas = (provId: string) => {
     setMostrarHistorialPagadas(prev => ({ ...prev, [provId]: !prev[provId] }));
@@ -148,7 +203,7 @@ export default function ProveedoresPage() {
   // Historial de Abonos Globales
   const [abonosProvInfo, setAbonosProvInfo] = useState<{id: string, nombre: string} | null>(null);
 
-  // ── Modal: Pago General / Cascada FIFO ──────────────────────
+  // â”€â”€ Modal: Pago General / Cascada FIFO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [showPagoGeneralModal, setShowPagoGeneralModal] = useState(false);
   const [proveedorPagarGeneral, setProveedorPagarGeneral] = useState<any>(null);
   const [montoAbonoGeneral, setMontoAbonoGeneral] = useState('');
@@ -159,7 +214,7 @@ export default function ProveedoresPage() {
   const [isPagarGeneralLoading, setIsPagarGeneralLoading] = useState(false);
   const [errorPagoGeneral, setErrorPagoGeneral] = useState('');
 
-  // ── Detalles de Factura Modal ──────────────────────────────
+  // â”€â”€ Detalles de Factura Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [detallesModalData, setDetallesModalData] = useState<any>(null);
   const handleVerDetallesFactura = async (fac: any) => {
     setDetallesModalData({ isLoading: true, factura: fac });
@@ -172,7 +227,7 @@ export default function ProveedoresPage() {
     }
   };
 
-  // ── Modal: Editar Factura ──────────────────────────────────
+  // â”€â”€ Modal: Editar Factura â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [showEditFacturaModal, setShowEditFacturaModal] = useState(false);
   const [facturaEditando, setFacturaEditando] = useState<any>(null);
   const [editFacConcepto, setEditFacConcepto] = useState('');
@@ -231,7 +286,7 @@ export default function ProveedoresPage() {
       : Number(editFacTotal);
 
     if (isNaN(calculatedTotal) || calculatedTotal <= 0) {
-      setErrorEdit('Monto inválido'); return;
+      setErrorEdit('Monto invÃ¡lido'); return;
     }
     if (!editFacSede) {
       setErrorEdit('Sede requerida'); return;
@@ -275,13 +330,13 @@ export default function ProveedoresPage() {
     setIsEditLoading(false);
   };
 
-  // ── Debounce search ───────────────────────────────────────
+  // â”€â”€ Debounce search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     const h = setTimeout(() => setDebouncedSearch(searchTerm), 400);
     return () => clearTimeout(h);
   }, [searchTerm]);
 
-  // ── Initial Load ──────────────────────────────────────────
+  // â”€â”€ Initial Load â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const fetchInit = useCallback(async () => {
     setLoading(true);
     setPage(1);
@@ -331,7 +386,7 @@ export default function ProveedoresPage() {
     }
   }, [showFacturaModal, facSede]);
 
-  // ── Crear Proveedor ───────────────────────────────────────
+  // â”€â”€ Crear Proveedor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleCrearProveedor = async () => {
     if (!nuevoNombre.trim()) { setErrorCrear('El nombre es obligatorio'); return; }
     setCreandoProveedor(true);
@@ -367,7 +422,7 @@ export default function ProveedoresPage() {
   };
 
   const handleEliminarFactura = async (facId: string) => {
-    if (!confirm('¿Estás seguro de que deseas eliminar esta factura de proveedor? Se revertirán los registros y abonos asociados.')) return;
+    if (!confirm('Â¿EstÃ¡s seguro de que deseas eliminar esta factura de proveedor? Se revertirÃ¡n los registros y abonos asociados.')) return;
     
     // Optimistic removal
     setFacturasProveedor(prev => prev.filter(f => f.id !== facId));
@@ -388,7 +443,7 @@ export default function ProveedoresPage() {
     }
   };
 
-  // ── Crear Factura ─────────────────────────────────────────
+  // â”€â”€ Crear Factura â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleCrearFactura = async () => {
     if (!facProveedorId) { setErrorFactura('Selecciona un proveedor'); return; }
 
@@ -400,15 +455,15 @@ export default function ProveedoresPage() {
     }
 
     if (!targetSede || targetSede === 'ALL') {
-      setErrorFactura('Debes seleccionar una sede válida para registrar la factura.');
+      setErrorFactura('Debes seleccionar una sede vÃ¡lida para registrar la factura.');
       return;
     }
     
     let totalToSubmit = Number(facTotal);
     if (facturaTab === 'gastos') {
-      if (!facTotal || isNaN(totalToSubmit) || totalToSubmit <= 0) { setErrorFactura('Monto inválido'); return; }
+      if (!facTotal || isNaN(totalToSubmit) || totalToSubmit <= 0) { setErrorFactura('Monto invÃ¡lido'); return; }
     } else {
-      if (facItems.length === 0) { setErrorFactura('Añade al menos un insumo'); return; }
+      if (facItems.length === 0) { setErrorFactura('AÃ±ade al menos un insumo'); return; }
       totalToSubmit = facItems.reduce((acc, item) => acc + item.costoTotal, 0);
     }
     
@@ -447,10 +502,10 @@ export default function ProveedoresPage() {
     setEnviandoFactura(false);
   };
 
-  // ── Registrar Pago ────────────────────────────────────────
+  // â”€â”€ Registrar Pago â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handlePagar = async () => {
     if (!montoAbonar || isNaN(Number(montoAbonar)) || Number(montoAbonar) <= 0) {
-      setErrorPago('Monto inválido'); return;
+      setErrorPago('Monto invÃ¡lido'); return;
     }
     setIsPagarLoading(true);
     setErrorPago('');
@@ -471,10 +526,10 @@ export default function ProveedoresPage() {
     setIsPagarLoading(false);
   };
 
-  // ── Registrar Pago General (Cascada FIFO) ──────────────────
+  // â”€â”€ Registrar Pago General (Cascada FIFO) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handlePagarGeneral = async () => {
     if (!montoAbonoGeneral || isNaN(Number(montoAbonoGeneral)) || Number(montoAbonoGeneral) <= 0) {
-      setErrorPagoGeneral('Ingresa un monto válido');
+      setErrorPagoGeneral('Ingresa un monto vÃ¡lido');
       return;
     }
     setIsPagarGeneralLoading(true);
@@ -506,14 +561,14 @@ export default function ProveedoresPage() {
     setIsPagarGeneralLoading(false);
   };
 
-  // ── Helpers ───────────────────────────────────────────────
+  // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const safeDate = (d: string) => formatFecha(d);
   const safeDateTime = (d: string) => formatFecha(d, { includeTime: true });
 
-  // ── RENDER ────────────────────────────────────────────────
+  // â”€â”€ RENDER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto">
-      {/* ── Header ── */}
+      {/* â”€â”€ Header â”€â”€ */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2"><Store className="text-emerald-400" /> Proveedores</h1>
@@ -531,7 +586,7 @@ export default function ProveedoresPage() {
         </div>
       </div>
 
-      {/* ── Filters ── */}
+      {/* â”€â”€ Filters â”€â”€ */}
       <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 mb-4">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
@@ -572,7 +627,7 @@ export default function ProveedoresPage() {
         </div>
       </div>
 
-      {/* ── List ── */}
+      {/* â”€â”€ List â”€â”€ */}
       <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden">
         {loading ? (
           <div className="p-5 space-y-3">
@@ -581,8 +636,8 @@ export default function ProveedoresPage() {
         ) : (soloConDeuda ? proveedores : todosProveedores).length === 0 ? (
           <div className="p-12 text-center flex flex-col items-center justify-center">
             <Check size={48} className="text-emerald-500/50 mb-4" />
-            <h3 className="text-xl font-bold text-white mb-2">{soloConDeuda ? '¡Todo al día!' : 'Sin proveedores'}</h3>
-            <p className="text-neutral-400">{soloConDeuda ? 'No tienes cuentas por pagar.' : 'Aún no has creado ningún proveedor.'}</p>
+            <h3 className="text-xl font-bold text-white mb-2">{soloConDeuda ? 'Â¡Todo al dÃ­a!' : 'Sin proveedores'}</h3>
+            <p className="text-neutral-400">{soloConDeuda ? 'No tienes cuentas por pagar.' : 'AÃºn no has creado ningÃºn proveedor.'}</p>
             {!soloConDeuda && (
               <button onClick={() => setShowCrearModal(true)}
                 className="mt-4 flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm">
@@ -606,7 +661,7 @@ export default function ProveedoresPage() {
                       <h3 className="font-bold text-lg text-white truncate">{prov.nombre_proveedor || prov.nombre_comercial}</h3>
                       <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-neutral-500 mt-0.5">
                         {(prov.rif || prov.rif_cedula) && <span>RIF: {prov.rif || prov.rif_cedula}</span>}
-                        {(prov.numero_contacto) && <span>📞 {prov.numero_contacto}</span>}
+                        {(prov.numero_contacto) && <span>ðŸ“ž {prov.numero_contacto}</span>}
                         {prov.facturas_pendientes && <span>{prov.facturas_pendientes} factura(s) pendiente(s)</span>}
                       </div>
                     </div>
@@ -640,7 +695,7 @@ export default function ProveedoresPage() {
                   </div>
                 </div>
 
-                {/* ── Facturas expandidas ── */}
+                {/* â”€â”€ Facturas expandidas â”€â”€ */}
                 {expandedId === (prov.id_proveedor || prov.id) && (() => {
                   const provId = prov.id_proveedor || prov.id;
                   const facturasPendientes = facturasProveedor.filter(f => Number(f.saldo_pendiente) > 0);
@@ -656,7 +711,7 @@ export default function ProveedoresPage() {
                             <div>
                               <div className="flex items-center gap-2 mb-1 flex-wrap">
                                 <h5 className="font-bold text-white">{fac.concepto || 'Factura / Deuda'}</h5>
-                                {fac.numero_factura && <span className="text-xs bg-neutral-800 text-neutral-300 px-2 py-0.5 rounded">Nº {fac.numero_factura}</span>}
+                                {fac.numero_factura && <span className="text-xs bg-neutral-800 text-neutral-300 px-2 py-0.5 rounded">NÂº {fac.numero_factura}</span>}
                                 {fac.sede_nombre && (
                                   <span className="text-[11px] bg-neutral-800/80 text-neutral-300 border border-neutral-700/60 px-2 py-0.5 rounded-md flex items-center gap-1 font-medium">
                                     <Store size={11} className="text-indigo-400" /> {fac.sede_nombre}
@@ -679,7 +734,7 @@ export default function ProveedoresPage() {
                                 })()}
                               </div>
                               <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                                <p className="text-xs text-neutral-500 flex items-center gap-1"><Clock size={12} /> Emisión: {safeDate(fac.fecha_emision)}</p>
+                                <p className="text-xs text-neutral-500 flex items-center gap-1"><Clock size={12} /> EmisiÃ³n: {safeDate(fac.fecha_emision)}</p>
                                 {fac.pagos && fac.pagos.length > 0 && (
                                   <button
                                     type="button"
@@ -738,7 +793,7 @@ export default function ProveedoresPage() {
                           </div>
                         </div>
 
-                        {/* ── Historial de pagos por factura (Minimizado) ── */}
+                        {/* â”€â”€ Historial de pagos por factura (Minimizado) â”€â”€ */}
                         {fac.pagos && fac.pagos.length > 0 && expandedPagos[fac.id] && (
                           <div className="bg-neutral-950/80 p-3.5 rounded-b-xl border border-neutral-800 border-t-0 -mt-2 ml-4 mr-2 shadow-inner">
                             <div className="flex items-center justify-between mb-2">
@@ -825,7 +880,7 @@ export default function ProveedoresPage() {
                           {facturasPendientes.length === 0 ? (
                             <div className="text-center py-6 border border-dashed border-neutral-800/90 rounded-2xl bg-neutral-900/30">
                               <CheckCircle2 className="mx-auto text-emerald-400 mb-1.5" size={26} />
-                              <p className="text-sm font-semibold text-white">¡No hay facturas pendientes por pagar!</p>
+                              <p className="text-sm font-semibold text-white">Â¡No hay facturas pendientes por pagar!</p>
                               <p className="text-xs text-neutral-500 mt-0.5">Todas las facturas de este proveedor se encuentran saldadas.</p>
                               {facturasPagadas.length > 0 && !verPagadas && (
                                 <button
@@ -843,7 +898,7 @@ export default function ProveedoresPage() {
                             </div>
                           )}
 
-                          {/* 2. Sección desplegable: Historial de facturas pagadas */}
+                          {/* 2. SecciÃ³n desplegable: Historial de facturas pagadas */}
                           {verPagadas && facturasPagadas.length > 0 && (
                             <div className="mt-5 pt-4 border-t border-neutral-800 space-y-3">
                               <div className="flex items-center justify-between">
@@ -875,7 +930,7 @@ export default function ProveedoresPage() {
               <div className="p-4 text-center">
                 <button onClick={fetchMore} disabled={loadingMore}
                   className="text-sm text-neutral-400 hover:text-white bg-neutral-800 hover:bg-neutral-700 px-6 py-2 rounded-xl transition-colors">
-                  {loadingMore ? 'Cargando...' : 'Ver más'}
+                  {loadingMore ? 'Cargando...' : 'Ver mÃ¡s'}
                 </button>
               </div>
             )}
@@ -883,9 +938,9 @@ export default function ProveedoresPage() {
         )}
       </div>
 
-      {/* ════════════════════════════════════
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
           MODAL: Crear Proveedor
-      ════════════════════════════════════ */}
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       {showCrearModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md shadow-2xl">
@@ -905,7 +960,7 @@ export default function ProveedoresPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">RIF / Cédula</label>
+                  <label className="block text-sm text-neutral-400 mb-1.5">RIF / CÃ©dula</label>
                   <div className="relative">
                     <Hash size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
                     <input type="text" value={nuevoRif} onChange={e => setNuevoRif(e.target.value)}
@@ -914,7 +969,7 @@ export default function ProveedoresPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">Teléfono</label>
+                  <label className="block text-sm text-neutral-400 mb-1.5">TelÃ©fono</label>
                   <div className="relative">
                     <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
                     <input type="tel" value={nuevoTelefono} onChange={e => setNuevoTelefono(e.target.value)}
@@ -924,11 +979,11 @@ export default function ProveedoresPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm text-neutral-400 mb-1.5">Dirección / Ubicación</label>
+                <label className="block text-sm text-neutral-400 mb-1.5">DirecciÃ³n / UbicaciÃ³n</label>
                 <div className="relative">
                   <MapPin size={14} className="absolute left-3 top-3 text-neutral-500" />
                   <textarea rows={2} value={nuevoUbicacion} onChange={e => setNuevoUbicacion(e.target.value)}
-                    placeholder="Dirección (opcional)"
+                    placeholder="DirecciÃ³n (opcional)"
                     className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl pl-8 pr-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm resize-none" />
                 </div>
               </div>
@@ -945,9 +1000,9 @@ export default function ProveedoresPage() {
         </div>
       )}
 
-      {/* ════════════════════════════════════
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
           MODAL: Nueva Factura a Proveedor
-      ════════════════════════════════════ */}
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       {showFacturaModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
@@ -1034,13 +1089,13 @@ export default function ProveedoresPage() {
                       </option>
                     ))}
                   </select>
-                  <span className="text-[11px] text-neutral-500 mt-1.5 block">Los insumos y gastos se registrarán en esta sede</span>
+                  <span className="text-[11px] text-neutral-500 mt-1.5 block">Los insumos y gastos se registrarÃ¡n en esta sede</span>
                 </div>
               </div>
               
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">Nº Factura</label>
+                  <label className="block text-sm text-neutral-400 mb-1.5">NÂº Factura</label>
                   <input type="text" value={facNumero} onChange={e => setFacNumero(e.target.value)}
                     placeholder="Opcional"
                     className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500 text-sm" />
@@ -1059,7 +1114,7 @@ export default function ProveedoresPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className={facMoneda === 'VES' ? "sm:col-span-1" : "sm:col-span-2"}>
-                  <label className="block text-sm text-neutral-400 mb-1.5">Concepto / Descripción</label>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Concepto / DescripciÃ³n</label>
                   <input type="text" value={facConcepto} onChange={e => setFacConcepto(e.target.value)}
                     placeholder="Ej. Compra de materia prima"
                     className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 text-sm" />
@@ -1069,7 +1124,7 @@ export default function ProveedoresPage() {
                   <select value={facMoneda} onChange={e => setFacMoneda(e.target.value as 'USD'|'VES')}
                     className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500 text-sm font-semibold">
                     <option className="bg-neutral-900 text-white" value="USD">USD ($)</option>
-                    <option className="bg-neutral-900 text-white" value="VES">VES (Bolívares Bs.)</option>
+                    <option className="bg-neutral-900 text-white" value="VES">VES (BolÃ­vares Bs.)</option>
                   </select>
                 </div>
                 {facMoneda === 'VES' && (
@@ -1093,12 +1148,12 @@ export default function ProveedoresPage() {
                 )}
               </div>
 
-              {/* Campos específicos por tab */}
+              {/* Campos especÃ­ficos por tab */}
               {facturaTab === 'gastos' ? (
                 <div className="pt-2 border-t border-neutral-800 space-y-2">
                   <div>
                     <label className="block text-sm text-neutral-400 mb-1.5">
-                      Monto Total ({facMoneda === 'VES' ? 'Bolívares Bs.' : 'Dólares USD'}) *
+                      Monto Total ({facMoneda === 'VES' ? 'BolÃ­vares Bs.' : 'DÃ³lares USD'}) *
                     </label>
                     <input type="number" min="0" step="any" value={facTotal} onChange={e => setFacTotal(e.target.value)}
                       placeholder="0.00"
@@ -1106,7 +1161,7 @@ export default function ProveedoresPage() {
                   </div>
                   {facMoneda === 'VES' && Number(facTotal) > 0 && facTasa > 0 && (
                     <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs flex justify-between items-center text-indigo-300">
-                      <span>Equivalente en Dólares (registrado como deuda):</span>
+                      <span>Equivalente en DÃ³lares (registrado como deuda):</span>
                       <span className="font-bold text-sm text-white">
                         $ {(Number(facTotal) / facTasa).toFixed(2)} USD
                       </span>
@@ -1124,7 +1179,7 @@ export default function ProveedoresPage() {
                       onClick={() => { setCrearInsumoNuevo(!crearInsumoNuevo); setInsumoSearch(''); }}
                       className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
                     >
-                      {crearInsumoNuevo ? '← Seleccionar existente' : '+ Crear nuevo insumo'}
+                      {crearInsumoNuevo ? 'â† Seleccionar existente' : '+ Crear nuevo insumo'}
                     </button>
                   </div>
 
@@ -1260,7 +1315,7 @@ export default function ProveedoresPage() {
 
                     {facMoneda === 'VES' && facTasa > 0 && parseFloat(insumoCostoTotal) > 0 && (
                       <div className="text-[11px] text-amber-300/90 font-medium px-1">
-                        ≈ $ {(parseFloat(insumoCostoTotal) / facTasa).toFixed(2)} USD (Tasa: {facTasa} Bs/$)
+                        â‰ˆ $ {(parseFloat(insumoCostoTotal) / facTasa).toFixed(2)} USD (Tasa: {facTasa} Bs/$)
                       </div>
                     )}
 
@@ -1332,7 +1387,7 @@ export default function ProveedoresPage() {
                               {item.is_new && <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded ml-1">Nuevo</span>}
                             </p>
                             <p className="text-xs text-neutral-400 mt-0.5">
-                              {item.cantidad} {item.unidad_nueva} × {facMoneda === 'VES' ? 'Bs. ' : '$ '} {(item.precioUnitario || item.costoTotal / item.cantidad).toFixed(2)} = <span className="text-white font-semibold">{facMoneda === 'VES' ? 'Bs. ' : '$ '} {item.costoTotal.toFixed(2)}</span>
+                              {item.cantidad} {item.unidad_nueva} Ã— {facMoneda === 'VES' ? 'Bs. ' : '$ '} {(item.precioUnitario || item.costoTotal / item.cantidad).toFixed(2)} = <span className="text-white font-semibold">{facMoneda === 'VES' ? 'Bs. ' : '$ '} {item.costoTotal.toFixed(2)}</span>
                             </p>
                           </div>
                           <button
@@ -1344,750 +1399,21 @@ export default function ProveedoresPage() {
                           </button>
                         </div>
                       ))}
-                                              <div className="p-3 bg-neutral-900/50 flex flex-col gap-2 text-sm">
+                        <div className="p-3 bg-neutral-900/50 flex flex-col gap-2 text-sm">
                           <div className="flex items-center justify-between">
                             <span className="text-neutral-400">Subtotal Items:</span>
                             <span className="text-neutral-300 font-medium">
-                              {facMoneda === 'VES' ? 'Bs. ' : '$ '}
+                              {facMoneda === 'VES' ? 'Bs. ' : '\$ '}
                               {facItems.reduce((acc, i) => acc + i.costoTotal, 0).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="text-neutral-400">Descuento:</span>
                             <div className="flex items-center gap-1 w-24">
-                              <span className="text-neutral-500 text-xs">{facMoneda === 'VES' ? 'Bs.' : '
-                  ) : (
-                    <p className="text-xs text-neutral-500 italic text-center py-2">
-                      No has agregado insumos todavía. Selecciona uno arriba y haz clic en &quot;Agregar&quot;.
-                    </p>
-                  )}
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm text-neutral-400 mb-1.5 mt-2">Estado / Método de Pago</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    list="lista-metodos-factura"
-                    value={facMetodoPago}
-                    onChange={e => setFacMetodoPago(e.target.value)}
-                    placeholder="Ej. Por pagar, Transferencia, Zelle..."
-                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 text-sm"
-                  />
-                  <datalist id="lista-metodos-factura">
-                    <option value="Por pagar" />
-                    {metodosDisponibles.map(m => (
-                      <option key={m} value={m} />
-                    ))}
-                  </datalist>
-                </div>
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {['Por pagar', ...metodosDisponibles.slice(0, 5)].map(m => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setFacMetodoPago(m)}
-                      className={`text-[10px] px-2 py-0.5 rounded-lg border transition-colors ${
-                        facMetodoPago === m
-                          ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-400 font-semibold'
-                          : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:text-white'
-                      }`}
-                    >
-                      {m}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {errorFactura && <p className="text-rose-400 text-sm flex items-center gap-2"><AlertCircle size={14} /> {errorFactura}</p>}
-            </div>
-              <div className="p-6 border-t border-neutral-800 flex gap-3 justify-end">
-                <button onClick={() => setShowFacturaModal(false)} className="px-5 py-2.5 rounded-xl text-neutral-300 hover:bg-neutral-800 text-sm">Cancelar</button>
-                <button onClick={handleCrearFactura} disabled={enviandoFactura}
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50">
-                  {enviandoFactura ? 'Registrando...' : <><FileText size={16} /> Registrar Factura</>}
-                </button>
-              </div>
-          </div>
-        </div>
-      )}
-
-      {/* ════════════════════════════════════
-          MODAL: Registrar Pago / Abono
-      ════════════════════════════════════ */}
-      {showPagoModal && facturaPagar && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md shadow-2xl">
-            <div className="flex items-center justify-between p-6 border-b border-neutral-800">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2"><Wallet size={18} className="text-emerald-400" /> Registrar Abono</h3>
-              <button onClick={() => setShowPagoModal(false)} className="text-neutral-400 hover:text-white"><X size={22} /></button>
-            </div>
-            <div className="p-6 space-y-4">
-              {/* Factura info */}
-              <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-4">
-                <p className="text-sm text-neutral-400 mb-1">{facturaPagar.concepto || 'Factura'}</p>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-neutral-500">
-                    Total: {formatCurrency(facturaPagar.total)}
-                    {tasaBcv > 0 && ` (~ Bs. ${(facturaPagar.total * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`}
-                  </span>
-                  <div className="text-right">
-                    <span className="text-rose-400 font-bold block">
-                      Pendiente: {formatCurrency(facturaPagar.saldo_pendiente)}
-                    </span>
-                    {tasaBcv > 0 && facturaPagar.saldo_pendiente > 0 && (
-                      <span className="text-[11px] text-rose-400/80">
-                        ≈ Bs. {(facturaPagar.saldo_pendiente * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm text-neutral-400 mb-1.5">Monto a Abonar (USD) *</label>
-                <input type="number" min="0.01" step="any" value={montoAbonar} onChange={e => setMontoAbonar(e.target.value)}
-                  className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-lg font-semibold" />
-                {tasaBcv > 0 && Number(montoAbonar) > 0 && (
-                  <p className="text-xs text-emerald-400/90 mt-1">
-                    ≈ Bs. {(Number(montoAbonar) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
-                  </p>
-                )}
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">Método de Pago</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      list="lista-metodos-abono"
-                      value={metodoPago}
-                      onChange={e => setMetodoPago(e.target.value)}
-                      placeholder="Ej. Transferencia, Zelle..."
-                      className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
-                    />
-                    <datalist id="lista-metodos-abono">
-                      {metodosDisponibles.map(m => (
-                        <option key={m} value={m} />
-                      ))}
-                    </datalist>
-                  </div>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {metodosDisponibles.slice(0, 5).map(m => (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => setMetodoPago(m)}
-                        className={`text-[10px] px-2 py-0.5 rounded-lg border transition-colors ${
-                          metodoPago === m
-                            ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 font-semibold'
-                            : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:text-white'
-                        }`}
-                      >
-                        {m}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">Fecha del Pago</label>
-                  <input type="date" value={fechaPago} onChange={e => setFechaPago(e.target.value)}
-                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 [color-scheme:dark] text-sm" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">Banco Origen</label>
-                  <input type="text" value={bancoOrigen} onChange={e => setBancoOrigen(e.target.value)}
-                    placeholder="Ej. Banesco"
-                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm" />
-                </div>
-                <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">N° Referencia</label>
-                  <input type="text" value={referencia} onChange={e => setReferencia(e.target.value)}
-                    placeholder="Opcional"
-                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm" />
-                </div>
-              </div>
-              {errorPago && <p className="text-rose-400 text-sm flex items-center gap-2"><AlertCircle size={14} /> {errorPago}</p>}
-            </div>
-            <div className="p-6 border-t border-neutral-800 flex gap-3 justify-end">
-              <button onClick={() => setShowPagoModal(false)} className="px-5 py-2.5 rounded-xl text-neutral-300 hover:bg-neutral-800 text-sm">Cancelar</button>
-              <button onClick={handlePagar} disabled={isPagarLoading}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50">
-                {isPagarLoading ? 'Registrando...' : <><Wallet size={16} /> Registrar Pago</>}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ════════════════════════════════════
-          MODAL: Pago General / Cascada FIFO
-      ════════════════════════════════════ */}
-      {showPagoGeneralModal && proveedorPagarGeneral && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-lg shadow-2xl">
-            <div className="flex items-center justify-between p-6 border-b border-neutral-800">
-              <div>
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Wallet size={18} className="text-emerald-400" /> Abono General a Proveedor
-                </h3>
-                <p className="text-xs text-neutral-400 mt-0.5">
-                  {proveedorPagarGeneral.nombre_proveedor || proveedorPagarGeneral.nombre_comercial}
-                </p>
-              </div>
-              <button onClick={() => setShowPagoGeneralModal(false)} className="text-neutral-400 hover:text-white">
-                <X size={22} />
-              </button>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              {/* Resumen Deuda y Regla FIFO */}
-              <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-4">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs font-semibold uppercase text-neutral-400">Deuda Total Acumulada</span>
-                  <div className="text-right">
-                    <span className="text-xl font-black text-rose-400">
-                      {formatCurrency(proveedorPagarGeneral.monto_adeudado)}
-                    </span>
-                    {tasaBcv > 0 && proveedorPagarGeneral.monto_adeudado > 0 && (
-                      <span className="block text-xs text-neutral-400 font-medium">
-                        ≈ Bs. {(proveedorPagarGeneral.monto_adeudado * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                </div>
-
-              <div>
-                <label className="block text-sm text-neutral-400 mb-1.5">Monto a Abonar (USD) *</label>
-                <input
-                  type="number"
-                  min="0.01"
-                  step="any"
-                  value={montoAbonoGeneral}
-                  onChange={e => setMontoAbonoGeneral(e.target.value)}
-                  placeholder="0.00"
-                  className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-lg font-bold"
-                />
-                {tasaBcv > 0 && Number(montoAbonoGeneral) > 0 && (
-                  <p className="text-xs text-emerald-400/90 mt-1">
-                    ≈ Bs. {(Number(montoAbonoGeneral) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
-                  </p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">Método de Pago</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      list="lista-metodos-abono-general"
-                      value={metodoPagoGeneral}
-                      onChange={e => setMetodoPagoGeneral(e.target.value)}
-                      placeholder="Ej. Transferencia, Zelle..."
-                      className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
-                    />
-                    <datalist id="lista-metodos-abono-general">
-                      {metodosDisponibles.map(m => (
-                        <option key={m} value={m} />
-                      ))}
-                    </datalist>
-                  </div>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {metodosDisponibles.slice(0, 5).map(m => (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => setMetodoPagoGeneral(m)}
-                        className={`text-[10px] px-2 py-0.5 rounded-lg border transition-colors ${
-                          metodoPagoGeneral === m
-                            ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 font-semibold'
-                            : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:text-white'
-                        }`}
-                      >
-                        {m}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">Fecha del Pago</label>
-                  <input
-                    type="date"
-                    value={fechaPagoGeneral}
-                    onChange={e => setFechaPagoGeneral(e.target.value)}
-                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 [color-scheme:dark] text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">Banco Origen</label>
-                  <input
-                    type="text"
-                    value={bancoOrigenGeneral}
-                    onChange={e => setBancoOrigenGeneral(e.target.value)}
-                    placeholder="Ej. Banesco, Chase"
-                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">N° Referencia</label>
-                  <input
-                    type="text"
-                    value={referenciaGeneral}
-                    onChange={e => setReferenciaGeneral(e.target.value)}
-                    placeholder="Opcional"
-                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
-                  />
-                </div>
-              </div>
-
-              {errorPagoGeneral && (
-                <p className="text-rose-400 text-sm flex items-center gap-2">
-                  <AlertCircle size={14} /> {errorPagoGeneral}
-                </p>
-              )}
-            </div>
-
-            <div className="p-6 border-t border-neutral-800 flex gap-3 justify-end">
-              <button
-                type="button"
-                onClick={() => setShowPagoGeneralModal(false)}
-                className="px-5 py-2.5 rounded-xl text-neutral-300 hover:bg-neutral-800 text-sm"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handlePagarGeneral}
-                disabled={isPagarGeneralLoading}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-emerald-600/20"
-              >
-                {isPagarGeneralLoading ? 'Aplicando pago...' : <><Wallet size={16} /> Aplicar Abono</>}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ════════════════════════════════════
-          MODAL: Detalles de Factura (Insumos)
-      ════════════════════════════════════ */}
-      {detallesModalData && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="flex items-center justify-between p-6 border-b border-neutral-800 shrink-0">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Package size={18} className="text-indigo-400" /> 
-                Detalles de Factura 
-                {detallesModalData.factura?.numero_factura ? `Nº ${detallesModalData.factura.numero_factura}` : ''}
-              </h3>
-              <button onClick={() => setDetallesModalData(null)} className="text-neutral-400 hover:text-white">
-                <X size={22} />
-              </button>
-            </div>
-            
-            <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
-              {detallesModalData.isLoading ? (
-                <div className="flex justify-center items-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
-                </div>
-              ) : detallesModalData.error ? (
-                <div className="text-center py-8">
-                  <AlertCircle size={40} className="text-rose-400 mx-auto mb-3" />
-                  <p className="text-neutral-400">{detallesModalData.error}</p>
-                </div>
-              ) : detallesModalData.detalles?.items ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <p className="text-sm text-neutral-400 font-medium">Concepto: <span className="text-white">{detallesModalData.detalles.texto || detallesModalData.factura?.concepto}</span></p>
-                    <Badge label={`${detallesModalData.detalles.items.length} items`} color="indigo" />
-                  </div>
-                  
-                  <div className="rounded-xl border border-neutral-800 overflow-hidden bg-black/30">
-                    <table className="w-full text-left text-sm">
-                      <thead className="bg-neutral-900/50">
-                        <tr>
-                          <th className="px-4 py-3 text-neutral-400 font-medium border-b border-neutral-800">Insumo</th>
-                          <th className="px-4 py-3 text-neutral-400 font-medium border-b border-neutral-800 text-right">Cant.</th>
-                          <th className="px-4 py-3 text-neutral-400 font-medium border-b border-neutral-800 text-right">Total</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-neutral-800/50">
-                        {detallesModalData.detalles.items.map((it: any, idx: number) => (
-                          <tr key={idx} className="hover:bg-neutral-800/30">
-                            <td className="px-4 py-3 text-neutral-200">
-                              {it.nombre_nuevo || 'Item'}
-                              {it.is_new && <span className="ml-2 text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded">NUEVO</span>}
-                            </td>
-                            <td className="px-4 py-3 text-right text-neutral-300">
-                              {it.cantidad} <span className="text-xs text-neutral-500">{it.unidad_nueva}</span>
-                            </td>
-                            <td className="px-4 py-3 text-right text-white font-medium">
-                              {formatCurrency(
-                                it.monedaItem === 'VES' 
-                                  ? (it.costoTotal / (detallesModalData.detalles.tasaCambio || 1)) 
-                                  : it.costoTotal
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-neutral-500">No hay detalles estructurados para mostrar.</p>
-                </div>
-              )}
-            </div>
-            
-            <div className="p-6 border-t border-neutral-800 flex justify-end gap-3 bg-neutral-900 shrink-0">
-              {detallesModalData?.compraPuntualId && (
-                <Link 
-                  href={`/dashboard/compras?tab=historial&edit=${detallesModalData.compraPuntualId}`}
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-xl transition-colors text-sm font-medium flex items-center gap-2"
-                >
-                  <Edit2 size={16} />
-                  Modificar Ítems
-                </Link>
-              )}
-              <button 
-                onClick={() => setDetallesModalData(null)}
-                className="bg-neutral-800 hover:bg-neutral-700 text-white px-6 py-2 rounded-xl transition-colors text-sm font-medium"
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ════════════════════════════════════
-          MODAL: Editar Factura
-      ════════════════════════════════════ */}
-      {showEditFacturaModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-2xl max-h-[90vh] shadow-2xl overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-6 border-b border-neutral-800 shrink-0">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Pencil size={18} className="text-indigo-400" /> Editar Factura
-              </h3>
-              <button onClick={() => setShowEditFacturaModal(false)} className="text-neutral-400 hover:text-white">
-                <X size={22} />
-              </button>
-            </div>
-            
-            <div className="p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
-              {errorEdit && (
-                <div className="bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl text-rose-400 text-sm flex items-center gap-2">
-                  <AlertCircle size={16} /> {errorEdit}
-                </div>
-              )}
-              
-              <div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-400 mb-1.5">Sede</label>
-                    <select value={editFacSede} onChange={e => setEditFacSede(e.target.value)}
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-white text-sm appearance-none focus:outline-none focus:border-indigo-500">
-                      <option className="bg-neutral-900" value="">Seleccionar Sede...</option>
-                      {sedes.map(s => (
-                        <option key={s.id} value={s.id} className="bg-neutral-900">{s.nombre}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-400 mb-1.5">Número de Factura</label>
-                    <div className="relative">
-                      <Hash size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
-                      <input type="text" value={editFacNumero} onChange={e => setEditFacNumero(e.target.value)}
-                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-9 pr-4 py-2 text-white text-sm" placeholder="S/N" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-neutral-400 mb-1.5">Concepto</label>
-                <input type="text" value={editFacConcepto} onChange={e => setEditFacConcepto(e.target.value)}
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-white text-sm" placeholder="Ej. Compra de insumos" />
-              </div>
-
-              {/* EDICIÓN DE ITEMS / PRODUCTOS SI LA FACTURA TIENE INSUMOS */}
-              {isLoadingEditItems ? (
-                <div className="py-4 text-center text-xs text-neutral-400 flex items-center justify-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-indigo-500"></div> Cargando productos vinculados...
-                </div>
-              ) : (editFacItems.length > 0 || editFacCompraPuntualId) ? (
-                <div className="space-y-3 pt-2">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-sm font-bold text-emerald-400 flex items-center gap-1.5">
-                      <Package size={16} /> Productos / Insumos ({editFacItems.length})
-                    </label>
-                    <span className="text-xs text-neutral-400">El inventario se sincronizará automáticamente</span>
-                  </div>
-
-                  {/* Lista de productos actuales */}
-                  <div className="bg-black/30 border border-neutral-800 rounded-xl overflow-hidden divide-y divide-neutral-800/60">
-                    {editFacItems.map((item, idx) => (
-                      <div key={idx} className="p-3 flex items-center justify-between gap-3 text-sm hover:bg-neutral-800/30">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-white truncate">
-                            {item.nombre_nuevo}
-                            {item.is_new && <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded ml-1.5 font-normal">NUEVO</span>}
-                          </p>
-                          <p className="text-xs text-neutral-400 mt-0.5">
-                            {item.cantidad} {item.unidad_nueva || 'Und'} · Total: <span className="text-white font-medium">$ {Number(item.costoTotal || 0).toFixed(2)}</span>
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newItems = editFacItems.filter((_, i) => i !== idx);
-                            setEditFacItems(newItems);
-                            const newTot = newItems.reduce((acc, i) => acc + Number(i.costoTotal || 0), 0);
-                            setEditFacTotal(newTot.toFixed(2));
-                          }}
-                          className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors flex items-center gap-1 text-xs"
-                          title="Eliminar este producto de la factura"
-                        >
-                          <Trash2 size={15} /> <span className="hidden sm:inline">Quitar</span>
-                        </button>
-                      </div>
-                    ))}
-
-                    {editFacItems.length === 0 && (
-                      <div className="p-4 text-center text-xs text-neutral-500 italic">
-                        No quedan productos en esta factura. Agrega uno abajo.
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Formulario para agregar producto a la factura */}
-                  <div className="p-3 bg-neutral-950 rounded-xl border border-indigo-500/30 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1">
-                        <Plus size={13} /> Agregar Producto
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditAddIsNew(!editAddIsNew);
-                          setEditAddInsumoSearch('');
-                          setEditAddNombreNuevo('');
-                        }}
-                        className="text-xs text-neutral-400 hover:text-white underline"
-                      >
-                        {editAddIsNew ? 'Seleccionar existente' : '+ Crear nuevo'}
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
-                      {editAddIsNew ? (
-                        <>
-                          <div className="sm:col-span-5">
-                            <label className="block text-[10px] font-medium text-neutral-400 mb-1">Nombre Insumo</label>
-                            <input
-                              type="text"
-                              value={editAddNombreNuevo}
-                              onChange={e => setEditAddNombreNuevo(e.target.value)}
-                              placeholder="Ej. Harina"
-                              className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2.5 py-1.5 text-xs"
-                            />
-                          </div>
-                          <div className="sm:col-span-2">
-                            <label className="block text-[10px] font-medium text-neutral-400 mb-1">Unidad</label>
-                            <select
-                              value={editAddUnidad}
-                              onChange={e => setEditAddUnidad(e.target.value)}
-                              className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2 py-1.5 text-xs"
-                            >
-                              {['Kg', 'Gr', 'Lt', 'Ml', 'Und', 'Cajas', 'Paquetes'].map(u => (
-                                <option key={u} value={u} className="bg-neutral-900">{u}</option>
-                              ))}
-                            </select>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="sm:col-span-7">
-                          <label className="block text-[10px] font-medium text-neutral-400 mb-1">Insumo</label>
-                          <select
-                            value={editAddInsumoSearch}
-                            onChange={e => setEditAddInsumoSearch(e.target.value)}
-                            className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2.5 py-1.5 text-xs"
-                          >
-                            <option value="">Seleccionar insumo...</option>
-                            {insumosList.map(i => (
-                              <option key={i.id} value={i.id} className="bg-neutral-900">
-                                {i.nombre} ({i.cantidad_actual || 0} {i.unidad_medida})
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-
-                      <div className="sm:col-span-2">
-                        <label className="block text-[10px] font-medium text-neutral-400 mb-1">Cantidad</label>
-                        <input
-                          type="number"
-                          step="any"
-                          min="0.01"
-                          placeholder="0"
-                          value={editAddCantidad}
-                          onChange={e => setEditAddCantidad(e.target.value)}
-                          className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2 py-1.5 text-xs text-center"
-                        />
-                      </div>
-
-                      <div className="sm:col-span-3 flex gap-2">
-                        <div className="flex-1">
-                          <label className="block text-[10px] font-medium text-neutral-400 mb-1">Total ($)</label>
-                          <input
-                            type="number"
-                            step="any"
-                            min="0.01"
-                            placeholder="0.00"
-                            value={editAddTotal}
-                            onChange={e => setEditAddTotal(e.target.value)}
-                            className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2 py-1.5 text-xs text-center"
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const qty = Number(editAddCantidad);
-                            const cost = Number(editAddTotal);
-                            if (!qty || qty <= 0 || !cost || cost <= 0) return;
-
-                            let newItem: any = null;
-                            if (editAddIsNew) {
-                              if (!editAddNombreNuevo.trim()) return;
-                              newItem = {
-                                id: Math.random().toString(),
-                                insumo_id: null,
-                                is_new: true,
-                                nombre_nuevo: editAddNombreNuevo.trim(),
-                                unidad_nueva: editAddUnidad || 'Und',
-                                cantidad: qty,
-                                costoTotal: cost,
-                                monedaItem: 'USD'
-                              };
-                            } else {
-                              if (!editAddInsumoSearch) return;
-                              const found = insumosList.find(i => i.id === editAddInsumoSearch);
-                              newItem = {
-                                id: Math.random().toString(),
-                                insumo_id: editAddInsumoSearch,
-                                is_new: false,
-                                nombre_nuevo: found?.nombre || 'Insumo',
-                                unidad_nueva: found?.unidad_medida || 'Und',
-                                cantidad: qty,
-                                costoTotal: cost,
-                                monedaItem: 'USD'
-                              };
-                            }
-
-                            const updated = [...editFacItems, newItem];
-                            setEditFacItems(updated);
-                            const newTot = updated.reduce((acc, i) => acc + Number(i.costoTotal || 0), 0);
-                            setEditFacTotal(newTot.toFixed(2));
-
-                            setEditAddInsumoSearch('');
-                            setEditAddNombreNuevo('');
-                            setEditAddIsNew(false);
-                            setEditAddCantidad('');
-                            setEditAddTotal('');
-                          }}
-                          className="self-end bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-1.5 px-3 rounded-lg transition-colors flex items-center justify-center gap-1"
-                        >
-                          <Plus size={13} /> Añadir
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-
-              <div>
-                <label className="block text-sm font-medium text-neutral-400 mb-1.5">Monto Total de la Factura (Divisas)</label>
-                <div className="relative">
-                  <DollarSign size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
-                  <input
-                    type="number"
-                    step="any"
-                    min="0"
-                    value={editFacTotal}
-                    onChange={e => setEditFacTotal(e.target.value)}
-                    readOnly={editFacItems.length > 0}
-                    className={`w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-9 pr-4 py-2 text-white text-sm ${editFacItems.length > 0 ? 'opacity-80 cursor-not-allowed text-emerald-400 font-bold' : ''}`}
-                  />
-                </div>
-                <p className="text-xs text-neutral-500 mt-1">
-                  {editFacItems.length > 0
-                    ? 'El total se calcula automáticamente sumando los productos de la factura.'
-                    : 'El saldo pendiente se recalculará automáticamente según los abonos ya realizados.'}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-neutral-400 mb-1.5">Fecha de Emisión</label>
-                  <input type="date" value={editFacFecha} onChange={e => setEditFacFecha(e.target.value)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-white text-sm" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-400 mb-1.5">Vencimiento (Opcional)</label>
-                  <input type="date" value={editFacFechaVencimiento} onChange={e => setEditFacFechaVencimiento(e.target.value)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-white text-sm" />
-                </div>
-              </div>
-            </div>
-            
-            <div className="p-6 border-t border-neutral-800 flex justify-end gap-3 shrink-0">
-              <button 
-                onClick={() => setShowEditFacturaModal(false)}
-                className="bg-neutral-800 hover:bg-neutral-700 text-white px-5 py-2.5 rounded-xl transition-colors text-sm font-medium"
-              >
-                Cancelar
-              </button>
-              <button 
-                onClick={handleGuardarEdicionFactura}
-                disabled={isEditLoading}
-                className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl transition-colors text-sm font-medium disabled:opacity-50 flex items-center gap-2"
-              >
-                {isEditLoading ? 'Guardando...' : <><Check size={16} /> Guardar Cambios</>}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL HISTORIAL DE ABONOS GLOBALES */}
-      {abonosProvInfo && (
-        <AbonosGlobalesHistorial
-          proveedorId={abonosProvInfo.id}
-          proveedorNombre={abonosProvInfo.nombre}
-          sedeId={sedeId}
-          onClose={() => setAbonosProvInfo(null)}
-        />
-      )}
-
-    </div>
-  );
-}
-
-
-
-}</span>
-                              <input 
-                                type="number" 
-                                className="w-full bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-right text-rose-400 focus:border-indigo-500"
+                              <span className="text-neutral-500 text-xs">{facMoneda === 'VES' ? 'Bs.' : '\$'}</span>
+                              <input
+                                type="number"
+                                className="w-full bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-right text-rose-400 focus:border-indigo-500 outline-none"
                                 value={facDescuento}
                                 onChange={e => setFacDescuento(e.target.value)}
                                 placeholder="0.00"
@@ -2097,739 +1423,10 @@ export default function ProveedoresPage() {
                           <div className="flex items-center justify-between">
                             <span className="text-neutral-400">IVA / Otros Impuestos:</span>
                             <div className="flex items-center gap-1 w-24">
-                              <span className="text-neutral-500 text-xs">{facMoneda === 'VES' ? 'Bs.' : '
-                  ) : (
-                    <p className="text-xs text-neutral-500 italic text-center py-2">
-                      No has agregado insumos todavía. Selecciona uno arriba y haz clic en &quot;Agregar&quot;.
-                    </p>
-                  )}
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm text-neutral-400 mb-1.5 mt-2">Estado / Método de Pago</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    list="lista-metodos-factura"
-                    value={facMetodoPago}
-                    onChange={e => setFacMetodoPago(e.target.value)}
-                    placeholder="Ej. Por pagar, Transferencia, Zelle..."
-                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 text-sm"
-                  />
-                  <datalist id="lista-metodos-factura">
-                    <option value="Por pagar" />
-                    {metodosDisponibles.map(m => (
-                      <option key={m} value={m} />
-                    ))}
-                  </datalist>
-                </div>
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {['Por pagar', ...metodosDisponibles.slice(0, 5)].map(m => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setFacMetodoPago(m)}
-                      className={`text-[10px] px-2 py-0.5 rounded-lg border transition-colors ${
-                        facMetodoPago === m
-                          ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-400 font-semibold'
-                          : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:text-white'
-                      }`}
-                    >
-                      {m}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {errorFactura && <p className="text-rose-400 text-sm flex items-center gap-2"><AlertCircle size={14} /> {errorFactura}</p>}
-            </div>
-              <div className="p-6 border-t border-neutral-800 flex gap-3 justify-end">
-                <button onClick={() => setShowFacturaModal(false)} className="px-5 py-2.5 rounded-xl text-neutral-300 hover:bg-neutral-800 text-sm">Cancelar</button>
-                <button onClick={handleCrearFactura} disabled={enviandoFactura}
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50">
-                  {enviandoFactura ? 'Registrando...' : <><FileText size={16} /> Registrar Factura</>}
-                </button>
-              </div>
-          </div>
-        </div>
-      )}
-
-      {/* ════════════════════════════════════
-          MODAL: Registrar Pago / Abono
-      ════════════════════════════════════ */}
-      {showPagoModal && facturaPagar && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md shadow-2xl">
-            <div className="flex items-center justify-between p-6 border-b border-neutral-800">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2"><Wallet size={18} className="text-emerald-400" /> Registrar Abono</h3>
-              <button onClick={() => setShowPagoModal(false)} className="text-neutral-400 hover:text-white"><X size={22} /></button>
-            </div>
-            <div className="p-6 space-y-4">
-              {/* Factura info */}
-              <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-4">
-                <p className="text-sm text-neutral-400 mb-1">{facturaPagar.concepto || 'Factura'}</p>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-neutral-500">
-                    Total: {formatCurrency(facturaPagar.total)}
-                    {tasaBcv > 0 && ` (~ Bs. ${(facturaPagar.total * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`}
-                  </span>
-                  <div className="text-right">
-                    <span className="text-rose-400 font-bold block">
-                      Pendiente: {formatCurrency(facturaPagar.saldo_pendiente)}
-                    </span>
-                    {tasaBcv > 0 && facturaPagar.saldo_pendiente > 0 && (
-                      <span className="text-[11px] text-rose-400/80">
-                        ≈ Bs. {(facturaPagar.saldo_pendiente * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm text-neutral-400 mb-1.5">Monto a Abonar (USD) *</label>
-                <input type="number" min="0.01" step="any" value={montoAbonar} onChange={e => setMontoAbonar(e.target.value)}
-                  className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-lg font-semibold" />
-                {tasaBcv > 0 && Number(montoAbonar) > 0 && (
-                  <p className="text-xs text-emerald-400/90 mt-1">
-                    ≈ Bs. {(Number(montoAbonar) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
-                  </p>
-                )}
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">Método de Pago</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      list="lista-metodos-abono"
-                      value={metodoPago}
-                      onChange={e => setMetodoPago(e.target.value)}
-                      placeholder="Ej. Transferencia, Zelle..."
-                      className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
-                    />
-                    <datalist id="lista-metodos-abono">
-                      {metodosDisponibles.map(m => (
-                        <option key={m} value={m} />
-                      ))}
-                    </datalist>
-                  </div>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {metodosDisponibles.slice(0, 5).map(m => (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => setMetodoPago(m)}
-                        className={`text-[10px] px-2 py-0.5 rounded-lg border transition-colors ${
-                          metodoPago === m
-                            ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 font-semibold'
-                            : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:text-white'
-                        }`}
-                      >
-                        {m}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">Fecha del Pago</label>
-                  <input type="date" value={fechaPago} onChange={e => setFechaPago(e.target.value)}
-                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 [color-scheme:dark] text-sm" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">Banco Origen</label>
-                  <input type="text" value={bancoOrigen} onChange={e => setBancoOrigen(e.target.value)}
-                    placeholder="Ej. Banesco"
-                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm" />
-                </div>
-                <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">N° Referencia</label>
-                  <input type="text" value={referencia} onChange={e => setReferencia(e.target.value)}
-                    placeholder="Opcional"
-                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm" />
-                </div>
-              </div>
-              {errorPago && <p className="text-rose-400 text-sm flex items-center gap-2"><AlertCircle size={14} /> {errorPago}</p>}
-            </div>
-            <div className="p-6 border-t border-neutral-800 flex gap-3 justify-end">
-              <button onClick={() => setShowPagoModal(false)} className="px-5 py-2.5 rounded-xl text-neutral-300 hover:bg-neutral-800 text-sm">Cancelar</button>
-              <button onClick={handlePagar} disabled={isPagarLoading}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50">
-                {isPagarLoading ? 'Registrando...' : <><Wallet size={16} /> Registrar Pago</>}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ════════════════════════════════════
-          MODAL: Pago General / Cascada FIFO
-      ════════════════════════════════════ */}
-      {showPagoGeneralModal && proveedorPagarGeneral && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-lg shadow-2xl">
-            <div className="flex items-center justify-between p-6 border-b border-neutral-800">
-              <div>
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Wallet size={18} className="text-emerald-400" /> Abono General a Proveedor
-                </h3>
-                <p className="text-xs text-neutral-400 mt-0.5">
-                  {proveedorPagarGeneral.nombre_proveedor || proveedorPagarGeneral.nombre_comercial}
-                </p>
-              </div>
-              <button onClick={() => setShowPagoGeneralModal(false)} className="text-neutral-400 hover:text-white">
-                <X size={22} />
-              </button>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              {/* Resumen Deuda y Regla FIFO */}
-              <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-4">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs font-semibold uppercase text-neutral-400">Deuda Total Acumulada</span>
-                  <div className="text-right">
-                    <span className="text-xl font-black text-rose-400">
-                      {formatCurrency(proveedorPagarGeneral.monto_adeudado)}
-                    </span>
-                    {tasaBcv > 0 && proveedorPagarGeneral.monto_adeudado > 0 && (
-                      <span className="block text-xs text-neutral-400 font-medium">
-                        ≈ Bs. {(proveedorPagarGeneral.monto_adeudado * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                </div>
-
-              <div>
-                <label className="block text-sm text-neutral-400 mb-1.5">Monto a Abonar (USD) *</label>
-                <input
-                  type="number"
-                  min="0.01"
-                  step="any"
-                  value={montoAbonoGeneral}
-                  onChange={e => setMontoAbonoGeneral(e.target.value)}
-                  placeholder="0.00"
-                  className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-lg font-bold"
-                />
-                {tasaBcv > 0 && Number(montoAbonoGeneral) > 0 && (
-                  <p className="text-xs text-emerald-400/90 mt-1">
-                    ≈ Bs. {(Number(montoAbonoGeneral) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
-                  </p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">Método de Pago</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      list="lista-metodos-abono-general"
-                      value={metodoPagoGeneral}
-                      onChange={e => setMetodoPagoGeneral(e.target.value)}
-                      placeholder="Ej. Transferencia, Zelle..."
-                      className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
-                    />
-                    <datalist id="lista-metodos-abono-general">
-                      {metodosDisponibles.map(m => (
-                        <option key={m} value={m} />
-                      ))}
-                    </datalist>
-                  </div>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {metodosDisponibles.slice(0, 5).map(m => (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => setMetodoPagoGeneral(m)}
-                        className={`text-[10px] px-2 py-0.5 rounded-lg border transition-colors ${
-                          metodoPagoGeneral === m
-                            ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 font-semibold'
-                            : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:text-white'
-                        }`}
-                      >
-                        {m}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">Fecha del Pago</label>
-                  <input
-                    type="date"
-                    value={fechaPagoGeneral}
-                    onChange={e => setFechaPagoGeneral(e.target.value)}
-                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 [color-scheme:dark] text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">Banco Origen</label>
-                  <input
-                    type="text"
-                    value={bancoOrigenGeneral}
-                    onChange={e => setBancoOrigenGeneral(e.target.value)}
-                    placeholder="Ej. Banesco, Chase"
-                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">N° Referencia</label>
-                  <input
-                    type="text"
-                    value={referenciaGeneral}
-                    onChange={e => setReferenciaGeneral(e.target.value)}
-                    placeholder="Opcional"
-                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
-                  />
-                </div>
-              </div>
-
-              {errorPagoGeneral && (
-                <p className="text-rose-400 text-sm flex items-center gap-2">
-                  <AlertCircle size={14} /> {errorPagoGeneral}
-                </p>
-              )}
-            </div>
-
-            <div className="p-6 border-t border-neutral-800 flex gap-3 justify-end">
-              <button
-                type="button"
-                onClick={() => setShowPagoGeneralModal(false)}
-                className="px-5 py-2.5 rounded-xl text-neutral-300 hover:bg-neutral-800 text-sm"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handlePagarGeneral}
-                disabled={isPagarGeneralLoading}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-emerald-600/20"
-              >
-                {isPagarGeneralLoading ? 'Aplicando pago...' : <><Wallet size={16} /> Aplicar Abono</>}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ════════════════════════════════════
-          MODAL: Detalles de Factura (Insumos)
-      ════════════════════════════════════ */}
-      {detallesModalData && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="flex items-center justify-between p-6 border-b border-neutral-800 shrink-0">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Package size={18} className="text-indigo-400" /> 
-                Detalles de Factura 
-                {detallesModalData.factura?.numero_factura ? `Nº ${detallesModalData.factura.numero_factura}` : ''}
-              </h3>
-              <button onClick={() => setDetallesModalData(null)} className="text-neutral-400 hover:text-white">
-                <X size={22} />
-              </button>
-            </div>
-            
-            <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
-              {detallesModalData.isLoading ? (
-                <div className="flex justify-center items-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
-                </div>
-              ) : detallesModalData.error ? (
-                <div className="text-center py-8">
-                  <AlertCircle size={40} className="text-rose-400 mx-auto mb-3" />
-                  <p className="text-neutral-400">{detallesModalData.error}</p>
-                </div>
-              ) : detallesModalData.detalles?.items ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <p className="text-sm text-neutral-400 font-medium">Concepto: <span className="text-white">{detallesModalData.detalles.texto || detallesModalData.factura?.concepto}</span></p>
-                    <Badge label={`${detallesModalData.detalles.items.length} items`} color="indigo" />
-                  </div>
-                  
-                  <div className="rounded-xl border border-neutral-800 overflow-hidden bg-black/30">
-                    <table className="w-full text-left text-sm">
-                      <thead className="bg-neutral-900/50">
-                        <tr>
-                          <th className="px-4 py-3 text-neutral-400 font-medium border-b border-neutral-800">Insumo</th>
-                          <th className="px-4 py-3 text-neutral-400 font-medium border-b border-neutral-800 text-right">Cant.</th>
-                          <th className="px-4 py-3 text-neutral-400 font-medium border-b border-neutral-800 text-right">Total</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-neutral-800/50">
-                        {detallesModalData.detalles.items.map((it: any, idx: number) => (
-                          <tr key={idx} className="hover:bg-neutral-800/30">
-                            <td className="px-4 py-3 text-neutral-200">
-                              {it.nombre_nuevo || 'Item'}
-                              {it.is_new && <span className="ml-2 text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded">NUEVO</span>}
-                            </td>
-                            <td className="px-4 py-3 text-right text-neutral-300">
-                              {it.cantidad} <span className="text-xs text-neutral-500">{it.unidad_nueva}</span>
-                            </td>
-                            <td className="px-4 py-3 text-right text-white font-medium">
-                              {formatCurrency(
-                                it.monedaItem === 'VES' 
-                                  ? (it.costoTotal / (detallesModalData.detalles.tasaCambio || 1)) 
-                                  : it.costoTotal
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-neutral-500">No hay detalles estructurados para mostrar.</p>
-                </div>
-              )}
-            </div>
-            
-            <div className="p-6 border-t border-neutral-800 flex justify-end gap-3 bg-neutral-900 shrink-0">
-              {detallesModalData?.compraPuntualId && (
-                <Link 
-                  href={`/dashboard/compras?tab=historial&edit=${detallesModalData.compraPuntualId}`}
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-xl transition-colors text-sm font-medium flex items-center gap-2"
-                >
-                  <Edit2 size={16} />
-                  Modificar Ítems
-                </Link>
-              )}
-              <button 
-                onClick={() => setDetallesModalData(null)}
-                className="bg-neutral-800 hover:bg-neutral-700 text-white px-6 py-2 rounded-xl transition-colors text-sm font-medium"
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ════════════════════════════════════
-          MODAL: Editar Factura
-      ════════════════════════════════════ */}
-      {showEditFacturaModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-2xl max-h-[90vh] shadow-2xl overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-6 border-b border-neutral-800 shrink-0">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Pencil size={18} className="text-indigo-400" /> Editar Factura
-              </h3>
-              <button onClick={() => setShowEditFacturaModal(false)} className="text-neutral-400 hover:text-white">
-                <X size={22} />
-              </button>
-            </div>
-            
-            <div className="p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
-              {errorEdit && (
-                <div className="bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl text-rose-400 text-sm flex items-center gap-2">
-                  <AlertCircle size={16} /> {errorEdit}
-                </div>
-              )}
-              
-              <div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-400 mb-1.5">Sede</label>
-                    <select value={editFacSede} onChange={e => setEditFacSede(e.target.value)}
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-white text-sm appearance-none focus:outline-none focus:border-indigo-500">
-                      <option className="bg-neutral-900" value="">Seleccionar Sede...</option>
-                      {sedes.map(s => (
-                        <option key={s.id} value={s.id} className="bg-neutral-900">{s.nombre}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-400 mb-1.5">Número de Factura</label>
-                    <div className="relative">
-                      <Hash size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
-                      <input type="text" value={editFacNumero} onChange={e => setEditFacNumero(e.target.value)}
-                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-9 pr-4 py-2 text-white text-sm" placeholder="S/N" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-neutral-400 mb-1.5">Concepto</label>
-                <input type="text" value={editFacConcepto} onChange={e => setEditFacConcepto(e.target.value)}
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-white text-sm" placeholder="Ej. Compra de insumos" />
-              </div>
-
-              {/* EDICIÓN DE ITEMS / PRODUCTOS SI LA FACTURA TIENE INSUMOS */}
-              {isLoadingEditItems ? (
-                <div className="py-4 text-center text-xs text-neutral-400 flex items-center justify-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-indigo-500"></div> Cargando productos vinculados...
-                </div>
-              ) : (editFacItems.length > 0 || editFacCompraPuntualId) ? (
-                <div className="space-y-3 pt-2">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-sm font-bold text-emerald-400 flex items-center gap-1.5">
-                      <Package size={16} /> Productos / Insumos ({editFacItems.length})
-                    </label>
-                    <span className="text-xs text-neutral-400">El inventario se sincronizará automáticamente</span>
-                  </div>
-
-                  {/* Lista de productos actuales */}
-                  <div className="bg-black/30 border border-neutral-800 rounded-xl overflow-hidden divide-y divide-neutral-800/60">
-                    {editFacItems.map((item, idx) => (
-                      <div key={idx} className="p-3 flex items-center justify-between gap-3 text-sm hover:bg-neutral-800/30">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-white truncate">
-                            {item.nombre_nuevo}
-                            {item.is_new && <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded ml-1.5 font-normal">NUEVO</span>}
-                          </p>
-                          <p className="text-xs text-neutral-400 mt-0.5">
-                            {item.cantidad} {item.unidad_nueva || 'Und'} · Total: <span className="text-white font-medium">$ {Number(item.costoTotal || 0).toFixed(2)}</span>
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newItems = editFacItems.filter((_, i) => i !== idx);
-                            setEditFacItems(newItems);
-                            const newTot = newItems.reduce((acc, i) => acc + Number(i.costoTotal || 0), 0);
-                            setEditFacTotal(newTot.toFixed(2));
-                          }}
-                          className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors flex items-center gap-1 text-xs"
-                          title="Eliminar este producto de la factura"
-                        >
-                          <Trash2 size={15} /> <span className="hidden sm:inline">Quitar</span>
-                        </button>
-                      </div>
-                    ))}
-
-                    {editFacItems.length === 0 && (
-                      <div className="p-4 text-center text-xs text-neutral-500 italic">
-                        No quedan productos en esta factura. Agrega uno abajo.
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Formulario para agregar producto a la factura */}
-                  <div className="p-3 bg-neutral-950 rounded-xl border border-indigo-500/30 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1">
-                        <Plus size={13} /> Agregar Producto
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditAddIsNew(!editAddIsNew);
-                          setEditAddInsumoSearch('');
-                          setEditAddNombreNuevo('');
-                        }}
-                        className="text-xs text-neutral-400 hover:text-white underline"
-                      >
-                        {editAddIsNew ? 'Seleccionar existente' : '+ Crear nuevo'}
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
-                      {editAddIsNew ? (
-                        <>
-                          <div className="sm:col-span-5">
-                            <label className="block text-[10px] font-medium text-neutral-400 mb-1">Nombre Insumo</label>
-                            <input
-                              type="text"
-                              value={editAddNombreNuevo}
-                              onChange={e => setEditAddNombreNuevo(e.target.value)}
-                              placeholder="Ej. Harina"
-                              className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2.5 py-1.5 text-xs"
-                            />
-                          </div>
-                          <div className="sm:col-span-2">
-                            <label className="block text-[10px] font-medium text-neutral-400 mb-1">Unidad</label>
-                            <select
-                              value={editAddUnidad}
-                              onChange={e => setEditAddUnidad(e.target.value)}
-                              className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2 py-1.5 text-xs"
-                            >
-                              {['Kg', 'Gr', 'Lt', 'Ml', 'Und', 'Cajas', 'Paquetes'].map(u => (
-                                <option key={u} value={u} className="bg-neutral-900">{u}</option>
-                              ))}
-                            </select>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="sm:col-span-7">
-                          <label className="block text-[10px] font-medium text-neutral-400 mb-1">Insumo</label>
-                          <select
-                            value={editAddInsumoSearch}
-                            onChange={e => setEditAddInsumoSearch(e.target.value)}
-                            className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2.5 py-1.5 text-xs"
-                          >
-                            <option value="">Seleccionar insumo...</option>
-                            {insumosList.map(i => (
-                              <option key={i.id} value={i.id} className="bg-neutral-900">
-                                {i.nombre} ({i.cantidad_actual || 0} {i.unidad_medida})
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-
-                      <div className="sm:col-span-2">
-                        <label className="block text-[10px] font-medium text-neutral-400 mb-1">Cantidad</label>
-                        <input
-                          type="number"
-                          step="any"
-                          min="0.01"
-                          placeholder="0"
-                          value={editAddCantidad}
-                          onChange={e => setEditAddCantidad(e.target.value)}
-                          className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2 py-1.5 text-xs text-center"
-                        />
-                      </div>
-
-                      <div className="sm:col-span-3 flex gap-2">
-                        <div className="flex-1">
-                          <label className="block text-[10px] font-medium text-neutral-400 mb-1">Total ($)</label>
-                          <input
-                            type="number"
-                            step="any"
-                            min="0.01"
-                            placeholder="0.00"
-                            value={editAddTotal}
-                            onChange={e => setEditAddTotal(e.target.value)}
-                            className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2 py-1.5 text-xs text-center"
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const qty = Number(editAddCantidad);
-                            const cost = Number(editAddTotal);
-                            if (!qty || qty <= 0 || !cost || cost <= 0) return;
-
-                            let newItem: any = null;
-                            if (editAddIsNew) {
-                              if (!editAddNombreNuevo.trim()) return;
-                              newItem = {
-                                id: Math.random().toString(),
-                                insumo_id: null,
-                                is_new: true,
-                                nombre_nuevo: editAddNombreNuevo.trim(),
-                                unidad_nueva: editAddUnidad || 'Und',
-                                cantidad: qty,
-                                costoTotal: cost,
-                                monedaItem: 'USD'
-                              };
-                            } else {
-                              if (!editAddInsumoSearch) return;
-                              const found = insumosList.find(i => i.id === editAddInsumoSearch);
-                              newItem = {
-                                id: Math.random().toString(),
-                                insumo_id: editAddInsumoSearch,
-                                is_new: false,
-                                nombre_nuevo: found?.nombre || 'Insumo',
-                                unidad_nueva: found?.unidad_medida || 'Und',
-                                cantidad: qty,
-                                costoTotal: cost,
-                                monedaItem: 'USD'
-                              };
-                            }
-
-                            const updated = [...editFacItems, newItem];
-                            setEditFacItems(updated);
-                            const newTot = updated.reduce((acc, i) => acc + Number(i.costoTotal || 0), 0);
-                            setEditFacTotal(newTot.toFixed(2));
-
-                            setEditAddInsumoSearch('');
-                            setEditAddNombreNuevo('');
-                            setEditAddIsNew(false);
-                            setEditAddCantidad('');
-                            setEditAddTotal('');
-                          }}
-                          className="self-end bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-1.5 px-3 rounded-lg transition-colors flex items-center justify-center gap-1"
-                        >
-                          <Plus size={13} /> Añadir
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-
-              <div>
-                <label className="block text-sm font-medium text-neutral-400 mb-1.5">Monto Total de la Factura (Divisas)</label>
-                <div className="relative">
-                  <DollarSign size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
-                  <input
-                    type="number"
-                    step="any"
-                    min="0"
-                    value={editFacTotal}
-                    onChange={e => setEditFacTotal(e.target.value)}
-                    readOnly={editFacItems.length > 0}
-                    className={`w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-9 pr-4 py-2 text-white text-sm ${editFacItems.length > 0 ? 'opacity-80 cursor-not-allowed text-emerald-400 font-bold' : ''}`}
-                  />
-                </div>
-                <p className="text-xs text-neutral-500 mt-1">
-                  {editFacItems.length > 0
-                    ? 'El total se calcula automáticamente sumando los productos de la factura.'
-                    : 'El saldo pendiente se recalculará automáticamente según los abonos ya realizados.'}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-neutral-400 mb-1.5">Fecha de Emisión</label>
-                  <input type="date" value={editFacFecha} onChange={e => setEditFacFecha(e.target.value)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-white text-sm" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-400 mb-1.5">Vencimiento (Opcional)</label>
-                  <input type="date" value={editFacFechaVencimiento} onChange={e => setEditFacFechaVencimiento(e.target.value)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-white text-sm" />
-                </div>
-              </div>
-            </div>
-            
-            <div className="p-6 border-t border-neutral-800 flex justify-end gap-3 shrink-0">
-              <button 
-                onClick={() => setShowEditFacturaModal(false)}
-                className="bg-neutral-800 hover:bg-neutral-700 text-white px-5 py-2.5 rounded-xl transition-colors text-sm font-medium"
-              >
-                Cancelar
-              </button>
-              <button 
-                onClick={handleGuardarEdicionFactura}
-                disabled={isEditLoading}
-                className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl transition-colors text-sm font-medium disabled:opacity-50 flex items-center gap-2"
-              >
-                {isEditLoading ? 'Guardando...' : <><Check size={16} /> Guardar Cambios</>}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL HISTORIAL DE ABONOS GLOBALES */}
-      {abonosProvInfo && (
-        <AbonosGlobalesHistorial
-          proveedorId={abonosProvInfo.id}
-          proveedorNombre={abonosProvInfo.nombre}
-          sedeId={sedeId}
-          onClose={() => setAbonosProvInfo(null)}
-        />
-      )}
-
-    </div>
-  );
-}
-
-
-
-}</span>
-                              <input 
-                                type="number" 
-                                className="w-full bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-right text-amber-400 focus:border-indigo-500"
+                              <span className="text-neutral-500 text-xs">{facMoneda === 'VES' ? 'Bs.' : '\$'}</span>
+                              <input
+                                type="number"
+                                className="w-full bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-right text-amber-400 focus:border-indigo-500 outline-none"
                                 value={facIva}
                                 onChange={e => setFacIva(e.target.value)}
                                 placeholder="0.00"
@@ -2841,28 +1438,28 @@ export default function ProveedoresPage() {
                             <span className="text-neutral-300">Total Factura:</span>
                             <div className="text-right">
                               <span className="text-emerald-400 text-base">
-                                {facMoneda === 'VES' ? 'Bs. ' : '$ '}
+                                {facMoneda === 'VES' ? 'Bs. ' : '\$ '}
                                 {(facItems.reduce((acc, i) => acc + i.costoTotal, 0) - Number(facDescuento || 0) + Number(facIva || 0)).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </span>
                               {facMoneda === 'VES' && facTasa > 0 && (
                                 <span className="block text-xs text-neutral-400 font-normal">
-                                  � $ {((facItems.reduce((acc, i) => acc + i.costoTotal, 0) - Number(facDescuento || 0) + Number(facIva || 0)) / facTasa).toFixed(2)} USD (Tasa: {facTasa} Bs/$)
+                                  {`\u2248 $ ${((facItems.reduce((acc, i) => acc + i.costoTotal, 0) - Number(facDescuento || 0) + Number(facIva || 0)) / facTasa).toFixed(2)} USD (Tasa: ${facTasa} Bs/$)`}
                                 </span>
                               )}
                             </div>
                           </div>
                         </div>
                       </div>
-                  ) : (
-                    <p className="text-xs text-neutral-500 italic text-center py-2">
-                      No has agregado insumos todavía. Selecciona uno arriba y haz clic en &quot;Agregar&quot;.
-                    </p>
-                  )}
-                </div>
+                    ) : (
+                      <p className="text-xs text-neutral-500 italic text-center py-2">
+                        No has agregado insumos todavía. Selecciona uno arriba y haz clic en &quot;Agregar&quot;.
+                      </p>
+                    )}
+                  </div>
               )}
 
               <div>
-                <label className="block text-sm text-neutral-400 mb-1.5 mt-2">Estado / Método de Pago</label>
+                <label className="block text-sm text-neutral-400 mb-1.5 mt-2">Estado / MÃ©todo de Pago</label>
                 <div className="relative">
                   <input
                     type="text"
@@ -2909,9 +1506,9 @@ export default function ProveedoresPage() {
         </div>
       )}
 
-      {/* ════════════════════════════════════
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
           MODAL: Registrar Pago / Abono
-      ════════════════════════════════════ */}
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       {showPagoModal && facturaPagar && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md shadow-2xl">
@@ -2934,7 +1531,7 @@ export default function ProveedoresPage() {
                     </span>
                     {tasaBcv > 0 && facturaPagar.saldo_pendiente > 0 && (
                       <span className="text-[11px] text-rose-400/80">
-                        ≈ Bs. {(facturaPagar.saldo_pendiente * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        â‰ˆ Bs. {(facturaPagar.saldo_pendiente * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     )}
                   </div>
@@ -2946,13 +1543,13 @@ export default function ProveedoresPage() {
                   className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-lg font-semibold" />
                 {tasaBcv > 0 && Number(montoAbonar) > 0 && (
                   <p className="text-xs text-emerald-400/90 mt-1">
-                    ≈ Bs. {(Number(montoAbonar) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
+                    â‰ˆ Bs. {(Number(montoAbonar) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
                   </p>
                 )}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">Método de Pago</label>
+                  <label className="block text-sm text-neutral-400 mb-1.5">MÃ©todo de Pago</label>
                   <div className="relative">
                     <input
                       type="text"
@@ -2999,7 +1596,7 @@ export default function ProveedoresPage() {
                     className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm" />
                 </div>
                 <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">N° Referencia</label>
+                  <label className="block text-sm text-neutral-400 mb-1.5">NÂ° Referencia</label>
                   <input type="text" value={referencia} onChange={e => setReferencia(e.target.value)}
                     placeholder="Opcional"
                     className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm" />
@@ -3018,9 +1615,9 @@ export default function ProveedoresPage() {
         </div>
       )}
 
-      {/* ════════════════════════════════════
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
           MODAL: Pago General / Cascada FIFO
-      ════════════════════════════════════ */}
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       {showPagoGeneralModal && proveedorPagarGeneral && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-lg shadow-2xl">
@@ -3049,7 +1646,7 @@ export default function ProveedoresPage() {
                     </span>
                     {tasaBcv > 0 && proveedorPagarGeneral.monto_adeudado > 0 && (
                       <span className="block text-xs text-neutral-400 font-medium">
-                        ≈ Bs. {(proveedorPagarGeneral.monto_adeudado * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        â‰ˆ Bs. {(proveedorPagarGeneral.monto_adeudado * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     )}
                   </div>
@@ -3069,14 +1666,14 @@ export default function ProveedoresPage() {
                 />
                 {tasaBcv > 0 && Number(montoAbonoGeneral) > 0 && (
                   <p className="text-xs text-emerald-400/90 mt-1">
-                    ≈ Bs. {(Number(montoAbonoGeneral) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
+                    â‰ˆ Bs. {(Number(montoAbonoGeneral) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
                   </p>
                 )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">Método de Pago</label>
+                  <label className="block text-sm text-neutral-400 mb-1.5">MÃ©todo de Pago</label>
                   <div className="relative">
                     <input
                       type="text"
@@ -3132,7 +1729,7 @@ export default function ProveedoresPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">N° Referencia</label>
+                  <label className="block text-sm text-neutral-400 mb-1.5">NÂ° Referencia</label>
                   <input
                     type="text"
                     value={referenciaGeneral}
@@ -3171,9 +1768,9 @@ export default function ProveedoresPage() {
         </div>
       )}
 
-      {/* ════════════════════════════════════
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
           MODAL: Detalles de Factura (Insumos)
-      ════════════════════════════════════ */}
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       {detallesModalData && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -3181,7 +1778,7 @@ export default function ProveedoresPage() {
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <Package size={18} className="text-indigo-400" /> 
                 Detalles de Factura 
-                {detallesModalData.factura?.numero_factura ? `Nº ${detallesModalData.factura.numero_factura}` : ''}
+                {detallesModalData.factura?.numero_factura ? `NÂº ${detallesModalData.factura.numero_factura}` : ''}
               </h3>
               <button onClick={() => setDetallesModalData(null)} className="text-neutral-400 hover:text-white">
                 <X size={22} />
@@ -3251,7 +1848,7 @@ export default function ProveedoresPage() {
                   className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-xl transition-colors text-sm font-medium flex items-center gap-2"
                 >
                   <Edit2 size={16} />
-                  Modificar Ítems
+                  Modificar Ãtems
                 </Link>
               )}
               <button 
@@ -3265,9 +1862,9 @@ export default function ProveedoresPage() {
         </div>
       )}
 
-      {/* ════════════════════════════════════
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
           MODAL: Editar Factura
-      ════════════════════════════════════ */}
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       {showEditFacturaModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-2xl max-h-[90vh] shadow-2xl overflow-hidden flex flex-col">
@@ -3300,7 +1897,7 @@ export default function ProveedoresPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-neutral-400 mb-1.5">Número de Factura</label>
+                    <label className="block text-sm font-medium text-neutral-400 mb-1.5">NÃºmero de Factura</label>
                     <div className="relative">
                       <Hash size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
                       <input type="text" value={editFacNumero} onChange={e => setEditFacNumero(e.target.value)}
@@ -3316,7 +1913,7 @@ export default function ProveedoresPage() {
                   className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-white text-sm" placeholder="Ej. Compra de insumos" />
               </div>
 
-              {/* EDICIÓN DE ITEMS / PRODUCTOS SI LA FACTURA TIENE INSUMOS */}
+              {/* EDICIÃ“N DE ITEMS / PRODUCTOS SI LA FACTURA TIENE INSUMOS */}
               {isLoadingEditItems ? (
                 <div className="py-4 text-center text-xs text-neutral-400 flex items-center justify-center gap-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-indigo-500"></div> Cargando productos vinculados...
@@ -3327,7 +1924,7 @@ export default function ProveedoresPage() {
                     <label className="block text-sm font-bold text-emerald-400 flex items-center gap-1.5">
                       <Package size={16} /> Productos / Insumos ({editFacItems.length})
                     </label>
-                    <span className="text-xs text-neutral-400">El inventario se sincronizará automáticamente</span>
+                    <span className="text-xs text-neutral-400">El inventario se sincronizarÃ¡ automÃ¡ticamente</span>
                   </div>
 
                   {/* Lista de productos actuales */}
@@ -3340,7 +1937,7 @@ export default function ProveedoresPage() {
                             {item.is_new && <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded ml-1.5 font-normal">NUEVO</span>}
                           </p>
                           <p className="text-xs text-neutral-400 mt-0.5">
-                            {item.cantidad} {item.unidad_nueva || 'Und'} · Total: <span className="text-white font-medium">$ {Number(item.costoTotal || 0).toFixed(2)}</span>
+                            {item.cantidad} {item.unidad_nueva || 'Und'} Â· Total: <span className="text-white font-medium">$ {Number(item.costoTotal || 0).toFixed(2)}</span>
                           </p>
                         </div>
                         <button
@@ -3503,7 +2100,7 @@ export default function ProveedoresPage() {
                           }}
                           className="self-end bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-1.5 px-3 rounded-lg transition-colors flex items-center justify-center gap-1"
                         >
-                          <Plus size={13} /> Añadir
+                          <Plus size={13} /> AÃ±adir
                         </button>
                       </div>
                     </div>
@@ -3527,14 +2124,1346 @@ export default function ProveedoresPage() {
                 </div>
                 <p className="text-xs text-neutral-500 mt-1">
                   {editFacItems.length > 0
-                    ? 'El total se calcula automáticamente sumando los productos de la factura.'
-                    : 'El saldo pendiente se recalculará automáticamente según los abonos ya realizados.'}
+                    ? 'El total se calcula automÃ¡ticamente sumando los productos de la factura.'
+                    : 'El saldo pendiente se recalcularÃ¡ automÃ¡ticamente segÃºn los abonos ya realizados.'}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-400 mb-1.5">Fecha de Emisión</label>
+                  <label className="block text-sm font-medium text-neutral-400 mb-1.5">Fecha de EmisiÃ³n</label>
+                  <input type="date" value={editFacFecha} onChange={e => setEditFacFecha(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-white text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-400 mb-1.5">Vencimiento (Opcional)</label>
+                  <input type="date" value={editFacFechaVencimiento} onChange={e => setEditFacFechaVencimiento(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-white text-sm" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-6 border-t border-neutral-800 flex justify-end gap-3 shrink-0">
+              <button 
+                onClick={() => setShowEditFacturaModal(false)}
+                className="bg-neutral-800 hover:bg-neutral-700 text-white px-5 py-2.5 rounded-xl transition-colors text-sm font-medium"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleGuardarEdicionFactura}
+                disabled={isEditLoading}
+                className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl transition-colors text-sm font-medium disabled:opacity-50 flex items-center gap-2"
+              >
+                {isEditLoading ? 'Guardando...' : <><Check size={16} /> Guardar Cambios</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL HISTORIAL DE ABONOS GLOBALES */}
+      {abonosProvInfo && (
+        <AbonosGlobalesHistorial
+          proveedorId={abonosProvInfo.id}
+          proveedorNombre={abonosProvInfo.nombre}
+          sedeId={sedeId}
+          onClose={() => setAbonosProvInfo(null)}
+        />
+      )}
+
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+          MODAL: Registrar Pago / Abono
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+      {showPagoModal && facturaPagar && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-between p-6 border-b border-neutral-800">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2"><Wallet size={18} className="text-emerald-400" /> Registrar Abono</h3>
+              <button onClick={() => setShowPagoModal(false)} className="text-neutral-400 hover:text-white"><X size={22} /></button>
+            </div>
+            <div className="p-6 space-y-4">
+              {/* Factura info */}
+              <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-4">
+                <p className="text-sm text-neutral-400 mb-1">{facturaPagar.concepto || 'Factura'}</p>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-neutral-500">
+                    Total: {formatCurrency(facturaPagar.total)}
+                    {tasaBcv > 0 && ` (~ Bs. ${(facturaPagar.total * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`}
+                  </span>
+                  <div className="text-right">
+                    <span className="text-rose-400 font-bold block">
+                      Pendiente: {formatCurrency(facturaPagar.saldo_pendiente)}
+                    </span>
+                    {tasaBcv > 0 && facturaPagar.saldo_pendiente > 0 && (
+                      <span className="text-[11px] text-rose-400/80">
+                        â‰ˆ Bs. {(facturaPagar.saldo_pendiente * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm text-neutral-400 mb-1.5">Monto a Abonar (USD) *</label>
+                <input type="number" min="0.01" step="any" value={montoAbonar} onChange={e => setMontoAbonar(e.target.value)}
+                  className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-lg font-semibold" />
+                {tasaBcv > 0 && Number(montoAbonar) > 0 && (
+                  <p className="text-xs text-emerald-400/90 mt-1">
+                    â‰ˆ Bs. {(Number(montoAbonar) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
+                  </p>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">MÃ©todo de Pago</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      list="lista-metodos-abono"
+                      value={metodoPago}
+                      onChange={e => setMetodoPago(e.target.value)}
+                      placeholder="Ej. Transferencia, Zelle..."
+                      className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
+                    />
+                    <datalist id="lista-metodos-abono">
+                      {metodosDisponibles.map(m => (
+                        <option key={m} value={m} />
+                      ))}
+                    </datalist>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {metodosDisponibles.slice(0, 5).map(m => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setMetodoPago(m)}
+                        className={`text-[10px] px-2 py-0.5 rounded-lg border transition-colors ${
+                          metodoPago === m
+                            ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 font-semibold'
+                            : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:text-white'
+                        }`}
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Fecha del Pago</label>
+                  <input type="date" value={fechaPago} onChange={e => setFechaPago(e.target.value)}
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 [color-scheme:dark] text-sm" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Banco Origen</label>
+                  <input type="text" value={bancoOrigen} onChange={e => setBancoOrigen(e.target.value)}
+                    placeholder="Ej. Banesco"
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">NÂ° Referencia</label>
+                  <input type="text" value={referencia} onChange={e => setReferencia(e.target.value)}
+                    placeholder="Opcional"
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm" />
+                </div>
+              </div>
+              {errorPago && <p className="text-rose-400 text-sm flex items-center gap-2"><AlertCircle size={14} /> {errorPago}</p>}
+            </div>
+            <div className="p-6 border-t border-neutral-800 flex gap-3 justify-end">
+              <button onClick={() => setShowPagoModal(false)} className="px-5 py-2.5 rounded-xl text-neutral-300 hover:bg-neutral-800 text-sm">Cancelar</button>
+              <button onClick={handlePagar} disabled={isPagarLoading}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50">
+                {isPagarLoading ? 'Registrando...' : <><Wallet size={16} /> Registrar Pago</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+          MODAL: Pago General / Cascada FIFO
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+      {showPagoGeneralModal && proveedorPagarGeneral && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-lg shadow-2xl">
+            <div className="flex items-center justify-between p-6 border-b border-neutral-800">
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Wallet size={18} className="text-emerald-400" /> Abono General a Proveedor
+                </h3>
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  {proveedorPagarGeneral.nombre_proveedor || proveedorPagarGeneral.nombre_comercial}
+                </p>
+              </div>
+              <button onClick={() => setShowPagoGeneralModal(false)} className="text-neutral-400 hover:text-white">
+                <X size={22} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              {/* Resumen Deuda y Regla FIFO */}
+              <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-semibold uppercase text-neutral-400">Deuda Total Acumulada</span>
+                  <div className="text-right">
+                    <span className="text-xl font-black text-rose-400">
+                      {formatCurrency(proveedorPagarGeneral.monto_adeudado)}
+                    </span>
+                    {tasaBcv > 0 && proveedorPagarGeneral.monto_adeudado > 0 && (
+                      <span className="block text-xs text-neutral-400 font-medium">
+                        â‰ˆ Bs. {(proveedorPagarGeneral.monto_adeudado * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                </div>
+
+              <div>
+                <label className="block text-sm text-neutral-400 mb-1.5">Monto a Abonar (USD) *</label>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="any"
+                  value={montoAbonoGeneral}
+                  onChange={e => setMontoAbonoGeneral(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-lg font-bold"
+                />
+                {tasaBcv > 0 && Number(montoAbonoGeneral) > 0 && (
+                  <p className="text-xs text-emerald-400/90 mt-1">
+                    â‰ˆ Bs. {(Number(montoAbonoGeneral) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
+                  </p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">MÃ©todo de Pago</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      list="lista-metodos-abono-general"
+                      value={metodoPagoGeneral}
+                      onChange={e => setMetodoPagoGeneral(e.target.value)}
+                      placeholder="Ej. Transferencia, Zelle..."
+                      className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
+                    />
+                    <datalist id="lista-metodos-abono-general">
+                      {metodosDisponibles.map(m => (
+                        <option key={m} value={m} />
+                      ))}
+                    </datalist>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {metodosDisponibles.slice(0, 5).map(m => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setMetodoPagoGeneral(m)}
+                        className={`text-[10px] px-2 py-0.5 rounded-lg border transition-colors ${
+                          metodoPagoGeneral === m
+                            ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 font-semibold'
+                            : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:text-white'
+                        }`}
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Fecha del Pago</label>
+                  <input
+                    type="date"
+                    value={fechaPagoGeneral}
+                    onChange={e => setFechaPagoGeneral(e.target.value)}
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 [color-scheme:dark] text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Banco Origen</label>
+                  <input
+                    type="text"
+                    value={bancoOrigenGeneral}
+                    onChange={e => setBancoOrigenGeneral(e.target.value)}
+                    placeholder="Ej. Banesco, Chase"
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">NÂ° Referencia</label>
+                  <input
+                    type="text"
+                    value={referenciaGeneral}
+                    onChange={e => setReferenciaGeneral(e.target.value)}
+                    placeholder="Opcional"
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
+                  />
+                </div>
+              </div>
+
+              {errorPagoGeneral && (
+                <p className="text-rose-400 text-sm flex items-center gap-2">
+                  <AlertCircle size={14} /> {errorPagoGeneral}
+                </p>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-neutral-800 flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => setShowPagoGeneralModal(false)}
+                className="px-5 py-2.5 rounded-xl text-neutral-300 hover:bg-neutral-800 text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handlePagarGeneral}
+                disabled={isPagarGeneralLoading}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-emerald-600/20"
+              >
+                {isPagarGeneralLoading ? 'Aplicando pago...' : <><Wallet size={16} /> Aplicar Abono</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+          MODAL: Detalles de Factura (Insumos)
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+      {detallesModalData && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between p-6 border-b border-neutral-800 shrink-0">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Package size={18} className="text-indigo-400" /> 
+                Detalles de Factura 
+                {detallesModalData.factura?.numero_factura ? `NÂº ${detallesModalData.factura.numero_factura}` : ''}
+              </h3>
+              <button onClick={() => setDetallesModalData(null)} className="text-neutral-400 hover:text-white">
+                <X size={22} />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+              {detallesModalData.isLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
+                </div>
+              ) : detallesModalData.error ? (
+                <div className="text-center py-8">
+                  <AlertCircle size={40} className="text-rose-400 mx-auto mb-3" />
+                  <p className="text-neutral-400">{detallesModalData.error}</p>
+                </div>
+              ) : detallesModalData.detalles?.items ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-sm text-neutral-400 font-medium">Concepto: <span className="text-white">{detallesModalData.detalles.texto || detallesModalData.factura?.concepto}</span></p>
+                    <Badge label={`${detallesModalData.detalles.items.length} items`} color="indigo" />
+                  </div>
+                  
+                  <div className="rounded-xl border border-neutral-800 overflow-hidden bg-black/30">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-neutral-900/50">
+                        <tr>
+                          <th className="px-4 py-3 text-neutral-400 font-medium border-b border-neutral-800">Insumo</th>
+                          <th className="px-4 py-3 text-neutral-400 font-medium border-b border-neutral-800 text-right">Cant.</th>
+                          <th className="px-4 py-3 text-neutral-400 font-medium border-b border-neutral-800 text-right">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-neutral-800/50">
+                        {detallesModalData.detalles.items.map((it: any, idx: number) => (
+                          <tr key={idx} className="hover:bg-neutral-800/30">
+                            <td className="px-4 py-3 text-neutral-200">
+                              {it.nombre_nuevo || 'Item'}
+                              {it.is_new && <span className="ml-2 text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded">NUEVO</span>}
+                            </td>
+                            <td className="px-4 py-3 text-right text-neutral-300">
+                              {it.cantidad} <span className="text-xs text-neutral-500">{it.unidad_nueva}</span>
+                            </td>
+                            <td className="px-4 py-3 text-right text-white font-medium">
+                              {formatCurrency(
+                                it.monedaItem === 'VES' 
+                                  ? (it.costoTotal / (detallesModalData.detalles.tasaCambio || 1)) 
+                                  : it.costoTotal
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-neutral-500">No hay detalles estructurados para mostrar.</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="p-6 border-t border-neutral-800 flex justify-end gap-3 bg-neutral-900 shrink-0">
+              {detallesModalData?.compraPuntualId && (
+                <Link 
+                  href={`/dashboard/compras?tab=historial&edit=${detallesModalData.compraPuntualId}`}
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-xl transition-colors text-sm font-medium flex items-center gap-2"
+                >
+                  <Edit2 size={16} />
+                  Modificar Ãtems
+                </Link>
+              )}
+              <button 
+                onClick={() => setDetallesModalData(null)}
+                className="bg-neutral-800 hover:bg-neutral-700 text-white px-6 py-2 rounded-xl transition-colors text-sm font-medium"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+          MODAL: Editar Factura
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+      {showEditFacturaModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-2xl max-h-[90vh] shadow-2xl overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-neutral-800 shrink-0">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Pencil size={18} className="text-indigo-400" /> Editar Factura
+              </h3>
+              <button onClick={() => setShowEditFacturaModal(false)} className="text-neutral-400 hover:text-white">
+                <X size={22} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
+              {errorEdit && (
+                <div className="bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl text-rose-400 text-sm flex items-center gap-2">
+                  <AlertCircle size={16} /> {errorEdit}
+                </div>
+              )}
+              
+              <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-400 mb-1.5">Sede</label>
+                    <select value={editFacSede} onChange={e => setEditFacSede(e.target.value)}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-white text-sm appearance-none focus:outline-none focus:border-indigo-500">
+                      <option className="bg-neutral-900" value="">Seleccionar Sede...</option>
+                      {sedes.map(s => (
+                        <option key={s.id} value={s.id} className="bg-neutral-900">{s.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-400 mb-1.5">NÃºmero de Factura</label>
+                    <div className="relative">
+                      <Hash size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                      <input type="text" value={editFacNumero} onChange={e => setEditFacNumero(e.target.value)}
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-9 pr-4 py-2 text-white text-sm" placeholder="S/N" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-400 mb-1.5">Concepto</label>
+                <input type="text" value={editFacConcepto} onChange={e => setEditFacConcepto(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-white text-sm" placeholder="Ej. Compra de insumos" />
+              </div>
+
+              {/* EDICIÃ“N DE ITEMS / PRODUCTOS SI LA FACTURA TIENE INSUMOS */}
+              {isLoadingEditItems ? (
+                <div className="py-4 text-center text-xs text-neutral-400 flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-indigo-500"></div> Cargando productos vinculados...
+                </div>
+              ) : (editFacItems.length > 0 || editFacCompraPuntualId) ? (
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-sm font-bold text-emerald-400 flex items-center gap-1.5">
+                      <Package size={16} /> Productos / Insumos ({editFacItems.length})
+                    </label>
+                    <span className="text-xs text-neutral-400">El inventario se sincronizarÃ¡ automÃ¡ticamente</span>
+                  </div>
+
+                  {/* Lista de productos actuales */}
+                  <div className="bg-black/30 border border-neutral-800 rounded-xl overflow-hidden divide-y divide-neutral-800/60">
+                    {editFacItems.map((item, idx) => (
+                      <div key={idx} className="p-3 flex items-center justify-between gap-3 text-sm hover:bg-neutral-800/30">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-white truncate">
+                            {item.nombre_nuevo}
+                            {item.is_new && <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded ml-1.5 font-normal">NUEVO</span>}
+                          </p>
+                          <p className="text-xs text-neutral-400 mt-0.5">
+                            {item.cantidad} {item.unidad_nueva || 'Und'} Â· Total: <span className="text-white font-medium">$ {Number(item.costoTotal || 0).toFixed(2)}</span>
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newItems = editFacItems.filter((_, i) => i !== idx);
+                            setEditFacItems(newItems);
+                            const newTot = newItems.reduce((acc, i) => acc + Number(i.costoTotal || 0), 0);
+                            setEditFacTotal(newTot.toFixed(2));
+                          }}
+                          className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors flex items-center gap-1 text-xs"
+                          title="Eliminar este producto de la factura"
+                        >
+                          <Trash2 size={15} /> <span className="hidden sm:inline">Quitar</span>
+                        </button>
+                      </div>
+                    ))}
+
+                    {editFacItems.length === 0 && (
+                      <div className="p-4 text-center text-xs text-neutral-500 italic">
+                        No quedan productos en esta factura. Agrega uno abajo.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Formulario para agregar producto a la factura */}
+                  <div className="p-3 bg-neutral-950 rounded-xl border border-indigo-500/30 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1">
+                        <Plus size={13} /> Agregar Producto
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditAddIsNew(!editAddIsNew);
+                          setEditAddInsumoSearch('');
+                          setEditAddNombreNuevo('');
+                        }}
+                        className="text-xs text-neutral-400 hover:text-white underline"
+                      >
+                        {editAddIsNew ? 'Seleccionar existente' : '+ Crear nuevo'}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
+                      {editAddIsNew ? (
+                        <>
+                          <div className="sm:col-span-5">
+                            <label className="block text-[10px] font-medium text-neutral-400 mb-1">Nombre Insumo</label>
+                            <input
+                              type="text"
+                              value={editAddNombreNuevo}
+                              onChange={e => setEditAddNombreNuevo(e.target.value)}
+                              placeholder="Ej. Harina"
+                              className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2.5 py-1.5 text-xs"
+                            />
+                          </div>
+                          <div className="sm:col-span-2">
+                            <label className="block text-[10px] font-medium text-neutral-400 mb-1">Unidad</label>
+                            <select
+                              value={editAddUnidad}
+                              onChange={e => setEditAddUnidad(e.target.value)}
+                              className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2 py-1.5 text-xs"
+                            >
+                              {['Kg', 'Gr', 'Lt', 'Ml', 'Und', 'Cajas', 'Paquetes'].map(u => (
+                                <option key={u} value={u} className="bg-neutral-900">{u}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="sm:col-span-7">
+                          <label className="block text-[10px] font-medium text-neutral-400 mb-1">Insumo</label>
+                          <select
+                            value={editAddInsumoSearch}
+                            onChange={e => setEditAddInsumoSearch(e.target.value)}
+                            className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2.5 py-1.5 text-xs"
+                          >
+                            <option value="">Seleccionar insumo...</option>
+                            {insumosList.map(i => (
+                              <option key={i.id} value={i.id} className="bg-neutral-900">
+                                {i.nombre} ({i.cantidad_actual || 0} {i.unidad_medida})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-[10px] font-medium text-neutral-400 mb-1">Cantidad</label>
+                        <input
+                          type="number"
+                          step="any"
+                          min="0.01"
+                          placeholder="0"
+                          value={editAddCantidad}
+                          onChange={e => setEditAddCantidad(e.target.value)}
+                          className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2 py-1.5 text-xs text-center"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-3 flex gap-2">
+                        <div className="flex-1">
+                          <label className="block text-[10px] font-medium text-neutral-400 mb-1">Total ($)</label>
+                          <input
+                            type="number"
+                            step="any"
+                            min="0.01"
+                            placeholder="0.00"
+                            value={editAddTotal}
+                            onChange={e => setEditAddTotal(e.target.value)}
+                            className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2 py-1.5 text-xs text-center"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const qty = Number(editAddCantidad);
+                            const cost = Number(editAddTotal);
+                            if (!qty || qty <= 0 || !cost || cost <= 0) return;
+
+                            let newItem: any = null;
+                            if (editAddIsNew) {
+                              if (!editAddNombreNuevo.trim()) return;
+                              newItem = {
+                                id: Math.random().toString(),
+                                insumo_id: null,
+                                is_new: true,
+                                nombre_nuevo: editAddNombreNuevo.trim(),
+                                unidad_nueva: editAddUnidad || 'Und',
+                                cantidad: qty,
+                                costoTotal: cost,
+                                monedaItem: 'USD'
+                              };
+                            } else {
+                              if (!editAddInsumoSearch) return;
+                              const found = insumosList.find(i => i.id === editAddInsumoSearch);
+                              newItem = {
+                                id: Math.random().toString(),
+                                insumo_id: editAddInsumoSearch,
+                                is_new: false,
+                                nombre_nuevo: found?.nombre || 'Insumo',
+                                unidad_nueva: found?.unidad_medida || 'Und',
+                                cantidad: qty,
+                                costoTotal: cost,
+                                monedaItem: 'USD'
+                              };
+                            }
+
+                            const updated = [...editFacItems, newItem];
+                            setEditFacItems(updated);
+                            const newTot = updated.reduce((acc, i) => acc + Number(i.costoTotal || 0), 0);
+                            setEditFacTotal(newTot.toFixed(2));
+
+                            setEditAddInsumoSearch('');
+                            setEditAddNombreNuevo('');
+                            setEditAddIsNew(false);
+                            setEditAddCantidad('');
+                            setEditAddTotal('');
+                          }}
+                          className="self-end bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-1.5 px-3 rounded-lg transition-colors flex items-center justify-center gap-1"
+                        >
+                          <Plus size={13} /> AÃ±adir
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-400 mb-1.5">Monto Total de la Factura (Divisas)</label>
+                <div className="relative">
+                  <DollarSign size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                  <input
+                    type="number"
+                    step="any"
+                    min="0"
+                    value={editFacTotal}
+                    onChange={e => setEditFacTotal(e.target.value)}
+                    readOnly={editFacItems.length > 0}
+                    className={`w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-9 pr-4 py-2 text-white text-sm ${editFacItems.length > 0 ? 'opacity-80 cursor-not-allowed text-emerald-400 font-bold' : ''}`}
+                  />
+                </div>
+                <p className="text-xs text-neutral-500 mt-1">
+                  {editFacItems.length > 0
+                    ? 'El total se calcula automÃ¡ticamente sumando los productos de la factura.'
+                    : 'El saldo pendiente se recalcularÃ¡ automÃ¡ticamente segÃºn los abonos ya realizados.'}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-400 mb-1.5">Fecha de EmisiÃ³n</label>
+                  <input type="date" value={editFacFecha} onChange={e => setEditFacFecha(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-white text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-400 mb-1.5">Vencimiento (Opcional)</label>
+                  <input type="date" value={editFacFechaVencimiento} onChange={e => setEditFacFechaVencimiento(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-white text-sm" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-6 border-t border-neutral-800 flex justify-end gap-3 shrink-0">
+              <button 
+                onClick={() => setShowEditFacturaModal(false)}
+                className="bg-neutral-800 hover:bg-neutral-700 text-white px-5 py-2.5 rounded-xl transition-colors text-sm font-medium"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleGuardarEdicionFactura}
+                disabled={isEditLoading}
+                className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl transition-colors text-sm font-medium disabled:opacity-50 flex items-center gap-2"
+              >
+                {isEditLoading ? 'Guardando...' : <><Check size={16} /> Guardar Cambios</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL HISTORIAL DE ABONOS GLOBALES */}
+      {abonosProvInfo && (
+        <AbonosGlobalesHistorial
+          proveedorId={abonosProvInfo.id}
+          proveedorNombre={abonosProvInfo.nombre}
+          sedeId={sedeId}
+          onClose={() => setAbonosProvInfo(null)}
+        />
+      )}
+
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+          MODAL: Registrar Pago / Abono
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+      {showPagoModal && facturaPagar && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-between p-6 border-b border-neutral-800">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2"><Wallet size={18} className="text-emerald-400" /> Registrar Abono</h3>
+              <button onClick={() => setShowPagoModal(false)} className="text-neutral-400 hover:text-white"><X size={22} /></button>
+            </div>
+            <div className="p-6 space-y-4">
+              {/* Factura info */}
+              <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-4">
+                <p className="text-sm text-neutral-400 mb-1">{facturaPagar.concepto || 'Factura'}</p>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-neutral-500">
+                    Total: {formatCurrency(facturaPagar.total)}
+                    {tasaBcv > 0 && ` (~ Bs. ${(facturaPagar.total * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`}
+                  </span>
+                  <div className="text-right">
+                    <span className="text-rose-400 font-bold block">
+                      Pendiente: {formatCurrency(facturaPagar.saldo_pendiente)}
+                    </span>
+                    {tasaBcv > 0 && facturaPagar.saldo_pendiente > 0 && (
+                      <span className="text-[11px] text-rose-400/80">
+                        â‰ˆ Bs. {(facturaPagar.saldo_pendiente * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm text-neutral-400 mb-1.5">Monto a Abonar (USD) *</label>
+                <input type="number" min="0.01" step="any" value={montoAbonar} onChange={e => setMontoAbonar(e.target.value)}
+                  className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-lg font-semibold" />
+                {tasaBcv > 0 && Number(montoAbonar) > 0 && (
+                  <p className="text-xs text-emerald-400/90 mt-1">
+                    â‰ˆ Bs. {(Number(montoAbonar) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
+                  </p>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">MÃ©todo de Pago</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      list="lista-metodos-abono"
+                      value={metodoPago}
+                      onChange={e => setMetodoPago(e.target.value)}
+                      placeholder="Ej. Transferencia, Zelle..."
+                      className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
+                    />
+                    <datalist id="lista-metodos-abono">
+                      {metodosDisponibles.map(m => (
+                        <option key={m} value={m} />
+                      ))}
+                    </datalist>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {metodosDisponibles.slice(0, 5).map(m => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setMetodoPago(m)}
+                        className={`text-[10px] px-2 py-0.5 rounded-lg border transition-colors ${
+                          metodoPago === m
+                            ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 font-semibold'
+                            : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:text-white'
+                        }`}
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Fecha del Pago</label>
+                  <input type="date" value={fechaPago} onChange={e => setFechaPago(e.target.value)}
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 [color-scheme:dark] text-sm" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Banco Origen</label>
+                  <input type="text" value={bancoOrigen} onChange={e => setBancoOrigen(e.target.value)}
+                    placeholder="Ej. Banesco"
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">NÂ° Referencia</label>
+                  <input type="text" value={referencia} onChange={e => setReferencia(e.target.value)}
+                    placeholder="Opcional"
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm" />
+                </div>
+              </div>
+              {errorPago && <p className="text-rose-400 text-sm flex items-center gap-2"><AlertCircle size={14} /> {errorPago}</p>}
+            </div>
+            <div className="p-6 border-t border-neutral-800 flex gap-3 justify-end">
+              <button onClick={() => setShowPagoModal(false)} className="px-5 py-2.5 rounded-xl text-neutral-300 hover:bg-neutral-800 text-sm">Cancelar</button>
+              <button onClick={handlePagar} disabled={isPagarLoading}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50">
+                {isPagarLoading ? 'Registrando...' : <><Wallet size={16} /> Registrar Pago</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+          MODAL: Pago General / Cascada FIFO
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+      {showPagoGeneralModal && proveedorPagarGeneral && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-lg shadow-2xl">
+            <div className="flex items-center justify-between p-6 border-b border-neutral-800">
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Wallet size={18} className="text-emerald-400" /> Abono General a Proveedor
+                </h3>
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  {proveedorPagarGeneral.nombre_proveedor || proveedorPagarGeneral.nombre_comercial}
+                </p>
+              </div>
+              <button onClick={() => setShowPagoGeneralModal(false)} className="text-neutral-400 hover:text-white">
+                <X size={22} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              {/* Resumen Deuda y Regla FIFO */}
+              <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-semibold uppercase text-neutral-400">Deuda Total Acumulada</span>
+                  <div className="text-right">
+                    <span className="text-xl font-black text-rose-400">
+                      {formatCurrency(proveedorPagarGeneral.monto_adeudado)}
+                    </span>
+                    {tasaBcv > 0 && proveedorPagarGeneral.monto_adeudado > 0 && (
+                      <span className="block text-xs text-neutral-400 font-medium">
+                        â‰ˆ Bs. {(proveedorPagarGeneral.monto_adeudado * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                </div>
+
+              <div>
+                <label className="block text-sm text-neutral-400 mb-1.5">Monto a Abonar (USD) *</label>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="any"
+                  value={montoAbonoGeneral}
+                  onChange={e => setMontoAbonoGeneral(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-lg font-bold"
+                />
+                {tasaBcv > 0 && Number(montoAbonoGeneral) > 0 && (
+                  <p className="text-xs text-emerald-400/90 mt-1">
+                    â‰ˆ Bs. {(Number(montoAbonoGeneral) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
+                  </p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">MÃ©todo de Pago</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      list="lista-metodos-abono-general"
+                      value={metodoPagoGeneral}
+                      onChange={e => setMetodoPagoGeneral(e.target.value)}
+                      placeholder="Ej. Transferencia, Zelle..."
+                      className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
+                    />
+                    <datalist id="lista-metodos-abono-general">
+                      {metodosDisponibles.map(m => (
+                        <option key={m} value={m} />
+                      ))}
+                    </datalist>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {metodosDisponibles.slice(0, 5).map(m => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setMetodoPagoGeneral(m)}
+                        className={`text-[10px] px-2 py-0.5 rounded-lg border transition-colors ${
+                          metodoPagoGeneral === m
+                            ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 font-semibold'
+                            : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:text-white'
+                        }`}
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Fecha del Pago</label>
+                  <input
+                    type="date"
+                    value={fechaPagoGeneral}
+                    onChange={e => setFechaPagoGeneral(e.target.value)}
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 [color-scheme:dark] text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Banco Origen</label>
+                  <input
+                    type="text"
+                    value={bancoOrigenGeneral}
+                    onChange={e => setBancoOrigenGeneral(e.target.value)}
+                    placeholder="Ej. Banesco, Chase"
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">NÂ° Referencia</label>
+                  <input
+                    type="text"
+                    value={referenciaGeneral}
+                    onChange={e => setReferenciaGeneral(e.target.value)}
+                    placeholder="Opcional"
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
+                  />
+                </div>
+              </div>
+
+              {errorPagoGeneral && (
+                <p className="text-rose-400 text-sm flex items-center gap-2">
+                  <AlertCircle size={14} /> {errorPagoGeneral}
+                </p>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-neutral-800 flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => setShowPagoGeneralModal(false)}
+                className="px-5 py-2.5 rounded-xl text-neutral-300 hover:bg-neutral-800 text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handlePagarGeneral}
+                disabled={isPagarGeneralLoading}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-emerald-600/20"
+              >
+                {isPagarGeneralLoading ? 'Aplicando pago...' : <><Wallet size={16} /> Aplicar Abono</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+          MODAL: Detalles de Factura (Insumos)
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+      {detallesModalData && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between p-6 border-b border-neutral-800 shrink-0">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Package size={18} className="text-indigo-400" /> 
+                Detalles de Factura 
+                {detallesModalData.factura?.numero_factura ? `NÂº ${detallesModalData.factura.numero_factura}` : ''}
+              </h3>
+              <button onClick={() => setDetallesModalData(null)} className="text-neutral-400 hover:text-white">
+                <X size={22} />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+              {detallesModalData.isLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
+                </div>
+              ) : detallesModalData.error ? (
+                <div className="text-center py-8">
+                  <AlertCircle size={40} className="text-rose-400 mx-auto mb-3" />
+                  <p className="text-neutral-400">{detallesModalData.error}</p>
+                </div>
+              ) : detallesModalData.detalles?.items ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-sm text-neutral-400 font-medium">Concepto: <span className="text-white">{detallesModalData.detalles.texto || detallesModalData.factura?.concepto}</span></p>
+                    <Badge label={`${detallesModalData.detalles.items.length} items`} color="indigo" />
+                  </div>
+                  
+                  <div className="rounded-xl border border-neutral-800 overflow-hidden bg-black/30">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-neutral-900/50">
+                        <tr>
+                          <th className="px-4 py-3 text-neutral-400 font-medium border-b border-neutral-800">Insumo</th>
+                          <th className="px-4 py-3 text-neutral-400 font-medium border-b border-neutral-800 text-right">Cant.</th>
+                          <th className="px-4 py-3 text-neutral-400 font-medium border-b border-neutral-800 text-right">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-neutral-800/50">
+                        {detallesModalData.detalles.items.map((it: any, idx: number) => (
+                          <tr key={idx} className="hover:bg-neutral-800/30">
+                            <td className="px-4 py-3 text-neutral-200">
+                              {it.nombre_nuevo || 'Item'}
+                              {it.is_new && <span className="ml-2 text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded">NUEVO</span>}
+                            </td>
+                            <td className="px-4 py-3 text-right text-neutral-300">
+                              {it.cantidad} <span className="text-xs text-neutral-500">{it.unidad_nueva}</span>
+                            </td>
+                            <td className="px-4 py-3 text-right text-white font-medium">
+                              {formatCurrency(
+                                it.monedaItem === 'VES' 
+                                  ? (it.costoTotal / (detallesModalData.detalles.tasaCambio || 1)) 
+                                  : it.costoTotal
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-neutral-500">No hay detalles estructurados para mostrar.</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="p-6 border-t border-neutral-800 flex justify-end gap-3 bg-neutral-900 shrink-0">
+              {detallesModalData?.compraPuntualId && (
+                <Link 
+                  href={`/dashboard/compras?tab=historial&edit=${detallesModalData.compraPuntualId}`}
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-xl transition-colors text-sm font-medium flex items-center gap-2"
+                >
+                  <Edit2 size={16} />
+                  Modificar Ãtems
+                </Link>
+              )}
+              <button 
+                onClick={() => setDetallesModalData(null)}
+                className="bg-neutral-800 hover:bg-neutral-700 text-white px-6 py-2 rounded-xl transition-colors text-sm font-medium"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+          MODAL: Editar Factura
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+      {showEditFacturaModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-2xl max-h-[90vh] shadow-2xl overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-neutral-800 shrink-0">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Pencil size={18} className="text-indigo-400" /> Editar Factura
+              </h3>
+              <button onClick={() => setShowEditFacturaModal(false)} className="text-neutral-400 hover:text-white">
+                <X size={22} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
+              {errorEdit && (
+                <div className="bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl text-rose-400 text-sm flex items-center gap-2">
+                  <AlertCircle size={16} /> {errorEdit}
+                </div>
+              )}
+              
+              <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-400 mb-1.5">Sede</label>
+                    <select value={editFacSede} onChange={e => setEditFacSede(e.target.value)}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-white text-sm appearance-none focus:outline-none focus:border-indigo-500">
+                      <option className="bg-neutral-900" value="">Seleccionar Sede...</option>
+                      {sedes.map(s => (
+                        <option key={s.id} value={s.id} className="bg-neutral-900">{s.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-400 mb-1.5">NÃºmero de Factura</label>
+                    <div className="relative">
+                      <Hash size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                      <input type="text" value={editFacNumero} onChange={e => setEditFacNumero(e.target.value)}
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-9 pr-4 py-2 text-white text-sm" placeholder="S/N" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-400 mb-1.5">Concepto</label>
+                <input type="text" value={editFacConcepto} onChange={e => setEditFacConcepto(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-white text-sm" placeholder="Ej. Compra de insumos" />
+              </div>
+
+              {/* EDICIÃ“N DE ITEMS / PRODUCTOS SI LA FACTURA TIENE INSUMOS */}
+              {isLoadingEditItems ? (
+                <div className="py-4 text-center text-xs text-neutral-400 flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-indigo-500"></div> Cargando productos vinculados...
+                </div>
+              ) : (editFacItems.length > 0 || editFacCompraPuntualId) ? (
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-sm font-bold text-emerald-400 flex items-center gap-1.5">
+                      <Package size={16} /> Productos / Insumos ({editFacItems.length})
+                    </label>
+                    <span className="text-xs text-neutral-400">El inventario se sincronizarÃ¡ automÃ¡ticamente</span>
+                  </div>
+
+                  {/* Lista de productos actuales */}
+                  <div className="bg-black/30 border border-neutral-800 rounded-xl overflow-hidden divide-y divide-neutral-800/60">
+                    {editFacItems.map((item, idx) => (
+                      <div key={idx} className="p-3 flex items-center justify-between gap-3 text-sm hover:bg-neutral-800/30">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-white truncate">
+                            {item.nombre_nuevo}
+                            {item.is_new && <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded ml-1.5 font-normal">NUEVO</span>}
+                          </p>
+                          <p className="text-xs text-neutral-400 mt-0.5">
+                            {item.cantidad} {item.unidad_nueva || 'Und'} Â· Total: <span className="text-white font-medium">$ {Number(item.costoTotal || 0).toFixed(2)}</span>
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newItems = editFacItems.filter((_, i) => i !== idx);
+                            setEditFacItems(newItems);
+                            const newTot = newItems.reduce((acc, i) => acc + Number(i.costoTotal || 0), 0);
+                            setEditFacTotal(newTot.toFixed(2));
+                          }}
+                          className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors flex items-center gap-1 text-xs"
+                          title="Eliminar este producto de la factura"
+                        >
+                          <Trash2 size={15} /> <span className="hidden sm:inline">Quitar</span>
+                        </button>
+                      </div>
+                    ))}
+
+                    {editFacItems.length === 0 && (
+                      <div className="p-4 text-center text-xs text-neutral-500 italic">
+                        No quedan productos en esta factura. Agrega uno abajo.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Formulario para agregar producto a la factura */}
+                  <div className="p-3 bg-neutral-950 rounded-xl border border-indigo-500/30 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1">
+                        <Plus size={13} /> Agregar Producto
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditAddIsNew(!editAddIsNew);
+                          setEditAddInsumoSearch('');
+                          setEditAddNombreNuevo('');
+                        }}
+                        className="text-xs text-neutral-400 hover:text-white underline"
+                      >
+                        {editAddIsNew ? 'Seleccionar existente' : '+ Crear nuevo'}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
+                      {editAddIsNew ? (
+                        <>
+                          <div className="sm:col-span-5">
+                            <label className="block text-[10px] font-medium text-neutral-400 mb-1">Nombre Insumo</label>
+                            <input
+                              type="text"
+                              value={editAddNombreNuevo}
+                              onChange={e => setEditAddNombreNuevo(e.target.value)}
+                              placeholder="Ej. Harina"
+                              className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2.5 py-1.5 text-xs"
+                            />
+                          </div>
+                          <div className="sm:col-span-2">
+                            <label className="block text-[10px] font-medium text-neutral-400 mb-1">Unidad</label>
+                            <select
+                              value={editAddUnidad}
+                              onChange={e => setEditAddUnidad(e.target.value)}
+                              className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2 py-1.5 text-xs"
+                            >
+                              {['Kg', 'Gr', 'Lt', 'Ml', 'Und', 'Cajas', 'Paquetes'].map(u => (
+                                <option key={u} value={u} className="bg-neutral-900">{u}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="sm:col-span-7">
+                          <label className="block text-[10px] font-medium text-neutral-400 mb-1">Insumo</label>
+                          <select
+                            value={editAddInsumoSearch}
+                            onChange={e => setEditAddInsumoSearch(e.target.value)}
+                            className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2.5 py-1.5 text-xs"
+                          >
+                            <option value="">Seleccionar insumo...</option>
+                            {insumosList.map(i => (
+                              <option key={i.id} value={i.id} className="bg-neutral-900">
+                                {i.nombre} ({i.cantidad_actual || 0} {i.unidad_medida})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-[10px] font-medium text-neutral-400 mb-1">Cantidad</label>
+                        <input
+                          type="number"
+                          step="any"
+                          min="0.01"
+                          placeholder="0"
+                          value={editAddCantidad}
+                          onChange={e => setEditAddCantidad(e.target.value)}
+                          className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2 py-1.5 text-xs text-center"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-3 flex gap-2">
+                        <div className="flex-1">
+                          <label className="block text-[10px] font-medium text-neutral-400 mb-1">Total ($)</label>
+                          <input
+                            type="number"
+                            step="any"
+                            min="0.01"
+                            placeholder="0.00"
+                            value={editAddTotal}
+                            onChange={e => setEditAddTotal(e.target.value)}
+                            className="w-full bg-black/50 border border-neutral-700 text-white rounded-lg px-2 py-1.5 text-xs text-center"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const qty = Number(editAddCantidad);
+                            const cost = Number(editAddTotal);
+                            if (!qty || qty <= 0 || !cost || cost <= 0) return;
+
+                            let newItem: any = null;
+                            if (editAddIsNew) {
+                              if (!editAddNombreNuevo.trim()) return;
+                              newItem = {
+                                id: Math.random().toString(),
+                                insumo_id: null,
+                                is_new: true,
+                                nombre_nuevo: editAddNombreNuevo.trim(),
+                                unidad_nueva: editAddUnidad || 'Und',
+                                cantidad: qty,
+                                costoTotal: cost,
+                                monedaItem: 'USD'
+                              };
+                            } else {
+                              if (!editAddInsumoSearch) return;
+                              const found = insumosList.find(i => i.id === editAddInsumoSearch);
+                              newItem = {
+                                id: Math.random().toString(),
+                                insumo_id: editAddInsumoSearch,
+                                is_new: false,
+                                nombre_nuevo: found?.nombre || 'Insumo',
+                                unidad_nueva: found?.unidad_medida || 'Und',
+                                cantidad: qty,
+                                costoTotal: cost,
+                                monedaItem: 'USD'
+                              };
+                            }
+
+                            const updated = [...editFacItems, newItem];
+                            setEditFacItems(updated);
+                            const newTot = updated.reduce((acc, i) => acc + Number(i.costoTotal || 0), 0);
+                            setEditFacTotal(newTot.toFixed(2));
+
+                            setEditAddInsumoSearch('');
+                            setEditAddNombreNuevo('');
+                            setEditAddIsNew(false);
+                            setEditAddCantidad('');
+                            setEditAddTotal('');
+                          }}
+                          className="self-end bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-1.5 px-3 rounded-lg transition-colors flex items-center justify-center gap-1"
+                        >
+                          <Plus size={13} /> AÃ±adir
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-400 mb-1.5">Monto Total de la Factura (Divisas)</label>
+                <div className="relative">
+                  <DollarSign size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                  <input
+                    type="number"
+                    step="any"
+                    min="0"
+                    value={editFacTotal}
+                    onChange={e => setEditFacTotal(e.target.value)}
+                    readOnly={editFacItems.length > 0}
+                    className={`w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-9 pr-4 py-2 text-white text-sm ${editFacItems.length > 0 ? 'opacity-80 cursor-not-allowed text-emerald-400 font-bold' : ''}`}
+                  />
+                </div>
+                <p className="text-xs text-neutral-500 mt-1">
+                  {editFacItems.length > 0
+                    ? 'El total se calcula automÃ¡ticamente sumando los productos de la factura.'
+                    : 'El saldo pendiente se recalcularÃ¡ automÃ¡ticamente segÃºn los abonos ya realizados.'}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-400 mb-1.5">Fecha de EmisiÃ³n</label>
                   <input type="date" value={editFacFecha} onChange={e => setEditFacFecha(e.target.value)}
                     className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-white text-sm" />
                 </div>

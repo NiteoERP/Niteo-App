@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useTransition } from 'react';
 import { Plus, Search, Edit2, Trash2, PackageSearch, Box, Share2, Copy, Check, ExternalLink, ToggleLeft, ToggleRight, Link } from 'lucide-react';
@@ -66,7 +66,7 @@ export default function CatalogoClient({
   };
 
   const handleBulkDelete = async () => {
-    if (!confirm(`¿Eliminar ${selectedIds.length} productos seleccionados?`)) return;
+    if (!confirm(`Â¿Eliminar ${selectedIds.length} productos seleccionados?`)) return;
     startTransition(async () => {
       const { bulkDeleteProductos } = await import('@/actions/catalogo-actions');
       const res = await bulkDeleteProductos(selectedIds);
@@ -91,11 +91,6 @@ export default function CatalogoClient({
       if (res.error) alert(res.error);
       else setSelectedIds([]);
     });
-  }; = await import('@/actions/catalogo-actions');
-      const res = await bulkUpdateProductos(selectedIds, { categoria_id: cId.trim() || null });
-      if (res.error) alert(res.error);
-      else setSelectedIds([]);
-    });
   };
 
 
@@ -105,7 +100,7 @@ export default function CatalogoClient({
   };
 
   const handleDelete = (id: string) => {
-    if (!confirm('¿Seguro que deseas eliminar este producto?')) return;
+    if (!confirm('Â¿Seguro que deseas eliminar este producto?')) return;
     startTransition(async () => {
       await deleteProducto(id);
     });
@@ -125,7 +120,7 @@ export default function CatalogoClient({
   return (
     <div className="space-y-6">
 
-      {/* ── Panel de Catálogo Compartido ── */}
+      {/* â”€â”€ Panel de CatÃ¡logo Compartido â”€â”€ */}
       {empresa && (
         <div className={`rounded-xl border p-4 transition-all ${
           catalogoActivo
@@ -141,7 +136,7 @@ export default function CatalogoClient({
               </div>
               <div>
                 <p className="text-sm font-semibold text-white flex items-center gap-2">
-                  Catálogo Público
+                  CatÃ¡logo PÃºblico
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${
                     catalogoActivo
                       ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
@@ -152,8 +147,8 @@ export default function CatalogoClient({
                 </p>
                 <p className="text-xs text-neutral-500 mt-0.5">
                   {catalogoActivo
-                    ? 'Tu catálogo es visible públicamente. Los clientes pueden ver y pedir productos.'
-                    : 'Activa el catálogo desde Ajustes para compartirlo con tus clientes.'}
+                    ? 'Tu catÃ¡logo es visible pÃºblicamente. Los clientes pueden ver y pedir productos.'
+                    : 'Activa el catÃ¡logo desde Ajustes para compartirlo con tus clientes.'}
                 </p>
               </div>
             </div>
@@ -185,7 +180,7 @@ export default function CatalogoClient({
                       rel="noopener noreferrer"
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600/10 hover:bg-emerald-600/20 border border-emerald-600/30 text-emerald-400 text-xs rounded-lg transition-all"
                     >
-                      <ExternalLink size={13} /> Ver catálogo
+                      <ExternalLink size={13} /> Ver catÃ¡logo
                     </a>
                   )}
                 </>
@@ -197,7 +192,7 @@ export default function CatalogoClient({
                   href="/dashboard/configuracion"
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-600/30 text-indigo-400 text-xs rounded-lg transition-all"
                 >
-                  Configurar en Ajustes →
+                  Configurar en Ajustes â†’
                 </a>
               )}
             </div>
@@ -205,14 +200,14 @@ export default function CatalogoClient({
         </div>
       )}
 
-      {/* ── Barra de búsqueda + botones ── */}
+      {/* â”€â”€ Barra de bÃºsqueda + botones â”€â”€ */}
             <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4">
         <div className="flex flex-col sm:flex-row flex-1 items-stretch sm:items-center gap-3">
           <div className="relative w-full sm:max-w-sm shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 w-4 h-4" />
             <input
               type="text"
-              placeholder="Buscar producto o c�digo..."
+              placeholder="Buscar producto o código..."
               className="w-full bg-neutral-900 border border-neutral-800 text-sm text-white rounded-lg pl-9 pr-4 py-2 focus:border-indigo-500 transition-colors"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -236,7 +231,7 @@ export default function CatalogoClient({
               onChange={(e) => setSelectedCategoria(e.target.value)}
               className="bg-neutral-900 border border-neutral-800 text-sm text-neutral-300 rounded-lg px-3 py-2 focus:border-indigo-500 outline-none transition-colors flex-1 sm:flex-none sm:w-[140px] truncate"
             >
-              <option value="">Todas las categor�as</option>
+              <option value="">Todas las categorías</option>
               {categorias.map(c => (
                 <option key={c.id} value={c.id}>{c.nombre}</option>
               ))}
@@ -254,9 +249,9 @@ export default function CatalogoClient({
           <button 
             onClick={() => setIsDuplicarOpen(true)}
             className="flex items-center gap-2 px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-indigo-300 rounded-lg font-medium transition-colors text-sm border border-neutral-700/50"
-            title="Duplicar Catálogo entre sedes"
+            title="Duplicar CatÃ¡logo entre sedes"
           >
-            <Copy size={16} /> <span className="hidden sm:inline">Duplicar Catálogo</span>
+            <Copy size={16} /> <span className="hidden sm:inline">Duplicar CatÃ¡logo</span>
           </button>
           <button 
             onClick={() => { setEditingProd(null); setIsFormOpen(true); }}
@@ -291,9 +286,9 @@ export default function CatalogoClient({
               }}
               disabled={isPending}
             >
-              <option value="">Asignar Categor�a...</option>
-              <option value="NULL">Sin Categor�a</option>
-              {categorias.map(c => <option key={ulk-cat-} value={c.id}>{c.nombre}</option>)}
+              <option value="">Asignar Categoría...</option>
+              <option value="NULL">Sin Categoría</option>
+              {categorias.map(c => <option key={`bulk-cat-${c.id}`} value={c.id}>{c.nombre}</option>)}
             </select>
             <select 
               className="px-3 py-1.5 text-xs font-medium bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg transition-colors cursor-pointer outline-none"
@@ -306,7 +301,7 @@ export default function CatalogoClient({
             >
               <option value="">Asignar Sede...</option>
               <option value="GLOBAL">Global / Todas</option>
-              {sedes.map(s => <option key={ulk-sede-} value={s.id}>{s.nombre_sede}</option>)}
+              {sedes.map(s => <option key={`bulk-sede-${s.id}`} value={s.id}>{s.nombre_sede}</option>)}
             </select>
             <button 
               onClick={handleBulkDelete}
@@ -339,7 +334,7 @@ export default function CatalogoClient({
                   <div>
                     <p className="font-medium text-white">{p.nombre}</p>
                     {p.descripcion && <p className="text-xs text-neutral-400 line-clamp-1">{p.descripcion}</p>}
-                    <p className="text-[11px] text-neutral-500 mt-0.5">{p.codigo_barras || 'Sin código'}</p>
+                    <p className="text-[11px] text-neutral-500 mt-0.5">{p.codigo_barras || 'Sin cÃ³digo'}</p>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -357,7 +352,7 @@ export default function CatalogoClient({
                     {p.categorias.nombre}
                   </span>
                 ) : (
-                  <span className="text-[10px] text-neutral-600 italic">Sin categoría</span>
+                  <span className="text-[10px] text-neutral-600 italic">Sin categorÃ­a</span>
                 )}
                 {p.es_compuesto ? (
                   <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-medium border border-emerald-500/20">
@@ -402,7 +397,7 @@ export default function CatalogoClient({
                 </th>
                 <th className="px-6 py-4 font-medium">Producto</th>
                 <th className="px-6 py-4 font-medium">Sucursal</th>
-                <th className="px-6 py-4 font-medium">Categor�a</th>
+                <th className="px-6 py-4 font-medium">Categoría</th>
                 <th className="px-6 py-4 font-medium">Tipo</th>
                 <th className="px-6 py-4 font-medium">Costo</th>
                 <th className="px-6 py-4 font-medium">P. Venta</th>
@@ -428,7 +423,7 @@ export default function CatalogoClient({
                         {p.descripcion && (
                           <p className="text-xs text-neutral-400 max-w-xs line-clamp-1">{p.descripcion}</p>
                         )}
-                        <p className="text-[11px] text-neutral-500">{p.codigo_barras || 'Sin código'}</p>
+                        <p className="text-[11px] text-neutral-500">{p.codigo_barras || 'Sin cÃ³digo'}</p>
                       </div>
                     </div>
                   </td>
@@ -443,7 +438,7 @@ export default function CatalogoClient({
                         {p.categorias.nombre}
                       </span>
                     ) : (
-                      <span className="text-xs text-neutral-600 italic">Sin categoría</span>
+                      <span className="text-xs text-neutral-600 italic">Sin categorÃ­a</span>
                     )}
                   </td>
                   <td className="px-6 py-4">

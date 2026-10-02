@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useTransition, useEffect } from 'react';
 import { X, Loader2, PackageSearch, Box, Trash2, Plus, Beaker, Lock, ToggleLeft, ToggleRight } from 'lucide-react';
@@ -108,7 +108,7 @@ export default function ProductoForm({
       setCreatingCat(false);
       setNewCatName('');
     } else {
-      alert(res.error || 'Error al crear la categoría.');
+      alert(res.error || 'Error al crear la categorÃ­a.');
     }
     setLoadingNewCat(false);
   };
@@ -240,7 +240,7 @@ export default function ProductoForm({
                   className={`relative p-4 rounded-xl border flex flex-col items-center text-center gap-2 transition-all ${!canUseRecetas ? 'opacity-50 cursor-not-allowed border-neutral-800 text-neutral-500' : formData.tipo === 'ELABORADO' ? 'border-indigo-500 bg-indigo-500/10 text-white cursor-pointer' : 'border-neutral-800 text-neutral-400 hover:border-neutral-700 cursor-pointer'}`}
                 >
                   {!canUseRecetas && (
-                    <div className="absolute top-2 right-2 text-rose-400" title="Requiere módulo de recetas">
+                    <div className="absolute top-2 right-2 text-rose-400" title="Requiere mÃ³dulo de recetas">
                       <Lock size={14} />
                     </div>
                   )}
@@ -278,7 +278,7 @@ export default function ProductoForm({
 
               <div>
                 <div className="flex justify-between items-center mb-1.5">
-                  <label className="text-sm font-medium text-neutral-400">Categoría</label>
+                  <label className="text-sm font-medium text-neutral-400">CategorÃ­a</label>
                   {!creatingCat && (
                     <button
                       type="button"
@@ -321,7 +321,7 @@ export default function ProductoForm({
                     value={formData.categoria_id}
                     onChange={e => setFormData({...formData, categoria_id: e.target.value})}
                   >
-                    <option value="">Sin categoría</option>
+                    <option value="">Sin categorÃ­a</option>
                     {catsList.map(c => (
                       <option key={c.id} value={c.id}>{c.nombre}</option>
                     ))}
@@ -339,7 +339,7 @@ export default function ProductoForm({
                   onClick={() => setFormData({...formData, sede_dropdown_open: !formData.sede_dropdown_open})}
                 >
                   <span className="truncate text-sm">
-                    {formData.sedes_ids.length === 0 ? 'Global / Todas las Sedes' : formData.sedes_ids.length === 1 ? sedes.find(s => s.id === formData.sedes_ids[0])?.nombre_sede : formData.sedes_ids.length === sedes.length ? 'Todas (Espec�ficas)' : ${formData.sedes_ids.length} sedes seleccionadas}
+                    {formData.sedes_ids.length === 0 ? 'Global / Todas las Sedes' : formData.sedes_ids.length === 1 ? sedes.find(s => s.id === formData.sedes_ids[0])?.nombre_sede : formData.sedes_ids.length === sedes.length ? 'Todas (Específicas)' : `${formData.sedes_ids.length} sedes seleccionadas`}
                   </span>
                   <span className="text-xs text-neutral-500">?</span>
                 </div>
@@ -367,7 +367,7 @@ export default function ProductoForm({
                           else setFormData({...formData, sedes_ids: []});
                         }}
                       />
-                      <span className="text-sm text-indigo-300 font-medium">Seleccionar todas espec�ficas</span>
+                      <span className="text-sm text-indigo-300 font-medium">Seleccionar todas específicas</span>
                     </label>
                     {sedes.map(s => (
                       <label key={s.id} className="flex items-center gap-2 p-2 hover:bg-neutral-800 rounded cursor-pointer">
@@ -379,7 +379,7 @@ export default function ProductoForm({
                             if (e.target.checked) {
                               setFormData({...formData, sedes_ids: [...formData.sedes_ids, s.id]});
                             } else {
-                              setFormData({...formData, sedes_ids: formData.sedes_ids.filter(id => id !== s.id)});
+                              setFormData({...formData, sedes_ids: formData.sedes_ids.filter((id: string) => id !== s.id)});
                             }
                           }}
                         />
@@ -392,10 +392,10 @@ export default function ProductoForm({
               </div>
 
               <div>
-                <label className="text-sm font-medium text-neutral-400 block mb-1.5">Código de Barras (Opcional)</label>
+                <label className="text-sm font-medium text-neutral-400 block mb-1.5">CÃ³digo de Barras (Opcional)</label>
                 <input 
                   type="text" 
-                  placeholder="Escanea o escribe el código"
+                  placeholder="Escanea o escribe el cÃ³digo"
                   className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 text-white font-mono text-sm focus:border-indigo-500 transition-colors"
                   value={formData.codigo_barras}
                   onChange={e => setFormData({...formData, codigo_barras: e.target.value})}
@@ -403,7 +403,7 @@ export default function ProductoForm({
               </div>
             </div>
             
-            <label className="text-sm font-medium text-neutral-400 block mb-1.5">Descripción (Opcional)</label>
+            <label className="text-sm font-medium text-neutral-400 block mb-1.5">DescripciÃ³n (Opcional)</label>
               <textarea 
                 rows={2}
                 placeholder="Detalles del producto, ingredientes principales, notas para el cajero..."
@@ -414,7 +414,7 @@ export default function ProductoForm({
             </div>
 
             <div>
-              <label className="text-sm font-medium text-neutral-400 block mb-1.5">Notas rápidas de preparación (separadas por coma)</label>
+              <label className="text-sm font-medium text-neutral-400 block mb-1.5">Notas rÃ¡pidas de preparaciÃ³n (separadas por coma)</label>
               <textarea 
                 rows={2}
                 placeholder="Ej: Sin cebolla, Para llevar, Bien cocido, Sin salsas..."
@@ -461,7 +461,7 @@ export default function ProductoForm({
               <>
                 <div className="flex items-center justify-between bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-3">
                   <div>
-                    <label className="text-sm font-medium text-white">Aplicar Precios Dinámicos</label>
+                    <label className="text-sm font-medium text-white">Aplicar Precios DinÃ¡micos</label>
                     <p className="text-[10px] text-neutral-500 mt-0.5">Permitir que las listas de porcentaje afecten este producto</p>
                   </div>
                   <button
@@ -519,10 +519,10 @@ export default function ProductoForm({
                       }}
                     >
                       <option value="">Selecciona...</option>
-                      <optgroup label="Insumos (Almacén)">
+                      <optgroup label="Insumos (AlmacÃ©n)">
                         {insumos.map(i => <option key={`i-${i.id}`} value={`insumo||${i.id}`}>{i.nombre} ({i.unidad_medida})</option>)}
                       </optgroup>
-                      <optgroup label="Subproductos (Catálogo)">
+                      <optgroup label="Subproductos (CatÃ¡logo)">
                         {productos.filter(p => p.id !== initialData?.id).map(p => (
                           <option key={`p-${p.id}`} value={`producto||${p.id}`}>{p.nombre}</option>
                         ))}
@@ -569,7 +569,7 @@ export default function ProductoForm({
               />
               <div>
                 <p className="font-medium text-white text-sm">Precio Abierto (Modificable)</p>
-                <p className="text-xs text-neutral-500">El cajero podrá cambiar el precio al vender.</p>
+                <p className="text-xs text-neutral-500">El cajero podrÃ¡ cambiar el precio al vender.</p>
               </div>
             </label>
           </form>
