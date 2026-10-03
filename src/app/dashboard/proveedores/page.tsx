@@ -22,7 +22,7 @@ import NiteoDatePicker from '@/components/ui/NiteoDatePicker';
 import { formatFecha } from "@/utils/date-utils";
 import AbonosGlobalesHistorial from "./AbonosGlobalesHistorial";
 
-// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Helpers ────────────────────────────────────────────────
 function Badge({ label, color = 'neutral' }: { label: string; color?: string }) {
   const map: Record<string, string> = {
     emerald: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
@@ -37,7 +37,7 @@ function Badge({ label, color = 'neutral' }: { label: string; color?: string }) 
   );
 }
 
-// â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Main Component ─────────────────────────────────────────
 export default function ProveedoresPage() {
   const { formatCurrency, empresa, userRole, permisos } = useEmpresa();
   const roleUpper = (userRole || '').toUpperCase();
@@ -63,13 +63,13 @@ export default function ProveedoresPage() {
   const [facturasProveedor, setFacturasProveedor] = useState<any[]>([]);
   const [loadingFacturas, setLoadingFacturas] = useState(false);
 
-  // â”€â”€ Tab: solo con deuda vs todos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Tab: solo con deuda vs todos ──────────────────────────
   
   const [eliminandoId, setEliminandoId] = useState<string | null>(null);
 
   const handleEliminarProveedor = async (e: React.MouseEvent, provId: string, nombre: string) => {
     e.stopPropagation();
-    if (!confirm(`Â¿EstÃ¡s seguro que deseas eliminar el proveedor "${nombre}"? Si tiene facturas asociadas, se ocultarÃ¡ en lugar de eliminarse por completo.`)) return;
+    if (!confirm(`¿Estás seguro que deseas eliminar el proveedor "${nombre}"? Si tiene facturas asociadas, se ocultará en lugar de eliminarse por completo.`)) return;
     setEliminandoId(provId);
     const res = await eliminarProveedor(provId);
     if (res.success) {
@@ -83,7 +83,7 @@ export default function ProveedoresPage() {
   const [soloConDeuda, setSoloConDeuda] = useState(true);
   const [todosProveedores, setTodosProveedores] = useState<any[]>([]);
 
-  // â”€â”€ Modal: Crear Proveedor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Modal: Crear Proveedor ────────────────────────────────
   const [showCrearModal, setShowCrearModal] = useState(false);
   const [nuevoNombre, setNuevoNombre] = useState('');
   const [nuevoRif, setNuevoRif] = useState('');
@@ -92,7 +92,7 @@ export default function ProveedoresPage() {
   const [creandoProveedor, setCreandoProveedor] = useState(false);
   const [errorCrear, setErrorCrear] = useState('');
 
-  // â”€â”€ Modal: Nueva Factura â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Modal: Nueva Factura ──────────────────────────────────
   const [showFacturaModal, setShowFacturaModal] = useState(false);
   const [facProveedorId, setFacProveedorId] = useState('');
   const [showProvDropdown, setShowProvDropdown] = useState(false);
@@ -266,7 +266,7 @@ export default function ProveedoresPage() {
   const [nombreInsumoNuevo, setNombreInsumoNuevo] = useState('');
   const [unidadInsumoNueva, setUnidadInsumoNueva] = useState('Kg');
 
-  // â”€â”€ Modal: Pago â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Modal: Pago ───────────────────────────────────────────
   const [showPagoModal, setShowPagoModal] = useState(false);
   const [facturaPagar, setFacturaPagar] = useState<any>(null);
   const [montoAbonar, setMontoAbonar] = useState('');
@@ -277,13 +277,13 @@ export default function ProveedoresPage() {
   const [isPagarLoading, setIsPagarLoading] = useState(false);
   const [errorPago, setErrorPago] = useState('');
 
-  // â”€â”€ Historial de pagos minimizado por factura â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Historial de pagos minimizado por factura ──────────────
   const [expandedPagos, setExpandedPagos] = useState<Record<string, boolean>>({});
   const togglePagos = (facId: string) => {
     setExpandedPagos(prev => ({ ...prev, [facId]: !prev[facId] }));
   };
 
-  // â”€â”€ Ver historial de facturas saldadas por proveedor â”€â”€â”€â”€â”€â”€â”€
+  // ── Ver historial de facturas saldadas por proveedor ───────
   const [mostrarHistorialPagadas, setMostrarHistorialPagadas] = useState<Record<string, boolean>>({});
   const toggleHistorialPagadas = (provId: string) => {
     setMostrarHistorialPagadas(prev => ({ ...prev, [provId]: !prev[provId] }));
@@ -292,7 +292,7 @@ export default function ProveedoresPage() {
   // Historial de Abonos Globales
   const [abonosProvInfo, setAbonosProvInfo] = useState<{id: string, nombre: string} | null>(null);
 
-  // â”€â”€ Modal: Pago General / Cascada FIFO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Modal: Pago General / Cascada FIFO ──────────────────────
   const [showPagoGeneralModal, setShowPagoGeneralModal] = useState(false);
   const [proveedorPagarGeneral, setProveedorPagarGeneral] = useState<any>(null);
   const [montoAbonoGeneral, setMontoAbonoGeneral] = useState('');
@@ -303,7 +303,7 @@ export default function ProveedoresPage() {
   const [isPagarGeneralLoading, setIsPagarGeneralLoading] = useState(false);
   const [errorPagoGeneral, setErrorPagoGeneral] = useState('');
 
-  // â”€â”€ Detalles de Factura Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Detalles de Factura Modal ──────────────────────────────
   const [detallesModalData, setDetallesModalData] = useState<any>(null);
   const handleVerDetallesFactura = async (fac: any) => {
     setDetallesModalData({ isLoading: true, factura: fac });
@@ -316,7 +316,7 @@ export default function ProveedoresPage() {
     }
   };
 
-  // â”€â”€ Modal: Editar Factura â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Modal: Editar Factura ──────────────────────────────────
   const [showEditFacturaModal, setShowEditFacturaModal] = useState(false);
   const [facturaEditando, setFacturaEditando] = useState<any>(null);
   const [editFacConcepto, setEditFacConcepto] = useState('');
@@ -377,7 +377,7 @@ export default function ProveedoresPage() {
       : Number(editFacTotal);
 
     if (isNaN(calculatedTotal) || calculatedTotal <= 0) {
-      setErrorEdit('Monto invÃ¡lido'); return;
+      setErrorEdit('Monto inválido'); return;
     }
     if (!editFacSede) {
       setErrorEdit('Sede requerida'); return;
@@ -421,13 +421,13 @@ export default function ProveedoresPage() {
     setIsEditLoading(false);
   };
 
-  // â”€â”€ Debounce search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Debounce search ───────────────────────────────────────
   useEffect(() => {
     const h = setTimeout(() => setDebouncedSearch(searchTerm), 400);
     return () => clearTimeout(h);
   }, [searchTerm]);
 
-  // â”€â”€ Initial Load â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Initial Load ──────────────────────────────────────────
   const fetchInit = useCallback(async () => {
     setLoading(true);
     setPage(1);
@@ -477,7 +477,7 @@ export default function ProveedoresPage() {
     }
   }, [showFacturaModal, facSede]);
 
-  // â”€â”€ Crear Proveedor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Crear Proveedor ───────────────────────────────────────
   const handleCrearProveedor = async () => {
     if (!nuevoNombre.trim()) { setErrorCrear('El nombre es obligatorio'); return; }
     setCreandoProveedor(true);
@@ -513,7 +513,7 @@ export default function ProveedoresPage() {
   };
 
   const handleEliminarFactura = async (facId: string) => {
-    if (!confirm('Â¿EstÃ¡s seguro de que deseas eliminar esta factura de proveedor? Se revertirÃ¡n los registros y abonos asociados.')) return;
+    if (!confirm('¿Estás seguro de que deseas eliminar esta factura de proveedor? Se revertirán los registros y abonos asociados.')) return;
     
     // Optimistic removal
     setFacturasProveedor(prev => prev.filter(f => f.id !== facId));
@@ -534,7 +534,7 @@ export default function ProveedoresPage() {
     }
   };
 
-  // â”€â”€ Crear Factura â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Crear Factura ─────────────────────────────────────────
   const handleCrearFactura = async () => {
     if (!facProveedorId) { setErrorFactura('Selecciona un proveedor'); return; }
 
@@ -546,15 +546,15 @@ export default function ProveedoresPage() {
     }
 
     if (!targetSede || targetSede === 'ALL') {
-      setErrorFactura('Debes seleccionar una sede vÃ¡lida para registrar la factura.');
+      setErrorFactura('Debes seleccionar una sede válida para registrar la factura.');
       return;
     }
     
     let totalToSubmit = Number(facTotal);
     if (facturaTab === 'gastos') {
-      if (!facTotal || isNaN(totalToSubmit) || totalToSubmit <= 0) { setErrorFactura('Monto invÃ¡lido'); return; }
+      if (!facTotal || isNaN(totalToSubmit) || totalToSubmit <= 0) { setErrorFactura('Monto inválido'); return; }
     } else {
-      if (facItems.length === 0) { setErrorFactura('AÃ±ade al menos un insumo'); return; }
+      if (facItems.length === 0) { setErrorFactura('Añade al menos un insumo'); return; }
       totalToSubmit = facItems.reduce((acc, item) => acc + item.costoTotal, 0);
     }
     
@@ -593,10 +593,10 @@ export default function ProveedoresPage() {
     setEnviandoFactura(false);
   };
 
-  // â”€â”€ Registrar Pago â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Registrar Pago ────────────────────────────────────────
   const handlePagar = async () => {
     if (!montoAbonar || isNaN(Number(montoAbonar)) || Number(montoAbonar) <= 0) {
-      setErrorPago('Monto invÃ¡lido'); return;
+      setErrorPago('Monto inválido'); return;
     }
     setIsPagarLoading(true);
     setErrorPago('');
@@ -617,10 +617,10 @@ export default function ProveedoresPage() {
     setIsPagarLoading(false);
   };
 
-  // â”€â”€ Registrar Pago General (Cascada FIFO) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Registrar Pago General (Cascada FIFO) ──────────────────
   const handlePagarGeneral = async () => {
     if (!montoAbonoGeneral || isNaN(Number(montoAbonoGeneral)) || Number(montoAbonoGeneral) <= 0) {
-      setErrorPagoGeneral('Ingresa un monto vÃ¡lido');
+      setErrorPagoGeneral('Ingresa un monto válido');
       return;
     }
     setIsPagarGeneralLoading(true);
@@ -652,14 +652,14 @@ export default function ProveedoresPage() {
     setIsPagarGeneralLoading(false);
   };
 
-  // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Helpers ───────────────────────────────────────────────
   const safeDate = (d: string) => formatFecha(d);
   const safeDateTime = (d: string) => formatFecha(d, { includeTime: true });
 
-  // â”€â”€ RENDER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── RENDER ────────────────────────────────────────────────
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto">
-      {/* â”€â”€ Header â”€â”€ */}
+      {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2"><Store className="text-emerald-400" /> Proveedores</h1>
@@ -677,7 +677,7 @@ export default function ProveedoresPage() {
         </div>
       </div>
 
-      {/* â”€â”€ Filters â”€â”€ */}
+      {/* ── Filters ── */}
       <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 mb-4">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
@@ -718,7 +718,7 @@ export default function ProveedoresPage() {
         </div>
       </div>
 
-      {/* â”€â”€ List â”€â”€ */}
+      {/* ── List ── */}
       <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden">
         {loading ? (
           <div className="p-5 space-y-3">
@@ -727,8 +727,8 @@ export default function ProveedoresPage() {
         ) : (soloConDeuda ? proveedores : todosProveedores).length === 0 ? (
           <div className="p-12 text-center flex flex-col items-center justify-center">
             <Check size={48} className="text-emerald-500/50 mb-4" />
-            <h3 className="text-xl font-bold text-white mb-2">{soloConDeuda ? 'Â¡Todo al dÃ­a!' : 'Sin proveedores'}</h3>
-            <p className="text-neutral-400">{soloConDeuda ? 'No tienes cuentas por pagar.' : 'AÃºn no has creado ningÃºn proveedor.'}</p>
+            <h3 className="text-xl font-bold text-white mb-2">{soloConDeuda ? 'Â¡Todo al día!' : 'Sin proveedores'}</h3>
+            <p className="text-neutral-400">{soloConDeuda ? 'No tienes cuentas por pagar.' : 'Aún no has creado ningún proveedor.'}</p>
             {!soloConDeuda && (
               <button onClick={() => setShowCrearModal(true)}
                 className="mt-4 flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm">
@@ -786,7 +786,7 @@ export default function ProveedoresPage() {
                   </div>
                 </div>
 
-                {/* â”€â”€ Facturas expandidas â”€â”€ */}
+                {/* ── Facturas expandidas ── */}
                 {expandedId === (prov.id_proveedor || prov.id) && (() => {
                   const provId = prov.id_proveedor || prov.id;
                   const facturasPendientes = facturasProveedor.filter(f => Number(f.saldo_pendiente) > 0);
@@ -802,7 +802,7 @@ export default function ProveedoresPage() {
                             <div>
                               <div className="flex items-center gap-2 mb-1 flex-wrap">
                                 <h5 className="font-bold text-white">{fac.concepto || 'Factura / Deuda'}</h5>
-                                {fac.numero_factura && <span className="text-xs bg-neutral-800 text-neutral-300 px-2 py-0.5 rounded">NÂº {fac.numero_factura}</span>}
+                                {fac.numero_factura && <span className="text-xs bg-neutral-800 text-neutral-300 px-2 py-0.5 rounded">Nº {fac.numero_factura}</span>}
                                 {fac.sede_nombre && (
                                   <span className="text-[11px] bg-neutral-800/80 text-neutral-300 border border-neutral-700/60 px-2 py-0.5 rounded-md flex items-center gap-1 font-medium">
                                     <Store size={11} className="text-indigo-400" /> {fac.sede_nombre}
@@ -825,7 +825,7 @@ export default function ProveedoresPage() {
                                 })()}
                               </div>
                               <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                                <p className="text-xs text-neutral-500 flex items-center gap-1"><Clock size={12} /> EmisiÃ³n: {safeDate(fac.fecha_emision)}</p>
+                                <p className="text-xs text-neutral-500 flex items-center gap-1"><Clock size={12} /> Emisión: {safeDate(fac.fecha_emision)}</p>
                                 {fac.pagos && fac.pagos.length > 0 && (
                                   <button
                                     type="button"
@@ -884,7 +884,7 @@ export default function ProveedoresPage() {
                           </div>
                         </div>
 
-                        {/* â”€â”€ Historial de pagos por factura (Minimizado) â”€â”€ */}
+                        {/* ── Historial de pagos por factura (Minimizado) ── */}
                         {fac.pagos && fac.pagos.length > 0 && expandedPagos[fac.id] && (
                           <div className="bg-neutral-950/80 p-3.5 rounded-b-xl border border-neutral-800 border-t-0 -mt-2 ml-4 mr-2 shadow-inner">
                             <div className="flex items-center justify-between mb-2">
@@ -989,7 +989,7 @@ export default function ProveedoresPage() {
                             </div>
                           )}
 
-                          {/* 2. SecciÃ³n desplegable: Historial de facturas pagadas */}
+                          {/* 2. Sección desplegable: Historial de facturas pagadas */}
                           {verPagadas && facturasPagadas.length > 0 && (
                             <div className="mt-5 pt-4 border-t border-neutral-800 space-y-3">
                               <div className="flex items-center justify-between">
@@ -1021,7 +1021,7 @@ export default function ProveedoresPage() {
               <div className="p-4 text-center">
                 <button onClick={fetchMore} disabled={loadingMore}
                   className="text-sm text-neutral-400 hover:text-white bg-neutral-800 hover:bg-neutral-700 px-6 py-2 rounded-xl transition-colors">
-                  {loadingMore ? 'Cargando...' : 'Ver mÃ¡s'}
+                  {loadingMore ? 'Cargando...' : 'Ver más'}
                 </button>
               </div>
             )}
@@ -1051,7 +1051,7 @@ export default function ProveedoresPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">RIF / CÃ©dula</label>
+                  <label className="block text-sm text-neutral-400 mb-1.5">RIF / Cédula</label>
                   <div className="relative">
                     <Hash size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
                     <input type="text" value={nuevoRif} onChange={e => setNuevoRif(e.target.value)}
@@ -1060,7 +1060,7 @@ export default function ProveedoresPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">TelÃ©fono</label>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Teléfono</label>
                   <div className="relative">
                     <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
                     <input type="tel" value={nuevoTelefono} onChange={e => setNuevoTelefono(e.target.value)}
@@ -1070,11 +1070,11 @@ export default function ProveedoresPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm text-neutral-400 mb-1.5">DirecciÃ³n / UbicaciÃ³n</label>
+                <label className="block text-sm text-neutral-400 mb-1.5">Dirección / Ubicación</label>
                 <div className="relative">
                   <MapPin size={14} className="absolute left-3 top-3 text-neutral-500" />
                   <textarea rows={2} value={nuevoUbicacion} onChange={e => setNuevoUbicacion(e.target.value)}
-                    placeholder="DirecciÃ³n (opcional)"
+                    placeholder="Dirección (opcional)"
                     className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl pl-8 pr-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm resize-none" />
                 </div>
               </div>
@@ -1223,13 +1223,13 @@ export default function ProveedoresPage() {
                       </option>
                     ))}
                   </select>
-                  <span className="text-[11px] text-neutral-500 mt-1.5 block">Los insumos y gastos se registrarÃ¡n en esta sede</span>
+                  <span className="text-[11px] text-neutral-500 mt-1.5 block">Los insumos y gastos se registrarán en esta sede</span>
                 </div>
               </div>
               
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">NÂº Factura</label>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Nº Factura</label>
                   <input type="text" value={facNumero} onChange={e => setFacNumero(e.target.value)}
                     placeholder="Opcional"
                     className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500 text-sm" />
@@ -1246,7 +1246,7 @@ export default function ProveedoresPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className={facMoneda === 'VES' ? "sm:col-span-1" : "sm:col-span-2"}>
-                  <label className="block text-sm text-neutral-400 mb-1.5">Concepto / DescripciÃ³n</label>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Concepto / Descripción</label>
                   <input type="text" value={facConcepto} onChange={e => setFacConcepto(e.target.value)}
                     placeholder="Ej. Compra de materia prima"
                     className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 text-sm" />
@@ -1256,7 +1256,7 @@ export default function ProveedoresPage() {
                   <select value={facMoneda} onChange={e => setFacMoneda(e.target.value as 'USD'|'VES')}
                     className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500 text-sm font-semibold">
                     <option className="bg-neutral-900 text-white" value="USD">USD ($)</option>
-                    <option className="bg-neutral-900 text-white" value="VES">VES (BolÃ­vares Bs.)</option>
+                    <option className="bg-neutral-900 text-white" value="VES">VES (Bolívares Bs.)</option>
                   </select>
                 </div>
                 {facMoneda === 'VES' && (
@@ -1280,12 +1280,12 @@ export default function ProveedoresPage() {
                 )}
               </div>
 
-              {/* Campos especÃ­ficos por tab */}
+              {/* Campos específicos por tab */}
               {facturaTab === 'gastos' ? (
                 <div className="pt-2 border-t border-neutral-800 space-y-2">
                   <div>
                     <label className="block text-sm text-neutral-400 mb-1.5">
-                      Monto Total ({facMoneda === 'VES' ? 'BolÃ­vares Bs.' : 'DÃ³lares USD'}) *
+                      Monto Total ({facMoneda === 'VES' ? 'Bolívares Bs.' : 'Dólares USD'}) *
                     </label>
                     <input type="number" min="0" step="any" value={facTotal} onChange={e => setFacTotal(e.target.value)}
                       placeholder="0.00"
@@ -1293,7 +1293,7 @@ export default function ProveedoresPage() {
                   </div>
                   {facMoneda === 'VES' && Number(facTotal) > 0 && facTasa > 0 && (
                     <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs flex justify-between items-center text-indigo-300">
-                      <span>Equivalente en DÃ³lares (registrado como deuda):</span>
+                      <span>Equivalente en Dólares (registrado como deuda):</span>
                       <span className="font-bold text-sm text-white">
                         $ {(Number(facTotal) / facTasa).toFixed(2)} USD
                       </span>
@@ -1474,7 +1474,7 @@ export default function ProveedoresPage() {
 
                     {facMoneda === 'VES' && facTasa > 0 && parseFloat(insumoCostoTotal) > 0 && (
                       <div className="text-[11px] text-amber-300/90 font-medium px-1">
-                        â‰ˆ $ {(parseFloat(insumoCostoTotal) / facTasa).toFixed(2)} USD (Tasa: {facTasa} Bs/$)
+                        ≈ $ {(parseFloat(insumoCostoTotal) / facTasa).toFixed(2)} USD (Tasa: {facTasa} Bs/$)
                       </div>
                     )}
 
@@ -1618,7 +1618,7 @@ export default function ProveedoresPage() {
               )}
 
               <div>
-                <label className="block text-sm text-neutral-400 mb-1.5 mt-2">Estado / MÃ©todo de Pago</label>
+                <label className="block text-sm text-neutral-400 mb-1.5 mt-2">Estado / Método de Pago</label>
                 <div className="relative">
                   <input
                     type="text"
@@ -1690,7 +1690,7 @@ export default function ProveedoresPage() {
                     </span>
                     {tasaBcv > 0 && facturaPagar.saldo_pendiente > 0 && (
                       <span className="text-[11px] text-rose-400/80">
-                        â‰ˆ Bs. {(facturaPagar.saldo_pendiente * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ≈ Bs. {(facturaPagar.saldo_pendiente * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     )}
                   </div>
@@ -1702,13 +1702,13 @@ export default function ProveedoresPage() {
                   className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-lg font-semibold" />
                 {tasaBcv > 0 && Number(montoAbonar) > 0 && (
                   <p className="text-xs text-emerald-400/90 mt-1">
-                    â‰ˆ Bs. {(Number(montoAbonar) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
+                    ≈ Bs. {(Number(montoAbonar) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
                   </p>
                 )}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">MÃ©todo de Pago</label>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Método de Pago</label>
                   <div className="relative">
                     <input
                       type="text"
@@ -1804,7 +1804,7 @@ export default function ProveedoresPage() {
                     </span>
                     {tasaBcv > 0 && proveedorPagarGeneral.monto_adeudado > 0 && (
                       <span className="block text-xs text-neutral-400 font-medium">
-                        â‰ˆ Bs. {(proveedorPagarGeneral.monto_adeudado * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ≈ Bs. {(proveedorPagarGeneral.monto_adeudado * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     )}
                   </div>
@@ -1824,14 +1824,14 @@ export default function ProveedoresPage() {
                 />
                 {tasaBcv > 0 && Number(montoAbonoGeneral) > 0 && (
                   <p className="text-xs text-emerald-400/90 mt-1">
-                    â‰ˆ Bs. {(Number(montoAbonoGeneral) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
+                    ≈ Bs. {(Number(montoAbonoGeneral) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
                   </p>
                 )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">MÃ©todo de Pago</label>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Método de Pago</label>
                   <div className="relative">
                     <input
                       type="text"
@@ -1931,7 +1931,7 @@ export default function ProveedoresPage() {
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <Package size={18} className="text-indigo-400" /> 
                 Detalles de Factura 
-                {detallesModalData.factura?.numero_factura ? `NÂº ${detallesModalData.factura.numero_factura}` : ''}
+                {detallesModalData.factura?.numero_factura ? `Nº ${detallesModalData.factura.numero_factura}` : ''}
               </h3>
               <button onClick={() => setDetallesModalData(null)} className="text-neutral-400 hover:text-white">
                 <X size={22} />
@@ -2001,7 +2001,7 @@ export default function ProveedoresPage() {
                   className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-xl transition-colors text-sm font-medium flex items-center gap-2"
                 >
                   <Edit2 size={16} />
-                  Modificar Ãtems
+                  Modificar ítems
                 </Link>
               )}
               <button 
@@ -2050,7 +2050,7 @@ export default function ProveedoresPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-neutral-400 mb-1.5">NÃºmero de Factura</label>
+                    <label className="block text-sm font-medium text-neutral-400 mb-1.5">Número de Factura</label>
                     <div className="relative">
                       <Hash size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
                       <input type="text" value={editFacNumero} onChange={e => setEditFacNumero(e.target.value)}
@@ -2066,7 +2066,7 @@ export default function ProveedoresPage() {
                   className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-white text-sm" placeholder="Ej. Compra de insumos" />
               </div>
 
-              {/* EDICIÃ“N DE ITEMS / PRODUCTOS SI LA FACTURA TIENE INSUMOS */}
+              {/* EDICIí“N DE ITEMS / PRODUCTOS SI LA FACTURA TIENE INSUMOS */}
               {isLoadingEditItems ? (
                 <div className="py-4 text-center text-xs text-neutral-400 flex items-center justify-center gap-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-indigo-500"></div> Cargando productos vinculados...
@@ -2077,7 +2077,7 @@ export default function ProveedoresPage() {
                     <label className="block text-sm font-bold text-emerald-400 flex items-center gap-1.5">
                       <Package size={16} /> Productos / Insumos ({editFacItems.length})
                     </label>
-                    <span className="text-xs text-neutral-400">El inventario se sincronizarÃ¡ automÃ¡ticamente</span>
+                    <span className="text-xs text-neutral-400">El inventario se sincronizará automáticamente</span>
                   </div>
 
                   {/* Lista de productos actuales */}
@@ -2284,7 +2284,7 @@ export default function ProveedoresPage() {
                           }}
                           className="self-end bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-1.5 px-3 rounded-lg transition-colors flex items-center justify-center gap-1"
                         >
-                          <Plus size={13} /> AÃ±adir
+                          <Plus size={13} /> Añadir
                         </button>
                       </div>
                     </div>
@@ -2308,14 +2308,14 @@ export default function ProveedoresPage() {
                 </div>
                 <p className="text-xs text-neutral-500 mt-1">
                   {editFacItems.length > 0
-                    ? 'El total se calcula automÃ¡ticamente sumando los productos de la factura.'
-                    : 'El saldo pendiente se recalcularÃ¡ automÃ¡ticamente segÃºn los abonos ya realizados.'}
+                    ? 'El total se calcula automáticamente sumando los productos de la factura.'
+                    : 'El saldo pendiente se recalculará automáticamente según los abonos ya realizados.'}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-400 mb-1.5">Fecha de EmisiÃ³n</label>
+                  <label className="block text-sm font-medium text-neutral-400 mb-1.5">Fecha de Emisión</label>
                   <NiteoDatePicker value={editFacFecha} onChange={val => setEditFacFecha(val)} className="w-full" />
                 </div>
                 <div>
@@ -2379,7 +2379,7 @@ export default function ProveedoresPage() {
                     </span>
                     {tasaBcv > 0 && facturaPagar.saldo_pendiente > 0 && (
                       <span className="text-[11px] text-rose-400/80">
-                        â‰ˆ Bs. {(facturaPagar.saldo_pendiente * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ≈ Bs. {(facturaPagar.saldo_pendiente * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     )}
                   </div>
@@ -2391,13 +2391,13 @@ export default function ProveedoresPage() {
                   className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-lg font-semibold" />
                 {tasaBcv > 0 && Number(montoAbonar) > 0 && (
                   <p className="text-xs text-emerald-400/90 mt-1">
-                    â‰ˆ Bs. {(Number(montoAbonar) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
+                    ≈ Bs. {(Number(montoAbonar) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
                   </p>
                 )}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">MÃ©todo de Pago</label>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Método de Pago</label>
                   <div className="relative">
                     <input
                       type="text"
@@ -2493,7 +2493,7 @@ export default function ProveedoresPage() {
                     </span>
                     {tasaBcv > 0 && proveedorPagarGeneral.monto_adeudado > 0 && (
                       <span className="block text-xs text-neutral-400 font-medium">
-                        â‰ˆ Bs. {(proveedorPagarGeneral.monto_adeudado * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ≈ Bs. {(proveedorPagarGeneral.monto_adeudado * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     )}
                   </div>
@@ -2513,14 +2513,14 @@ export default function ProveedoresPage() {
                 />
                 {tasaBcv > 0 && Number(montoAbonoGeneral) > 0 && (
                   <p className="text-xs text-emerald-400/90 mt-1">
-                    â‰ˆ Bs. {(Number(montoAbonoGeneral) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
+                    ≈ Bs. {(Number(montoAbonoGeneral) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
                   </p>
                 )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">MÃ©todo de Pago</label>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Método de Pago</label>
                   <div className="relative">
                     <input
                       type="text"
@@ -2620,7 +2620,7 @@ export default function ProveedoresPage() {
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <Package size={18} className="text-indigo-400" /> 
                 Detalles de Factura 
-                {detallesModalData.factura?.numero_factura ? `NÂº ${detallesModalData.factura.numero_factura}` : ''}
+                {detallesModalData.factura?.numero_factura ? `Nº ${detallesModalData.factura.numero_factura}` : ''}
               </h3>
               <button onClick={() => setDetallesModalData(null)} className="text-neutral-400 hover:text-white">
                 <X size={22} />
@@ -2690,7 +2690,7 @@ export default function ProveedoresPage() {
                   className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-xl transition-colors text-sm font-medium flex items-center gap-2"
                 >
                   <Edit2 size={16} />
-                  Modificar Ãtems
+                  Modificar ítems
                 </Link>
               )}
               <button 
@@ -2739,7 +2739,7 @@ export default function ProveedoresPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-neutral-400 mb-1.5">NÃºmero de Factura</label>
+                    <label className="block text-sm font-medium text-neutral-400 mb-1.5">Número de Factura</label>
                     <div className="relative">
                       <Hash size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
                       <input type="text" value={editFacNumero} onChange={e => setEditFacNumero(e.target.value)}
@@ -2755,7 +2755,7 @@ export default function ProveedoresPage() {
                   className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-white text-sm" placeholder="Ej. Compra de insumos" />
               </div>
 
-              {/* EDICIÃ“N DE ITEMS / PRODUCTOS SI LA FACTURA TIENE INSUMOS */}
+              {/* EDICIí“N DE ITEMS / PRODUCTOS SI LA FACTURA TIENE INSUMOS */}
               {isLoadingEditItems ? (
                 <div className="py-4 text-center text-xs text-neutral-400 flex items-center justify-center gap-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-indigo-500"></div> Cargando productos vinculados...
@@ -2766,7 +2766,7 @@ export default function ProveedoresPage() {
                     <label className="block text-sm font-bold text-emerald-400 flex items-center gap-1.5">
                       <Package size={16} /> Productos / Insumos ({editFacItems.length})
                     </label>
-                    <span className="text-xs text-neutral-400">El inventario se sincronizarÃ¡ automÃ¡ticamente</span>
+                    <span className="text-xs text-neutral-400">El inventario se sincronizará automáticamente</span>
                   </div>
 
                   {/* Lista de productos actuales */}
@@ -2973,7 +2973,7 @@ export default function ProveedoresPage() {
                           }}
                           className="self-end bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-1.5 px-3 rounded-lg transition-colors flex items-center justify-center gap-1"
                         >
-                          <Plus size={13} /> AÃ±adir
+                          <Plus size={13} /> Añadir
                         </button>
                       </div>
                     </div>
@@ -2997,14 +2997,14 @@ export default function ProveedoresPage() {
                 </div>
                 <p className="text-xs text-neutral-500 mt-1">
                   {editFacItems.length > 0
-                    ? 'El total se calcula automÃ¡ticamente sumando los productos de la factura.'
-                    : 'El saldo pendiente se recalcularÃ¡ automÃ¡ticamente segÃºn los abonos ya realizados.'}
+                    ? 'El total se calcula automáticamente sumando los productos de la factura.'
+                    : 'El saldo pendiente se recalculará automáticamente según los abonos ya realizados.'}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-400 mb-1.5">Fecha de EmisiÃ³n</label>
+                  <label className="block text-sm font-medium text-neutral-400 mb-1.5">Fecha de Emisión</label>
                   <NiteoDatePicker value={editFacFecha} onChange={val => setEditFacFecha(val)} className="w-full" />
                 </div>
                 <div>
@@ -3068,7 +3068,7 @@ export default function ProveedoresPage() {
                     </span>
                     {tasaBcv > 0 && facturaPagar.saldo_pendiente > 0 && (
                       <span className="text-[11px] text-rose-400/80">
-                        â‰ˆ Bs. {(facturaPagar.saldo_pendiente * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ≈ Bs. {(facturaPagar.saldo_pendiente * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     )}
                   </div>
@@ -3080,13 +3080,13 @@ export default function ProveedoresPage() {
                   className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-lg font-semibold" />
                 {tasaBcv > 0 && Number(montoAbonar) > 0 && (
                   <p className="text-xs text-emerald-400/90 mt-1">
-                    â‰ˆ Bs. {(Number(montoAbonar) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
+                    ≈ Bs. {(Number(montoAbonar) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
                   </p>
                 )}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">MÃ©todo de Pago</label>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Método de Pago</label>
                   <div className="relative">
                     <input
                       type="text"
@@ -3182,7 +3182,7 @@ export default function ProveedoresPage() {
                     </span>
                     {tasaBcv > 0 && proveedorPagarGeneral.monto_adeudado > 0 && (
                       <span className="block text-xs text-neutral-400 font-medium">
-                        â‰ˆ Bs. {(proveedorPagarGeneral.monto_adeudado * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ≈ Bs. {(proveedorPagarGeneral.monto_adeudado * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     )}
                   </div>
@@ -3202,14 +3202,14 @@ export default function ProveedoresPage() {
                 />
                 {tasaBcv > 0 && Number(montoAbonoGeneral) > 0 && (
                   <p className="text-xs text-emerald-400/90 mt-1">
-                    â‰ˆ Bs. {(Number(montoAbonoGeneral) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
+                    ≈ Bs. {(Number(montoAbonoGeneral) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a tasa {Number(tasaBcv).toFixed(2)} Bs/$
                   </p>
                 )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm text-neutral-400 mb-1.5">MÃ©todo de Pago</label>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Método de Pago</label>
                   <div className="relative">
                     <input
                       type="text"
@@ -3309,7 +3309,7 @@ export default function ProveedoresPage() {
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <Package size={18} className="text-indigo-400" /> 
                 Detalles de Factura 
-                {detallesModalData.factura?.numero_factura ? `NÂº ${detallesModalData.factura.numero_factura}` : ''}
+                {detallesModalData.factura?.numero_factura ? `Nº ${detallesModalData.factura.numero_factura}` : ''}
               </h3>
               <button onClick={() => setDetallesModalData(null)} className="text-neutral-400 hover:text-white">
                 <X size={22} />
@@ -3379,7 +3379,7 @@ export default function ProveedoresPage() {
                   className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-xl transition-colors text-sm font-medium flex items-center gap-2"
                 >
                   <Edit2 size={16} />
-                  Modificar Ãtems
+                  Modificar ítems
                 </Link>
               )}
               <button 
@@ -3428,7 +3428,7 @@ export default function ProveedoresPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-neutral-400 mb-1.5">NÃºmero de Factura</label>
+                    <label className="block text-sm font-medium text-neutral-400 mb-1.5">Número de Factura</label>
                     <div className="relative">
                       <Hash size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
                       <input type="text" value={editFacNumero} onChange={e => setEditFacNumero(e.target.value)}
@@ -3444,7 +3444,7 @@ export default function ProveedoresPage() {
                   className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-white text-sm" placeholder="Ej. Compra de insumos" />
               </div>
 
-              {/* EDICIÃ“N DE ITEMS / PRODUCTOS SI LA FACTURA TIENE INSUMOS */}
+              {/* EDICIí“N DE ITEMS / PRODUCTOS SI LA FACTURA TIENE INSUMOS */}
               {isLoadingEditItems ? (
                 <div className="py-4 text-center text-xs text-neutral-400 flex items-center justify-center gap-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-indigo-500"></div> Cargando productos vinculados...
@@ -3455,7 +3455,7 @@ export default function ProveedoresPage() {
                     <label className="block text-sm font-bold text-emerald-400 flex items-center gap-1.5">
                       <Package size={16} /> Productos / Insumos ({editFacItems.length})
                     </label>
-                    <span className="text-xs text-neutral-400">El inventario se sincronizarÃ¡ automÃ¡ticamente</span>
+                    <span className="text-xs text-neutral-400">El inventario se sincronizará automáticamente</span>
                   </div>
 
                   {/* Lista de productos actuales */}
@@ -3662,7 +3662,7 @@ export default function ProveedoresPage() {
                           }}
                           className="self-end bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-1.5 px-3 rounded-lg transition-colors flex items-center justify-center gap-1"
                         >
-                          <Plus size={13} /> AÃ±adir
+                          <Plus size={13} /> Añadir
                         </button>
                       </div>
                     </div>
@@ -3686,14 +3686,14 @@ export default function ProveedoresPage() {
                 </div>
                 <p className="text-xs text-neutral-500 mt-1">
                   {editFacItems.length > 0
-                    ? 'El total se calcula automÃ¡ticamente sumando los productos de la factura.'
-                    : 'El saldo pendiente se recalcularÃ¡ automÃ¡ticamente segÃºn los abonos ya realizados.'}
+                    ? 'El total se calcula automáticamente sumando los productos de la factura.'
+                    : 'El saldo pendiente se recalculará automáticamente según los abonos ya realizados.'}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-400 mb-1.5">Fecha de EmisiÃ³n</label>
+                  <label className="block text-sm font-medium text-neutral-400 mb-1.5">Fecha de Emisión</label>
                   <NiteoDatePicker value={editFacFecha} onChange={val => setEditFacFecha(val)} className="w-full" />
                 </div>
                 <div>

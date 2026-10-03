@@ -683,7 +683,7 @@ export default function NuevoCierreCaja() {
           </datalist>
         ))}
 
-        {/* CREAR NUEVO MÃTODO */}
+        {/* CREAR NUEVO MíTODO */}
         {showNewMetodo ? (
           <div className="bg-neutral-900 border border-indigo-500/50 rounded-2xl p-4 animate-in fade-in">
             <div className="flex justify-between items-center mb-4">
