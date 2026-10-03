@@ -163,10 +163,6 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${currentTab === 'mermas' ? 'border-rose-500 text-rose-400 font-semibold' : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:border-neutral-700'}`}>
           <Trash2 size={16} /> Mermas y Pérdidas
         </a>
-        <a href={`?tab=ventas-costo${activeSedeId ? `&sede=${activeSedeId}` : ''}`}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${currentTab === 'ventas-costo' ? 'border-purple-500 text-purple-400 font-semibold' : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:border-neutral-700'}`}>
-          <BadgePercent size={16} /> Venta al Costo
-        </a>
       </div>
 
       {/* Contenido */}
@@ -190,15 +186,6 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
             insumos={insumos}
             productos={productos}
             reasons={reasons}
-            empresaId={empresaId}
-            activeSedeId={activeSedeId || ''}
-            canSeeCosts={canSeeCosts}
-          />
-        )}
-        {currentTab === 'ventas-costo' && (
-          <VentasCostoManager
-            initialHistory={ventasCostoHist}
-            insumos={insumos}
             empresaId={empresaId}
             activeSedeId={activeSedeId || ''}
             canSeeCosts={canSeeCosts}

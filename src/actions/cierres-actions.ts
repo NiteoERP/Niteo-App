@@ -12,7 +12,7 @@ import { DEFAULT_TIMEZONE, getTimezoneOffsetString } from '@/utils/date-utils';
 export async function getCierrePrevio(fechaStr: string, requestedSedeId?: string) {
   const supabase = await createClient();
 
-  // Obtener la sesiÃ³n y el perfil para saber la sede
+  // Obtener la sesión y el perfil para saber la sede
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("No autenticado");
 
@@ -53,7 +53,7 @@ export async function getCierrePrevio(fechaStr: string, requestedSedeId?: string
     }
   }
 
-  // 2. Sumar Ventas del DÃ­a (de Niteo Sync) - Excluyendo CortesÃ­as / RegalÃ­as (dinero no percibido)
+  // 2. Sumar Ventas del Día (de Niteo Sync) - Excluyendo Cortesías / Regalías (dinero no percibido)
   const { data: ventasData } = await supabase
     .from('ventas_facturas')
     .select(`
@@ -81,7 +81,7 @@ export async function getCierrePrevio(fechaStr: string, requestedSedeId?: string
     return acc + Number(curr.total || 0);
   }, 0) : 0;
 
-  // 3. Sumar Gastos Operativos del DÃ­a
+  // 3. Sumar Gastos Operativos del Día
   const { data: gastosData } = await supabase
     .from('gastos_sede')
     .select('monto')
@@ -121,7 +121,7 @@ export async function guardarCierre(cierreData: any, transacciones: any[]) {
   if (!profile) return { error: "Perfil no encontrado" };
 
   const finalSedeId = cierreData.sede_id || profile.sede_id;
-  if (!finalSedeId) return { error: "No se especificÃ³ la sede para el cierre." };
+  if (!finalSedeId) return { error: "No se especificó la sede para el cierre." };
 
   // 1. Insertar en la Tabla Maestra (cierres_caja)
   const { data: nuevoCierre, error: errorCierre } = await supabase
@@ -146,7 +146,7 @@ export async function guardarCierre(cierreData: any, transacciones: any[]) {
 
   if (errorCierre) {
     console.error('Error insertando cierre:', errorCierre);
-    // Verificar si es error de constraint unique (ya cerrÃ³ hoy)
+    // Verificar si es error de constraint unique (ya cerró hoy)
     if (errorCierre.code === '23505') {
        return { error: 'Ya existe un cierre de caja registrado para esta fecha y sede.' };
     }
@@ -170,8 +170,8 @@ export async function guardarCierre(cierreData: any, transacciones: any[]) {
 
     if (errorTransacciones) {
       console.error('Error insertando transacciones:', errorTransacciones);
-      // Opcional: AquÃ­ se podrÃ­a hacer un rollback borrando el cierre, pero dejemos el log por ahora
-      return { error: 'El cierre guardÃ³ el resumen, pero hubo un error guardando los bancos. Detalles: ' + errorTransacciones.message + ' ' + (errorTransacciones.details || '') };
+      // Opcional: Aquí se podría hacer un rollback borrando el cierre, pero dejemos el log por ahora
+      return { error: 'El cierre guardó el resumen, pero hubo un error guardando los bancos. Detalles: ' + errorTransacciones.message + ' ' + (errorTransacciones.details || '') };
     }
   }
 
@@ -281,7 +281,7 @@ export async function actualizarCierre(cierreId: string, cierreData: any, transa
   if (profile?.rol !== 'MASTER' && !hasOverride) {
     return { error: 'No tienes permisos para modificar cierres.' };
   }
-  // Si usÃ³ el override, lo consumimos (borramos la cookie) para que no quede abierta
+  // Si usó el override, lo consumimos (borramos la cookie) para que no quede abierta
   if (hasOverride && profile?.rol !== 'MASTER') {
     cookieStore.delete('supervisor_override');
   }
@@ -331,7 +331,7 @@ export async function actualizarCierre(cierreId: string, cierreData: any, transa
 
     if (errorTransacciones) {
       console.error('Error insertando transacciones:', errorTransacciones);
-      return { error: 'El cierre se actualizÃ³ a medias (error en los bancos). Detalles: ' + errorTransacciones.message };
+      return { error: 'El cierre se actualizó a medias (error en los bancos). Detalles: ' + errorTransacciones.message };
     }
   }
 
@@ -363,7 +363,7 @@ export async function eliminarCierre(cierreId: string) {
 
   if (error) {
     console.error('Error eliminando cierre:', error);
-    return { error: 'OcurriÃ³ un error al intentar eliminar el cierre. Detalles: ' + error.message };
+    return { error: 'Ocurrió un error al intentar eliminar el cierre. Detalles: ' + error.message };
   }
 
   revalidatePath('/dashboard/caja');
@@ -390,10 +390,10 @@ export async function verifySupervisor(password: string) {
     .eq('rol', 'MASTER')
     .single();
 
-  if (!masterProfile) return { error: "No se encontrÃ³ un MASTER para esta empresa." };
+  if (!masterProfile) return { error: "No se encontró un MASTER para esta empresa." };
 
   // Para obtener el email del MASTER necesitamos permisos de admin, 
-  // pero podemos usar una llamada RPC o buscar en auth.users si tuviÃ©ramos acceso.
+  // pero podemos usar una llamada RPC o buscar en auth.users si tuviéramos acceso.
   // En Niteo, los usuarios normales no pueden leer auth.users.
   // ALTERNATIVA: Usar la clave de servicio para obtener el email del MASTER.
   const supabaseAdmin = createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -403,7 +403,7 @@ export async function verifySupervisor(password: string) {
     return { error: "No se pudo resolver el correo del MASTER." };
   }
 
-  // Ahora intentamos hacer login temporal sin afectar la sesiÃ³n actual
+  // Ahora intentamos hacer login temporal sin afectar la sesión actual
   const tempClient = createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     auth: { persistSession: false }
   });
@@ -414,7 +414,7 @@ export async function verifySupervisor(password: string) {
   });
 
   if (loginError) {
-    return { error: "ContraseÃ±a incorrecta." };
+    return { error: "Contraseña incorrecta." };
   }
 
   // Si fue exitoso, creamos una cookie de permiso temporal por 15 minutos
@@ -425,19 +425,19 @@ export async function verifySupervisor(password: string) {
 
 
 // ============================================================================
-// OBTENER MÃ‰TODOS CUSTOM HISTÃ“RICOS DE UNA SEDE
+// OBTENER MÉTODOS CUSTOM HISTÃ“RICOS DE UNA SEDE
 // ============================================================================
 export async function getMetodosHistorialSede(sedeId: string) {
   const supabase = await createClient();
   
-  // Como no podemos hacer un join fÃ¡cil y un distinct en PostgREST puro de forma sencilla para esta consulta,
-  // y como los cierres por sede tampoco son millones aÃºn, traemos los cierres recientes de esa sede.
+  // Como no podemos hacer un join fácil y un distinct en PostgREST puro de forma sencilla para esta consulta,
+  // y como los cierres por sede tampoco son millones aún, traemos los cierres recientes de esa sede.
   const { data: cierres } = await supabase
     .from('cierres_caja')
     .select('id')
     .eq('sede_id', sedeId)
     .order('created_at', { ascending: false })
-    .limit(30); // Miramos los Ãºltimos 30 cierres
+    .limit(30); // Miramos los últimos 30 cierres
 
   if (!cierres || cierres.length === 0) return [];
 
@@ -453,7 +453,7 @@ export async function getMetodosHistorialSede(sedeId: string) {
   const uniqueMetodos = [...new Set(txs.map(t => t.metodo))];
   
   // Filtramos los por defecto
-  const defaultIds = ['Efectivo', 'Punto de Venta', 'Pago MÃ³vil'];
+  const defaultIds = ['Efectivo', 'Punto de Venta', 'Pago Móvil'];
   return uniqueMetodos.filter(m => !defaultIds.includes(m));
 }
 
@@ -537,7 +537,7 @@ export async function getResumenPagos(fechaInicio: string, fechaFin: string, sed
     }
     
     grouped[fecha].metodos[metodo] += amountUSD;
-    // CortesÃ­as/RegalÃ­as no se suman a los ingresos percibidos
+    // Cortesías/Regalías no se suman a los ingresos percibidos
     const isCortesia = metodo.includes('CORTES') || metodo.includes('REGAL');
     if (!isCortesia) {
       grouped[fecha].total_usd += amountUSD;
