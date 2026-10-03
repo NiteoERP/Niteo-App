@@ -7,7 +7,7 @@ export const metadata = {
 };
 
 export default async function AdminDeliveryPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   // 1. Obtener Empresa ID
   const { data: { user } } = await supabase.auth.getUser();
@@ -44,7 +44,7 @@ export default async function AdminDeliveryPage() {
   }
 
   // 3. Procesar datos para los "Widgets" superiores
-  const totalPagado = entregas?.reduce((acc, curr) => acc + Number(curr.pago_repartidor || 0), 0) || 0;
+  const totalPagado = entregas?.reduce((acc: number, curr: any) => acc + Number(curr.pago_repartidor || 0), 0) || 0;
   const totalEntregas = entregas?.length || 0;
 
   return (
@@ -95,7 +95,7 @@ export default async function AdminDeliveryPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {entregas?.map((entrega) => (
+              {entregas?.map((entrega: any) => (
                 <tr key={entrega.id} className="hover:bg-gray-50/50 transition">
                   <td className="p-4 font-semibold text-gray-800">
                     {/* Soporte para arrays si Supabase devuelve un array en el JOIN */}
