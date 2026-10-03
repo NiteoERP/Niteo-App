@@ -427,7 +427,7 @@ export async function verifySupervisor(password: string) {
 // ============================================================================
 // OBTENER MÉTODOS CUSTOM HISTÃ“RICOS DE UNA SEDE
 // ============================================================================
-export async function getMetodosHistorialSede(sedeId: string) {
+export async function getMétodosHistorialSede(sedeId: string) {
   const supabase = await createClient();
   
   // Como no podemos hacer un join fácil y un distinct en PostgREST puro de forma sencilla para esta consulta,
@@ -450,11 +450,11 @@ export async function getMetodosHistorialSede(sedeId: string) {
 
   if (!txs) return [];
 
-  const uniqueMetodos = [...new Set(txs.map(t => t.metodo))];
+  const uniqueMétodo))];
   
   // Filtramos los por defecto
   const defaultIds = ['Efectivo', 'Punto de Venta', 'Pago Móvil'];
-  return uniqueMetodos.filter(m => !defaultIds.includes(m));
+  return uniqueMétodos.filter(m => !defaultIds.includes(m));
 }
 
 export async function getCierreParaEditar(cierreId: string) {
@@ -582,5 +582,60 @@ export async function verificarTransaccionesDuplicadas(transacciones: any[], ign
   }
 
   return duplicated;
+}
+
+
+// ============================================================================
+// BORRADORES EN LA NUBE (Niteo Cloud Drafts)
+// ============================================================================
+
+export async function saveCloudDraft(sedeId: string, transacciones: any[], metodos_custom: any[]) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "No autenticado" };
+
+  const adminSupabase = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const draftData = JSON.stringify({ transacciones, metodos_custom });
+  const fileName = "cierre_.json";
+
+  const { error } = await adminSupabase.storage
+    .from('drafts')
+    .upload(fileName, draftData, { upsert: true, contentType: 'application/json' });
+
+  if (error) {
+    console.error("Error saving cloud draft:", error);
+    return { error: error.message };
+  }
+  return { success: true };
+}
+
+export async function getCloudDraft(sedeId: string) {
+  const adminSupabase = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const fileName = "cierre_.json";
+  const { data, error } = await adminSupabase.storage.from('drafts').download(fileName);
+  
+  if (error || !data) return null;
+  try {
+    const text = await data.text();
+    return JSON.parse(text);
+  } catch (e) {
+    return null;
+  }
+}
+
+export async function clearCloudDraft(sedeId: string) {
+  const adminSupabase = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+  await adminSupabase.storage.from('drafts').remove(["cierre_.json"]);
 }
 
