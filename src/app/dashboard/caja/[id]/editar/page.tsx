@@ -1,9 +1,9 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Plus, Trash2, Wallet, CreditCard, Smartphone, DollarSign, CheckCircle2, Building2, Hash, ChevronDown, ChevronUp, GripHorizontal, X, RotateCcw } from 'lucide-react';
-import { getCierreParaEditar, actualizarCierre, getBancosUtilizados, getMetodosHistorialSede } from '@/actions/cierres-actions';
+import { getCierreParaEditar, actualizarCierre, getBancosUtilizados, getMetodosHistorialSede, verificarTransaccionesDuplicadas } from '@/actions/cierres-actions';
 import { createClient } from '@/utils/supabase/client';
 import { getSedesCaja } from '@/actions/sedes-actions';
 import { useCajaSync } from '@/hooks/useCajaSync';
@@ -30,7 +30,7 @@ interface Transaccion {
 // Clave de borrador en localStorage
 
 const METODOS_DEFAULT: MetodoConfig[] = [
-  { id: 'Pago Móvil', iconKey: 'Smartphone', color: 'text-indigo-400', defaultMoneda: 'VES' },
+  { id: 'Pago MÃ³vil', iconKey: 'Smartphone', color: 'text-indigo-400', defaultMoneda: 'VES' },
   { id: 'Punto de Venta', iconKey: 'CreditCard', color: 'text-emerald-400', defaultMoneda: 'VES' },
   { id: 'Zelle', iconKey: 'DollarSign', color: 'text-purple-400', defaultMoneda: 'USD' },
   { id: 'Efectivo', iconKey: 'Wallet', color: 'text-amber-400', defaultMoneda: 'USD' },
@@ -63,15 +63,15 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
     
   // Transacciones
   const [transacciones, setTransacciones] = useState<Transaccion[]>([]);
-  const [expandedMetodo, setExpandedMetodo] = useState<string | null>('Pago Móvil');
+  const [expandedMetodo, setExpandedMetodo] = useState<string | null>('Pago MÃ³vil');
 
-  // Metodos dinámicos
+  // Metodos dinÃ¡micos
   const [metodos, setMetodos] = useState<MetodoConfig[]>(METODOS_DEFAULT);
 
-  // Hook de sincronización en tiempo real con Supabase Broadcast
+  // Hook de sincronizaciÃ³n en tiempo real con Supabase Broadcast
   useCajaSync(selectedSedeId, transacciones, setTransacciones, metodos, setMetodos);
 
-  // Modal para nuevo método
+  // Modal para nuevo mÃ©todo
   const [showNewMetodo, setShowNewMetodo] = useState(false);
   const [newMetodoName, setNewMetodoName] = useState('');
   const [newMetodoMoneda, setNewMetodoMoneda] = useState<Moneda>('VES');
@@ -81,7 +81,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
 
   
 
-  // ─── FIX 1: GUARDAR BORRADOR EN localStorage EN CADA CAMBIO ─────────────
+  // â”€â”€â”€ FIX 1: GUARDAR BORRADOR EN localStorage EN CADA CAMBIO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     if (loading) return; // No guardar antes de que carguen los datos iniciales
     try {
@@ -92,7 +92,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
           color: m.color,
           defaultMoneda: m.defaultMoneda,
           isCustom: true,
-          iconKey: 'GripHorizontal', // único tipo custom por ahora
+          iconKey: 'GripHorizontal', // Ãºnico tipo custom por ahora
         }));
       if (selectedSedeId) {
         localStorage.setItem(`niteo_draft_cierre_${selectedSedeId}`, JSON.stringify({ transacciones, metodos_custom }));
@@ -108,7 +108,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
     setMetodos(METODOS_DEFAULT);
     setHasDraft(false);
   };
-  // ─────────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   useEffect(() => {
     async function loadInitial() {
@@ -290,6 +290,25 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
   const handleGuardarCierre = async () => {
     setSaving(true);
     try {
+      const txsLocales = transacciones.filter(t => t.referencia && t.referencia.trim() !== '');
+      const localesDuplicados = [];
+      for (let i = 0; i < txsLocales.length; i++) {
+        for (let j = i + 1; j < txsLocales.length; j++) {
+          if (txsLocales[i].referencia === txsLocales[j].referencia && Number(txsLocales[i].monto) === Number(txsLocales[j].monto)) {
+            localesDuplicados.push(txsLocales[i]);
+          }
+        }
+      }
+
+      const bdDuplicados = await verificarTransaccionesDuplicadas(transacciones, cierreId);
+      if (localesDuplicados.length > 0 || bdDuplicados.length > 0) {
+        const duplicadosUnicos = [...new Set([...localesDuplicados, ...bdDuplicados].map(t => t.referencia))];
+        const confirmar = window.confirm(`¡Atención! Hay transacciones con la MISMA referencia y monto que otros pagos de HOY:\n\nReferencias: \n\n¿Estás seguro que deseas guardar el cierre con estos pagos posiblemente duplicados?`);
+        if (!confirmar) {
+          setSaving(false);
+          return;
+        }
+      }
       const hoy = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
       
       let real_efectivo_bs = 0;
@@ -338,7 +357,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
       if (res.error) {
         alert(res.error);
       } else {
-        // FIX 1: limpiar el borrador al guardar con éxito
+        // FIX 1: limpiar el borrador al guardar con Ã©xito
         if (selectedSedeId) localStorage.removeItem(`niteo_draft_cierre_${selectedSedeId}`);
         setHasDraft(false);
         alert('Cierre guardado correctamente!');
@@ -367,7 +386,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
       <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 md:p-8 flex justify-between items-center shadow-sm">
         <div>
           <div className="flex items-center gap-3">
-              <button onClick={() => router.push('/dashboard/caja')} className="w-8 h-8 flex items-center justify-center rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white transition-colors" title="Volver al Historial (Se guardará el borrador)">
+              <button onClick={() => router.push('/dashboard/caja')} className="w-8 h-8 flex items-center justify-center rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white transition-colors" title="Volver al Historial (Se guardarÃ¡ el borrador)">
                 <ArrowLeft size={18} />
               </button>
               <h1 className="text-2xl font-bold text-white tracking-tight">Cierre de Caja</h1>
@@ -497,7 +516,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
                                 />
                               </div>
                               {tx.moneda === 'VES' && tx.monto && (
-                                <p className="text-[10px] text-neutral-500 mt-1 pl-1">≈ ${(parseFloat(tx.monto) / tasaCambio).toFixed(2)} USD</p>
+                                <p className="text-[10px] text-neutral-500 mt-1 pl-1">â‰ˆ ${(parseFloat(tx.monto) / tasaCambio).toFixed(2)} USD</p>
                               )}
                             </td>
 
@@ -585,7 +604,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
                           </div>
                         </div>
                         {tx.moneda === 'VES' && tx.monto && (
-                          <p className="text-[11px] text-neutral-400 text-center font-medium">≈ ${(parseFloat(tx.monto) / tasaCambio).toFixed(2)} USD</p>
+                          <p className="text-[11px] text-neutral-400 text-center font-medium">â‰ˆ ${(parseFloat(tx.monto) / tasaCambio).toFixed(2)} USD</p>
                         )}
                       </div>
                     ))}
@@ -595,7 +614,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
                     onClick={() => handleAddTransaccion(metodo.id, metodo.defaultMoneda)}
                     className="w-full py-4 border-2 border-dashed border-neutral-800 rounded-xl text-neutral-400 hover:text-white hover:border-neutral-700 hover:bg-neutral-800/50 flex items-center justify-center gap-2 transition-all font-medium"
                   >
-                    <Plus size={18} /> Agregar Transacción en {metodo.id}
+                    <Plus size={18} /> Agregar TransacciÃ³n en {metodo.id}
                   </button>
                 </div>
               )}
@@ -612,11 +631,11 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
           </datalist>
         ))}
 
-        {/* CREAR NUEVO MÉTODO */}
+        {/* CREAR NUEVO MÃ‰TODO */}
         {showNewMetodo ? (
           <div className="bg-neutral-900 border border-indigo-500/50 rounded-2xl p-4 animate-in fade-in">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-lg">Nuevo Método Dinámico</h3>
+              <h3 className="font-bold text-lg">Nuevo MÃ©todo DinÃ¡mico</h3>
               <button onClick={() => setShowNewMetodo(false)} className="text-neutral-400 hover:text-white">
                 <X size={20} />
               </button>
@@ -640,8 +659,8 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
                   onChange={(e) => setNewMetodoMoneda(e.target.value as Moneda)}
                   className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-white outline-none focus:border-indigo-500 cursor-pointer"
                 >
-                  <option value="VES">Bolívares (VES)</option>
-                  <option value="USD">Dólares (USD)</option>
+                  <option value="VES">BolÃ­vares (VES)</option>
+                  <option value="USD">DÃ³lares (USD)</option>
                 </select>
               </div>
             </div>
@@ -650,7 +669,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
               disabled={!newMetodoName.trim()}
               className="mt-4 w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-neutral-800 disabled:text-neutral-500 text-white rounded-xl py-3 font-bold transition-colors"
             >
-              Confirmar Nuevo Método
+              Confirmar Nuevo MÃ©todo
             </button>
           </div>
         ) : (
@@ -658,7 +677,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
             onClick={() => setShowNewMetodo(true)}
             className="w-full py-4 border-2 border-dashed border-indigo-500/30 rounded-xl text-indigo-400 hover:text-white hover:border-indigo-500 hover:bg-indigo-500/10 flex items-center justify-center gap-2 transition-all font-medium"
           >
-            <Plus size={18} /> Crear Nuevo Método de Pago
+            <Plus size={18} /> Crear Nuevo MÃ©todo de Pago
           </button>
         )}
       </div>
@@ -666,7 +685,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
       {/* FOOTER CONTAINED */}
       <div className="sticky bottom-6 bg-neutral-900/95 backdrop-blur-xl border border-neutral-800 p-4 md:p-6 z-30 shadow-2xl rounded-2xl mx-2 md:mx-0 flex items-center justify-between mt-8">
         <div>
-          <p className="text-xs text-neutral-400 uppercase tracking-widest">Verificación Física</p>
+          <p className="text-xs text-neutral-400 uppercase tracking-widest">VerificaciÃ³n FÃ­sica</p>
           <p className="text-3xl font-black text-emerald-400">${granTotalUSD.toFixed(2)}</p>
           {totalEsperado > 0 && (
             <p className={`text-xs mt-1 font-medium ${granTotalUSD >= totalEsperado ? 'text-emerald-500' : 'text-rose-500'}`}>
@@ -687,6 +706,10 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
     </div>
   );
 }
+
+
+
+
 
 
 

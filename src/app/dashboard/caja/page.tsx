@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { getHistorialCierres } from '@/actions/cierres-actions';
 import { getSedes } from '@/actions/sedes-actions';
-import { Plus, Search, Calendar, MapPin, DollarSign, Wallet, BarChart2 } from 'lucide-react';
+import { Plus, Search, Calendar, MapPin, DollarSign, Wallet, BarChart2, Eye } from 'lucide-react';
 import { CierreEnCursoBanner } from '@/components/cierres/CierreEnCursoBanner';
 import { createClient } from '@/utils/supabase/server';
 
@@ -45,14 +45,21 @@ export default async function CajaPage(props: { searchParams: Promise<{ sede?: s
             className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl font-medium transition-colors shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2"
           >
             <BarChart2 size={18} />
-            <span>Resumen</span>
+            <span className="hidden sm:inline">Resumen</span>
+          </Link>
+          <Link 
+            href="/dashboard/caja/nuevo?espectador=true" 
+            className="flex-1 md:flex-none bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-500 px-5 py-2.5 rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
+          >
+            <Eye size={18} />
+            <span className="hidden sm:inline">Espectador</span>
           </Link>
           <Link 
             href="/dashboard/caja/nuevo" 
             className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl font-medium transition-colors shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
           >
             <Plus size={18} />
-            <span>Nuevo Cierre</span>
+            <span className="hidden sm:inline">Nuevo Cierre</span>
           </Link>
         </div>
       </div>
@@ -148,3 +155,5 @@ export default async function CajaPage(props: { searchParams: Promise<{ sede?: s
     </div>
   );
 }
+
+

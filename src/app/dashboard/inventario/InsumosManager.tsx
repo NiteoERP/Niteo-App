@@ -61,6 +61,11 @@ const MOTIVO_LABELS: Record<string, string> = {
 };
 
 function getMotivoLabel(motivo: string) {
+  if (motivo.startsWith('VENTA_AL_COSTO|')) {
+    const parts = motivo.split('|');
+    const benef = parts[2] ? ` (${parts[2]})` : '';
+    return `Venta al Costo${benef}`;
+  }
   return MOTIVO_LABELS[motivo] || motivo;
 }
 
@@ -592,20 +597,6 @@ export default function InsumosManager({
           <PackageOpen className="text-emerald-400" /> Control de Insumos Base
         </h2>
         <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
-          {canVentaCosto && (
-            <button
-              onClick={() => {
-                setVcError(null);
-                setVcSuccessMsg(null);
-                setShowVentaCostoModal(true);
-              }}
-              className="bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 border border-indigo-500/40 hover:border-indigo-500 px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap shadow-sm hover:shadow-indigo-500/10"
-              title="Registrar salida de insumos a precio de costo (consumo interno o familiar)"
-            >
-              <BadgePercent size={16} className="text-indigo-400" />
-              <span>Venta al Costo</span>
-            </button>
-          )}
           {canSeeCosts && (
             <button
               onClick={() => setShowExportModal(true)}
@@ -1141,7 +1132,7 @@ export default function InsumosManager({
                               <span className="font-medium text-neutral-200">{getMotivoLabel(mov.motivo)}</span>
                               {mov.motivo === 'COMPRA' && <span className="ml-2 text-[10px] bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded border border-indigo-500/20">COMPRA</span>}
                               {mov.motivo === 'VENTA POS' && <span className="ml-2 text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20">VENTA</span>}
-                              {mov.motivo === 'VENTA_AL_COSTO' && <span className="ml-2 text-[10px] bg-purple-500/10 text-purple-400 px-2 py-0.5 rounded border border-purple-500/20">VENTA COSTO</span>}
+                              {(mov.motivo === 'VENTA_AL_COSTO' || mov.motivo?.startsWith('VENTA_AL_COSTO|')) && <span className="ml-2 text-[10px] bg-purple-500/10 text-purple-400 px-2 py-0.5 rounded border border-purple-500/20">VENTA COSTO</span>}
                             </td>
                             <td className="px-4 py-3 text-neutral-400 font-mono text-xs">
                               {format(parseISO(mov.fecha_movimiento), 'dd/MM/yyyy HH:mm', { locale: es })}

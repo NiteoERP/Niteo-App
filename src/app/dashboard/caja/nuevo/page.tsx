@@ -1,9 +1,9 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Plus, Trash2, Wallet, CreditCard, Smartphone, DollarSign, CheckCircle2, Building2, Hash, ChevronDown, ChevronUp, GripHorizontal, X, RotateCcw } from 'lucide-react';
-import { getCierrePrevio, guardarCierre, getBancosUtilizados, getMetodosHistorialSede } from '@/actions/cierres-actions';
+import { getCierrePrevio, guardarCierre, getBancosUtilizados, getMetodosHistorialSede, verificarTransaccionesDuplicadas } from '@/actions/cierres-actions';
 import { getSedesCaja } from '@/actions/sedes-actions';
 import { useCajaSync } from '@/hooks/useCajaSync';
 
@@ -29,7 +29,7 @@ interface Transaccion {
 // Clave de borrador en localStorage
 
 const METODOS_DEFAULT: MetodoConfig[] = [
-  { id: 'Pago Móvil', iconKey: 'Smartphone', color: 'text-indigo-400', defaultMoneda: 'VES' },
+  { id: 'Pago MÃƒÂ³vil', iconKey: 'Smartphone', color: 'text-indigo-400', defaultMoneda: 'VES' },
   { id: 'Punto de Venta', iconKey: 'CreditCard', color: 'text-emerald-400', defaultMoneda: 'VES' },
   { id: 'Zelle', iconKey: 'DollarSign', color: 'text-purple-400', defaultMoneda: 'USD' },
   { id: 'Efectivo', iconKey: 'Wallet', color: 'text-amber-400', defaultMoneda: 'USD' },
@@ -42,6 +42,8 @@ const ICON_MAP: Record<string, any> = {
 
 export default function NuevoCierreCaja() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isSpectator, setIsSpectator] = useState(searchParams.get('espectador') === 'true');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
@@ -59,15 +61,15 @@ export default function NuevoCierreCaja() {
     
   // Transacciones
   const [transacciones, setTransacciones] = useState<Transaccion[]>([]);
-  const [expandedMetodo, setExpandedMetodo] = useState<string | null>('Pago Móvil');
+  const [expandedMetodo, setExpandedMetodo] = useState<string | null>('Pago MÃƒÂ³vil');
 
-  // Metodos dinámicos
+  // Metodos dinÃƒÂ¡micos
   const [metodos, setMetodos] = useState<MetodoConfig[]>(METODOS_DEFAULT);
 
-  // Hook de sincronización en tiempo real con Supabase Broadcast
+  // Hook de sincronizaciÃƒÂ³n en tiempo real con Supabase Broadcast
   const { status: syncStatus, onlineCount } = useCajaSync(selectedSedeId, transacciones, setTransacciones, metodos, setMetodos);
 
-  // Modal para nuevo método
+  // Modal para nuevo mÃƒÂ©todo
   const [showNewMetodo, setShowNewMetodo] = useState(false);
   const [newMetodoName, setNewMetodoName] = useState('');
   const [newMetodoMoneda, setNewMetodoMoneda] = useState<Moneda>('VES');
@@ -122,35 +124,11 @@ export default function NuevoCierreCaja() {
 
   // Guardar cada vez que transacciones cambie
   useEffect(() => {
-    if (!loading && selectedSedeId) {
+    if (!loading && selectedSedeId && !isSpectator) {
       saveDraft(selectedSedeId, transacciones, metodos);
       setHasDraft(transacciones.length > 0);
     }
-  }, [transacciones, metodos]);
-  // -------------------
-
-
-  
-
-  // âââ FIX 1: GUARDAR BORRADOR EN localStorage EN CADA CAMBIO âââââââââââââ
-  useEffect(() => {
-    if (loading) return; // No guardar antes de que carguen los datos iniciales
-    try {
-      const metodos_custom = metodos
-        .filter(m => m.isCustom)
-        .map(m => ({
-          id: m.id,
-          color: m.color,
-          defaultMoneda: m.defaultMoneda,
-          isCustom: true,
-          iconKey: 'GripHorizontal', // único tipo custom por ahora
-        }));
-      if (selectedSedeId) {
-        localStorage.setItem(`niteo_draft_cierre_${selectedSedeId}`, JSON.stringify({ transacciones, metodos_custom }));
-      }
-      setHasDraft(transacciones.length > 0);
-    } catch (_) { /* no lanzar en SSR o modo privado */ }
-  }, [transacciones, metodos, loading]);
+  }, [transacciones, metodos, loading, selectedSedeId, isSpectator]);
 
   const limpiarBorrador = () => {
     try { localStorage.removeItem('niteo_draft_cierre'); } catch (_) {}
@@ -159,7 +137,7 @@ export default function NuevoCierreCaja() {
     setMetodos(METODOS_DEFAULT);
     setHasDraft(false);
   };
-  // âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+  // ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬ÃƒÂ¢Ã‚â€Ã‚â‚¬
 
   useEffect(() => {
     async function loadInitial() {
@@ -331,6 +309,25 @@ export default function NuevoCierreCaja() {
   const handleGuardarCierre = async () => {
     setSaving(true);
     try {
+      const txsLocales = transacciones.filter(t => t.referencia && t.referencia.trim() !== '');
+      const localesDuplicados = [];
+      for (let i = 0; i < txsLocales.length; i++) {
+        for (let j = i + 1; j < txsLocales.length; j++) {
+          if (txsLocales[i].referencia === txsLocales[j].referencia && Number(txsLocales[i].monto) === Number(txsLocales[j].monto)) {
+            localesDuplicados.push(txsLocales[i]);
+          }
+        }
+      }
+
+      const bdDuplicados = await verificarTransaccionesDuplicadas(transacciones);
+      if (localesDuplicados.length > 0 || bdDuplicados.length > 0) {
+        const duplicadosUnicos = [...new Set([...localesDuplicados, ...bdDuplicados].map(t => t.referencia))];
+        const confirmar = window.confirm(`¡Atención! Hay transacciones con la MISMA referencia y monto que otros pagos de HOY:\n\nReferencias: \n\n¿Estás seguro que deseas guardar el cierre con estos pagos posiblemente duplicados?`);
+        if (!confirmar) {
+          setSaving(false);
+          return;
+        }
+      }
       const hoy = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
       
       let real_efectivo_bs = 0;
@@ -379,7 +376,7 @@ export default function NuevoCierreCaja() {
       if (res.error) {
         alert(res.error);
       } else {
-        // FIX 1: limpiar el borrador al guardar con éxito
+        // FIX 1: limpiar el borrador al guardar con ÃƒÂ©xito
         if (selectedSedeId) localStorage.removeItem(`niteo_draft_cierre_${selectedSedeId}`);
         setHasDraft(false);
         alert('Cierre guardado correctamente!');
@@ -403,14 +400,14 @@ export default function NuevoCierreCaja() {
     <div className="animate-in fade-in duration-500 space-y-6 pb-24 max-w-4xl mx-auto">
 
       {/* FIX 1: BANNER DE BORRADOR ACTIVO */}
-      {hasDraft && (
+      {hasDraft && !isSpectator && (
         <div className="flex items-center justify-between gap-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl px-5 py-3">
           <div className="flex items-center gap-3">
             <RotateCcw size={18} className="text-amber-400 shrink-0" />
             <div>
               <p className="text-amber-300 text-sm font-semibold">Borrador restaurado</p>
               <p className="text-amber-500/80 text-xs">
-                Tienes {transacciones.length} transacción(es) guardada(s) de una sesión anterior.
+                Tienes {transacciones.length} transacciÃ³n(es) guardada(s) de una sesiÃ³n anterior.
               </p>
             </div>
           </div>
@@ -423,11 +420,34 @@ export default function NuevoCierreCaja() {
         </div>
       )}
 
+      {isSpectator && (
+        <div className="flex items-center justify-between gap-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl px-5 py-3">
+          <div className="flex items-center gap-3">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+            </span>
+            <div>
+              <p className="text-emerald-400 text-sm font-semibold">Modo Espectador Activo</p>
+              <p className="text-emerald-500/80 text-xs">
+                Viendo el borrador en tiempo real. Todos los controles estÃ¡n bloqueados para evitar interferir.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsSpectator(false)}
+            className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg transition-colors shadow-lg flex items-center gap-2 font-semibold"
+          >
+            Habilitar EdiciÃ³n
+          </button>
+        </div>
+      )}
+
       {/* HEADER */}
       <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 md:p-8 flex justify-between items-center shadow-sm">
         <div>
           <div className="flex items-center gap-3">
-              <button onClick={() => router.push('/dashboard/caja')} className="w-8 h-8 flex items-center justify-center rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white transition-colors" title="Volver al Historial (Se guardará el borrador)">
+              <button onClick={() => router.push('/dashboard/caja')} className="w-8 h-8 flex items-center justify-center rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white transition-colors" title="Volver al Historial (Se guardarÃƒÂ¡ el borrador)">
                 <ArrowLeft size={18} />
               </button>
               <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">Cierre de Caja{syncStatus === 'connected' && onlineCount > 1 && (<span className="text-xs px-2 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full flex items-center gap-1.5 animate-pulse"><span className="w-2 h-2 rounded-full bg-emerald-400"></span>{onlineCount} en linea</span>)}{syncStatus === 'connected' && onlineCount <= 1 && (<span className="text-xs px-2 py-1 bg-neutral-800 text-neutral-400 border border-neutral-700 rounded-full flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-neutral-500"></span>Conectado</span>)}</h1>
@@ -463,7 +483,7 @@ export default function NuevoCierreCaja() {
           const txs = transacciones.filter(t => t.metodo === metodo.id);
           const totalMetodo = getTotalByMetodo(metodo.id);
           
-          // Simularemos la venta esperada por método temporalmente (hasta que la acción devuelva el desglose)
+          // Simularemos la venta esperada por mÃƒÂ©todo temporalmente (hasta que la acciÃƒÂ³n devuelva el desglose)
           const esperadoMetodo = (totalEsperado / metodos.length); // mock value temporal
           const diferencia = totalMetodo - esperadoMetodo;
 
@@ -490,13 +510,13 @@ export default function NuevoCierreCaja() {
                   </div>
                 </div>
                 <div className="flex items-center gap-6">
-                  {/* Comparación visual Venta Sistema vs Físico */}
+                  {/* ComparaciÃƒÂ³n visual Venta Sistema vs FÃƒÂ­sico */}
                   <div className="hidden md:flex flex-col items-end mr-4">
                     <span className="text-[10px] text-neutral-500 uppercase font-bold tracking-wider">Sistema</span>
                     <span className="font-bold text-neutral-300 text-sm">${esperadoMetodo.toFixed(2)}</span>
                   </div>
                   <div className="hidden md:flex flex-col items-end">
-                    <span className="text-[10px] text-neutral-500 uppercase font-bold tracking-wider">Físico</span>
+                    <span className="text-[10px] text-neutral-500 uppercase font-bold tracking-wider">FÃƒÂ­sico</span>
                     <span className="font-bold text-emerald-400 text-sm">${totalMetodo.toFixed(2)}</span>
                   </div>
                   
@@ -552,7 +572,7 @@ export default function NuevoCierreCaja() {
                               <div className="flex bg-neutral-900 border border-neutral-800 rounded-lg focus-within:border-indigo-500 overflow-hidden h-9">
                                 <select 
                                   value={tx.moneda}
-                                  onChange={(e) => updateTransaccion(tx.id, 'moneda', e.target.value as any)}
+                                  disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'moneda', e.target.value as any)}
                                   className="bg-neutral-800 text-white text-xs font-bold px-2 outline-none border-r border-neutral-800 cursor-pointer"
                                 >
                                   <option value="VES">BS</option>
@@ -563,12 +583,12 @@ export default function NuevoCierreCaja() {
                                   inputMode="decimal"
                                   placeholder="0.00"
                                   value={tx.monto}
-                                  onChange={(e) => updateTransaccion(tx.id, 'monto', e.target.value)}
+                                  disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'monto', e.target.value)}
                                   className="flex-1 bg-transparent px-2 text-white text-sm font-medium outline-none placeholder:text-neutral-600 w-full min-w-0"
                                 />
                               </div>
                               {tx.moneda === 'VES' && tx.monto && (
-                                <p className="text-[10px] text-neutral-500 mt-1 pl-1">â ${(parseFloat(tx.monto) / tasaCambio).toFixed(2)} USD</p>
+                                <p className="text-[10px] text-neutral-500 mt-1 pl-1">ÃƒÂ¢Ã‚â€°Ã‚Ë† ${(parseFloat(tx.monto) / tasaCambio).toFixed(2)} USD</p>
                               )}
                             </td>
 
@@ -577,7 +597,7 @@ export default function NuevoCierreCaja() {
                                 type="text" 
                                 placeholder="Ej: 1234"
                                 value={tx.referencia}
-                                onChange={(e) => updateTransaccion(tx.id, 'referencia', e.target.value)}
+                                disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'referencia', e.target.value)}
                                 className="w-full bg-neutral-900 border border-neutral-800 focus:border-indigo-500 rounded-lg h-9 px-3 text-white text-sm outline-none transition-colors"
                               />
                             </td>
@@ -587,7 +607,7 @@ export default function NuevoCierreCaja() {
                                 type="text" 
                                 placeholder={metodo.id === 'Efectivo' ? 'N/A' : 'Ej: VZLA'}
                                 value={tx.banco}
-                                onChange={(e) => updateTransaccion(tx.id, 'banco', e.target.value)}
+                                disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'banco', e.target.value)}
                                 list={`bancos-list-${metodo.id.replace(/[^a-zA-Z0-9]/g, '')}`}
                                 className="w-full bg-neutral-900 border border-neutral-800 focus:border-indigo-500 rounded-lg h-9 px-3 text-white text-sm outline-none transition-colors"
                               />
@@ -621,7 +641,7 @@ export default function NuevoCierreCaja() {
                           <div className="col-span-2 flex bg-black/40 border border-neutral-800 rounded-lg focus-within:border-indigo-500 overflow-hidden h-10">
                               <select 
                                 value={tx.moneda}
-                                onChange={(e) => updateTransaccion(tx.id, 'moneda', e.target.value as any)}
+                                disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'moneda', e.target.value as any)}
                                 className="bg-neutral-800 text-white text-xs font-bold px-3 outline-none border-r border-neutral-800 cursor-pointer"
                               >
                                 <option value="VES">BS</option>
@@ -632,7 +652,7 @@ export default function NuevoCierreCaja() {
                                 inputMode="decimal"
                                 placeholder="0.00"
                                 value={tx.monto}
-                                onChange={(e) => updateTransaccion(tx.id, 'monto', e.target.value)}
+                                disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'monto', e.target.value)}
                                 className="flex-1 bg-transparent px-3 text-white text-sm font-bold outline-none placeholder:text-neutral-600 min-w-0"
                               />
                           </div>
@@ -640,7 +660,7 @@ export default function NuevoCierreCaja() {
                             type="text" 
                             placeholder="Ref: 1234"
                             value={tx.referencia}
-                            onChange={(e) => updateTransaccion(tx.id, 'referencia', e.target.value)}
+                            disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'referencia', e.target.value)}
                             className="bg-black/40 border border-neutral-800 focus:border-indigo-500 rounded-lg h-10 px-3 text-white text-sm outline-none transition-colors"
                           />
                           <div className="relative">
@@ -648,7 +668,7 @@ export default function NuevoCierreCaja() {
                               type="text" 
                               placeholder={metodo.id === 'Efectivo' ? 'N/A' : 'Banco'}
                               value={tx.banco}
-                              onChange={(e) => updateTransaccion(tx.id, 'banco', e.target.value)}
+                              disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'banco', e.target.value)}
                               list={`bancos-list-${metodo.id.replace(/[^a-zA-Z0-9]/g, '')}`}
                               className="w-full bg-black/40 border border-neutral-800 focus:border-indigo-500 rounded-lg h-10 px-3 text-white text-sm outline-none transition-colors"
                             />
@@ -656,7 +676,7 @@ export default function NuevoCierreCaja() {
                           </div>
                         </div>
                         {tx.moneda === 'VES' && tx.monto && (
-                          <p className="text-[11px] text-neutral-400 text-center font-medium">â ${(parseFloat(tx.monto) / tasaCambio).toFixed(2)} USD</p>
+                          <p className="text-[11px] text-neutral-400 text-center font-medium">ÃƒÂ¢Ã‚â€°Ã‚Ë† ${(parseFloat(tx.monto) / tasaCambio).toFixed(2)} USD</p>
                         )}
                       </div>
                     ))}
@@ -666,7 +686,7 @@ export default function NuevoCierreCaja() {
                     onClick={() => handleAddTransaccion(metodo.id, metodo.defaultMoneda)}
                     className="w-full py-4 border-2 border-dashed border-neutral-800 rounded-xl text-neutral-400 hover:text-white hover:border-neutral-700 hover:bg-neutral-800/50 flex items-center justify-center gap-2 transition-all font-medium"
                   >
-                    <Plus size={18} /> Agregar Transacción en {metodo.id}
+                    <Plus size={18} /> Agregar TransacciÃƒÂ³n en {metodo.id}
                   </button>
                 </div>
               )}
@@ -683,11 +703,11 @@ export default function NuevoCierreCaja() {
           </datalist>
         ))}
 
-        {/* CREAR NUEVO MíTODO */}
-        {showNewMetodo ? (
+        {/* CREAR NUEVO MÃƒÂ­Ã‚â€°TODO */}
+{!isSpectator && showNewMetodo ? (
           <div className="bg-neutral-900 border border-indigo-500/50 rounded-2xl p-4 animate-in fade-in">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-lg">Nuevo Método Dinámico</h3>
+              <h3 className="font-bold text-lg">Nuevo MÃƒÂ©todo DinÃƒÂ¡mico</h3>
               <button onClick={() => setShowNewMetodo(false)} className="text-neutral-400 hover:text-white">
                 <X size={20} />
               </button>
@@ -711,8 +731,8 @@ export default function NuevoCierreCaja() {
                   onChange={(e) => setNewMetodoMoneda(e.target.value as Moneda)}
                   className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-white outline-none focus:border-indigo-500 cursor-pointer"
                 >
-                  <option value="VES">Bolívares (VES)</option>
-                  <option value="USD">Dólares (USD)</option>
+                  <option value="VES">BolÃƒÂ­vares (VES)</option>
+                  <option value="USD">DÃƒÂ³lares (USD)</option>
                 </select>
               </div>
             </div>
@@ -721,7 +741,7 @@ export default function NuevoCierreCaja() {
               disabled={!newMetodoName.trim()}
               className="mt-4 w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-neutral-800 disabled:text-neutral-500 text-white rounded-xl py-3 font-bold transition-colors"
             >
-              Confirmar Nuevo Método
+              Confirmar Nuevo MÃƒÂ©todo
             </button>
           </div>
         ) : (
@@ -729,7 +749,7 @@ export default function NuevoCierreCaja() {
             onClick={() => setShowNewMetodo(true)}
             className="w-full py-4 border-2 border-dashed border-indigo-500/30 rounded-xl text-indigo-400 hover:text-white hover:border-indigo-500 hover:bg-indigo-500/10 flex items-center justify-center gap-2 transition-all font-medium"
           >
-            <Plus size={18} /> Crear Nuevo Método de Pago
+            <Plus size={18} /> Crear Nuevo MÃƒÂ©todo de Pago
           </button>
         )}
       </div>
@@ -737,7 +757,7 @@ export default function NuevoCierreCaja() {
       {/* FOOTER CONTAINED */}
       <div className="sticky bottom-6 bg-neutral-900/95 backdrop-blur-xl border border-neutral-800 p-4 md:p-6 z-30 shadow-2xl rounded-2xl mx-2 md:mx-0 flex items-center justify-between mt-8">
         <div>
-          <p className="text-xs text-neutral-400 uppercase tracking-widest">Verificación Física</p>
+          <p className="text-xs text-neutral-400 uppercase tracking-widest">VerificaciÃƒÂ³n FÃƒÂ­sica</p>
           <p className="text-3xl font-black text-emerald-400">${granTotalUSD.toFixed(2)}</p>
           {totalEsperado > 0 && (
             <p className={`text-xs mt-1 font-medium ${granTotalUSD >= totalEsperado ? 'text-emerald-500' : 'text-rose-500'}`}>
@@ -758,4 +778,19 @@ export default function NuevoCierreCaja() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
