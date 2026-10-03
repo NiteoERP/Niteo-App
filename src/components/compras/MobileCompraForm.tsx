@@ -55,6 +55,7 @@ export default function MobileCompraForm() {
     try {
       const reader = new FileReader();
       reader.onloadend = async () => {
+        try {
         const base64Str = (reader.result as string).split(',')[1];
         const { scanInvoice } = await import('@/actions/ai-actions');
 
@@ -100,10 +101,14 @@ export default function MobileCompraForm() {
 
           setCart(prev => [...prev, ...newCart]);
         }
-        setIsScanning(false);
-        // Resetear el input para que el usuario pueda escanear otra foto
-        if (fileInputRef.current) fileInputRef.current.value = '';
-      if (fileInputRefCam.current) fileInputRefCam.current.value = '';
+        } catch (errInner) {
+          console.error('Error IA:', errInner);
+          alert('Hubo un problema de conexión con la IA. Es posible que el servidor esté saturado (Rate Limit). Intenta de nuevo en un minuto.');
+        } finally {
+          setIsScanning(false);
+          if (fileInputRef.current) fileInputRef.current.value = '';
+          if (fileInputRefCam.current) fileInputRefCam.current.value = '';
+        }
       };
       reader.readAsDataURL(file);
     } catch (err) {

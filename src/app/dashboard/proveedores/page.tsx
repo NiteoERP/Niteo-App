@@ -125,6 +125,7 @@ export default function ProveedoresPage() {
     try {
       const reader = new FileReader();
       reader.onloadend = async () => {
+        try {
         const base64Str = (reader.result as string).split(',')[1];
         const { scanInvoice } = await import('@/actions/ai-actions');
         
@@ -178,9 +179,14 @@ export default function ProveedoresPage() {
           
           setFacItems(prev => [...prev, ...newCart]);
         }
-        setIsScanningFac(false);
-        if (fileInputRefFac.current) fileInputRefFac.current.value = '';
-      if (fileInputRefFacCam.current) fileInputRefFacCam.current.value = '';
+        } catch (errInner) {
+          console.error('Error IA:', errInner);
+          alert('Hubo un problema de conexión con la IA. Es posible que el servidor esté saturado (Rate Limit). Intenta de nuevo en un minuto.');
+        } finally {
+          setIsScanningFac(false);
+          if (fileInputRefFac.current) fileInputRefFac.current.value = '';
+          if (fileInputRefFacCam.current) fileInputRefFacCam.current.value = '';
+        }
       };
       reader.readAsDataURL(file);
     } catch (err) {
