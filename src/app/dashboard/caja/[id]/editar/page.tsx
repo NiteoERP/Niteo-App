@@ -23,6 +23,7 @@ interface Transaccion {
   metodo: string;
   banco: string;
   referencia: string;
+  cliente?: string;
   monto: string;
   moneda: Moneda;
 }
@@ -331,6 +332,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
           metodo: t.metodo,
           banco: t.banco || 'N/A',
           referencia: t.referencia || 'N/A',
+          cliente: t.cliente || '',
           monto: val,
           moneda: t.moneda
         };
@@ -487,6 +489,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
                           <th className="pb-3 w-8 text-center">#</th>
                           <th className="pb-3 px-2 min-w-[120px]">Monto</th>
                           <th className="pb-3 px-2 min-w-[140px]">Referencia</th>
+                          <th className="pb-3 px-2 min-w-[140px]">Cliente</th>
                           <th className="pb-3 px-2 min-w-[140px]">Banco</th>
                           <th className="pb-3 px-2 w-10 text-center"></th>
                         </tr>

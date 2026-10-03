@@ -160,6 +160,7 @@ export async function guardarCierre(cierreData: any, transacciones: any[]) {
       metodo: t.metodo,
       banco: t.banco,
       referencia: t.referencia,
+      cliente: t.cliente,
       monto: t.monto,
       moneda: t.moneda
     }));
@@ -321,6 +322,7 @@ export async function actualizarCierre(cierreId: string, cierreData: any, transa
       metodo: t.metodo,
       banco: t.banco,
       referencia: t.referencia,
+      cliente: t.cliente,
       monto: t.monto,
       moneda: t.moneda
     }));
