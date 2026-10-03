@@ -166,7 +166,12 @@ export default function ProveedoresPage() {
       const res = await scanInvoice(base64Str, file.type || 'image/jpeg', invContext);
       
       if (res.error) {
-        alert(res.error);
+        const errorStr = res.error.toLowerCase();
+        if (errorStr.includes('503') || errorStr.includes('504') || errorStr.includes('timeout') || errorStr.includes('fetch failed') || errorStr.includes('rate limit')) {
+          alert('Error al escanear (Saturación o fallo de conexión). Por favor, intente nuevamente.');
+        } else {
+          alert(res.error);
+        }
       } else if (res.data) {
         const d = res.data;
         

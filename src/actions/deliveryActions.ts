@@ -107,8 +107,9 @@ export async function procesarFotoDelivery(base64Image: string) {
     }
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    // Usamos el modelo flash que es rápido, barato e ideal para OCR
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    
+    // Configuramos el modelo principal que confirmaste que funciona perfecto y rápido
+    let model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
     const prompt = `
       Eres un sistema automático de lectura de tickets de restaurante (OCR).
@@ -130,11 +131,22 @@ export async function procesarFotoDelivery(base64Image: string) {
       },
     ];
 
-    const result = await model.generateContent([prompt, ...imageParts]);
-    const extractedText = result.response.text().trim();
+    let extractedText = '';
+    
+    try {
+      // Intentamos con el modelo principal
+      const result = await model.generateContent([prompt, ...imageParts]);
+      extractedText = result.response.text().trim();
+    } catch (primaryError) {
+      console.warn("Fallo gemini-flash-latest, intentando con el respaldo lite...", primaryError);
+      // Fallback al modelo de respaldo ultra rápido si el primero se satura o falla
+      model = genAI.getGenerativeModel({ model: "gemini-flash-lite-latest" });
+      const fallbackResult = await model.generateContent([prompt, ...imageParts]);
+      extractedText = fallbackResult.response.text().trim();
+    }
 
     if (extractedText === 'ERROR' || extractedText === '') {
-      return { success: false, message: 'No pude leer el número en la foto. Intenta otra vez o escríbelo a mano.' };
+      return { success: false, message: 'Error al escanear, intente nuevamente o ingrese manualmente.' };
     }
 
     // Una vez que la IA extrajo el número, ejecutamos el proceso normal
@@ -142,6 +154,6 @@ export async function procesarFotoDelivery(base64Image: string) {
 
   } catch (error: any) {
     console.error("Error en OCR:", error);
-    return { success: false, message: 'Error analizando la foto.' };
+    return { success: false, message: 'Error al escanear, intente nuevamente o ingrese manualmente.' };
   }
 }
