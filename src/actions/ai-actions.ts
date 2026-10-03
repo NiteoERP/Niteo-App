@@ -1,4 +1,4 @@
-'use server';
+﻿'use server';
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
@@ -10,12 +10,11 @@ export async function scanInvoice(base64Image: string, mimeType: string, invento
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     
-    // Lista de modelos a intentar en orden de preferencia
+    // Lista de modelos a intentar en orden de preferencia (nombres oficiales)
     const modelsToTry = [
-      'gemini-3.5-flash',
-      'gemini-flash-lite-latest',
-      'gemini-3.7-flash',
-      'gemini-flash-latest'
+      'gemini-1.5-flash',       // El modelo por defecto, más rápido e inteligente para imágenes
+      'gemini-1.5-flash-8b',    // Versión aún más ligera y veloz si el primero falla
+      'gemini-1.5-pro'          // Modelo más pesado como último recurso
     ];
 
     const inventoryContext = inventory.map(i => `{"id": "${i.id}", "nombre": "${i.nombre}", "unidad": "${i.unidad_medida}"}`).join('\n');
