@@ -54,6 +54,7 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
 
   const hasPerm = (p: string) => {
     if (userRole === 'MESERO') return p === 'mesas';
+    if (userRole === 'REPARTIDOR') return p === 'delivery'; // Restricción estricta para repartidores puros
     if (p === 'mesas') {
       if (userRole === 'MASTER') return false;
       if (rubro && rubro !== 'restaurante') return false;
@@ -257,6 +258,22 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
         <Link href="/dashboard/informes" className={getSingleLinkClass('/dashboard/informes')}>
           <FileText size={21} />
           <span>Informes</span>
+        </Link>
+      )}
+
+      {/* 4. Módulo de Delivery (Repartidores) */}
+      {(hasPerm('delivery') && userRole !== 'MASTER' && userRole !== 'SUPERADMIN') && (
+        <Link href="/delivery" className={getSingleLinkClass('/delivery')}>
+          <Truck size={21} />
+          <span>App Repartidores</span>
+        </Link>
+      )}
+
+      {/* 5. Reporte de Delivery (Solo Admins) */}
+      {(userRole === 'MASTER' || userRole === 'SUPERADMIN') && (
+        <Link href="/dashboard/delivery" className={getSingleLinkClass('/dashboard/delivery')}>
+          <Truck size={21} />
+          <span>Reporte Entregas</span>
         </Link>
       )}
     </nav>
@@ -469,6 +486,19 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
                     <FileText size={18} /> Informes
                   </Link>
                 )}
+                
+                {(hasPerm('delivery') && userRole !== 'MASTER' && userRole !== 'SUPERADMIN') && (
+                  <Link href="/delivery" onClick={() => setMenuOpen(false)} className={drawerItem('/delivery')}>
+                    <Truck size={18} /> App Repartidores
+                  </Link>
+                )}
+                
+                {(userRole === 'MASTER' || userRole === 'SUPERADMIN') && (
+                  <Link href="/dashboard/delivery" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/delivery')}>
+                    <Truck size={18} /> Reporte Entregas
+                  </Link>
+                )}
+
                 {hasPerm('ajustes') && (
                   <Link href="/dashboard/configuracion" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/configuracion')}>
                     <Settings size={18} /> Ajustes

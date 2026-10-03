@@ -154,6 +154,13 @@ export async function procesarFotoDelivery(base64Image: string) {
 
   } catch (error: any) {
     console.error("Error en OCR:", error);
+    
+    // Traducción de errores de timeout o saturación (503/504) según el reporte técnico
+    const errMsg = error?.message?.toLowerCase() || '';
+    if (errMsg.includes('503') || errMsg.includes('504') || errMsg.includes('timeout')) {
+      return { success: false, message: 'Servidor saturado, intenta en un minuto o ingresa manual.' };
+    }
+    
     return { success: false, message: 'Error al escanear, intente nuevamente o ingrese manualmente.' };
   }
 }

@@ -11,27 +11,43 @@ export default function DeliveryDashboard() {
   const [gananciasHoy, setGananciasHoy] = useState(0); // Esto idealmente se carga desde BD al iniciar
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Función mágica para comprimir la foto en el celular antes de gastar datos
+  // Función mágica para comprimir la foto en el celular (El Punto Dulce para OCR)
   const comprimirImagen = (file: File): Promise<string> => {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const reader = new FileReader();
+      
       reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 800; // Resolución ideal para que la IA lea rápido y pese poco
-          const scaleSize = MAX_WIDTH / img.width;
-          canvas.width = MAX_WIDTH;
-          canvas.height = img.height * scaleSize;
-          
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-          
-          // Exportamos a JPEG con calidad baja/media (0.6) para reducir a ~50kb
-          resolve(canvas.toDataURL('image/jpeg', 0.6));
-        };
-        img.src = event.target?.result as string;
+        try {
+          const img = new Image();
+          img.onload = () => {
+            try {
+              const canvas = document.createElement('canvas');
+              // El balance perfecto descubierto en pruebas: 2000px permite leer letras pequeñas
+              const MAX_WIDTH = 2000; 
+              let scaleSize = 1;
+              if (img.width > MAX_WIDTH) {
+                scaleSize = MAX_WIDTH / img.width;
+              }
+              canvas.width = img.width * scaleSize;
+              canvas.height = img.height * scaleSize;
+              
+              const ctx = canvas.getContext('2d');
+              ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+              
+              // Exportamos a JPEG con calidad 0.85 (~500kb) ideal para no saturar a la IA ni perder DPI
+              resolve(canvas.toDataURL('image/jpeg', 0.85));
+            } catch (err) {
+              reject(err);
+            }
+          };
+          img.onerror = () => reject(new Error('Error al decodificar la imagen'));
+          img.src = event.target?.result as string;
+        } catch (err) {
+          reject(err);
+        }
       };
+      
+      reader.onerror = () => reject(new Error('Error al leer el archivo'));
       reader.readAsDataURL(file);
     });
   };

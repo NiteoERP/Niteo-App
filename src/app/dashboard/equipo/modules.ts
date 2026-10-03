@@ -58,6 +58,12 @@ export const AVAILABLE_MODULES: ModuleDefinition[] = [
     description: 'Traslados de stock, envíos y recepciones entre sucursales', 
     category: 'inventario' 
   },
+  { 
+    id: 'delivery', 
+    label: 'Módulo Delivery (Repartidores)', 
+    description: 'Acceso a pantalla de validación de comandas mediante código o foto (Para Repartidores)', 
+    category: 'operaciones' 
+  },
 
   // Clientes y Finanzas
   { 
@@ -126,6 +132,7 @@ export const ROLE_PRESETS: Record<string, string[]> = {
     'despachos', 'clientes', 'creditos', 'reportes', 'finanzas', 'mesas'
   ],
   COMPRADOR: ['compras', 'proveedores', 'inventario'],
+  REPARTIDOR: ['delivery'],
   MASTER: AVAILABLE_MODULES.map(m => m.id),
 };
 

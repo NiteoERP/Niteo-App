@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect, useRef, useCallback, startTransition } from "react";
 import { getSedes } from "@/actions/dashboard-actions";
@@ -123,8 +123,8 @@ export default function ProveedoresPage() {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 1200;
-        const MAX_HEIGHT = 1200;
+        const MAX_WIDTH = 2000;
+        const MAX_HEIGHT = 2000;
         let width = img.width;
         let height = img.height;
 
@@ -145,7 +145,7 @@ export default function ProveedoresPage() {
         const ctx = canvas.getContext('2d');
         if (!ctx) return resolve('');
         ctx.drawImage(img, 0, 0, width, height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
         resolve(dataUrl.split(',')[1]);
       };
       img.onerror = reject;
@@ -200,12 +200,21 @@ export default function ProveedoresPage() {
           const factor = item.es_bulto ? (item.unidades_por_bulto_estimado || 1) : 1;
           const qty = item.cantidad || 1;
           const costo = item.precio_total ?? ((item.precio_unitario ?? 0) * qty);
+          
+          let matchedName = '';
+          let matchedUnidad = '';
+          if (!isNew) {
+            const matchedInsumo = insumosList.find(ins => ins.id === item.insumo_id_recomendado);
+            matchedName = matchedInsumo ? matchedInsumo.nombre : (item.nombre_original_factura || 'Producto Existente');
+            matchedUnidad = matchedInsumo ? matchedInsumo.unidad_medida : (item.unidad_medida_sugerida || 'Unidad');
+          }
+          
           return {
             id: Date.now().toString() + i,
             insumo_id: item.insumo_id_recomendado || null,
             is_new: isNew,
-            nombre_nuevo: isNew ? (item.nombre_original_factura || '') : '',
-            unidad_nueva: isNew ? (item.es_bulto ? 'Bulto' : (item.unidad_medida_sugerida || 'Unidad')) : '',
+            nombre_nuevo: isNew ? (item.nombre_original_factura || '') : matchedName,
+            unidad_nueva: isNew ? (item.es_bulto ? 'Bulto' : (item.unidad_medida_sugerida || 'Unidad')) : matchedUnidad,
             cantidad: qty,
             precioUnitario: costo / qty,
             costoTotal: costo,
