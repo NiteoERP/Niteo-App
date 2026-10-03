@@ -26,6 +26,7 @@ type CartItem = {
 };
 
 export default function MobileCompraForm() {
+  const [fechaEmision, setFechaEmision] = useState(() => new Date().toISOString().split('T')[0]);
   const [insumos, setInsumos] = useState<Insumo[]>([]);
   const [tasaDelDia, setTasaDelDia] = useState<number>(36.5);
 
@@ -161,11 +162,11 @@ export default function MobileCompraForm() {
       if (resTiendas.success && resTiendas.data) setTiendasFrecuentes(resTiendas.data);
     };
     fetchM();
-  }, []);
+  }, [fechaEmision]);
 
   useEffect(() => {
     const initData = async () => {
-      const [data, tasa] = await Promise.all([getInsumos(), getTasaDelDia()]);
+      const [data, tasa] = await Promise.all([getInsumos(), getTasaDelDia(fechaEmision)]);
       setInsumos(data);
       setTasaDelDia(tasa);
     };
@@ -222,6 +223,7 @@ export default function MobileCompraForm() {
   const [isPending, startTransition] = useTransition();
   const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
 
   const handleAddToCart = () => {
     if (!cantidad || !costoTotal || (!selectedInsumo && !isNewInsumo)) {
@@ -292,6 +294,7 @@ export default function MobileCompraForm() {
 
       const res = await registrarFacturaInsumos({
         proveedor: proveedor || 'Proveedor General',
+        fecha_emision: fechaEmision,
         moneda: monedaGlobal,
         tasa: tasaDelDia,
         metodo_pago: metodoPago,
@@ -360,15 +363,33 @@ export default function MobileCompraForm() {
             ref={fileInputRef}
             onChange={handleScanInvoice}
           />
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            ref={fileInputRefCam}
+            onChange={handleScanInvoice}
+          />
           <button
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => fileInputRefCam.current?.click()}
             disabled={isScanning}
             className="bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 border border-indigo-500/30 px-3 py-2 rounded-xl flex items-center gap-2 transition-colors disabled:opacity-50"
-            title="Autocompletar con Foto (IA)"
+            title="Tomar Foto"
           >
             {isScanning ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
             <span className="hidden sm:inline font-medium text-sm">
-              {isScanning ? 'Analizando...' : 'Escanear Foto'}
+              Cámara
+            </span>
+          </button>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isScanning}
+            className="bg-neutral-800 hover:bg-neutral-700 text-neutral-300 border border-neutral-700 px-3 py-2 rounded-xl flex items-center gap-2 transition-colors disabled:opacity-50"
+            title="Subir de Galería"
+          >
+            <span className="hidden sm:inline font-medium text-sm">
+              Galería
             </span>
           </button>
         </div>
@@ -399,8 +420,20 @@ export default function MobileCompraForm() {
             </div>
           )}
 
-          {/* ── Cabecera de la factura ───────────────────────────────────── */}
+          {/* ─ Cabecera de la factura ─ */}
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 bg-neutral-950/50 p-4 rounded-xl border border-neutral-800/50">
+            <div className="sm:col-span-4">
+              <label className="block text-sm font-medium text-neutral-400 mb-1">
+                Fecha de la Factura
+              </label>
+              <input
+                type="date"
+                value={fechaEmision}
+                onChange={(e) => setFechaEmision(e.target.value)}
+                className="w-full bg-[#171717] border border-[#262626] text-white rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500"
+              />
+              <p className="text-[10px] text-neutral-500 mt-1">La tasa de cambio se ajustará a esta fecha automáticamente.</p>
+            </div>
             <div className="sm:col-span-2">
               <label className="flex items-center gap-1.5 text-sm font-medium text-neutral-400 mb-1">
                 <Building2 size={16} className="text-neutral-500" /> Proveedor / Tienda

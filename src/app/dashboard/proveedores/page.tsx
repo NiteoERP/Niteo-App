@@ -18,6 +18,7 @@ import {
 import { format } from "date-fns";
 import MobileCompraForm from "@/components/compras/MobileCompraForm";
 import Link from "next/link";
+import NiteoDatePicker from '@/components/ui/NiteoDatePicker';
 import { formatFecha } from "@/utils/date-utils";
 import AbonosGlobalesHistorial from "./AbonosGlobalesHistorial";
 
@@ -118,6 +119,22 @@ export default function ProveedoresPage() {
   const fileInputRefFacCam = React.useRef<HTMLInputElement>(null);
 
   
+  useEffect(() => {
+    const fetchTasaPorFecha = async () => {
+      if (!facFecha) return;
+      try {
+        const { getTasaBcvForDateAction } = await import('@/actions/config-actions');
+        const res = await getTasaBcvForDateAction(facFecha);
+        if (res && res.tasa) {
+          setFacTasa(res.tasa);
+        }
+      } catch (e) {
+        console.error('Error fetching rate for date:', e);
+      }
+    };
+    fetchTasaPorFecha();
+  }, [facFecha]);
+
   const compressImage = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -1085,14 +1102,23 @@ export default function ProveedoresPage() {
                   <h3 className="text-lg font-bold text-white flex items-center gap-2"><FileText size={18} className="text-indigo-400" /> Nueva Factura / Deuda</h3>
                   <div className="flex items-center gap-2 mt-2">
                     <input type="file" accept="image/*" className="hidden" ref={fileInputRefFac} onChange={handleScanInvoiceFac} />
+                    <input type="file" accept="image/*" capture="environment" className="hidden" ref={fileInputRefFacCam} onChange={handleScanInvoiceFac} />
+                    <button 
+                      onClick={() => fileInputRefFacCam.current?.click()}
+                      disabled={isScanningFac}
+                      className="bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 border border-indigo-500/30 px-3 py-1.5 rounded-xl flex items-center gap-2 transition-colors disabled:opacity-50 text-xs"
+                      title="Tomar Foto con Cámara"
+                    >
+                      {isScanningFac ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
+                      <span className="font-medium">{isScanningFac ? 'Analizando...' : 'Cámara'}</span>
+                    </button>
                     <button 
                       onClick={() => fileInputRefFac.current?.click()}
                       disabled={isScanningFac}
-                      className="bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 border border-indigo-500/30 px-3 py-1.5 rounded-xl flex items-center gap-2 transition-colors disabled:opacity-50 text-xs"
-                      title="Autocompletar con Foto (IA)"
+                      className="bg-neutral-800 hover:bg-neutral-700 text-neutral-300 border border-neutral-700 px-3 py-1.5 rounded-xl flex items-center gap-2 transition-colors disabled:opacity-50 text-xs"
+                      title="Elegir de Galería"
                     >
-                      {isScanningFac ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
-                      <span className="font-medium">{isScanningFac ? 'Analizando...' : 'Escanear Foto'}</span>
+                      <span className="font-medium">Galería</span>
                     </button>
                   </div>
                 </div>
@@ -1210,13 +1236,11 @@ export default function ProveedoresPage() {
                 </div>
                 <div>
                   <label className="block text-sm text-neutral-400 mb-1.5">Fecha</label>
-                  <input type="date" value={facFecha} onChange={e => setFacFecha(e.target.value)}
-                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500 [color-scheme:dark] text-sm" />
+                  <NiteoDatePicker value={facFecha} onChange={val => setFacFecha(val)} className="w-full" />
                 </div>
                 <div>
                   <label className="block text-sm text-neutral-400 mb-1.5">Vencimiento</label>
-                  <input type="date" value={facFechaVencimiento} onChange={e => setFacFechaVencimiento(e.target.value)}
-                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500 [color-scheme:dark] text-sm" />
+                  <NiteoDatePicker value={facFechaVencimiento} onChange={val => setFacFechaVencimiento(val)} className="w-full" />
                 </div>
               </div>
 
@@ -1719,8 +1743,7 @@ export default function ProveedoresPage() {
                 </div>
                 <div>
                   <label className="block text-sm text-neutral-400 mb-1.5">Fecha del Pago</label>
-                  <input type="date" value={fechaPago} onChange={e => setFechaPago(e.target.value)}
-                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 [color-scheme:dark] text-sm" />
+                  <NiteoDatePicker value={fechaPago} onChange={val => setFechaPago(val)} className="w-full" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -1843,12 +1866,7 @@ export default function ProveedoresPage() {
                 </div>
                 <div>
                   <label className="block text-sm text-neutral-400 mb-1.5">Fecha del Pago</label>
-                  <input
-                    type="date"
-                    value={fechaPagoGeneral}
-                    onChange={e => setFechaPagoGeneral(e.target.value)}
-                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 [color-scheme:dark] text-sm"
-                  />
+                  <NiteoDatePicker value={fechaPagoGeneral} onChange={val => setFechaPagoGeneral(val)} className="w-full" />
                 </div>
               </div>
 
@@ -2298,13 +2316,11 @@ export default function ProveedoresPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-neutral-400 mb-1.5">Fecha de EmisiÃ³n</label>
-                  <input type="date" value={editFacFecha} onChange={e => setEditFacFecha(e.target.value)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-white text-sm" />
+                  <NiteoDatePicker value={editFacFecha} onChange={val => setEditFacFecha(val)} className="w-full" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-400 mb-1.5">Vencimiento (Opcional)</label>
-                  <input type="date" value={editFacFechaVencimiento} onChange={e => setEditFacFechaVencimiento(e.target.value)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-white text-sm" />
+                  <NiteoDatePicker value={editFacFechaVencimiento} onChange={val => setEditFacFechaVencimiento(val)} className="w-full" />
                 </div>
               </div>
             </div>
@@ -2416,8 +2432,7 @@ export default function ProveedoresPage() {
                 </div>
                 <div>
                   <label className="block text-sm text-neutral-400 mb-1.5">Fecha del Pago</label>
-                  <input type="date" value={fechaPago} onChange={e => setFechaPago(e.target.value)}
-                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 [color-scheme:dark] text-sm" />
+                  <NiteoDatePicker value={fechaPago} onChange={val => setFechaPago(val)} className="w-full" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -2540,12 +2555,7 @@ export default function ProveedoresPage() {
                 </div>
                 <div>
                   <label className="block text-sm text-neutral-400 mb-1.5">Fecha del Pago</label>
-                  <input
-                    type="date"
-                    value={fechaPagoGeneral}
-                    onChange={e => setFechaPagoGeneral(e.target.value)}
-                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 [color-scheme:dark] text-sm"
-                  />
+                  <NiteoDatePicker value={fechaPagoGeneral} onChange={val => setFechaPagoGeneral(val)} className="w-full" />
                 </div>
               </div>
 
@@ -2995,13 +3005,11 @@ export default function ProveedoresPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-neutral-400 mb-1.5">Fecha de EmisiÃ³n</label>
-                  <input type="date" value={editFacFecha} onChange={e => setEditFacFecha(e.target.value)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-white text-sm" />
+                  <NiteoDatePicker value={editFacFecha} onChange={val => setEditFacFecha(val)} className="w-full" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-400 mb-1.5">Vencimiento (Opcional)</label>
-                  <input type="date" value={editFacFechaVencimiento} onChange={e => setEditFacFechaVencimiento(e.target.value)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-white text-sm" />
+                  <NiteoDatePicker value={editFacFechaVencimiento} onChange={val => setEditFacFechaVencimiento(val)} className="w-full" />
                 </div>
               </div>
             </div>
@@ -3113,8 +3121,7 @@ export default function ProveedoresPage() {
                 </div>
                 <div>
                   <label className="block text-sm text-neutral-400 mb-1.5">Fecha del Pago</label>
-                  <input type="date" value={fechaPago} onChange={e => setFechaPago(e.target.value)}
-                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 [color-scheme:dark] text-sm" />
+                  <NiteoDatePicker value={fechaPago} onChange={val => setFechaPago(val)} className="w-full" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -3237,12 +3244,7 @@ export default function ProveedoresPage() {
                 </div>
                 <div>
                   <label className="block text-sm text-neutral-400 mb-1.5">Fecha del Pago</label>
-                  <input
-                    type="date"
-                    value={fechaPagoGeneral}
-                    onChange={e => setFechaPagoGeneral(e.target.value)}
-                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 [color-scheme:dark] text-sm"
-                  />
+                  <NiteoDatePicker value={fechaPagoGeneral} onChange={val => setFechaPagoGeneral(val)} className="w-full" />
                 </div>
               </div>
 
@@ -3692,13 +3694,11 @@ export default function ProveedoresPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-neutral-400 mb-1.5">Fecha de EmisiÃ³n</label>
-                  <input type="date" value={editFacFecha} onChange={e => setEditFacFecha(e.target.value)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-white text-sm" />
+                  <NiteoDatePicker value={editFacFecha} onChange={val => setEditFacFecha(val)} className="w-full" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-400 mb-1.5">Vencimiento (Opcional)</label>
-                  <input type="date" value={editFacFechaVencimiento} onChange={e => setEditFacFechaVencimiento(e.target.value)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-white text-sm" />
+                  <NiteoDatePicker value={editFacFechaVencimiento} onChange={val => setEditFacFechaVencimiento(val)} className="w-full" />
                 </div>
               </div>
             </div>
@@ -3735,6 +3735,7 @@ export default function ProveedoresPage() {
     </div>
   );
 }
+
 
 
 

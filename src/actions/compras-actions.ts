@@ -1,5 +1,5 @@
 ﻿'use server'
-import { getTasaBcvAction } from './config-actions';
+import { getTasaBcvAction, getTasaBcvForDateAction } from './config-actions';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers'; 
 import { revalidatePath } from 'next/cache';
@@ -157,7 +157,11 @@ export async function getInsumos(targetSedeId?: string) {
   return data || []; 
 }    
 
-export async function getTasaDelDia(): Promise<number> {
+export async function getTasaDelDia(dateStr?: string): Promise<number> {
+  if (dateStr) {
+    const data = await getTasaBcvForDateAction(dateStr);
+    return data.tasa || 36.50;
+  }
   const data = await getTasaBcvAction();
   return data.tasa || 36.50;
 }

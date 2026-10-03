@@ -155,3 +155,15 @@ export async function getCuentasContables(empresaId: string) {
   if (error) return [];
   return data;
 }
+
+export async function getEmpresaIdActual(): Promise<string | null> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data: profile } = await supabase
+    .from('perfiles')
+    .select('empresa_id')
+    .eq('id', user.id)
+    .single();
+  return profile?.empresa_id ?? null;
+}

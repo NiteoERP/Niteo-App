@@ -3,8 +3,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { getSedes } from "@/actions/dashboard-actions";
 import { getClientesConDeuda, getDetalleDeudaCliente, registrarAbono, getMetodosPago, registrarAbonoGlobal, getHistorialAbonosCliente, getTasaBCVActual } from "@/actions/creditos-actions";
-import { format, startOfDay, endOfDay } from "date-fns";
+import { format, startOfDay, endOfDay, startOfMonth } from "date-fns";
 import { useEmpresa } from "@/components/providers/EmpresaProvider";
+import NiteoDateRangePicker from "@/components/ui/NiteoDateRangePicker";
 import CreatableSelect from "react-select/creatable";
 import { Store, Wallet, Search, FileText, ShoppingCart, Users, PlusCircle, X, Download, Hash, History, ArrowLeft } from "lucide-react";
 import jsPDF from "jspdf";
@@ -38,8 +39,8 @@ export default function CreditosPage() {
   const [metodosDisponibles, setMetodosDisponibles] = useState<string[]>(["Efectivo"]);
   const [sedeId, setSedeId] = useState("ALL");
 
-  const [startDate, setStartDate] = useState<Date>(new Date('2000-01-01'));
-  const [endDate, setEndDate] = useState<Date>(new Date('2100-01-01'));
+  const [startDate, setStartDate] = useState<string>(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
+  const [endDate, setEndDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
 
   const [clientes, setClientes] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -110,7 +111,7 @@ export default function CreditosPage() {
     const fetchInit = async () => {
       setIsLoadingClientes(true);
       setPage(1); // Reset page on new filters
-      const res = await getClientesConDeuda(sedeId, format(startOfDay(startDate), "yyyy-MM-dd'T'HH:mm:ssXXX"), format(endOfDay(endDate), "yyyy-MM-dd'T'HH:mm:ssXXX"), 1, 20, debouncedSearch);
+      const res = await getClientesConDeuda(sedeId, new Date(startDate + 'T00:00:00').toISOString(), new Date(endDate + 'T23:59:59').toISOString(), 1, 20, debouncedSearch);
       if (res.success) {
         setClientes(res.data || []);
         setTotalCount(res.totalCount || 0);
@@ -125,13 +126,13 @@ export default function CreditosPage() {
       setIsLoadingClientes(false);
     };
     fetchInit();
-  }, [sedeId, format(startOfDay(startDate), "yyyy-MM-dd'T'HH:mm:ssXXX"), format(endOfDay(endDate), "yyyy-MM-dd'T'HH:mm:ssXXX"), debouncedSearch]);
+  }, [sedeId, startDate, endDate, debouncedSearch]);
 
   const handleLoadMore = async () => {
     if (isLoadingMore) return;
     setIsLoadingMore(true);
     const nextPage = page + 1;
-    const res = await getClientesConDeuda(sedeId, format(startOfDay(startDate), "yyyy-MM-dd'T'HH:mm:ssXXX"), format(endOfDay(endDate), "yyyy-MM-dd'T'HH:mm:ssXXX"), nextPage, 20, debouncedSearch);
+    const res = await getClientesConDeuda(sedeId, new Date(startDate + 'T00:00:00').toISOString(), new Date(endDate + 'T23:59:59').toISOString(), nextPage, 20, debouncedSearch);
     if (res.success) {
       setClientes(prev => [...prev, ...(res.data || [])]);
       setTotalCount(res.totalCount || 0);
@@ -185,7 +186,7 @@ export default function CreditosPage() {
         // Optimistic / Parallel reload without blocking
         const [rDet, rCli] = await Promise.all([
           getDetalleDeudaCliente(selectedClienteId, sedeId),
-          getClientesConDeuda(sedeId, startDate.toISOString(), endDate.toISOString(), 1, 20, debouncedSearch)
+          getClientesConDeuda(sedeId, new Date(startDate + 'T00:00:00').toISOString(), new Date(endDate + 'T23:59:59').toISOString(), 1, 20, debouncedSearch)
         ]);
         if (rDet.success) setDetalle(rDet.data || []);
         if (rCli.success) {
@@ -227,7 +228,7 @@ export default function CreditosPage() {
         // Parallel reload
         const [rDet, rCli] = await Promise.all([
           getDetalleDeudaCliente(selectedClienteId, sedeId),
-          getClientesConDeuda(sedeId, startDate.toISOString(), endDate.toISOString(), 1, 20, debouncedSearch)
+          getClientesConDeuda(sedeId, new Date(startDate + 'T00:00:00').toISOString(), new Date(endDate + 'T23:59:59').toISOString(), 1, 20, debouncedSearch)
         ]);
         if (rDet.success) setDetalle(rDet.data || []);
         if (rCli.success) {
@@ -480,6 +481,16 @@ export default function CreditosPage() {
               </select>
             </div>
           </div>
+
+          <NiteoDateRangePicker
+            startDate={startDate}
+            endDate={endDate}
+            onChange={(s, e) => {
+              setStartDate(s);
+              setEndDate(e);
+            }}
+            className="w-full"
+          />
 
           <div className="relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />

@@ -5,14 +5,14 @@ import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Plus, Trash2, Wallet, CreditCard, Smartphone, DollarSign, CheckCircle2, Building2, Hash, ChevronDown, ChevronUp, GripHorizontal, X, RotateCcw } from 'lucide-react';
 import { getCierreParaEditar, actualizarCierre, getBancosUtilizados, getMetodosHistorialSede } from '@/actions/cierres-actions';
 import { createClient } from '@/utils/supabase/client';
-import { getSedes } from '@/actions/sedes-actions';
+import { getSedesCaja } from '@/actions/sedes-actions';
 import { useCajaSync } from '@/hooks/useCajaSync';
 
 type Moneda = 'USD' | 'VES';
 
 interface MetodoConfig {
   id: string;
-  icon: any;
+  iconKey: string;
   color: string;
   defaultMoneda: Moneda;
   isCustom?: boolean;
@@ -30,10 +30,10 @@ interface Transaccion {
 // Clave de borrador en localStorage
 
 const METODOS_DEFAULT: MetodoConfig[] = [
-  { id: 'Pago Móvil', icon: Smartphone, color: 'text-indigo-400', defaultMoneda: 'VES' },
-  { id: 'Punto de Venta', icon: CreditCard, color: 'text-emerald-400', defaultMoneda: 'VES' },
-  { id: 'Zelle', icon: DollarSign, color: 'text-purple-400', defaultMoneda: 'USD' },
-  { id: 'Efectivo', icon: Wallet, color: 'text-amber-400', defaultMoneda: 'USD' },
+  { id: 'Pago Móvil', iconKey: 'Smartphone', color: 'text-indigo-400', defaultMoneda: 'VES' },
+  { id: 'Punto de Venta', iconKey: 'CreditCard', color: 'text-emerald-400', defaultMoneda: 'VES' },
+  { id: 'Zelle', iconKey: 'DollarSign', color: 'text-purple-400', defaultMoneda: 'USD' },
+  { id: 'Efectivo', iconKey: 'Wallet', color: 'text-amber-400', defaultMoneda: 'USD' },
 ];
 
 // Mapa de icon components para rehidratar desde localStorage (solo strings serializables)
@@ -113,7 +113,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
   useEffect(() => {
     async function loadInitial() {
       try {
-        const sedesData = await getSedes();
+        const sedesData = await getSedesCaja();
         setSedes(sedesData);
         
         const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
@@ -148,8 +148,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
             color: 'border-indigo-500/30',
             defaultMoneda: 'VES' as Moneda,
             isCustom: true,
-            iconKey: 'GripHorizontal',
-            icon: GripHorizontal
+            iconKey: 'GripHorizontal'
           }));
           
           setMetodos(prev => {
@@ -186,8 +185,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
             color: 'border-indigo-500/30',
             defaultMoneda: 'VES' as Moneda,
             isCustom: true,
-            iconKey: 'GripHorizontal',
-            icon: GripHorizontal
+            iconKey: 'GripHorizontal'
           }));
           
           setMetodos((prev: any[]) => {
@@ -216,7 +214,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
     if (!newMetodoName.trim()) return;
     const newConfig: MetodoConfig = {
       id: newMetodoName.trim(),
-      icon: GripHorizontal,
+      iconKey: 'GripHorizontal',
       color: 'text-sky-400',
       defaultMoneda: newMetodoMoneda,
       isCustom: true
@@ -401,7 +399,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
       {/* BODY */}
       <div className="space-y-4">
         {metodos.map((metodo) => {
-          const Icon = metodo.icon;
+          const Icon = ICON_MAP[metodo.iconKey] || GripHorizontal;
           const isExpanded = expandedMetodo === metodo.id;
           const txs = transacciones.filter(t => t.metodo === metodo.id);
           const totalMetodo = getTotalByMetodo(metodo.id);
@@ -689,3 +687,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
     </div>
   );
 }
+
+
+
+
