@@ -64,7 +64,7 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
   if (currentTab === 'insumos' || currentTab === 'transformaciones' || currentTab === 'mermas') {
     let queryInsumos = supabase
       .from('inventario_insumos')
-      .select('id, nombre, unidad_medida, costo_promedio, cantidad_actual, empresa_id, sede_id')
+      .select('id, nombre, unidad_medida, costo_promedio, cantidad_actual, empresa_id, sede_id, es_reventa')
       .eq('empresa_id', empresaId)
       .order('nombre');
 
