@@ -3,13 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Plus, Trash2, Wallet, CreditCard, Smartphone, DollarSign, CheckCircle2, Building2, Hash, ChevronDown, ChevronUp, GripHorizontal, X, RotateCcw } from 'lucide-react';
-import { getCierrePrevio, guardarCierre, getBancosUtilizados, getMétodosHistorialSede, verificarTransaccionesDuplicadas, saveCloudDraft, getCloudDraft, clearCloudDraft } from '@/actions/cierres-actions';
+import { getCierrePrevio, guardarCierre, getBancosUtilizados, getMetodosHistorialSede, verificarTransaccionesDuplicadas, saveCloudDraft, getCloudDraft, clearCloudDraft } from '@/actions/cierres-actions';
 import { getSedesCaja } from '@/actions/sedes-actions';
 import { useCajaSync } from '@/hooks/useCajaSync';
 
 type Moneda = 'USD' | 'VES';
 
-interface MétodoConfig {
+interface MetodoConfig {
   id: string;
   iconKey: string;
   color: string;
@@ -57,24 +57,26 @@ export default function NuevoCierreCaja() {
   const [totalEsperado, setTotalEsperado] = useState(0);
   
   // Listas sugeridas
-  const [bancosPorMétodo] = useState<Record<string, string[]>>({});
+  const [bancosPorMetodo, setBancosPorMetodo] = useState<Record<string, string[]>>({});
     
   // Transacciones
   const [transacciones, setTransacciones] = useState<Transaccion[]>([]);
-  const [expandedMétodo] = useState<string | null>('Pago Móvil');
+  const [expandedMetodo, setExpandedMetodo] = useState<string | null>('Pago Móvil');
 
-  // Métodos dinámicos
-  const [metodos, setMétodoConfig[]>(METODOS_DEFAULT);
+  // Metodos dinámicos
+  const [metodos, setMetodos] = useState<MetodoConfig[]>(METODOS_DEFAULT);
 
   // Hook de sincronización en tiempo real con Supabase Broadcast
-  const { status: syncStatus, onlineCount } = useCajaSync(selectedSedeId, transacciones, setTransacciones, metodos, setMétodos);
+  const { status: syncStatus, onlineCount } = useCajaSync(selectedSedeId, transacciones, setTransacciones, metodos, setMetodos);
 
-  // Método
-  const [showNewMétodo] = useState(false);
-  const [newMétodoName] = useState('');
-  const [newMétodoMoneda] = useState<Moneda>('VES');
+  // Modal para nuevo método
+  const [showNewMetodo, setShowNewMetodo] = useState(false);
+  const [newMetodoName, setNewMetodoName] = useState('');
+  const [newMetodoMoneda, setNewMetodoMoneda] = useState<Moneda>('VES');
 
   // --- DRAFT LOGIC ---
+  const cloudSaveTimer = React.useRef<NodeJS.Timeout | null>(null);
+
   const saveDraft = (sedeId: string, txs: any[], mets: any[]) => {
     if (!sedeId) return;
     try {
@@ -83,41 +85,53 @@ export default function NuevoCierreCaja() {
         id: m.id, color: m.color, defaultMoneda: m.defaultMoneda, isCustom: true, iconKey: 'GripHorizontal',
       }));
       localStorage.setItem(draftKey, JSON.stringify({ transacciones: txs, metodos_custom }));
+
+      if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
+      cloudSaveTimer.current = setTimeout(() => {
+        saveCloudDraft(sedeId, txs, metodos_custom).catch(console.error);
+      }, 5000);
     } catch (_) {}
   };
 
-  const loadDraft = (sedeId: string) => {
+  const loadDraft = async (sedeId: string) => {
     if (!sedeId) return false;
     try {
       const draftKey = `niteo_draft_cierre_${sedeId}`;
       const raw = localStorage.getItem(draftKey);
+      let hasData = false;
       if (raw) {
         const draft = JSON.parse(raw);
-        let hasData = false;
-        
         if (draft.transacciones?.length > 0) {
           setTransacciones(draft.transacciones);
           hasData = true;
-        } else {
-          setTransacciones([]);
         }
-
         if (draft.metodos_custom?.length > 0) {
-          const customRestored: Métodos_custom.map((m: any) => ({
+          const customRestored: MetodoConfig[] = draft.metodos_custom.map((m: any) => ({
             ...m, iconKey: m.iconKey || 'GripHorizontal',
           }));
-          setMétodos([...METODOS_DEFAULT, ...customRestored]);
-        } else {
-          setMétodos(METODOS_DEFAULT);
+          setMetodos([...METODOS_DEFAULT, ...customRestored]);
         }
-        
         setHasDraft(hasData);
-        return hasData;
       }
+
+      const cloudDraft = await getCloudDraft(sedeId);
+      if (cloudDraft && (cloudDraft.transacciones?.length > 0 || cloudDraft.metodos_custom?.length > 0)) {
+        if (cloudDraft.transacciones?.length > 0) {
+          setTransacciones(cloudDraft.transacciones);
+        }
+        if (cloudDraft.metodos_custom?.length > 0) {
+          const customRestored: MetodoConfig[] = cloudDraft.metodos_custom.map((m: any) => ({
+            ...m, iconKey: m.iconKey || 'GripHorizontal',
+          }));
+          setMetodos([...METODOS_DEFAULT, ...customRestored]);
+        }
+        setHasDraft(cloudDraft.transacciones?.length > 0);
+        return true;
+      }
+      return hasData;
     } catch (_) {}
-    
     setTransacciones([]);
-    setMétodos(METODOS_DEFAULT);
+    setMetodos(METODOS_DEFAULT);
     setHasDraft(false);
     return false;
   };
@@ -132,9 +146,12 @@ export default function NuevoCierreCaja() {
 
   const limpiarBorrador = () => {
     try { localStorage.removeItem('niteo_draft_cierre'); } catch (_) {}
-    if (selectedSedeId) localStorage.removeItem(`niteo_draft_cierre_${selectedSedeId}`);
+    if (selectedSedeId) {
+      localStorage.removeItem(`niteo_draft_cierre_${selectedSedeId}`);
+      clearCloudDraft(selectedSedeId).catch(console.error);
+    }
     setTransacciones([]);
-    setMétodos(METODOS_DEFAULT);
+    setMetodos(METODOS_DEFAULT);
     setHasDraft(false);
   };
   // ─────────────────────────────────────────────────────────────────────────
@@ -152,10 +169,10 @@ export default function NuevoCierreCaja() {
           initialSedeId = lastSedeId;
         }
         
-        const [cierreRes, bancosRes, customMétodos] = await Promise.all([
+        const [cierreRes, bancosRes, customMetodos] = await Promise.all([
           getCierrePrevio(today, initialSedeId),
           getBancosUtilizados(),
-          initialSedeId ? getMétodosHistorialSede(initialSedeId) : Promise.resolve([])
+          initialSedeId ? getMetodosHistorialSede(initialSedeId) : Promise.resolve([])
         ]);
         
         const finalSedeId = cierreRes.targetSedeId || initialSedeId;
@@ -168,9 +185,9 @@ export default function NuevoCierreCaja() {
         setVentasTotales(cierreRes.ventasTotales || 0);
         setGastosTotales(cierreRes.gastosTotales || 0);
         setTotalEsperado(cierreRes.totalEsperado || 0);
-        setBancosPorMétodo(bancosRes);
-        if (customMétodos.length > 0) {
-          const restoredMétodos.map((mName: string) => ({
+        setBancosPorMetodo(bancosRes);
+        if (customMetodos && customMetodos.length > 0) {
+          const restoredMetodos = customMetodos.map((mName: string) => ({
             id: mName,
             color: 'border-indigo-500/30',
             defaultMoneda: 'VES' as Moneda,
@@ -178,9 +195,9 @@ export default function NuevoCierreCaja() {
             iconKey: 'GripHorizontal'
           }));
           
-          setMétodos(prev => {
+          setMetodos(prev => {
             const existingIds = new Set(prev.map(p => p.id));
-            const newMétodos.filter((r: any) => !existingIds.has(r.id));
+            const newMets = restoredMetodos.filter((r: any) => !existingIds.has(r.id));
             return [...prev, ...newMets];
           });
         }
@@ -202,12 +219,12 @@ export default function NuevoCierreCaja() {
     setLoading(true);
     try {
       const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
-      const [cierreRes, customMétodos] = await Promise.all([
+      const [cierreRes, customMetodos] = await Promise.all([
           getCierrePrevio(today, newSedeId),
-          getMétodosHistorialSede(newSedeId)
+          getMetodosHistorialSede(newSedeId)
         ]);
-        if (customMétodos.length > 0) {
-          const restoredMétodos.map((mName: string) => ({
+        if (customMetodos && customMetodos.length > 0) {
+          const restoredMetodos = customMetodos.map((mName: string) => ({
             id: mName,
             color: 'border-indigo-500/30',
             defaultMoneda: 'VES' as Moneda,
@@ -215,9 +232,9 @@ export default function NuevoCierreCaja() {
             iconKey: 'GripHorizontal'
           }));
           
-          setMétodos((prev: any[]) => {
+          setMetodos((prev: any[]) => {
             const existingIds = new Set(prev.map(p => p.id));
-            const newMétodos.filter((r: any) => !existingIds.has(r.id));
+            const newMets = restoredMetodos.filter((r: any) => !existingIds.has(r.id));
             return [...prev, ...newMets];
           });
         }
@@ -232,19 +249,19 @@ export default function NuevoCierreCaja() {
     }
   };
 
-  const handleCreateMétodo = () => {
-    if (!newMétodoName.trim()) return;
-    const newConfig: MétodoConfig = {
-      id: newMétodoName.trim(),
+  const handleCreateMetodo = () => {
+    if (!newMetodoName.trim()) return;
+    const newConfig: MetodoConfig = {
+      id: newMetodoName.trim(),
       iconKey: 'GripHorizontal',
       color: 'text-sky-400',
-      defaultMétodoMoneda,
+      defaultMoneda: newMetodoMoneda,
       isCustom: true
     };
-    setMétodos, newConfig]);
-    setExpandedMétodo(newConfig.id);
-    setNewMétodoName('');
-    setShowNewMétodo(false);
+    setMetodos([...metodos, newConfig]);
+    setExpandedMetodo(newConfig.id);
+    setNewMetodoName('');
+    setShowNewMetodo(false);
   };
 
   const handleAddTransaccion = (metodoId: string, defaultMoneda: Moneda) => {
@@ -257,7 +274,7 @@ export default function NuevoCierreCaja() {
       moneda: defaultMoneda
     };
     setTransacciones([...transacciones, newTx]);
-    setExpandedMétodoId);
+    setExpandedMetodo(metodoId);
   };
 
   const updateTransaccion = (id: string, field: keyof Transaccion, value: string) => {
@@ -282,7 +299,7 @@ export default function NuevoCierreCaja() {
     return total;
   };
 
-  const getTotalByMétodo: string) => {
+  const getTotalByMetodo = (metodo: string) => {
     let total = 0;
     transacciones.filter(t => t.metodo === metodo).forEach(t => {
       const val = parseFloat(t.monto) || 0;
@@ -325,7 +342,7 @@ export default function NuevoCierreCaja() {
       const bdDuplicados = await verificarTransaccionesDuplicadas(transacciones);
       if (localesDuplicados.length > 0 || bdDuplicados.length > 0) {
         const duplicadosUnicos = [...new Set([...localesDuplicados, ...bdDuplicados].map(t => t.referencia))];
-        const confirmar = window.confirm(`¡Atenciónte duplicados?`);
+        const confirmar = window.confirm(`¡Atención! Hay transacciones con la MISMA referencia y monto que otros pagos de HOY:\n\nReferencias: \n\n¿Estás seguro que deseas guardar el cierre con estos pagos posiblemente duplicados?`);
         if (!confirmar) {
           setSaving(false);
           return;
@@ -380,7 +397,10 @@ export default function NuevoCierreCaja() {
         alert(res.error);
       } else {
         // FIX 1: limpiar el borrador al guardar con éxito
-        if (selectedSedeId) localStorage.removeItem(`niteo_draft_cierre_${selectedSedeId}`);
+          if (selectedSedeId) {
+            localStorage.removeItem(`niteo_draft_cierre_${selectedSedeId}`);
+            clearCloudDraft(selectedSedeId).catch(console.error);
+          }
         setHasDraft(false);
         alert('Cierre guardado correctamente!');
         router.push('/dashboard/caja');
@@ -481,14 +501,14 @@ export default function NuevoCierreCaja() {
       {/* BODY */}
       <div className="space-y-4">
         {metodos.map((metodo) => {
-          const Icon = ICON_Método.iconKey] || GripHorizontal;
-          const isExpanded = expandedMétodo.id;
+          const Icon = ICON_MAP[metodo.iconKey] || GripHorizontal;
+          const isExpanded = expandedMetodo === metodo.id;
           const txs = transacciones.filter(t => t.metodo === metodo.id);
-          const totalMétodo.id);
+          const totalMetodo = getTotalByMetodo(metodo.id);
           
           // Simularemos la venta esperada por método temporalmente (hasta que la acción devuelva el desglose)
-          const esperadoMétodos.length); // mock value temporal
-          const diferencia = totalMétodo;
+          const esperadoMetodo = (totalEsperado / metodos.length); // mock value temporal
+          const diferencia = totalMetodo - esperadoMetodo;
 
           const banksSummary = getBanksSummary(metodo.id);
           const hasBanks = Object.keys(banksSummary).length > 0;
@@ -497,7 +517,7 @@ export default function NuevoCierreCaja() {
             <div key={metodo.id} className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden transition-all duration-300">
               {/* Accordion Header */}
               <button 
-                onClick={() => setExpandedMétodo.id)}
+                onClick={() => setExpandedMetodo(isExpanded ? null : metodo.id)}
                 className="w-full flex items-center justify-between p-4 bg-neutral-900 hover:bg-neutral-800/50 transition-colors"
               >
                 <div className="flex items-center gap-4">
@@ -516,11 +536,11 @@ export default function NuevoCierreCaja() {
                   {/* Comparación visual Venta Sistema vs Físico */}
                   <div className="hidden md:flex flex-col items-end mr-4">
                     <span className="text-[10px] text-neutral-500 uppercase font-bold tracking-wider">Sistema</span>
-                    <span className="font-bold text-neutral-300 text-sm">${esperadoMétodo.toFixed(2)}</span>
+                    <span className="font-bold text-neutral-300 text-sm">${esperadoMetodo.toFixed(2)}</span>
                   </div>
                   <div className="hidden md:flex flex-col items-end">
                     <span className="text-[10px] text-neutral-500 uppercase font-bold tracking-wider">Físico</span>
-                    <span className="font-bold text-emerald-400 text-sm">${totalMétodo.toFixed(2)}</span>
+                    <span className="font-bold text-emerald-400 text-sm">${totalMetodo.toFixed(2)}</span>
                   </div>
                   
                   <div className="text-neutral-500 ml-2">
@@ -700,18 +720,18 @@ export default function NuevoCierreCaja() {
         {metodos.map(m => (
           <datalist key={m.id} id={`bancos-list-${m.id.replace(/[^a-zA-Z0-9]/g, '')}`}>
             {Array.from(new Set([
-              ...(bancosPorMétodo[m.id] || []),
+              ...(bancosPorMetodo[m.id] || []),
               ...transacciones.filter(t => t.metodo === m.id && t.banco && t.banco.trim() !== '' && t.banco.trim() !== 'N/A').map(t => t.banco.trim())
             ])).sort().map(b => <option key={b} value={b} />)}
           </datalist>
         ))}
 
         {/* CREAR NUEVO MÍTODO */}
-{!isSpectator && showNewMétodo ? (
+{!isSpectator && showNewMetodo ? (
           <div className="bg-neutral-900 border border-indigo-500/50 rounded-2xl p-4 animate-in fade-in">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-lg">Nuevo Método Dinámico</h3>
-              <button onClick={() => setShowNewMétodo(false)} className="text-neutral-400 hover:text-white">
+              <button onClick={() => setShowNewMetodo(false)} className="text-neutral-400 hover:text-white">
                 <X size={20} />
               </button>
             </div>
@@ -722,16 +742,16 @@ export default function NuevoCierreCaja() {
                   type="text" 
                   autoFocus
                   placeholder="Ej: Biopago, Binance, etc."
-                  value={newMétodoName}
-                  onChange={(e) => setNewMétodoName(e.target.value)}
+                  value={newMetodoName}
+                  onChange={(e) => setNewMetodoName(e.target.value)}
                   className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-white outline-none focus:border-indigo-500"
                 />
               </div>
               <div className="space-y-2">
                 <label className="block text-xs font-medium text-neutral-400 uppercase">Moneda Predeterminada</label>
                 <select 
-                  value={newMétodoMoneda}
-                  onChange={(e) => setNewMétodoMoneda(e.target.value as Moneda)}
+                  value={newMetodoMoneda}
+                  onChange={(e) => setNewMetodoMoneda(e.target.value as Moneda)}
                   className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-white outline-none focus:border-indigo-500 cursor-pointer"
                 >
                   <option value="VES">Bolívares (VES)</option>
@@ -740,8 +760,8 @@ export default function NuevoCierreCaja() {
               </div>
             </div>
             <button 
-              onClick={handleCreateMétodo}
-              disabled={!newMétodoName.trim()}
+              onClick={handleCreateMetodo}
+              disabled={!newMetodoName.trim()}
               className="mt-4 w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-neutral-800 disabled:text-neutral-500 text-white rounded-xl py-3 font-bold transition-colors"
             >
               Confirmar Nuevo Método
@@ -749,7 +769,7 @@ export default function NuevoCierreCaja() {
           </div>
         ) : (
           <button 
-            onClick={() => setShowNewMétodo(true)}
+            onClick={() => setShowNewMetodo(true)}
             className="w-full py-4 border-2 border-dashed border-indigo-500/30 rounded-xl text-indigo-400 hover:text-white hover:border-indigo-500 hover:bg-indigo-500/10 flex items-center justify-center gap-2 transition-all font-medium"
           >
             <Plus size={18} /> Crear Nuevo Método de Pago

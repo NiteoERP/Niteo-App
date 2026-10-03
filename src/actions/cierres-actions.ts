@@ -427,7 +427,7 @@ export async function verifySupervisor(password: string) {
 // ============================================================================
 // OBTENER MÉTODOS CUSTOM HISTÃ“RICOS DE UNA SEDE
 // ============================================================================
-export async function getMétodosHistorialSede(sedeId: string) {
+export async function getMetodosHistorialSede(sedeId: string) {
   const supabase = await createClient();
   
   // Como no podemos hacer un join fácil y un distinct en PostgREST puro de forma sencilla para esta consulta,
@@ -450,7 +450,7 @@ export async function getMétodosHistorialSede(sedeId: string) {
 
   if (!txs) return [];
 
-  const uniqueMetodos = [...new Set(txs.map((tx: any) => tx.metodo))];
+  const uniqueMetodos = [...new Set(txs.map(t => t.metodo))];
   
   // Filtramos los por defecto
   const defaultIds = ['Efectivo', 'Punto de Venta', 'Pago Móvil'];
@@ -638,5 +638,4 @@ export async function clearCloudDraft(sedeId: string) {
   );
   await adminSupabase.storage.from('drafts').remove(["cierre_.json"]);
 }
-
 
