@@ -450,11 +450,11 @@ export async function getMétodosHistorialSede(sedeId: string) {
 
   if (!txs) return [];
 
-  const uniqueMétodo))];
+  const uniqueMetodos = [...new Set(txs.map((tx: any) => tx.metodo))];
   
   // Filtramos los por defecto
   const defaultIds = ['Efectivo', 'Punto de Venta', 'Pago Móvil'];
-  return uniqueMétodos.filter(m => !defaultIds.includes(m));
+  return uniqueMetodos.filter(m => !defaultIds.includes(m));
 }
 
 export async function getCierreParaEditar(cierreId: string) {
@@ -638,4 +638,5 @@ export async function clearCloudDraft(sedeId: string) {
   );
   await adminSupabase.storage.from('drafts').remove(["cierre_.json"]);
 }
+
 

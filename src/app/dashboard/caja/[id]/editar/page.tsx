@@ -29,7 +29,7 @@ interface Transaccion {
 
 // Clave de borrador en localStorage
 
-const MétodoConfig[] = [
+const METODOS_DEFAULT: MetodoConfig[] = [
   { id: 'Pago Móvil', iconKey: 'Smartphone', color: 'text-indigo-400', defaultMoneda: 'VES' },
   { id: 'Punto de Venta', iconKey: 'CreditCard', color: 'text-emerald-400', defaultMoneda: 'VES' },
   { id: 'Zelle', iconKey: 'DollarSign', color: 'text-purple-400', defaultMoneda: 'USD' },
