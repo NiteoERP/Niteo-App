@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useOptimistic, useTransition, useState, useMemo } from 'react';
 import { createInsumo, deleteInsumo, ajustarInventarioBatch, registrarVentaAlCosto, updateInsumo } from './actions';
@@ -48,7 +48,7 @@ type Movimiento = {
   operador_nombre: string;
 };
 
-type PeriodType = 'dias' | 'semanas' | 'meses' | 'años';
+type PeriodType = 'dias' | 'semanas' | 'meses' | 'aÃ±os';
 type ExportPeriodType = 'dia' | 'semana' | 'mes';
 
 const MOTIVO_LABELS: Record<string, string> = {
@@ -56,8 +56,8 @@ const MOTIVO_LABELS: Record<string, string> = {
   'STOCK_INICIAL': 'Stock Inicial',
   'COMPRA': 'Compra de Insumos',
   'VENTA POS': 'Venta POS',
-  'MERMA': 'Merma / Pérdida',
-  'TRANSFORMACION': 'Transformación',
+  'MERMA': 'Merma / PÃ©rdida',
+  'TRANSFORMACION': 'TransformaciÃ³n',
   'VENTA_AL_COSTO': 'Venta al Costo',
 };
 
@@ -89,7 +89,7 @@ function buildChartData(movimientos: Movimiento[], insumos: Insumo[], period: Pe
     case 'dias':   count = 14; fmt = 'dd MMM'; stepFn = subDays;   truncFn = startOfDay;   break;
     case 'semanas':count = 12; fmt = "dd/MM"; stepFn = subWeeks;  truncFn = startOfWeek;  break;
     case 'meses':  count = 12; fmt = 'MMM yy'; stepFn = subMonths; truncFn = startOfMonth; break;
-    case 'años':   count = 5;  fmt = 'yyyy';   stepFn = subYears;  truncFn = startOfYear;  break;
+    case 'aÃ±os':   count = 5;  fmt = 'yyyy';   stepFn = subYears;  truncFn = startOfYear;  break;
   }
 
   const currentValue = (insumos || []).reduce((s, i) => s + (Number(i.costo_promedio) || 0) * (Number(i.cantidad_actual) || 0), 0);
@@ -169,7 +169,7 @@ function buildExportRows(
         return s + m.cantidad * (insumos.find(i => i.id === m.insumo_id)?.costo_promedio || 0);
       }, 0);
       rows.push({
-        periodo: `${format(weekStart, 'dd/MM', { locale: es })}  ${format(weekEnd, 'dd/MM/yyyy', { locale: es })}`,
+        periodo: `${format(weekStart, 'dd/MM', { locale: es })} Â– ${format(weekEnd, 'dd/MM/yyyy', { locale: es })}`,
         entradas, salidas, neto: entradas - salidas, valorFinal: 0,
       });
     });
@@ -213,7 +213,7 @@ async function exportExcel(
   const XLSX = await import('xlsx');
   const rows = buildExportRows(movimientos, insumos, desde, hasta, breakdown);
   const data = rows.map(r => ({
-    'Período': r.periodo,
+    'PerÃ­odo': r.periodo,
     'Entradas (USD)': parseFloat(r.entradas.toFixed(2)),
     'Salidas (USD)': parseFloat(r.salidas.toFixed(2)),
     'Neto (USD)': parseFloat(r.neto.toFixed(2)),
@@ -275,12 +275,12 @@ function exportPDF(
   </style></head><body onload="window.print()">
     <h1>Resumen de Inventario</h1>
     <p class="sub">
-      Período: ${format(desde, 'dd/MM/yyyy', { locale: es })} ? ${format(hasta, 'dd/MM/yyyy', { locale: es })}
-      &nbsp;|&nbsp; Desglose por ${breakdown === 'dia' ? 'Día' : breakdown === 'semana' ? 'Semana' : 'Mes'}
+      PerÃ­odo: ${format(desde, 'dd/MM/yyyy', { locale: es })} ? ${format(hasta, 'dd/MM/yyyy', { locale: es })}
+      &nbsp;|&nbsp; Desglose por ${breakdown === 'dia' ? 'DÃ­a' : breakdown === 'semana' ? 'Semana' : 'Mes'}
       &nbsp;|&nbsp; Generado: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: es })}
     </p>
     <table>
-      <thead><tr><th>Período</th><th>Entradas (USD)</th><th>Salidas (USD)</th><th>Neto (USD)</th><th>Valor Inventario (USD)</th></tr></thead>
+      <thead><tr><th>PerÃ­odo</th><th>Entradas (USD)</th><th>Salidas (USD)</th><th>Neto (USD)</th><th>Valor Inventario (USD)</th></tr></thead>
       <tbody>${tableHtml}</tbody>
       <tfoot><tr>
         <td>TOTALES</td>
@@ -457,7 +457,7 @@ export default function InsumosManager({
   };
 
   const handleDelete = (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar este insumo?')) return;
+    if (!confirm('Â¿EstÃ¡s seguro de eliminar este insumo?')) return;
     startTransition(async () => {
       addOptimisticInsumo({ type: 'delete', payload: id });
       const res = await deleteInsumo(id);
@@ -507,7 +507,7 @@ export default function InsumosManager({
     }
   };
 
-  // -- Lógica de Venta al Costo -----------------------------------------------
+  // -- LÃ³gica de Venta al Costo -----------------------------------------------
   const vcSelectedInsumo = useMemo(() => {
     return optimisticInsumos.find(i => i.id === vcSelectedInsumoId) || null;
   }, [optimisticInsumos, vcSelectedInsumoId]);
@@ -551,7 +551,7 @@ export default function InsumosManager({
         payload: [{ id: vcSelectedInsumo.id, cantidad_actual: res.nuevoStock }]
       });
 
-      setVcSuccessMsg(`Salida registrada con éxito: ${vcCantidadNum} ${vcSelectedInsumo.unidad_medida} de ${vcSelectedInsumo.nombre} ($${vcTotalCosto.toFixed(2)} USD).`);
+      setVcSuccessMsg(`Salida registrada con Ã©xito: ${vcCantidadNum} ${vcSelectedInsumo.unidad_medida} de ${vcSelectedInsumo.nombre} ($${vcTotalCosto.toFixed(2)} USD).`);
       setTimeout(() => {
         setVcSuccessMsg(null);
         setShowVentaCostoModal(false);
@@ -629,7 +629,7 @@ export default function InsumosManager({
         </div>
       </div>
 
-      {/* SUMMARY CARDS  solo con acceso financiero */}
+      {/* SUMMARY CARDS Â— solo con acceso financiero */}
       {canSeeCosts && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-2 bg-gradient-to-br from-indigo-950/70 to-neutral-900 border border-indigo-500/30 rounded-3xl p-6 flex items-center justify-between shadow-lg">
@@ -641,7 +641,7 @@ export default function InsumosManager({
                 ${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 <span className="text-indigo-400 text-lg ml-2">USD</span>
               </p>
-              <p className="text-neutral-500 text-xs mt-2">Suma de (costo prom. × existencias) de todos los insumos</p>
+              <p className="text-neutral-500 text-xs mt-2">Suma de (costo prom. Ã— existencias) de todos los insumos</p>
             </div>
             <div className="hidden md:flex items-center justify-center w-20 h-20 rounded-2xl bg-indigo-500/10 border border-indigo-500/20">
               <BarChart3 size={36} className="text-indigo-400" />
@@ -663,7 +663,7 @@ export default function InsumosManager({
               </div>
               <div className="overflow-hidden">
                 <p className="text-neutral-500 text-xs">Mayor Valor en Stock</p>
-                <p className="text-white font-bold text-sm truncate">{topInsumo?.nombre || ''}</p>
+                <p className="text-white font-bold text-sm truncate">{topInsumo?.nombre || 'Â—'}</p>
                 {topInsumo && <p className="text-amber-400 text-xs">${((Number(topInsumo.costo_promedio) || 0) * (Number(topInsumo.cantidad_actual) || 0)).toFixed(2)}</p>}
               </div>
             </div>
@@ -671,15 +671,15 @@ export default function InsumosManager({
         </div>
       )}
 
-      {/* EVOLUTION CHART  solo con acceso financiero */}
+      {/* EVOLUTION CHART Â— solo con acceso financiero */}
       {canSeeCosts && (
         <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-white font-semibold flex items-center gap-2">
-              <Activity size={16} className="text-indigo-400" /> Evolución del Valor del Inventario
+              <Activity size={16} className="text-indigo-400" /> EvoluciÃ³n del Valor del Inventario
             </h3>
             <div className="flex gap-1">
-              {(['dias', 'semanas', 'meses', 'años'] as PeriodType[]).map(p => (
+              {(['dias', 'semanas', 'meses', 'aÃ±os'] as PeriodType[]).map(p => (
                 <button key={p} onClick={() => setPeriod(p)}
                   className={`px-3 py-1 rounded-lg text-xs font-medium capitalize transition-colors ${period === p ? 'bg-indigo-600 text-white' : 'text-neutral-400 hover:text-white hover:bg-neutral-800'}`}>
                   {p}
@@ -735,9 +735,9 @@ export default function InsumosManager({
                   className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-emerald-500" />
               </div>
               <div className="w-full lg:w-48">
-                <label className="block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wider">Categoría</label>
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5 uppercase tracking-wider">CategorÃ­a</label>
                 <input type="text" list="categorias-datalist" value={categoria} onChange={e => setCategoria(e.target.value)}
-                  placeholder="Ej: Pizzería, Vegetales"
+                  placeholder="Ej: PizzerÃ­a, Vegetales"
                   className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-emerald-500" />
                 <datalist id="categorias-datalist">
                   {allCategorias.filter(c => c !== 'TODOS').map(c => <option key={c} value={c} />)}
@@ -796,7 +796,7 @@ export default function InsumosManager({
                   onClick={() => setFilterCategoria(cat)}
                   className={`px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${filterCategoria === cat ? 'bg-indigo-600 text-white shadow-md' : 'bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700'}`}
                 >
-                  {cat === 'TODOS' ? 'Todas las Categorías' : cat}
+                  {cat === 'TODOS' ? 'Todas las CategorÃ­as' : cat}
                 </button>
               ))}
             </div>
@@ -903,7 +903,7 @@ export default function InsumosManager({
               <div className="py-16 text-center text-neutral-500">
                 <History size={32} className="mx-auto mb-3 opacity-30" />
                 <p className="text-sm">No hay movimientos con estos filtros</p>
-                <p className="text-xs mt-1 text-neutral-600">Los ajustes, compras y ventas aparecerán aquí automáticamente</p>
+                <p className="text-xs mt-1 text-neutral-600">Los ajustes, compras y ventas aparecerÃ¡n aquÃ­ automÃ¡ticamente</p>
               </div>
             ) : filteredMovimientos.map(mov => {
               const isEntrada = mov.tipo_movimiento === 'ENTRADA';
@@ -965,8 +965,8 @@ export default function InsumosManager({
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex justify-center items-center p-4">
           <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 w-full max-w-2xl shadow-2xl relative max-h-[90vh] flex flex-col">
             <button onClick={() => setShowAdjustModal(false)} className="absolute top-4 right-4 text-neutral-500 hover:text-white transition-colors"><X size={20} /></button>
-            <h2 className="text-xl font-black text-white mb-1 flex items-center gap-2"><Edit3 className="text-indigo-400" /> Ajustar Existencias Físicas</h2>
-            <p className="text-sm text-neutral-400 mb-6">Actualiza las cantidades reales. El sistema registrará la diferencia automáticamente en el historial.</p>
+            <h2 className="text-xl font-black text-white mb-1 flex items-center gap-2"><Edit3 className="text-indigo-400" /> Ajustar Existencias FÃ­sicas</h2>
+            <p className="text-sm text-neutral-400 mb-6">Actualiza las cantidades reales. El sistema registrarÃ¡ la diferencia automÃ¡ticamente en el historial.</p>
             <div className="overflow-y-auto flex-1 pr-2 custom-scrollbar space-y-3">
               {optimisticInsumos.map(insumo => (
                 <div key={insumo.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-neutral-950 border border-neutral-800 rounded-xl">
@@ -1014,7 +1014,7 @@ export default function InsumosManager({
               <div>
                 <label className="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">Formato</label>
                 <div className="grid grid-cols-2 gap-2">
-                  {([['xlsx', 'Excel (.xlsx)', '??'], ['pdf', 'PDF (Impresión)', '??']] as const).map(([val, lbl, icon]) => (
+                  {([['xlsx', 'Excel (.xlsx)', '??'], ['pdf', 'PDF (ImpresiÃ³n)', '??']] as const).map(([val, lbl, icon]) => (
                     <button key={val} onClick={() => setExportFormat(val)}
                       className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-medium transition-all ${exportFormat === val ? 'border-indigo-500 bg-indigo-500/10 text-white' : 'border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-white'}`}>
                       <span>{icon}</span> {lbl}
@@ -1044,7 +1044,7 @@ export default function InsumosManager({
               <div>
                 <label className="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">Desglose por</label>
                 <div className="grid grid-cols-3 gap-2">
-                  {([['dia', 'Día'], ['semana', 'Semana'], ['mes', 'Mes']] as const).map(([val, lbl]) => (
+                  {([['dia', 'DÃ­a'], ['semana', 'Semana'], ['mes', 'Mes']] as const).map(([val, lbl]) => (
                     <button key={val} onClick={() => setExportBreakdown(val)}
                       className={`px-3 py-2.5 rounded-xl border text-sm font-medium transition-all ${exportBreakdown === val ? 'border-indigo-500 bg-indigo-500/10 text-white' : 'border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-white'}`}>
                       {lbl}
@@ -1160,7 +1160,7 @@ export default function InsumosManager({
                             </td>
                             {canSeeCosts && (
                               <td className="px-4 py-3 text-right text-neutral-300 font-mono">
-                                {mov.costo_unitario > 0 ? `$${mov.costo_unitario.toFixed(4)}` : ''}
+                                {mov.costo_unitario > 0 ? `$${mov.costo_unitario.toFixed(4)}` : 'Â—'}
                               </td>
                             )}
                             <td className="px-4 py-3 text-neutral-500 text-xs">
@@ -1179,237 +1179,16 @@ export default function InsumosManager({
       )}
 
       {/* -- MODAL / SLIDE-OVER VENTA AL COSTO ----------------------------- */}
-      {showVentaCostoModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[120] flex justify-end animate-in fade-in duration-200">
-          <div className="w-full max-w-lg bg-neutral-900 h-full shadow-2xl flex flex-col border-l border-neutral-800 animate-in slide-in-from-right duration-300">
-            {/* Header del Modal */}
-            <div className="px-6 py-5 border-b border-neutral-800 flex justify-between items-center bg-neutral-950/60 shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shadow-inner">
-                  <BadgePercent size={20} />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-white">Venta al Costo</h3>
-                  <p className="text-xs text-neutral-400">Traspaso familiar / consumo a precio de costo</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowVentaCostoModal(false)}
-                className="text-neutral-400 hover:text-white p-2 rounded-xl hover:bg-neutral-800 transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* Formulario / Contenido */}
-            <form onSubmit={handleProcessVentaCosto} className="flex flex-col flex-1 overflow-hidden">
-              <div className="p-6 overflow-y-auto space-y-5 custom-scrollbar flex-1">
-                {/* Mensajes de feedback */}
-                {vcSuccessMsg && (
-                  <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs rounded-xl font-medium flex items-center gap-2 animate-in fade-in">
-                    <CheckCircle2 size={16} className="shrink-0 text-emerald-400" />
-                    <span>{vcSuccessMsg}</span>
-                  </div>
-                )}
-                {vcError && (
-                  <div className="p-3.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs rounded-xl font-medium flex items-center gap-2 animate-in fade-in">
-                    <AlertCircle size={16} className="shrink-0 text-rose-400" />
-                    <span>{vcError}</span>
-                  </div>
-                )}
-
-                {/* Explicación informativa */}
-                <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-2xl p-3.5 text-xs text-indigo-300/90 leading-relaxed">
-                  Esta operación deduce el insumo del inventario físico al <strong>costo promedio registrado</strong>, sincerando las Compras Netas sin registrar venta comercial ni margen de ganancia.
-                </div>
-
-                {/* Paso 1: Selección de Insumo con Autocomplete */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold text-neutral-300 uppercase tracking-wider">
-                    1. Insumo de la Sede
-                  </label>
-
-                  {!vcSelectedInsumo ? (
-                    <div className="space-y-2">
-                      <div className="relative">
-                        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500" />
-                        <input
-                          type="text"
-                          value={vcSearchQuery}
-                          onChange={e => setVcSearchQuery(e.target.value)}
-                          placeholder="Buscar insumo por nombre..."
-                          className="w-full bg-neutral-950 border border-neutral-800 focus:border-indigo-500 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none transition-colors"
-                          autoFocus
-                        />
-                      </div>
-
-                      {/* Lista de resultados de búsqueda */}
-                      <div className="border border-neutral-800 rounded-2xl max-h-56 overflow-y-auto bg-neutral-950/70 divide-y divide-neutral-800/60 custom-scrollbar">
-                        {vcFilteredInsumos.length === 0 ? (
-                          <div className="p-4 text-center text-xs text-neutral-500">
-                            No se encontraron insumos con ese nombre.
-                          </div>
-                        ) : (
-                          vcFilteredInsumos.map(insumo => (
-                            <button
-                              key={insumo.id}
-                              type="button"
-                              onClick={() => {
-                                setVcSelectedInsumoId(insumo.id);
-                                setVcSearchQuery('');
-                                setVcError(null);
-                              }}
-                              className="w-full text-left px-4 py-2.5 hover:bg-neutral-800/50 flex items-center justify-between transition-colors group"
-                            >
-                              <div>
-                                <p className="text-xs font-semibold text-white group-hover:text-indigo-300 transition-colors">
-                                  {insumo.nombre}
-                                </p>
-                                <p className="text-[11px] text-neutral-400 font-mono">
-                                  Costo: ${(Number(insumo.costo_promedio) || 0).toFixed(4)} / {insumo.unidad_medida}
-                                </p>
-                              </div>
-                              <span className={`text-xs font-bold px-2 py-0.5 rounded-lg border ${
-                                insumo.cantidad_actual > 0
-                                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                                  : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                              }`}>
-                                {insumo.cantidad_actual} {insumo.unidad_medida}
-                              </span>
-                            </button>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    /* Insumo seleccionado */
-                    <div className="bg-neutral-950 border border-indigo-500/30 rounded-2xl p-4 relative">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-bold text-white flex items-center gap-2">
-                            {vcSelectedInsumo.nombre}
-                            <span className="text-[10px] uppercase font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
-                              {vcSelectedInsumo.unidad_medida}
-                            </span>
-                          </p>
-                          <div className="flex items-center gap-4 mt-2 text-xs">
-                            <span className="text-neutral-400">
-                              Stock Disponible: <strong className="text-white">{vcSelectedInsumo.cantidad_actual} {vcSelectedInsumo.unidad_medida}</strong>
-                            </span>
-                            <span className="text-neutral-400">
-                              Costo Promedio: <strong className="text-indigo-400 font-mono">${vcCostoPromedio.toFixed(4)}</strong>
-                            </span>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setVcSelectedInsumoId('');
-                            setVcCantidad('');
-                          }}
-                          className="text-xs font-medium text-neutral-400 hover:text-white bg-neutral-800 hover:bg-neutral-700 px-2.5 py-1 rounded-lg transition-colors"
-                        >
-                          Cambiar
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Paso 2: Cantidad a Retirar */}
-                {vcSelectedInsumo && (
-                  <div className="space-y-4 pt-2 border-t border-neutral-800 animate-in fade-in duration-200">
-                    <div>
-                      <div className="flex justify-between items-center mb-1.5">
-                        <label className="text-xs font-bold text-neutral-300 uppercase tracking-wider">
-                          2. Cantidad a Retirar
-                        </label>
-                        <span className="text-xs text-neutral-500">
-                          Máx: {vcSelectedInsumo.cantidad_actual} {vcSelectedInsumo.unidad_medida}
-                        </span>
-                      </div>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          step="any"
-                          min="0.0001"
-                          max={vcSelectedInsumo.cantidad_actual}
-                          required
-                          value={vcCantidad}
-                          onChange={e => setVcCantidad(e.target.value)}
-                          placeholder="0.00"
-                          className="w-full bg-neutral-950 border border-neutral-800 focus:border-indigo-500 rounded-xl px-4 py-2.5 text-sm text-white font-mono focus:outline-none transition-colors"
-                        />
-                        <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400 font-bold uppercase">
-                          {vcSelectedInsumo.unidad_medida}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Resumen de cálculo en vivo */}
-                    <div className="grid grid-cols-2 gap-3 bg-neutral-950/80 border border-neutral-800 rounded-2xl p-4">
-                      <div>
-                        <p className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Costo Total ($)</p>
-                        <p className="text-xl font-black text-white font-mono mt-0.5">
-                          ${vcTotalCosto.toFixed(2)} <span className="text-xs text-neutral-500 font-normal">USD</span>
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Nuevo Stock</p>
-                        <p className={`text-xl font-black font-mono mt-0.5 ${
-                          (vcSelectedInsumo.cantidad_actual - vcCantidadNum) < 0 ? 'text-rose-400' : 'text-emerald-400'
-                        }`}>
-                          {Math.max(0, vcSelectedInsumo.cantidad_actual - vcCantidadNum).toFixed(2)}{' '}
-                          <span className="text-xs text-neutral-500 font-normal">{vcSelectedInsumo.unidad_medida}</span>
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Paso 3: Nota u observación opcional */}
-                    <div>
-                      <label className="block text-xs font-semibold text-neutral-300 mb-1.5">
-                        Nota / Beneficiario (Opcional)
-                      </label>
-                      <input
-                        type="text"
-                        value={vcNotas}
-                        onChange={e => setVcNotas(e.target.value)}
-                        placeholder="Ej. Para socio / familiar Carlos"
-                        className="w-full bg-neutral-950 border border-neutral-800 focus:border-indigo-500 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none transition-colors"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Footer del Slide-Over */}
-              <div className="p-5 border-t border-neutral-800 bg-neutral-950/90 flex items-center justify-end gap-3 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setShowVentaCostoModal(false)}
-                  disabled={vcLoading}
-                  className="px-4 py-2.5 text-xs font-semibold text-neutral-400 hover:text-white rounded-xl hover:bg-neutral-800 transition-colors disabled:opacity-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={
-                    vcLoading ||
-                    !vcSelectedInsumo ||
-                    vcCantidadNum <= 0 ||
-                    vcCantidadNum > (vcSelectedInsumo?.cantidad_actual || 0)
-                  }
-                  className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-lg shadow-indigo-600/20 cursor-pointer disabled:cursor-not-allowed"
-                >
-                  {vcLoading ? <Loader2 size={14} className="animate-spin" /> : <BadgePercent size={14} />}
-                  Procesar Venta al Costo
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <VentaAlCostoSlideOver
+        isOpen={showVentaCostoModal}
+        onClose={() => setShowVentaCostoModal(false)}
+        insumos={optimisticInsumos}
+        empresaId={empresaId}
+        activeSedeId={sedeId}
+        onSuccess={() => {
+          // close handled in SlideOver. Data fetch handled in SlideOver.
+        }}
+      />
 
 
       {/* Edit Insumo Modal */}
@@ -1436,19 +1215,19 @@ export default function InsumosManager({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-neutral-400 mb-1.5 uppercase tracking-wider">Categoría</label>
+                <label className="block text-xs font-medium text-neutral-400 mb-1.5 uppercase tracking-wider">CategorÃ­a</label>
                 <input
                   type="text"
                   list="edit-categorias-datalist"
                   value={editCategoria}
                   onChange={e => setEditCategoria(e.target.value)}
-                  placeholder="Ej: Coctelería, Pizzería"
+                  placeholder="Ej: CoctelerÃ­a, PizzerÃ­a"
                   className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500"
                 />
                 <datalist id="edit-categorias-datalist">
                   {allCategorias.filter(c => c !== 'TODOS').map(c => <option key={c} value={c} />)}
                 </datalist>
-                <p className="text-[10px] text-neutral-500 mt-1.5">Si escribes una categoría nueva, se creará automáticamente.</p>
+                <p className="text-[10px] text-neutral-500 mt-1.5">Si escribes una categorÃ­a nueva, se crearÃ¡ automÃ¡ticamente.</p>
               </div>
 
               <div className="pt-2 mt-2 border-t border-neutral-800/50 flex justify-end gap-3">

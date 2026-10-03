@@ -158,8 +158,11 @@ export default function NuevoCierreCaja() {
           initialSedeId ? getMetodosHistorialSede(initialSedeId) : Promise.resolve([])
         ]);
         
-        if (cierreRes.targetSedeId) setSelectedSedeId(cierreRes.targetSedeId);
-        else if (initialSedeId) setSelectedSedeId(initialSedeId);
+        const finalSedeId = cierreRes.targetSedeId || initialSedeId;
+        if (finalSedeId) {
+          setSelectedSedeId(finalSedeId);
+          loadDraft(finalSedeId);
+        }
 
         setTasaCambio(cierreRes.tasaCambio || 36.5);
         setVentasTotales(cierreRes.ventasTotales || 0);
@@ -778,6 +781,7 @@ export default function NuevoCierreCaja() {
     </div>
   );
 }
+
 
 
 
