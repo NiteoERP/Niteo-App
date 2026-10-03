@@ -65,7 +65,7 @@ export default function DeliveryDashboard() {
       
       if (resultado.success) {
         setMensaje({ texto: resultado.message, tipo: 'success' });
-        if (resultado.pagoSumado) setGananciasHoy(prev => prev + resultado.pagoSumado);
+        if ('pagoSumado' in resultado && resultado.pagoSumado) setGananciasHoy(prev => prev + resultado.pagoSumado);
       } else {
         setMensaje({ texto: resultado.message, tipo: 'error' });
       }
@@ -84,17 +84,21 @@ export default function DeliveryDashboard() {
     setLoading(true);
     setMensaje({ texto: 'Verificando orden...', tipo: '' });
 
-    const resultado = await reclamarDeliveryManual(numeroManual.trim());
-    
-    if (resultado.success) {
-      setMensaje({ texto: resultado.message, tipo: 'success' });
-      if (resultado.pagoSumado) setGananciasHoy(prev => prev + resultado.pagoSumado);
-      setNumeroManual(''); // Limpiamos el input
-    } else {
-      setMensaje({ texto: resultado.message, tipo: 'error' });
+    try {
+      const resultado = await reclamarDeliveryManual(numeroManual.trim());
+      
+      if (resultado.success) {
+        setMensaje({ texto: resultado.message, tipo: 'success' });
+        if (resultado.pagoSumado) setGananciasHoy(prev => prev + resultado.pagoSumado);
+        setNumeroManual('');
+      } else {
+        setMensaje({ texto: resultado.message, tipo: 'error' });
+      }
+    } catch (error) {
+      setMensaje({ texto: 'Error de conexión. Intente nuevamente.', tipo: 'error' });
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
   return (

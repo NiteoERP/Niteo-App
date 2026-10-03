@@ -54,19 +54,32 @@ export async function reclamarDeliveryManual(numeroOrden: string) {
       };
     }
 
-    // 4. Buscar cuánto vale el Delivery en los detalles de la factura
-    // Hacemos un JOIN con la tabla productos para buscar la palabra 'delivery'
-    const { data: detalles } = await supabase
-      .from('ventas_detalles')
-      .select(`
-        total,
-        producto:productos!inner(nombre)
-      `)
-      .eq('factura_id', factura.id)
-      .ilike('productos.nombre', '%delivery%');
+    // 4. Buscar el precio del Delivery en los detalles de la factura
+    // Estrategia correcta: primero encontrar el producto_id cuyo nombre sea 'delivery',
+    // luego buscar ese producto_id en los detalles de la factura específica.
+    let pagoRepartidor = 0;
+    
+    const { data: productoDelivery } = await supabase
+      .from('productos')
+      .select('id')
+      .eq('empresa_id', perfil.empresa_id)
+      .ilike('nombre', '%delivery%')
+      .limit(5); // Puede haber varios productos con 'delivery' en el nombre
 
-    // Si encontró el producto 'delivery', tomamos su total, si no, es 0
-    const pagoRepartidor = (detalles && detalles.length > 0) ? detalles[0].total : 0;
+    if (productoDelivery && productoDelivery.length > 0) {
+      const idsDelivery = productoDelivery.map(p => p.id);
+      
+      const { data: detalles } = await supabase
+        .from('ventas_detalles')
+        .select('total')
+        .eq('factura_id', factura.id)
+        .in('producto_id', idsDelivery);
+
+      // Sumamos todos los ítems de delivery (por si hay más de uno en la misma orden)
+      if (detalles && detalles.length > 0) {
+        pagoRepartidor = detalles.reduce((acc, d) => acc + Number(d.total || 0), 0);
+      }
+    }
 
     // 5. Actualizar la factura (Bloqueo Atómico con la condición estado_delivery != ENTREGADO)
     const { error: updateError, count } = await supabase
