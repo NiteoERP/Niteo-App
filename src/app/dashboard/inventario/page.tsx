@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { createClient } from '@/utils/supabase/server';
 import InsumosManager from './InsumosManager';
 import TransformacionesManager from './TransformacionesManager';
