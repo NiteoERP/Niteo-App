@@ -584,8 +584,8 @@ export default function NuevoCierreCaja() {
                           <th className="pb-3 w-8 text-center">#</th>
                           <th className="pb-3 px-2 min-w-[120px]">Monto</th>
                           <th className="pb-3 px-2 min-w-[140px]">Referencia</th>
-                          <th className="pb-3 px-2 min-w-[140px]">Cliente</th>
-                          <th className="pb-3 px-2 min-w-[140px]">Banco</th>
+                            <th className="pb-3 px-2 min-w-[140px]">Banco</th>
+                            <th className="pb-3 px-2 min-w-[140px]">Cliente</th>
                           <th className="pb-3 px-2 w-10 text-center"></th>
                         </tr>
                       </thead>
@@ -637,6 +637,15 @@ export default function NuevoCierreCaja() {
                                 list={`bancos-list-${metodo.id.replace(/[^a-zA-Z0-9]/g, '')}`}
                                 className="w-full bg-neutral-900 border border-neutral-800 focus:border-indigo-500 rounded-lg h-9 px-3 text-white text-sm outline-none transition-colors"
                               />
+                              </td>
+                              <td className="py-2 px-2 align-top pt-3">
+                                <input 
+                                  type="text" 
+                                  placeholder="Ej: Juan P."
+                                  value={tx.cliente || ''}
+                                  disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'cliente', e.target.value)}
+                                  className="w-full bg-neutral-900 border border-neutral-800 focus:border-indigo-500 rounded-lg h-9 px-3 text-white text-sm outline-none transition-colors"
+                                />
                               </td>
 
                             <td className="py-2 px-2 text-center align-top pt-3">
@@ -700,6 +709,13 @@ export default function NuevoCierreCaja() {
                             />
                             
                           </div>
+                            <input 
+                              type="text" 
+                              placeholder="Cliente (Opc.)"
+                              value={tx.cliente || ''}
+                              disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'cliente', e.target.value)}
+                              className="col-span-2 bg-black/40 border border-neutral-800 focus:border-indigo-500 rounded-lg h-10 px-3 text-white text-sm outline-none transition-colors"
+                            />
                         </div>
                         {tx.moneda === 'VES' && tx.monto && (
                           <p className="text-[11px] text-neutral-400 text-center font-medium">≈ ${(parseFloat(tx.monto) / tasaCambio).toFixed(2)} USD</p>
