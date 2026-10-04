@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
@@ -548,7 +548,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
                                   type="text" 
                                   placeholder="Ej: Juan P."
                                   value={tx.cliente || ''}
-                                  disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'cliente', e.target.value)}
+                                  onChange={(e) => updateTransaccion(tx.id, 'cliente', e.target.value)}
                                   className="w-full bg-neutral-900 border border-neutral-800 focus:border-indigo-500 rounded-lg h-9 px-3 text-white text-sm outline-none transition-colors"
                                 />
                               </td>
@@ -618,7 +618,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
                               type="text" 
                               placeholder="Cliente (Opc.)"
                               value={tx.cliente || ''}
-                              disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'cliente', e.target.value)}
+                              onChange={(e) => updateTransaccion(tx.id, 'cliente', e.target.value)}
                               className="col-span-2 bg-black/40 border border-neutral-800 focus:border-indigo-500 rounded-lg h-10 px-3 text-white text-sm outline-none transition-colors"
                             />
                         </div>

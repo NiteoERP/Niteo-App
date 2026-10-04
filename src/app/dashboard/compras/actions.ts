@@ -401,10 +401,15 @@ export async function registrarFactura(
       return payload;
     });
 
-      const { error: insertErr } = await supabase.from('compras_mercancia').insert(lineas);
-      if (insertErr) throw insertErr;
+      // Validar Sede y Proveedor explícitamente antes de insertar
+      if (!idSede) {
+        throw new Error('Debe tener una Sede activa seleccionada para registrar facturas.');
+      }
+      if (!idProveedor) {
+        throw new Error('Debe seleccionar un proveedor válido.');
+      }
 
-      // ALSO create a debt in Proveedores (compras_facturas)
+      // 1. Crear la deuda en Proveedores (compras_facturas) PRIMERO, para no afectar inventario si falla
       const totalFactura = productosFactura.reduce((sum, p) => sum + Number(p.total), 0);
       const { error: fError } = await supabase.from('compras_facturas').insert({
         empresa_id: idEmpresa,
@@ -413,11 +418,18 @@ export async function registrarFactura(
         numero_factura: nroFactura || 'S/N',
         concepto: 'Ingreso de Mercancía',
         total: totalFactura,
-        saldo_pendiente: totalFactura, // Por defecto entra como deuda a Proveedores
+        saldo_pendiente: totalFactura,
         fecha_emision: safeFecha,
         usuario_id: user.id
       });
-      if (fError) console.error('Error al registrar en compras_facturas:', fError);
+      if (fError) {
+        console.error('Error al registrar en compras_facturas:', fError);
+        throw new Error('Error al registrar la factura: ' + fError.message);
+      }
+
+      // 2. Insertar mercancía
+      const { error: insertErr } = await supabase.from('compras_mercancia').insert(lineas);
+      if (insertErr) throw insertErr;
 
         for (const p of productosFactura) {
         if (p.id_producto) {
