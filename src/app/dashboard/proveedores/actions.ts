@@ -1,4 +1,4 @@
-﻿'use server';
+'use server';
 
 import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
@@ -6,7 +6,9 @@ import { getTasaBcvAction } from '@/actions/config-actions';
 import { toSafeIsoDate } from '@/utils/date-utils';
 import { revalidatePath } from 'next/cache';
 
-export async function getProveedoresConDeuda(sedeId: string, page: number = 1, limit: number = 20, searchQuery: string = '') {
+export type TipoProveedorFiltro = 'TODOS' | 'PROVEEDORES' | 'TIENDAS';
+
+export async function getProveedoresConDeuda(sedeId: string, page: number = 1, limit: number = 20, searchQuery: string = '', tipo: TipoProveedorFiltro = 'TODOS') {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'No autenticado' };
@@ -28,6 +30,25 @@ export async function getProveedoresConDeuda(sedeId: string, page: number = 1, l
     query = query.ilike('nombre_proveedor', `%${searchQuery.trim()}%`);
   }
 
+  // Filtro Tiendas / Proveedores: el RPC no devuelve es_tienda, así que buscamos los IDs de las
+  // tiendas y filtramos sobre el resultado del RPC. Se hace en el servidor (no en el navegador)
+  // para que la paginación y el totalCount sean correctos.
+  if (tipo !== 'TODOS') {
+    const { data: tiendas, error: tErr } = await supabase.from('proveedores')
+      .select('id')
+      .eq('empresa_id', profile.empresa_id)
+      .eq('es_tienda', true);
+    if (tErr) return { success: false, error: tErr.message };
+    const ids = (tiendas || []).map(t => t.id);
+
+    if (tipo === 'TIENDAS') {
+      if (ids.length === 0) return { success: true, data: [], totalCount: 0 };
+      query = query.in('id_proveedor', ids);
+    } else if (ids.length > 0) {
+      query = query.not('id_proveedor', 'in', `(${ids.join(',')})`);
+    }
+  }
+
   const { data, error, count } = await query.range(from, to);
 
   if (error) return { success: false, error: error.message };
@@ -40,7 +61,7 @@ export async function getFacturasProveedor(proveedorId: string, sedeId: string) 
   if (!user) return { success: false, error: 'No autenticado' };
 
   let query = supabase.from('compras_facturas')
-    .select('id, sede_id, numero_factura, concepto, total, saldo_pendiente, fecha_emision, fecha_vencimiento, modificado, usuario_modificacion_id, pagos:compras_pagos(id, monto, metodo_pago, referencia, banco_origen, fecha_pago)')
+    .select('id, sede_id, numero_factura, concepto, total, saldo_pendiente, fecha_emision, fecha_vencimiento, modificado, usuario_modificacion_id, pagos:compras_pagos(id, monto, metodo_pago, referencia, banco_origen, fecha_pago, usuario_id)')
     .eq('proveedor_id', proveedorId)
     .order('fecha_emision', { ascending: false });
     
@@ -70,7 +91,14 @@ export async function getFacturasProveedor(proveedorId: string, sedeId: string) 
   const mappedData = data?.map((d: any) => ({
     ...d,
     sede_nombre: d.sede_id ? (sedeMap[d.sede_id] || null) : null,
-    modificado_por: d.modificado ? (userMap[d.usuario_modificacion_id] || 'Usuario Desconocido') : null
+    modificado_por: d.modificado ? (userMap[d.usuario_modificacion_id] || 'Usuario Desconocido') : null,
+    // Responsable de cada abono: compras_pagos.usuario_id se resuelve al nombre del perfil
+    pagos: Array.isArray(d.pagos)
+      ? d.pagos.map((p: any) => ({
+          ...p,
+          registrado_por: p.usuario_id ? (userMap[p.usuario_id] || 'Usuario Desconocido') : null
+        }))
+      : []
   })) || [];
 
   return { success: true, data: mappedData };
@@ -183,7 +211,7 @@ export async function getTodosProveedores() {
   if (!profile) return { success: false, error: 'Perfil no encontrado' };
 
   const { data, error } = await supabase.from('proveedores')
-    .select('id, nombre_comercial, rif_cedula, numero_contacto, ubicacion')
+    .select('id, nombre_comercial, rif_cedula, numero_contacto, ubicacion, es_tienda')
     .eq('empresa_id', profile.empresa_id)
     .eq('estado_activo', true)
     .order('nombre_comercial');
@@ -197,6 +225,7 @@ export async function crearProveedor(datos: {
   rif?: string;
   telefono?: string;
   ubicacion?: string;
+  es_tienda?: boolean;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -212,9 +241,11 @@ export async function crearProveedor(datos: {
       rif_cedula: datos.rif?.trim() || null,
       numero_contacto: datos.telefono?.trim() || null,
       ubicacion: datos.ubicacion?.trim() || null,
+      // es_tienda = compra directa en tienda/comercio (no proveedor habitual); sirve para reportes
+      es_tienda: datos.es_tienda === true,
       estado_activo: true
     })
-    .select('id, nombre_comercial, rif_cedula, numero_contacto, ubicacion')
+    .select('id, nombre_comercial, rif_cedula, numero_contacto, ubicacion, es_tienda')
     .single();
 
   if (error) return { success: false, error: error.message };
@@ -372,52 +403,75 @@ export async function crearFacturaProveedorConInsumos(
   return res;
 }
 
+/**
+ * Busca la compra_puntual (detalle de ítems/inventario) vinculada a una factura de proveedor.
+ *
+ * No existe una FK entre compras_facturas y compras_puntuales, así que el vínculo se infiere.
+ * Antes se usaban ventanas de tiempo distintas en cada función (±1 min, ±2 min, ±24 h) y casi
+ * nunca coincidían: compras_puntuales.fecha_registro se guarda con la fecha de emisión elegida
+ * por el usuario, mientras que compras_facturas.fecha_registro es la fecha real de carga
+ * (diferencias de días o incluso años). Por eso aquí se filtra por:
+ *   empresa + monto exacto + nombre del proveedor (sin distinguir mayúsculas/espacios)
+ * y, si hay varias candidatas, se elige la más cercana a la fecha de emisión de la factura.
+ * Si el proveedor no coincide, NO se devuelve nada (es preferible no vincular a vincular mal).
+ */
+async function buscarCompraPuntualVinculada(
+  client: any,
+  fac: { empresa_id: string; proveedor_id: string | null; total: number | string; fecha_emision?: string | null; fecha_registro?: string | null },
+  columnas: string
+): Promise<any | null> {
+  if (!fac.proveedor_id) return null;
+
+  const { data: prov } = await client.from('proveedores')
+    .select('nombre_comercial')
+    .eq('id', fac.proveedor_id)
+    .single();
+  const nombreProv = String(prov?.nombre_comercial || '').trim().toLowerCase();
+  if (!nombreProv) return null;
+
+  const { data: punts } = await client.from('compras_puntuales')
+    .select(`${columnas}, proveedor, fecha_registro`)
+    .eq('id_empresa', fac.empresa_id)
+    .eq('monto_divisas', fac.total);
+
+  const candidatos = (punts || []).filter(
+    (p: any) => String(p.proveedor || '').trim().toLowerCase() === nombreProv
+  );
+  if (candidatos.length === 0) return null;
+
+  const ref = new Date(fac.fecha_emision || fac.fecha_registro || Date.now()).getTime();
+  candidatos.sort((a: any, b: any) =>
+    Math.abs(new Date(a.fecha_registro).getTime() - ref) - Math.abs(new Date(b.fecha_registro).getTime() - ref)
+  );
+  return candidatos[0];
+}
+
 export async function getFacturaDetallesItems(facturaId: string) {
   const supabase = await createClient();
   const { data: fac } = await supabase.from('compras_facturas')
-    .select('proveedor_id, total, fecha_registro, fecha_emision')
+    .select('empresa_id, proveedor_id, total, fecha_registro, fecha_emision')
     .eq('id', facturaId)
     .single();
 
   if (!fac) return { success: false, error: 'Factura no encontrada' };
 
-  const { data: prov } = await supabase.from('proveedores')
-    .select('nombre_comercial')
-    .eq('id', fac.proveedor_id)
-    .single();
-
-  const dateStr = fac.fecha_registro || fac.fecha_emision;
-  if (!dateStr) return { success: false, error: 'No se puede buscar detalles sin fecha' };
-
-  const baseDate = new Date(dateStr);
-  const minDate = new Date(baseDate.getTime() - 60000); // 1 minute before
-  const maxDate = new Date(baseDate.getTime() + 60000); // 1 minute after
-
-  const { data: punts } = await supabase.from('compras_puntuales')
-    .select('id, detalles, proveedor')
-    .eq('monto_divisas', fac.total)
-    .gte('fecha_registro', minDate.toISOString())
-    .lte('fecha_registro', maxDate.toISOString());
-
-  if (!punts || punts.length === 0) {
+  const match = await buscarCompraPuntualVinculada(supabase, fac, 'id, detalles, tasa_cambio');
+  if (!match) {
     return { success: false, error: 'No hay detalles de items para esta factura.' };
   }
 
-  let match = punts[0];
-  if (prov && punts.length > 1) {
-    const p = punts.find(x => x.proveedor === prov.nombre_comercial);
-    if (p) match = p;
-  }
-
-  let parsed = match.detalles;
-  if (typeof parsed === 'string' && parsed.startsWith('{')) {
+  // detalles es TEXT con JSON adentro: parseo defensivo
+  let parsed: any = match.detalles;
+  if (typeof parsed === 'string' && parsed.trim().startsWith('{')) {
     try {
       parsed = JSON.parse(parsed);
-    } catch(e) {}
+    } catch (e) {
+      parsed = null;
+    }
   }
 
-  if (parsed && parsed.is_insumos && parsed.items) {
-    return { success: true, data: parsed, compra_puntual_id: match.id };
+  if (parsed && parsed.is_insumos && Array.isArray(parsed.items)) {
+    return { success: true, data: parsed, compra_puntual_id: match.id, tasa_cambio: Number(match.tasa_cambio) || 0 };
   }
 
   return { success: false, error: 'El detalle no contiene items de insumo.' };
@@ -454,6 +508,7 @@ export async function editarFacturaProveedor(
     concepto: payload.concepto,
     total: payload.total,
     saldo_pendiente: nuevoSaldo,
+    estado_pago: nuevoSaldo > 0 ? 2 : 1, // 1 = Pagado, 2 = Pendiente (convención del proyecto)
     fecha_emision: toSafeIsoDate(payload.fecha_emision),
     fecha_vencimiento: payload.fecha_vencimiento ? toSafeIsoDate(payload.fecha_vencimiento) : null,
     modificado: true,
@@ -466,19 +521,11 @@ export async function editarFacturaProveedor(
 
   if (error) return { success: false, error: error.message };
 
-  // Intentar actualizar la compra_puntual vinculada y transferir inventario si cambió de sede
-  const baseDate = new Date(fac.fecha_registro || fac.fecha_emision);
-  const minDate = new Date(baseDate.getTime() - 60000).toISOString();
-  const maxDate = new Date(baseDate.getTime() + 60000).toISOString();
+  // Intentar actualizar la compra_puntual vinculada y transferir inventario si cambió de sede.
+  // Se usa la misma búsqueda que en getFacturaDetallesItems/eliminarFacturaProveedor (ver helper).
+  const matchPunt = await buscarCompraPuntualVinculada(supabase, fac, 'id, tasa_cambio, detalles, id_sede');
 
-  const { data: punts } = await supabase.from('compras_puntuales')
-    .select('id, tasa_cambio, detalles, id_sede')
-    .eq('monto_divisas', fac.total)
-    .gte('fecha_registro', minDate)
-    .lte('fecha_registro', maxDate);
-
-  if (punts && punts.length > 0) {
-    const matchPunt = punts[0];
+  if (matchPunt) {
     const newBs = payload.total * Number(matchPunt.tasa_cambio);
     const updateDataPunt: any = {
       monto_divisas: payload.total,
@@ -630,21 +677,14 @@ export async function eliminarFacturaProveedor(facturaId: string) {
     return { success: false, error: 'No autorizado para esta empresa' };
   }
 
-  // 1. Revertir inventario si la factura tenía insumos y eliminar compras_puntuales vinculadas
-  const dateStr = fac.fecha_registro || fac.fecha_emision;
-  if (dateStr) {
-    const baseDate = new Date(dateStr);
-    const minDate = new Date(baseDate.getTime() - 120000).toISOString();
-    const maxDate = new Date(baseDate.getTime() + 120000).toISOString();
+  // 1. Revertir inventario si la factura tenía insumos y eliminar la compra_puntual vinculada.
+  // Se usa el helper compartido (empresa + proveedor + monto). Antes se usaba ±2 min y se borraban
+  // TODAS las compras con ese monto, lo que podía afectar compras de otro proveedor.
+  if (fac.proveedor_id) {
+    const vinculada = await buscarCompraPuntualVinculada(adminClient, fac, 'id, detalles');
+    const punts: any[] = vinculada ? [vinculada] : [];
 
-    const { data: punts } = await adminClient.from('compras_puntuales')
-      .select('*')
-      .eq('id_empresa', profile.empresa_id)
-      .eq('monto_divisas', fac.total)
-      .gte('fecha_registro', minDate)
-      .lte('fecha_registro', maxDate);
-
-    if (punts && punts.length > 0) {
+    if (punts.length > 0) {
       for (const p of punts) {
         try {
           let detObj: any = null;
@@ -772,6 +812,7 @@ export async function getHistorialAbonosGlobales(proveedorId: string, sedeId: st
       banco_origen,
       fecha_pago,
       factura_id,
+      usuario_id,
       compras_facturas!inner (
         numero_factura,
         proveedor_id,
@@ -787,6 +828,16 @@ export async function getHistorialAbonosGlobales(proveedorId: string, sedeId: st
 
   const { data, error } = await query;
   if (error) return { success: false, error: error.message };
+
+  // Mapa usuario_id -> nombre para mostrar quién registró cada abono
+  const { data: profile } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
+  const userMap: Record<string, string> = {};
+  if (profile) {
+    const { data: perfiles } = await supabase.from('perfiles')
+      .select('id, nombre_completo')
+      .eq('empresa_id', profile.empresa_id);
+    (perfiles || []).forEach(p => { userMap[p.id] = p.nombre_completo; });
+  }
 
   // Group by (fecha_pago + metodo_pago + referencia)
   const grouped = new Map<string, any>();
@@ -805,7 +856,8 @@ export async function getHistorialAbonosGlobales(proveedorId: string, sedeId: st
         banco_origen: pago.banco_origen,
         monto_total: 0,
         cantidad_facturas: 0,
-        facturas_afectadas: []
+        facturas_afectadas: [],
+        registrado_por: pago.usuario_id ? (userMap[pago.usuario_id] || 'Usuario Desconocido') : null
       });
     }
 
@@ -853,3 +905,177 @@ export async function eliminarProveedor(proveedorId: string) {
   }
 }
 
+/**
+ * Recalcula saldo_pendiente y estado_pago de una factura de proveedor a partir de la suma real
+ * de sus pagos. Es idempotente (no depende de triggers), por lo que es seguro llamarlo después
+ * de editar o eliminar un abono. Convención del proyecto: estado_pago 1 = Pagado, 2 = Pendiente.
+ */
+async function recalcularSaldoFacturaProveedor(client: any, facturaId: string) {
+  const { data: factura, error } = await client.from('compras_facturas')
+    .select('id, total, pagos:compras_pagos(monto)')
+    .eq('id', facturaId)
+    .single();
+  if (error || !factura) return { success: false, error: error?.message || 'Factura no encontrada' };
+
+  const sumPagos = Array.isArray(factura.pagos)
+    ? factura.pagos.reduce((acc: number, p: any) => acc + (Number(p.monto) || 0), 0)
+    : 0;
+  const nuevoSaldo = Math.max(0, Number((Number(factura.total) - sumPagos).toFixed(2)));
+
+  const { error: updErr } = await client.from('compras_facturas')
+    .update({ saldo_pendiente: nuevoSaldo, estado_pago: nuevoSaldo > 0 ? 2 : 1 })
+    .eq('id', factura.id);
+  if (updErr) return { success: false, error: updErr.message };
+
+  return { success: true, saldo_pendiente: nuevoSaldo };
+}
+
+/**
+ * Obtiene un pago junto con su factura y verifica que pertenezca a la empresa del usuario.
+ * compras_pagos no tiene empresa_id, así que la pertenencia se valida a través de la factura.
+ */
+async function obtenerPagoDeMiEmpresa(supabase: any, userId: string, pagoId: string) {
+  const { data: profile } = await supabase.from('perfiles')
+    .select('empresa_id, rol, permisos')
+    .eq('id', userId)
+    .single();
+  if (!profile) return { error: 'Perfil no encontrado' as string };
+
+  const { data: pago, error } = await supabase.from('compras_pagos')
+    .select('id, factura_id, monto, compras_facturas!inner(id, empresa_id, total)')
+    .eq('id', pagoId)
+    .single();
+  if (error || !pago) return { error: 'Pago no encontrado' as string };
+
+  const fac = pago.compras_facturas as any;
+  if (!fac || fac.empresa_id !== profile.empresa_id) return { error: 'No autorizado para esta empresa' as string };
+
+  return { profile, pago, factura: fac };
+}
+
+export async function editarAbonoProveedor(
+  pagoId: string,
+  nuevoMonto: number,
+  metodoPago: string,
+  referencia: string,
+  bancoOrigen: string
+) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autenticado' };
+
+  const monto = Number(nuevoMonto);
+  if (!Number.isFinite(monto) || monto <= 0) return { success: false, error: 'Monto inválido' };
+  if (!metodoPago || !metodoPago.trim()) return { success: false, error: 'Selecciona un método de pago' };
+
+  const ctx = await obtenerPagoDeMiEmpresa(supabase, user.id, pagoId);
+  if ('error' in ctx) return { success: false, error: ctx.error };
+
+  // Evitar que la suma de abonos supere el total de la factura (tolerancia de 1 centavo por redondeo)
+  const { data: otros } = await supabase.from('compras_pagos')
+    .select('id, monto')
+    .eq('factura_id', ctx.pago.factura_id)
+    .neq('id', pagoId);
+  const sumaOtros = (otros || []).reduce((acc: number, p: any) => acc + (Number(p.monto) || 0), 0);
+  const maximo = Number((Number(ctx.factura.total) - sumaOtros).toFixed(2));
+  if (monto > maximo + 0.01) {
+    return { success: false, error: `El abono no puede superar el saldo de la factura (máximo $${maximo.toFixed(2)})` };
+  }
+
+  const { error: updErr } = await supabase.from('compras_pagos')
+    .update({
+      monto: Number(monto.toFixed(2)),
+      metodo_pago: metodoPago.trim(),
+      referencia: referencia?.trim() || null,
+      banco_origen: bancoOrigen?.trim() || null
+    })
+    .eq('id', pagoId);
+  if (updErr) return { success: false, error: updErr.message };
+
+  // Si el monto baja, la factura vuelve a quedar pendiente por pagar
+  const rec = await recalcularSaldoFacturaProveedor(supabase, ctx.pago.factura_id);
+  if (!rec.success) return { success: false, error: rec.error };
+
+  revalidatePath('/dashboard/proveedores');
+  return { success: true, saldo_pendiente: rec.saldo_pendiente };
+}
+
+export async function eliminarAbonoProveedor(pagoId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autenticado' };
+
+  const ctx = await obtenerPagoDeMiEmpresa(supabase, user.id, pagoId);
+  if ('error' in ctx) return { success: false, error: ctx.error };
+
+  // Mismo criterio de permisos que eliminarFacturaProveedor: borrar dinero registrado es sensible
+  const rolProfile = (ctx.profile.rol || '').toUpperCase();
+  const rolMeta = (user.app_metadata?.user_role || '').toUpperCase();
+  const hasPermiso = Array.isArray(ctx.profile.permisos) && ctx.profile.permisos.includes('eliminar_facturas');
+  const autorizado = ['MASTER', 'ADMINISTRADOR', 'ADMIN'].includes(rolProfile)
+    || ['MASTER', 'ADMINISTRADOR', 'ADMIN'].includes(rolMeta)
+    || hasPermiso;
+  if (!autorizado) {
+    return { success: false, error: 'No tienes permisos para eliminar abonos. Contacta al Master para que te habilite el permiso en Equipo.' };
+  }
+
+  const { error: delErr } = await supabase.from('compras_pagos').delete().eq('id', pagoId);
+  if (delErr) return { success: false, error: delErr.message };
+
+  const rec = await recalcularSaldoFacturaProveedor(supabase, ctx.pago.factura_id);
+  if (!rec.success) return { success: false, error: rec.error };
+
+  revalidatePath('/dashboard/proveedores');
+  return { success: true, saldo_pendiente: rec.saldo_pendiente };
+}
+
+export async function editarProveedor(
+  proveedorId: string,
+  datos: { nombre: string; rif?: string; telefono?: string; ubicacion?: string; es_tienda?: boolean }
+) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autenticado' };
+
+  const { data: profile } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
+  if (!profile) return { success: false, error: 'Perfil no encontrado' };
+
+  const nombre = (datos.nombre || '').trim();
+  if (!nombre) return { success: false, error: 'El nombre es obligatorio' };
+
+  const updateData: Record<string, any> = {
+    nombre_comercial: nombre,
+    rif_cedula: datos.rif?.trim() || null,
+    numero_contacto: datos.telefono?.trim() || null,
+    ubicacion: datos.ubicacion?.trim() || null
+  };
+  if (typeof datos.es_tienda === 'boolean') updateData.es_tienda = datos.es_tienda;
+
+  // Leemos el nombre anterior para mantener sincronizado compras_puntuales.proveedor (texto libre).
+  // El vínculo factura <-> detalle de ítems depende de ese nombre (ver buscarCompraPuntualVinculada).
+  const { data: anterior } = await supabase.from('proveedores')
+    .select('id, nombre_comercial')
+    .eq('id', proveedorId)
+    .eq('empresa_id', profile.empresa_id)
+    .single();
+  if (!anterior) return { success: false, error: 'Proveedor no encontrado' };
+
+  const { data, error } = await supabase.from('proveedores')
+    .update(updateData)
+    .eq('id', proveedorId)
+    .eq('empresa_id', profile.empresa_id)
+    .select('id, nombre_comercial, rif_cedula, numero_contacto, ubicacion, es_tienda')
+    .single();
+  if (error) return { success: false, error: error.message };
+
+  if (anterior.nombre_comercial !== nombre) {
+    await supabase.from('compras_puntuales')
+      .update({ proveedor: nombre })
+      .eq('id_empresa', profile.empresa_id)
+      .eq('proveedor', anterior.nombre_comercial);
+  }
+
+  revalidatePath('/dashboard/proveedores');
+  revalidatePath('/dashboard/compras');
+  return { success: true, data };
+}

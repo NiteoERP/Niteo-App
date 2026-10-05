@@ -131,6 +131,11 @@ export default function AbonosGlobalesHistorial({
                         <div className="text-xs text-neutral-400 mt-0.5">
                           {formatFecha(abono.fecha_pago, { includeTime: true })} ? Ref: {abono.referencia || 'N/A'}
                         </div>
+                        {abono.registrado_por && (
+                          <div className="text-[10px] text-neutral-500 mt-1 flex items-center gap-1" title="Registrado por">
+                            <span className="bg-neutral-800 px-1.5 py-0.5 rounded text-neutral-400">Por: {abono.registrado_por}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-6">
@@ -168,3 +173,4 @@ export default function AbonosGlobalesHistorial({
     </div>
   );
 }
+
