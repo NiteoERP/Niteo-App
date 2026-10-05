@@ -1244,10 +1244,10 @@ export default function ProveedoresPage() {
       â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       {showCrearModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md shadow-2xl">
+          <form onSubmit={(e) => { e.preventDefault(); handleCrearProveedor(); }} className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md shadow-2xl">
             <div className="flex items-center justify-between p-6 border-b border-neutral-800">
               <h3 className="text-lg font-bold text-white flex items-center gap-2"><User size={18} className="text-emerald-400" /> Nuevo Proveedor</h3>
-              <button onClick={() => setShowCrearModal(false)} className="text-neutral-400 hover:text-white"><X size={22} /></button>
+              <button type="button" onClick={() => setShowCrearModal(false)} className="text-neutral-400 hover:text-white"><X size={22} /></button>
             </div>
             <div className="p-6 space-y-4">
               <div>
@@ -1291,13 +1291,13 @@ export default function ProveedoresPage() {
               {errorCrear && <p className="text-rose-400 text-sm flex items-center gap-2"><AlertCircle size={14} /> {errorCrear}</p>}
             </div>
             <div className="p-6 border-t border-neutral-800 flex gap-3 justify-end">
-              <button onClick={() => setShowCrearModal(false)} className="px-5 py-2.5 rounded-xl text-neutral-300 hover:bg-neutral-800 text-sm">Cancelar</button>
-              <button onClick={handleCrearProveedor} disabled={creandoProveedor}
+              <button type="button" onClick={() => setShowCrearModal(false)} className="px-5 py-2.5 rounded-xl text-neutral-300 hover:bg-neutral-800 text-sm">Cancelar</button>
+              <button type="submit" disabled={creandoProveedor}
                 className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50">
                 {creandoProveedor ? 'Guardando...' : <><Plus size={16} /> Crear Proveedor</>}
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 
@@ -2137,7 +2137,7 @@ export default function ProveedoresPage() {
       {/* ── Modal: Editar Proveedor ── */}
       {showEditProveedorModal && provEditando && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md shadow-2xl">
+          <form onSubmit={(e) => { e.preventDefault(); handleGuardarEdicionProveedor(); }} className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md shadow-2xl">
             <div className="flex items-center justify-between p-6 border-b border-neutral-800">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <Store size={18} className="text-emerald-400" /> Editar Proveedor
@@ -2226,24 +2226,23 @@ export default function ProveedoresPage() {
                 Cancelar
               </button>
               <button
-                type="button"
-                onClick={handleGuardarEdicionProveedor}
+                type="submit"
                 disabled={editandoProveedor}
                 className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50"
               >
                 {editandoProveedor ? 'Guardando...' : 'Guardar Cambios'}
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 
       {showEditAbonoModal && abonoEditando && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-sm shadow-2xl">
+          <form onSubmit={(e) => { e.preventDefault(); handleGuardarEdicionAbono(); }} className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-sm shadow-2xl">
             <div className="flex items-center justify-between p-6 border-b border-neutral-800">
               <h3 className="text-lg font-bold text-white flex items-center gap-2"><Edit2 size={18} className="text-indigo-400" /> Editar Abono</h3>
-              <button onClick={() => setShowEditAbonoModal(false)} className="text-neutral-400 hover:text-white"><X size={22} /></button>
+              <button type="button" onClick={() => setShowEditAbonoModal(false)} className="text-neutral-400 hover:text-white"><X size={22} /></button>
             </div>
             <div className="p-6 space-y-4">
               <div>
@@ -2262,7 +2261,7 @@ export default function ProveedoresPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-neutral-400 mb-1.5">Nº Referencia (opcional)</label>
+                <label className="block text-sm text-neutral-400 mb-1.5">N° Referencia (opcional)</label>
                 <input type="text" value={editAbonoReferencia} onChange={e => setEditAbonoReferencia(e.target.value)}
                   className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 text-sm" />
               </div>
@@ -2276,13 +2275,13 @@ export default function ProveedoresPage() {
               {errorEditAbono && <p className="text-rose-400 text-sm flex items-center gap-2"><AlertCircle size={14} /> {errorEditAbono}</p>}
             </div>
             <div className="p-6 border-t border-neutral-800 flex justify-end gap-3">
-              <button onClick={() => setShowEditAbonoModal(false)} className="px-5 py-2.5 rounded-xl text-neutral-300 hover:bg-neutral-800 text-sm">Cancelar</button>
-              <button onClick={handleGuardarEdicionAbono} disabled={isEditAbonoLoading}
+              <button type="button" onClick={() => setShowEditAbonoModal(false)} className="px-5 py-2.5 rounded-xl text-neutral-300 hover:bg-neutral-800 text-sm">Cancelar</button>
+              <button type="submit" disabled={isEditAbonoLoading}
                 className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50">
                 {isEditAbonoLoading ? 'Guardando...' : 'Guardar Cambios'}
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 
