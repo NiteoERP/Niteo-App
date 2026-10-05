@@ -544,9 +544,9 @@ export default function ProveedoresPage() {
   const handleGuardarEdicionProveedor = async () => {
     if (!editProvNombre.trim()) { setErrorEditProv("El nombre es obligatorio"); return; }
     setEditandoProveedor(true);
-    setErrorEditProv("");
     const { editarProveedor } = await import("./actions");
-    const res = await editarProveedor(provEditando.id, {
+    const targetId = provEditando.id_proveedor || provEditando.id;
+    const res = await editarProveedor(targetId, {
       nombre: editProvNombre,
       rif: editProvRif,
       telefono: editProvTelefono,
@@ -775,11 +775,19 @@ export default function ProveedoresPage() {
   const safeDate = (d: string) => formatFecha(d);
   const safeDateTime = (d: string) => formatFecha(d, { includeTime: true });
 
-    const provListToRender = (soloConDeuda ? proveedores : todosProveedores).filter((p: any) => {
-      if (filtroTipo === "PROVEEDORES") return !p.es_tienda;
-      if (filtroTipo === "TIENDAS") return p.es_tienda;
-      return true;
-    });
+  const provListToRender = soloConDeuda
+    ? proveedores
+    : todosProveedores.filter((p: any) => {
+        if (filtroTipo === "PROVEEDORES" && p.es_tienda) return false;
+        if (filtroTipo === "TIENDAS" && !p.es_tienda) return false;
+        if (debouncedSearch && debouncedSearch.trim() !== '') {
+          const q = debouncedSearch.toLowerCase().trim();
+          const name = (p.nombre_comercial || p.nombre_proveedor || '').toLowerCase();
+          const rif = (p.rif || p.rif_cedula || '').toLowerCase();
+          return name.includes(q) || rif.includes(q);
+        }
+        return true;
+      });
 
 
   // ── RENDER ────────────────────────────────────────────────

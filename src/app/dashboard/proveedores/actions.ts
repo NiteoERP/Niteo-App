@@ -52,7 +52,27 @@ export async function getProveedoresConDeuda(sedeId: string, page: number = 1, l
   const { data, error, count } = await query.range(from, to);
 
   if (error) return { success: false, error: error.message };
-  return { success: true, data, totalCount: count || 0 };
+
+  let enrichedData = data || [];
+  if (enrichedData.length > 0) {
+    const provIds = enrichedData.map((d: any) => d.id_proveedor).filter(Boolean);
+    const { data: provsInfo } = await supabase.from('proveedores')
+      .select('id, es_tienda, ubicacion, numero_contacto, rif_cedula')
+      .in('id', provIds);
+    const infoMap = new Map((provsInfo || []).map(p => [p.id, p]));
+    enrichedData = enrichedData.map((d: any) => {
+      const info = infoMap.get(d.id_proveedor);
+      return {
+        ...d,
+        es_tienda: info ? !!info.es_tienda : false,
+        ubicacion: d.ubicacion || info?.ubicacion || null,
+        numero_contacto: d.numero_contacto || info?.numero_contacto || null,
+        rif: d.rif || info?.rif_cedula || null,
+      };
+    });
+  }
+
+  return { success: true, data: enrichedData, totalCount: count || 0 };
 }
 
 export async function getFacturasProveedor(proveedorId: string, sedeId: string) {
