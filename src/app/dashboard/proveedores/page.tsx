@@ -533,10 +533,10 @@ export default function ProveedoresPage() {
   const openEditProveedorModal = (prov: any) => {
     setProvEditando(prov);
     setEditProvNombre(prov.nombre_comercial || prov.nombre_proveedor || "");
-    setEditProvRif(prov.rif || "");
-    setEditProvTelefono(prov.telefono || "");
+    setEditProvRif(prov.rif || prov.rif_cedula || "");
+    setEditProvTelefono(prov.telefono || prov.numero_contacto || "");
     setEditProvUbicacion(prov.ubicacion || "");
-    setEditProvEsTienda(prov.es_tienda || false);
+    setEditProvEsTienda(Boolean(prov.es_tienda));
     setErrorEditProv("");
     setShowEditProveedorModal(true);
   };
@@ -897,10 +897,28 @@ export default function ProveedoresPage() {
                       <Store size={20} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-lg text-white truncate">{prov.nombre_proveedor || prov.nombre_comercial}</h3> {prov.es_tienda && <span className="text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-md ml-2 relative -top-0.5">🏪 Tienda</span>} <button onClick={(e) => { e.stopPropagation(); openEditProveedorModal(prov); }} className="text-neutral-500 hover:text-emerald-400 transition-colors p-1" title="Editar Proveedor"><Edit3 size={16} /></button>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-bold text-lg text-white truncate">{prov.nombre_proveedor || prov.nombre_comercial}</h3>
+                        {prov.es_tienda && (
+                          <span className="text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-md font-semibold">
+                            🏪 Tienda
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditProveedorModal(prov);
+                          }}
+                          className="p-1 rounded-lg text-neutral-400 hover:text-emerald-400 hover:bg-neutral-800 transition-colors"
+                          title="Editar Proveedor"
+                        >
+                          <Edit3 size={15} />
+                        </button>
+                      </div>
                       <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-neutral-500 mt-0.5">
                         {(prov.rif || prov.rif_cedula) && <span>RIF: {prov.rif || prov.rif_cedula}</span>}
-                        {(prov.numero_contacto) && <span>ðŸ“ž {prov.numero_contacto}</span>}
+                        {(prov.numero_contacto) && <span>📞 {prov.numero_contacto}</span>}
                         {prov.facturas_pendientes && <span>{prov.facturas_pendientes} factura(s) pendiente(s)</span>}
                       </div>
                     </div>
@@ -2075,6 +2093,110 @@ export default function ProveedoresPage() {
       {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
           MODAL: Detalles de Factura (Insumos)
       â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â•  */}
+      {/* ── Modal: Editar Proveedor ── */}
+      {showEditProveedorModal && provEditando && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-between p-6 border-b border-neutral-800">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Store size={18} className="text-emerald-400" /> Editar Proveedor
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowEditProveedorModal(false)}
+                className="text-neutral-400 hover:text-white transition-colors"
+              >
+                <X size={22} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm text-neutral-400 mb-1.5">Nombre / Razón Social *</label>
+                <input
+                  type="text"
+                  value={editProvNombre}
+                  onChange={e => setEditProvNombre(e.target.value)}
+                  placeholder="Ej. Inversiones ABC"
+                  className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">RIF / Cédula</label>
+                  <input
+                    type="text"
+                    value={editProvRif}
+                    onChange={e => setEditProvRif(e.target.value)}
+                    placeholder="Ej. J-12345678"
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-neutral-400 mb-1.5">Teléfono</label>
+                  <input
+                    type="text"
+                    value={editProvTelefono}
+                    onChange={e => setEditProvTelefono(e.target.value)}
+                    placeholder="Ej. 0414-1234567"
+                    className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm text-neutral-400 mb-1.5">Dirección / Ubicación</label>
+                <textarea
+                  rows={2}
+                  value={editProvUbicacion}
+                  onChange={e => setEditProvUbicacion(e.target.value)}
+                  placeholder="Dirección (opcional)"
+                  className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm resize-none"
+                />
+              </div>
+
+              {/* Checkbox: Clasificar como tienda */}
+              <div className="flex items-center gap-2 pt-1 bg-neutral-950/40 border border-neutral-800/80 p-3 rounded-xl">
+                <input
+                  type="checkbox"
+                  id="editProvEsTiendaCheckbox"
+                  checked={editProvEsTienda}
+                  onChange={e => setEditProvEsTienda(e.target.checked)}
+                  className="w-4 h-4 rounded border-neutral-700 bg-neutral-900 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-neutral-900 cursor-pointer"
+                />
+                <label htmlFor="editProvEsTiendaCheckbox" className="text-xs text-neutral-300 cursor-pointer select-none">
+                  🏪 Clasificar como tienda (compra directa, no proveedor mayorista)
+                </label>
+              </div>
+
+              {errorEditProv && (
+                <p className="text-rose-400 text-sm flex items-center gap-2">
+                  <AlertCircle size={14} /> {errorEditProv}
+                </p>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-neutral-800 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowEditProveedorModal(false)}
+                className="px-5 py-2.5 rounded-xl text-neutral-300 hover:bg-neutral-800 text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleGuardarEdicionProveedor}
+                disabled={editandoProveedor}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50"
+              >
+                {editandoProveedor ? 'Guardando...' : 'Guardar Cambios'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showEditAbonoModal && abonoEditando && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-sm shadow-2xl">
