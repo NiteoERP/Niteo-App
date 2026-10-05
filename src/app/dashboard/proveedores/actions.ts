@@ -56,10 +56,53 @@ export async function getProveedoresConDeuda(sedeId: string, page: number = 1, l
   let enrichedData = data || [];
   if (enrichedData.length > 0) {
     const provIds = enrichedData.map((d: any) => d.id_proveedor).filter(Boolean);
-    const { data: provsInfo } = await supabase.from('proveedores')
-      .select('id, es_tienda, ubicacion, numero_contacto, rif_cedula')
-      .in('id', provIds);
-    const infoMap = new Map((provsInfo || []).map(p => [p.id, p]));
+
+    let facturasVencQuery = supabase.from('compras_facturas')
+      .select('proveedor_id, fecha_vencimiento, saldo_pendiente')
+      .in('proveedor_id', provIds)
+      .gt('saldo_pendiente', 0)
+      .not('fecha_vencimiento', 'is', null);
+
+    if (p_sede_id) {
+      facturasVencQuery = facturasVencQuery.eq('sede_id', p_sede_id);
+    }
+
+    const [provsInfoRes, facturasVencRes] = await Promise.all([
+      supabase.from('proveedores')
+        .select('id, es_tienda, ubicacion, numero_contacto, rif_cedula')
+        .in('id', provIds),
+      facturasVencQuery
+    ]);
+
+    const infoMap = new Map((provsInfoRes.data || []).map(p => [p.id, p]));
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const vencimientoMap: Record<string, { proxima_fecha_vencimiento: string; dias_para_vencer: number; vencidas: number; por_vencer: number }> = {};
+    for (const f of (facturasVencRes.data || [])) {
+      if (!f.proveedor_id || !f.fecha_vencimiento) continue;
+      const vDate = new Date(f.fecha_vencimiento);
+      vDate.setHours(0, 0, 0, 0);
+      const diffDays = Math.ceil((vDate.getTime() - now.getTime()) / (1000 * 3600 * 24));
+
+      if (!vencimientoMap[f.proveedor_id]) {
+        vencimientoMap[f.proveedor_id] = {
+          proxima_fecha_vencimiento: f.fecha_vencimiento,
+          dias_para_vencer: diffDays,
+          vencidas: diffDays < 0 ? 1 : 0,
+          por_vencer: (diffDays >= 0 && diffDays <= 7) ? 1 : 0
+        };
+      } else {
+        const prev = vencimientoMap[f.proveedor_id];
+        if (diffDays < 0) prev.vencidas++;
+        if (diffDays >= 0 && diffDays <= 7) prev.por_vencer++;
+        if (diffDays < prev.dias_para_vencer) {
+          prev.dias_para_vencer = diffDays;
+          prev.proxima_fecha_vencimiento = f.fecha_vencimiento;
+        }
+      }
+    }
+
     enrichedData = enrichedData.map((d: any) => {
       const info = infoMap.get(d.id_proveedor);
       return {
@@ -68,6 +111,7 @@ export async function getProveedoresConDeuda(sedeId: string, page: number = 1, l
         ubicacion: d.ubicacion || info?.ubicacion || null,
         numero_contacto: d.numero_contacto || info?.numero_contacto || null,
         rif: d.rif || info?.rif_cedula || null,
+        vencimiento_info: vencimientoMap[d.id_proveedor] || null
       };
     });
   }
@@ -237,7 +281,50 @@ export async function getTodosProveedores() {
     .order('nombre_comercial');
 
   if (error) return { success: false, error: error.message };
-  return { success: true, data };
+
+  const provIds = (data || []).map(p => p.id);
+  const vencimientoMap: Record<string, { proxima_fecha_vencimiento: string; dias_para_vencer: number; vencidas: number; por_vencer: number }> = {};
+  if (provIds.length > 0) {
+    const { data: facturas } = await supabase.from('compras_facturas')
+      .select('proveedor_id, fecha_vencimiento, saldo_pendiente')
+      .in('proveedor_id', provIds)
+      .gt('saldo_pendiente', 0)
+      .not('fecha_vencimiento', 'is', null);
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    for (const f of (facturas || [])) {
+      if (!f.proveedor_id || !f.fecha_vencimiento) continue;
+      const vDate = new Date(f.fecha_vencimiento);
+      vDate.setHours(0, 0, 0, 0);
+      const diffDays = Math.ceil((vDate.getTime() - now.getTime()) / (1000 * 3600 * 24));
+
+      if (!vencimientoMap[f.proveedor_id]) {
+        vencimientoMap[f.proveedor_id] = {
+          proxima_fecha_vencimiento: f.fecha_vencimiento,
+          dias_para_vencer: diffDays,
+          vencidas: diffDays < 0 ? 1 : 0,
+          por_vencer: (diffDays >= 0 && diffDays <= 7) ? 1 : 0
+        };
+      } else {
+        const prev = vencimientoMap[f.proveedor_id];
+        if (diffDays < 0) prev.vencidas++;
+        if (diffDays >= 0 && diffDays <= 7) prev.por_vencer++;
+        if (diffDays < prev.dias_para_vencer) {
+          prev.dias_para_vencer = diffDays;
+          prev.proxima_fecha_vencimiento = f.fecha_vencimiento;
+        }
+      }
+    }
+  }
+
+  const enriched = (data || []).map(p => ({
+    ...p,
+    vencimiento_info: vencimientoMap[p.id] || null
+  }));
+
+  return { success: true, data: enriched };
 }
 
 export async function crearProveedor(datos: {

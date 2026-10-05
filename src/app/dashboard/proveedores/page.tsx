@@ -13,7 +13,7 @@ import { useEmpresa } from "@/components/providers/EmpresaProvider";
 import {
   Store, Wallet, Search, Check, FileText, ChevronDown, ChevronUp,
   Clock, PlusCircle, X, Plus, User, Phone, MapPin, Hash,
-  CreditCard, Building2, AlertCircle, History, DollarSign, Package, CheckCircle2, Pencil, Info, Edit2, Trash2, Loader2, Eye, Camera
+  CreditCard, Building2, AlertCircle, AlertTriangle, History, DollarSign, Package, CheckCircle2, Pencil, Info, Edit2, Trash2, Loader2, Eye, Camera
 , Edit3 } from "lucide-react";
 import { format } from "date-fns";
 import MobileCompraForm from "@/components/compras/MobileCompraForm";
@@ -889,11 +889,23 @@ export default function ProveedoresPage() {
             {provListToRender.map((prov: any) => (
               <div key={prov.id_proveedor || prov.id} className="group">
                 <div
-                  className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:bg-neutral-800/30 transition-colors"
+                  className={`p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer transition-colors ${
+                    prov.vencimiento_info?.vencidas > 0
+                      ? 'bg-rose-950/15 hover:bg-rose-950/25 border-l-4 border-l-rose-500'
+                      : prov.vencimiento_info?.por_vencer > 0
+                      ? 'bg-amber-950/15 hover:bg-amber-950/25 border-l-4 border-l-amber-500'
+                      : 'hover:bg-neutral-800/30'
+                  }`}
                   onClick={() => toggleExpand(prov.id_proveedor || prov.id)}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center text-neutral-400 group-hover:text-emerald-400 group-hover:border-emerald-500/30 transition-colors shrink-0">
+                    <div className={`w-10 h-10 rounded-full border flex items-center justify-center transition-colors shrink-0 ${
+                      prov.vencimiento_info?.vencidas > 0
+                        ? 'bg-rose-500/15 border-rose-500/40 text-rose-400'
+                        : prov.vencimiento_info?.por_vencer > 0
+                        ? 'bg-amber-500/15 border-amber-500/40 text-amber-400'
+                        : 'bg-neutral-800 border-neutral-700 text-neutral-400 group-hover:text-emerald-400 group-hover:border-emerald-500/30'
+                    }`}>
                       <Store size={20} />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -915,11 +927,40 @@ export default function ProveedoresPage() {
                         >
                           <Edit3 size={15} />
                         </button>
+
+                        {/* Alerta de vencimiento en el encabezado */}
+                        {prov.vencimiento_info?.vencidas > 0 && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-400 border border-rose-500/40 shadow-sm shadow-rose-900/50">
+                            <AlertCircle size={12} />
+                            {prov.vencimiento_info.vencidas === 1 ? 'Factura vencida' : `${prov.vencimiento_info.vencidas} facturas vencidas`}
+                          </span>
+                        )}
+                        {prov.vencimiento_info && prov.vencimiento_info.vencidas === 0 && prov.vencimiento_info.por_vencer > 0 && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/40 shadow-sm shadow-amber-900/50 animate-pulse">
+                            <AlertTriangle size={12} />
+                            {prov.vencimiento_info.dias_para_vencer === 0
+                              ? 'Factura vence hoy'
+                              : prov.vencimiento_info.dias_para_vencer === 1
+                              ? 'Factura vence mañana'
+                              : `Vence en ${prov.vencimiento_info.dias_para_vencer} días`}
+                          </span>
+                        )}
                       </div>
                       <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-neutral-500 mt-0.5">
                         {(prov.rif || prov.rif_cedula) && <span>RIF: {prov.rif || prov.rif_cedula}</span>}
                         {(prov.numero_contacto) && <span>📞 {prov.numero_contacto}</span>}
                         {prov.facturas_pendientes && <span>{prov.facturas_pendientes} factura(s) pendiente(s)</span>}
+                        {prov.vencimiento_info?.proxima_fecha_vencimiento && (
+                          <span className={
+                            prov.vencimiento_info.vencidas > 0
+                              ? "text-rose-400 font-semibold flex items-center gap-1"
+                              : prov.vencimiento_info.por_vencer > 0
+                              ? "text-amber-400 font-semibold flex items-center gap-1"
+                              : "text-neutral-500 flex items-center gap-1"
+                          }>
+                            ⏰ Próx. vencimiento: {safeDate(prov.vencimiento_info.proxima_fecha_vencimiento)}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
