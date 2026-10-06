@@ -66,7 +66,7 @@ export async function obtenerCatalogoMesa(sedeId: string) {
     .from('productos')
     .select('id, id_pos, nombre, precio_venta, sede_id, categorias(nombre)')
     .eq('empresa_id', empresaId)
-    .eq('sede_id', sedeId)
+    .or(`sede_id.eq.${sedeId},sede_id.is.null`)
     .eq('estado_activo', true)
     .order('nombre').limit(3000);
 
