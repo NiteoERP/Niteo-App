@@ -24,8 +24,9 @@ export interface ComandaPayload {
   clienteNombre?: string;
   comentarioGeneral?: string;
   metodoPagoSugerido?: string;
-  items: ItemComanda[];
-}
+    montoPropina?: number;
+    items: ItemComanda[];
+  }
 
 export async function buscarTerminalPorCodigo(codigo: string): Promise<TerminalInfo | null> {
   const supabase = await createClient();
@@ -105,6 +106,7 @@ export async function enviarComanda(payload: ComandaPayload): Promise<{ success:
       cliente_nombre: payload.clienteNombre || null,
       comentario_general: payload.comentarioGeneral || null,
       metodo_pago_sugerido: payload.metodoPagoSugerido || null,
+      propina: payload.montoPropina || 0,
       items: payload.items,
       estado: 'pendiente',
     })
