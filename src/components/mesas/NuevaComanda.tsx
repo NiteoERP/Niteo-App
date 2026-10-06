@@ -44,6 +44,7 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
     return () => clearTimeout(timer);
   }, [clienteCedula]);
   const [comentarioGeneral, setComentarioGeneral] = useState('');
+  const [propina, setPropina] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
@@ -109,7 +110,8 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
     setCarrito(prev => prev.map(i => i.key === key ? { ...i, comentario } : i));
   };
 
-  const total = carrito.reduce((s, i) => s + i.cantidad * i.precio_unitario, 0);
+  const subtotal = carrito.reduce((s, i) => s + i.cantidad * i.precio_unitario, 0);
+  const total = subtotal + propina;
 
   const handleEnviar = async () => {
     if (!mesa.trim()) { setError('Ingresa el número de mesa'); return; }
@@ -127,6 +129,7 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
         mesaIdentificador: mesa.trim(),
         clienteNombre: nombreFinal || undefined,
         comentarioGeneral: comentarioGeneral.trim() || undefined,
+        montoPropina: propina > 0 ? propina : undefined,
         items: carrito.map(({ key, ...rest }) => rest),
       });
       if (!result.success) { setError(result.error || 'Error enviando la comanda'); return; }
@@ -139,6 +142,7 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
         setClienteCedula('');
         setShowClienteForm(false);
         setComentarioGeneral('');
+        setPropina(0);
         setCartOpen(false);
       }, 1500);
     } catch {
@@ -420,7 +424,29 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
                 </div>
               ))}
               
-              <div className="border-t border-neutral-800 pt-4 flex items-center justify-between">
+              <div className="border-t border-neutral-800 pt-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-neutral-400 font-medium text-sm">Propina Sugerida</span>
+                  <div className="flex gap-2">
+                    {[10, 15, 20].map(pct => {
+                      const p = Number((subtotal * pct / 100).toFixed(2));
+                      return (
+                        <button key={pct} onClick={() => setPropina(propina === p ? 0 : p)} className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${propina === p ? 'bg-indigo-600 text-white' : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'}`}>
+                          {pct}%
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-neutral-400 font-medium text-sm">Propina Manual ($)</span>
+                  <input type="number" min="0" step="0.5" value={propina || ''} onChange={e => setPropina(Number(e.target.value) || 0)} className="w-24 bg-neutral-900 border border-neutral-800 rounded-lg px-2 py-1.5 text-white text-right text-sm outline-none focus:border-indigo-500" placeholder="0.00" />
+                </div>
+                <div className="flex items-center justify-between pt-2">
+                  <span className="text-neutral-300 font-bold">Total estimado</span>
+                  <span className="text-white text-xl font-black">${total.toFixed(2)}</span>
+                </div>
+
                 <span className="text-neutral-400 font-medium">Total estimado</span>
                 <span className="text-white text-xl font-black">${total.toFixed(2)}</span>
               </div>
