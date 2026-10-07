@@ -126,7 +126,7 @@ export default function DirectorioClientes({ clientes }: { clientes: any[] }) {
                                 </div>
                                 <div className="flex items-center gap-2 text-xs text-neutral-500">
                                   <Building size={12} />
-                                  <span className="truncate">{pedido.sedes?.nombre || 'Sede N/A'}</span>
+                                  <span className="truncate">{pedido.sedes?.nombre_sede || 'Sede N/A'}</span>
                                 </div>
                               </div>
                             ))}

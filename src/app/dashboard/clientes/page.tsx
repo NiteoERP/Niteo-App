@@ -27,7 +27,7 @@ export default async function ClientesPage() {
       rif_cedula, 
       telefono, 
       email,
-      ventas_facturas ( id, total, fecha_venta, numero_documento, sedes(nombre) )
+      ventas_facturas ( id, total, fecha_venta, numero_documento, sedes(nombre_sede) )
     `)
     .eq('empresa_id', empresaId)
     .order('nombre', { ascending: true });
@@ -47,7 +47,7 @@ export default async function ClientesPage() {
     
     const sedesCounter: Record<string, number> = {};
     ventas.forEach((v: any) => {
-      const s = v.sedes?.nombre || 'Desconocida';
+      const s = v.sedes?.nombre_sede || 'Desconocida';
       sedesCounter[s] = (sedesCounter[s] || 0) + 1;
     });
     
