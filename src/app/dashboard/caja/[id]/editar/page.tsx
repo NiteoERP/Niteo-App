@@ -82,7 +82,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
 
   
 
-  // ─── FIX 1: GUARDAR BORRADOR EN localStorage EN CADA CAMBIO ─────────────
+  // âââ FIX 1: GUARDAR BORRADOR EN localStorage EN CADA CAMBIO âââââââââââââ
   useEffect(() => {
     if (loading) return; // No guardar antes de que carguen los datos iniciales
     try {
@@ -109,7 +109,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
     setMetodos(METODOS_DEFAULT);
     setHasDraft(false);
   };
-  // ─────────────────────────────────────────────────────────────────────────
+  // âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
   useEffect(() => {
     async function loadInitial() {
@@ -514,12 +514,12 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
                                   inputMode="decimal"
                                   placeholder="0.00"
                                   value={tx.monto}
-                                  onChange={(e) => updateTransaccion(tx.id, 'monto', e.target.value)}
+                                  onChange={(e) => updateTransaccion(tx.id, 'monto', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleAddTransaccion(metodo.id, metodo.defaultMoneda); }}
                                   className="flex-1 bg-transparent px-2 text-white text-sm font-medium outline-none placeholder:text-neutral-600 w-full min-w-0"
                                 />
                               </div>
                               {tx.moneda === 'VES' && tx.monto && (
-                                <p className="text-[10px] text-neutral-500 mt-1 pl-1">≈ ${(parseFloat(tx.monto) / tasaCambio).toFixed(2)} USD</p>
+                                <p className="text-[10px] text-neutral-500 mt-1 pl-1">â ${(parseFloat(tx.monto) / tasaCambio).toFixed(2)} USD</p>
                               )}
                             </td>
 
@@ -528,7 +528,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
                                 type="text" 
                                 placeholder="Ej: 1234"
                                 value={tx.referencia}
-                                onChange={(e) => updateTransaccion(tx.id, 'referencia', e.target.value)}
+                                onChange={(e) => updateTransaccion(tx.id, 'referencia', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleAddTransaccion(metodo.id, metodo.defaultMoneda); }}
                                 className="w-full bg-neutral-900 border border-neutral-800 focus:border-indigo-500 rounded-lg h-9 px-3 text-white text-sm outline-none transition-colors"
                               />
                             </td>
@@ -538,7 +538,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
                                 type="text" 
                                 placeholder={metodo.id === 'Efectivo' ? 'N/A' : 'Ej: VZLA'}
                                 value={tx.banco}
-                                onChange={(e) => updateTransaccion(tx.id, 'banco', e.target.value)}
+                                onChange={(e) => updateTransaccion(tx.id, 'banco', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleAddTransaccion(metodo.id, metodo.defaultMoneda); }}
                                 list={`bancos-list-${metodo.id.replace(/[^a-zA-Z0-9]/g, '')}`}
                                 className="w-full bg-neutral-900 border border-neutral-800 focus:border-indigo-500 rounded-lg h-9 px-3 text-white text-sm outline-none transition-colors"
                               />
@@ -548,7 +548,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
                                   type="text" 
                                   placeholder="Ej: Juan P."
                                   value={tx.cliente || ''}
-                                  onChange={(e) => updateTransaccion(tx.id, 'cliente', e.target.value)}
+                                  onChange={(e) => updateTransaccion(tx.id, 'cliente', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleAddTransaccion(metodo.id, metodo.defaultMoneda); }}
                                   className="w-full bg-neutral-900 border border-neutral-800 focus:border-indigo-500 rounded-lg h-9 px-3 text-white text-sm outline-none transition-colors"
                                 />
                               </td>
@@ -592,7 +592,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
                                 inputMode="decimal"
                                 placeholder="0.00"
                                 value={tx.monto}
-                                onChange={(e) => updateTransaccion(tx.id, 'monto', e.target.value)}
+                                onChange={(e) => updateTransaccion(tx.id, 'monto', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleAddTransaccion(metodo.id, metodo.defaultMoneda); }}
                                 className="flex-1 bg-transparent px-3 text-white text-sm font-bold outline-none placeholder:text-neutral-600 min-w-0"
                               />
                           </div>
@@ -600,7 +600,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
                             type="text" 
                             placeholder="Ref: 1234"
                             value={tx.referencia}
-                            onChange={(e) => updateTransaccion(tx.id, 'referencia', e.target.value)}
+                            onChange={(e) => updateTransaccion(tx.id, 'referencia', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleAddTransaccion(metodo.id, metodo.defaultMoneda); }}
                             className="bg-black/40 border border-neutral-800 focus:border-indigo-500 rounded-lg h-10 px-3 text-white text-sm outline-none transition-colors"
                           />
                           <div className="relative">
@@ -608,7 +608,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
                               type="text" 
                               placeholder={metodo.id === 'Efectivo' ? 'N/A' : 'Banco'}
                               value={tx.banco}
-                              onChange={(e) => updateTransaccion(tx.id, 'banco', e.target.value)}
+                              onChange={(e) => updateTransaccion(tx.id, 'banco', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleAddTransaccion(metodo.id, metodo.defaultMoneda); }}
                               list={`bancos-list-${metodo.id.replace(/[^a-zA-Z0-9]/g, '')}`}
                               className="w-full bg-black/40 border border-neutral-800 focus:border-indigo-500 rounded-lg h-10 px-3 text-white text-sm outline-none transition-colors"
                             />
@@ -618,12 +618,12 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
                               type="text" 
                               placeholder="Cliente (Opc.)"
                               value={tx.cliente || ''}
-                              onChange={(e) => updateTransaccion(tx.id, 'cliente', e.target.value)}
+                              onChange={(e) => updateTransaccion(tx.id, 'cliente', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleAddTransaccion(metodo.id, metodo.defaultMoneda); }}
                               className="col-span-2 bg-black/40 border border-neutral-800 focus:border-indigo-500 rounded-lg h-10 px-3 text-white text-sm outline-none transition-colors"
                             />
                         </div>
                         {tx.moneda === 'VES' && tx.monto && (
-                          <p className="text-[11px] text-neutral-400 text-center font-medium">≈ ${(parseFloat(tx.monto) / tasaCambio).toFixed(2)} USD</p>
+                          <p className="text-[11px] text-neutral-400 text-center font-medium">â ${(parseFloat(tx.monto) / tasaCambio).toFixed(2)} USD</p>
                         )}
                       </div>
                     ))}
@@ -650,7 +650,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
           </datalist>
         ))}
 
-        {/* CREAR NUEVO MÉTODO */}
+        {/* CREAR NUEVO MÃTODO */}
         {showNewMetodo ? (
           <div className="bg-neutral-900 border border-indigo-500/50 rounded-2xl p-4 animate-in fade-in">
             <div className="flex justify-between items-center mb-4">

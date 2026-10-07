@@ -118,6 +118,7 @@ export default async function CajaPage(props: { searchParams: Promise<{ sede?: s
                       <span className="flex items-center gap-1"><MapPin size={12} /> {c.sedes?.nombre_sede || 'Sede Local'}</span>
                       <span>•</span>
                       <span>Resp: {c.usuarios?.nombre || 'Usuario'}</span>
+                        {c.editor && <span>� Editado por: {c.editor.nombre}</span>}
                     </div>
                   </div>
                 </div>

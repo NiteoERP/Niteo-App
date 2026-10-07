@@ -1,37 +1,13 @@
-const url = 'https://gqlhillifpxizbaqaagl.supabase.co/rest/v1/sql';
-const apiKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxbGhpbGxpZnB4aXpiYXFhYWdsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NjU3OTMyMywiZXhwIjoyMTAyMTU1MzIzfQ.Tifa5ERlUd8wV7x89sBd20FHr_zLYgSn-u_qmrH5wQo';
-const sql = \ALTER TABLE public.perfiles ADD COLUMN IF NOT EXISTS rubro TEXT DEFAULT 'restaurante';
+const { createClient } = require('@supabase/supabase-js');
+const fs = require('fs');
+require('dotenv').config({ path: '.env.local' });
 
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS \\\$\\\$
-DECLARE
-  v_empresa_id uuid;
-  v_company_name text;
-  v_full_name text;
-  v_rubro text;
-BEGIN
-  v_company_name := COALESCE(NEW.raw_user_meta_data->>'company_name', 'Mi Empresa');
-  v_full_name := COALESCE(NEW.raw_user_meta_data->>'full_name', 'Usuario');
-  v_rubro := COALESCE(NEW.raw_user_meta_data->>'rubro', 'restaurante');
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-  INSERT INTO public.perfiles (nombre_empresa, owner_id, rubro)
-  VALUES (v_company_name, NEW.id, v_rubro)
-  RETURNING id INTO v_empresa_id;
+const sql = fs.readFileSync('supabase/migrations/20261005232914_bypass_sede_check_for_pos.sql', 'utf8');
 
-  INSERT INTO public.sedes (empresa_id, nombre_sede, direccion)
-  VALUES (v_empresa_id, 'Sede Principal', 'Dirección no especificada');
-
-  UPDATE auth.users
-  SET raw_app_meta_data = jsonb_set(
-    COALESCE(raw_app_meta_data, '{}'::jsonb),
-    '{empresa_id}',
-    to_jsonb(v_empresa_id::text)
-  )
-  WHERE id = NEW.id;
-
-  RETURN NEW;
-END;
-\\\$\\\$ LANGUAGE plpgsql SECURITY DEFINER;\;
-
-fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'apikey': apiKey, 'Authorization': 'Bearer ' + apiKey }, body: JSON.stringify({ query: sql }) }).then(async r => { if(!r.ok) console.error(await r.text()); else console.log('Success'); }).catch(console.error);
-
+// Note: supabase-js doesn't have a direct sql execution method unless pg_graphql or similar is enabled.
+// But we can check if it works.
+console.log("Cannot execute raw SQL via JS client directly.");

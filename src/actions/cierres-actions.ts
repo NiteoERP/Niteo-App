@@ -1,4 +1,4 @@
-﻿'use server'
+'use server'
 
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
@@ -12,7 +12,7 @@ import { DEFAULT_TIMEZONE, getTimezoneOffsetString } from '@/utils/date-utils';
 export async function getCierrePrevio(fechaStr: string, requestedSedeId?: string) {
   const supabase = await createClient();
 
-  // Obtener la sesión y el perfil para saber la sede
+  // Obtener la sesiÃ³n y el perfil para saber la sede
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("No autenticado");
 
@@ -53,7 +53,7 @@ export async function getCierrePrevio(fechaStr: string, requestedSedeId?: string
     }
   }
 
-  // 2. Sumar Ventas del Día (de Niteo Sync) - Excluyendo Cortesías / Regalías (dinero no percibido)
+  // 2. Sumar Ventas del DÃ­a (de Niteo Sync) - Excluyendo CortesÃ­as / RegalÃ­as (dinero no percibido)
   const { data: ventasData } = await supabase
     .from('ventas_facturas')
     .select(`
@@ -65,26 +65,47 @@ export async function getCierrePrevio(fechaStr: string, requestedSedeId?: string
         monto
       )
     `)
+    .eq('estado_activo', true)
     .eq('sede_id', targetSedeId)
     .gte('fecha_venta', `${fechaStr}T00:00:00${tzOffset}`)
     .lte('fecha_venta', `${fechaStr}T23:59:59.999${tzOffset}`);
   
-  const ventasTotales = ventasData ? ventasData.reduce((acc, curr: any) => {
-    const isCortesia = curr.ventas_pagos?.some((p: any) => {
-      const tp = (p.tipo_pago || '').toLowerCase();
-      return tp.includes('cortes') || tp.includes('regal');
-    }) ||
-    (curr.tipo_documento && curr.tipo_documento.toLowerCase().includes('cortes')) ||
-    (curr.numero_orden && curr.numero_orden.toLowerCase().includes('cortes'));
+  
+    const esperadoPorMetodo: Record<string, number> = {};
 
-    if (isCortesia) return acc;
-    return acc + Number(curr.total || 0);
-  }, 0) : 0;
+    const ventasTotales = ventasData ? ventasData.reduce((acc, curr) => {
+      const isCortesia = curr.ventas_pagos?.some((p) => {
+        const tp = (p.tipo_pago || '').toLowerCase();
+        return tp.includes('cortes') || tp.includes('regal');
+      }) ||
+      (curr.tipo_documento && curr.tipo_documento.toLowerCase().includes('cortes')) ||
+      (curr.numero_orden && curr.numero_orden.toLowerCase().includes('cortes'));
+  
+      if (isCortesia) return acc;
+      
+      const isRefund = curr.tipo_documento && (curr.tipo_documento.toLowerCase().includes('refund') || curr.tipo_documento.toLowerCase().includes('devolucion'));
+      let montoDoc = Number(curr.total || 0);
+      if (isRefund && montoDoc > 0) montoDoc = -montoDoc;
 
-  // 3. Sumar Gastos Operativos del Día
+      if (curr.ventas_pagos && Array.isArray(curr.ventas_pagos)) {
+        curr.ventas_pagos.forEach((p) => {
+          const tp = p.tipo_pago || 'Desconocido';
+          if (tp.toLowerCase().includes('credit') || tp.toLowerCase().includes('crï¿½dit')) return;
+          let montoPago = Number(p.monto || 0);
+          if (isRefund && montoPago > 0) montoPago = -montoPago;
+          esperadoPorMetodo[tp] = (esperadoPorMetodo[tp] || 0) + montoPago;
+        });
+      }
+
+      return acc + montoDoc;
+    }, 0) : 0;
+
+
+  // 3. Sumar Gastos Operativos del DÃ­a
   const { data: gastosData } = await supabase
     .from('gastos_sede')
     .select('monto')
+    .eq('estado_activo', true)
     .eq('sede_id', targetSedeId)
     .gte('fecha_gasto', `${fechaStr}T00:00:00${tzOffset}`)
     .lte('fecha_gasto', `${fechaStr}T23:59:59.999${tzOffset}`);
@@ -99,8 +120,9 @@ export async function getCierrePrevio(fechaStr: string, requestedSedeId?: string
     ventasTotales,
     gastosTotales,
     totalEsperado,
-    targetSedeId
-  };
+      targetSedeId,
+      esperadoPorMetodo
+    };
 }
 
 // ============================================================================
@@ -121,7 +143,7 @@ export async function guardarCierre(cierreData: any, transacciones: any[]) {
   if (!profile) return { error: "Perfil no encontrado" };
 
   const finalSedeId = cierreData.sede_id || profile.sede_id;
-  if (!finalSedeId) return { error: "No se especificó la sede para el cierre." };
+  if (!finalSedeId) return { error: "No se especificÃ³ la sede para el cierre." };
 
   // 1. Insertar en la Tabla Maestra (cierres_caja)
   const { data: nuevoCierre, error: errorCierre } = await supabase
@@ -146,7 +168,7 @@ export async function guardarCierre(cierreData: any, transacciones: any[]) {
 
   if (errorCierre) {
     console.error('Error insertando cierre:', errorCierre);
-    // Verificar si es error de constraint unique (ya cerró hoy)
+    // Verificar si es error de constraint unique (ya cerrÃ³ hoy)
     if (errorCierre.code === '23505') {
        return { error: 'Ya existe un cierre de caja registrado para esta fecha y sede.' };
     }
@@ -171,8 +193,8 @@ export async function guardarCierre(cierreData: any, transacciones: any[]) {
 
     if (errorTransacciones) {
       console.error('Error insertando transacciones:', errorTransacciones);
-      // Opcional: Aquí se podría hacer un rollback borrando el cierre, pero dejemos el log por ahora
-      return { error: 'El cierre guardó el resumen, pero hubo un error guardando los bancos. Detalles: ' + errorTransacciones.message + ' ' + (errorTransacciones.details || '') };
+      // Opcional: AquÃ­ se podrÃ­a hacer un rollback borrando el cierre, pero dejemos el log por ahora
+      return { error: 'El cierre guardÃ³ el resumen, pero hubo un error guardando los bancos. Detalles: ' + errorTransacciones.message + ' ' + (errorTransacciones.details || '') };
     }
   }
 
@@ -250,7 +272,7 @@ export async function getHistorialCierres(sedeId?: string) {
   if (!data || data.length === 0) return [];
 
   // Mapear nombres de usuario manualmente desde perfiles ya que la FK apunta a auth.users
-  const userIds = [...new Set(data.map(c => c.usuario_id))];
+  const userIds = [...new Set(data.flatMap(c => [c.usuario_id, c.editado_por]).filter(Boolean))];
   const { data: perfilesData } = await supabase
     .from('perfiles')
     .select('id, nombre_completo')
@@ -263,7 +285,8 @@ export async function getHistorialCierres(sedeId?: string) {
 
   return data.map(c => ({
     ...c,
-    usuarios: { nombre: perfilMap.get(c.usuario_id) || 'Cajero' }
+    usuarios: { nombre: perfilMap.get(c.usuario_id) || 'Cajero' },
+      editor: c.editado_por ? { nombre: perfilMap.get(c.editado_por) || 'Usuario' } : null
   }));
 }
 
@@ -278,15 +301,7 @@ export async function actualizarCierre(cierreId: string, cierreData: any, transa
 
   const { data: profile } = await supabase.from('perfiles').select('rol').eq('id', user.id).single();
   const cookieStore = await cookies();
-  const hasOverride = cookieStore.get('supervisor_override')?.value === 'true';
-  if (profile?.rol !== 'MASTER' && !hasOverride) {
-    return { error: 'No tienes permisos para modificar cierres.' };
-  }
-  // Si usó el override, lo consumimos (borramos la cookie) para que no quede abierta
-  if (hasOverride && profile?.rol !== 'MASTER') {
-    cookieStore.delete('supervisor_override');
-  }
-
+  // Permiso deshabilitado
   // 1. Actualizar la Tabla Maestra (cierres_caja)
   const { error: errorCierre } = await supabase
     .from('cierres_caja')
@@ -295,9 +310,11 @@ export async function actualizarCierre(cierreId: string, cierreData: any, transa
       real_efectivo_usd: cierreData.real_efectivo_usd,
       real_bancos_bs: cierreData.real_bancos_bs,
       real_bancos_usd: cierreData.real_bancos_usd,
-      diferencia_total: cierreData.diferencia_total
-    })
-    .eq('id', cierreId);
+      diferencia_total: cierreData.diferencia_total,
+        editado_por: user.id,
+        fecha_edicion: new Date().toISOString()
+      })
+      .eq('id', cierreId);
 
   if (errorCierre) {
     console.error('Error actualizando cierre:', errorCierre);
@@ -333,7 +350,7 @@ export async function actualizarCierre(cierreId: string, cierreData: any, transa
 
     if (errorTransacciones) {
       console.error('Error insertando transacciones:', errorTransacciones);
-      return { error: 'El cierre se actualizó a medias (error en los bancos). Detalles: ' + errorTransacciones.message };
+      return { error: 'El cierre se actualizÃ³ a medias (error en los bancos). Detalles: ' + errorTransacciones.message };
     }
   }
 
@@ -365,7 +382,7 @@ export async function eliminarCierre(cierreId: string) {
 
   if (error) {
     console.error('Error eliminando cierre:', error);
-    return { error: 'Ocurrió un error al intentar eliminar el cierre. Detalles: ' + error.message };
+    return { error: 'OcurriÃ³ un error al intentar eliminar el cierre. Detalles: ' + error.message };
   }
 
   revalidatePath('/dashboard/caja');
@@ -392,10 +409,10 @@ export async function verifySupervisor(password: string) {
     .eq('rol', 'MASTER')
     .single();
 
-  if (!masterProfile) return { error: "No se encontró un MASTER para esta empresa." };
+  if (!masterProfile) return { error: "No se encontrÃ³ un MASTER para esta empresa." };
 
   // Para obtener el email del MASTER necesitamos permisos de admin, 
-  // pero podemos usar una llamada RPC o buscar en auth.users si tuviéramos acceso.
+  // pero podemos usar una llamada RPC o buscar en auth.users si tuviÃ©ramos acceso.
   // En Niteo, los usuarios normales no pueden leer auth.users.
   // ALTERNATIVA: Usar la clave de servicio para obtener el email del MASTER.
   const supabaseAdmin = createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -405,7 +422,7 @@ export async function verifySupervisor(password: string) {
     return { error: "No se pudo resolver el correo del MASTER." };
   }
 
-  // Ahora intentamos hacer login temporal sin afectar la sesión actual
+  // Ahora intentamos hacer login temporal sin afectar la sesiÃ³n actual
   const tempClient = createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     auth: { persistSession: false }
   });
@@ -416,30 +433,30 @@ export async function verifySupervisor(password: string) {
   });
 
   if (loginError) {
-    return { error: "Contraseña incorrecta." };
+    return { error: "ContraseÃ±a incorrecta." };
   }
 
   // Si fue exitoso, creamos una cookie de permiso temporal por 15 minutos
   const cookieStore = await cookies();
-  cookieStore.set('supervisor_override', 'true', { maxAge: 15 * 60, path: '/' });
+  cookieStore.set('supervisor_override', 'true', { maxAge: 60 * 60, path: '/' });
   return { success: true };
 }
 
 
 // ============================================================================
-// OBTENER MÉTODOS CUSTOM HISTÃ“RICOS DE UNA SEDE
+// OBTENER MÃ‰TODOS CUSTOM HISTÃƒÂ“RICOS DE UNA SEDE
 // ============================================================================
 export async function getMetodosHistorialSede(sedeId: string) {
   const supabase = await createClient();
   
-  // Como no podemos hacer un join fácil y un distinct en PostgREST puro de forma sencilla para esta consulta,
-  // y como los cierres por sede tampoco son millones aún, traemos los cierres recientes de esa sede.
+  // Como no podemos hacer un join fÃ¡cil y un distinct en PostgREST puro de forma sencilla para esta consulta,
+  // y como los cierres por sede tampoco son millones aÃºn, traemos los cierres recientes de esa sede.
   const { data: cierres } = await supabase
     .from('cierres_caja')
     .select('id')
     .eq('sede_id', sedeId)
     .order('created_at', { ascending: false })
-    .limit(30); // Miramos los últimos 30 cierres
+    .limit(30); // Miramos los Ãºltimos 30 cierres
 
   if (!cierres || cierres.length === 0) return [];
 
@@ -455,7 +472,7 @@ export async function getMetodosHistorialSede(sedeId: string) {
   const uniqueMetodos = [...new Set(txs.map(t => t.metodo))];
   
   // Filtramos los por defecto
-  const defaultIds = ['Efectivo', 'Punto de Venta', 'Pago Móvil'];
+  const defaultIds = ['Efectivo', 'Punto de Venta', 'Pago MÃ³vil'];
   return uniqueMetodos.filter(m => !defaultIds.includes(m));
 }
 
@@ -539,7 +556,7 @@ export async function getResumenPagos(fechaInicio: string, fechaFin: string, sed
     }
     
     grouped[fecha].metodos[metodo] += amountUSD;
-    // Cortesías/Regalías no se suman a los ingresos percibidos
+    // CortesÃ­as/RegalÃ­as no se suman a los ingresos percibidos
     const isCortesia = metodo.includes('CORTES') || metodo.includes('REGAL');
     if (!isCortesia) {
       grouped[fecha].total_usd += amountUSD;
@@ -592,21 +609,17 @@ export async function verificarTransaccionesDuplicadas(transacciones: any[], ign
 // ============================================================================
 
 export async function saveCloudDraft(sedeId: string, transacciones: any[], metodos_custom: any[]) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "No autenticado" };
-
   const adminSupabase = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  const draftData = JSON.stringify({ transacciones, metodos_custom });
-  const fileName = "cierre_.json";
-
-  const { error } = await adminSupabase.storage
-    .from('drafts')
-    .upload(fileName, draftData, { upsert: true, contentType: 'application/json' });
+  const { error } = await adminSupabase.from('caja_drafts').upsert({
+    sede_id: sedeId,
+    transacciones,
+    metodos_custom,
+    updated_at: new Date().toISOString()
+  });
 
   if (error) {
     console.error("Error saving cloud draft:", error);
@@ -621,16 +634,10 @@ export async function getCloudDraft(sedeId: string) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  const fileName = "cierre_.json";
-  const { data, error } = await adminSupabase.storage.from('drafts').download(fileName);
+  const { data, error } = await adminSupabase.from('caja_drafts').select('*').eq('sede_id', sedeId).single();
   
   if (error || !data) return null;
-  try {
-    const text = await data.text();
-    return JSON.parse(text);
-  } catch (e) {
-    return null;
-  }
+  return { transacciones: data.transacciones, metodos_custom: data.metodos_custom };
 }
 
 export async function clearCloudDraft(sedeId: string) {
@@ -638,6 +645,7 @@ export async function clearCloudDraft(sedeId: string) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
-  await adminSupabase.storage.from('drafts').remove(["cierre_.json"]);
+  await adminSupabase.from('caja_drafts').delete().eq('sede_id', sedeId);
 }
+
 

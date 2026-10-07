@@ -1,7 +1,8 @@
 import React from 'react';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
-import { Users, Search, Mail, Phone, MapPin } from 'lucide-react';
+import { Users } from 'lucide-react';
+import DirectorioClientes from './DirectorioClientes';
 
 export default async function ClientesPage() {
   const supabase = await createClient();
@@ -18,13 +19,62 @@ export default async function ClientesPage() {
     return <div className="p-8 text-rose-400">Error: No tienes empresa configurada.</div>;
   }
 
-  // Fetch customers
-  const { data: clientes, error } = await supabase
+  const { data: clientesRaw, error } = await supabase
     .from('clientes')
-    .select('id, nombre, identificacion, email, telefono, direccion, creado_en')
+    .select(`
+      id, 
+      nombre, 
+      rif_cedula, 
+      telefono, 
+      email,
+      ventas_facturas ( id, total, fecha_venta, numero_documento, sedes(nombre) )
+    `)
     .eq('empresa_id', empresaId)
-    .order('nombre', { ascending: true })
-    .limit(100);
+    .order('nombre', { ascending: true });
+
+  if (error) {
+    return <div className="p-8 text-rose-400">Error al cargar clientes: {error.message}</div>;
+  }
+
+  const clientes = (clientesRaw || []).filter(c => 
+    c.nombre !== 'Consumidor Final' && 
+    ((c.rif_cedula && c.rif_cedula.trim() !== '') || (c.telefono && c.telefono.trim() !== ''))
+  ).map(c => {
+    const ventas = c.ventas_facturas || [];
+    const numPedidos = ventas.length;
+    const totalGastado = ventas.reduce((acc: number, v: any) => acc + Number(v.total || 0), 0);
+    const ticketPromedio = numPedidos > 0 ? totalGastado / numPedidos : 0;
+    
+    const sedesCounter: Record<string, number> = {};
+    ventas.forEach((v: any) => {
+      const s = v.sedes?.nombre || 'Desconocida';
+      sedesCounter[s] = (sedesCounter[s] || 0) + 1;
+    });
+    
+    let maxSede = 0;
+    let sedeFrecuente = 'N/A';
+    for (const [s, count] of Object.entries(sedesCounter)) {
+      if (count > maxSede) {
+        maxSede = count;
+        sedeFrecuente = s;
+      }
+    }
+
+    const historial = ventas.sort((a: any, b: any) => new Date(b.fecha_venta).getTime() - new Date(a.fecha_venta).getTime());
+
+    return {
+      id: c.id,
+      nombre: c.nombre,
+      rif_cedula: c.rif_cedula,
+      telefono: c.telefono,
+      email: c.email,
+      numPedidos,
+      totalGastado,
+      ticketPromedio,
+      sedeFrecuente,
+      historial
+    };
+  });
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto animate-in fade-in duration-300">
@@ -35,125 +85,12 @@ export default async function ClientesPage() {
             Directorio de Clientes
           </h1>
           <p className="text-neutral-400 text-xs md:text-sm mt-1">
-            Visualiza todos los clientes sincronizados desde tu caja Aronium.
+            Visualiza tus clientes registrados, su historial de pedidos y su ticket promedio.
           </p>
         </div>
       </div>
 
-      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden shadow-xl">
-        <div className="p-4 border-b border-neutral-800 flex items-center gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" size={18} />
-            <input 
-              type="text" 
-              placeholder="Buscar cliente (Deshabilitado en esta vista beta)..." 
-              disabled
-              className="w-full h-14 bg-neutral-950 border border-neutral-800 rounded-xl pl-10 pr-4 text-sm text-white outline-none opacity-50 cursor-not-allowed"
-            />
-          </div>
-          <span className="text-sm font-medium text-neutral-400">
-            {clientes?.length || 0} Registros
-          </span>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="hidden md:table w-full text-left text-sm">
-            <thead className="bg-neutral-950/50 text-neutral-500 font-medium border-b border-neutral-800">
-              <tr>
-                <th className="px-6 py-4">Nombre / Empresa</th>
-                <th className="px-6 py-4">Contacto</th>
-                <th className="px-6 py-4">Sincronizado</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-800">
-              {error && (
-                <tr><td colSpan={3} className="px-6 py-8 text-center text-rose-400">Error al cargar clientes: {error.message}</td></tr>
-              )}
-              {!error && (!clientes || clientes.length === 0) && (
-                <tr>
-                  <td colSpan={3} className="px-6 py-12 text-center text-neutral-500">
-                    <Users size={32} className="mx-auto mb-3 opacity-20" />
-                    <p>No hay clientes sincronizados.</p>
-                    <p className="text-xs mt-1">Los clientes creados en Aronium aparecerán aquí.</p>
-                  </td>
-                </tr>
-              )}
-              {clientes && clientes.map((cliente) => (
-                <tr key={cliente.id} className="hover:bg-white/[0.02] transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="font-semibold text-white">{cliente.nombre}</div>
-                    {cliente.identificacion && <div className="text-xs text-neutral-500 mt-0.5">ID/RUT: {cliente.identificacion}</div>}
-                  </td>
-                  <td className="px-6 py-4 space-y-1">
-                    {cliente.email && (
-                      <div className="flex items-center gap-2 text-neutral-400 text-xs">
-                        <Mail size={12} /> {cliente.email}
-                      </div>
-                    )}
-                    {cliente.telefono && (
-                      <div className="flex items-center gap-2 text-neutral-400 text-xs">
-                        <Phone size={12} /> {cliente.telefono}
-                      </div>
-                    )}
-                    {cliente.direccion && (
-                      <div className="flex items-center gap-2 text-neutral-500 text-xs">
-                        <MapPin size={12} /> {cliente.direccion}
-                      </div>
-                    )}
-                    {!cliente.email && !cliente.telefono && !cliente.direccion && <span className="text-neutral-600 italic text-xs">Sin datos de contacto</span>}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-xs text-neutral-500">
-                      {cliente.creado_en ? new Date(cliente.creado_en).toLocaleDateString() : '-'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {/* Mobile view (Cards) */}
-          <div className="md:hidden flex flex-col divide-y divide-neutral-800">
-            {error && (
-              <div className="p-8 text-center text-rose-400">Error al cargar clientes: {error.message}</div>
-            )}
-            {!error && (!clientes || clientes.length === 0) && (
-              <div className="p-12 text-center text-neutral-500">
-                <Users size={32} className="mx-auto mb-3 opacity-20" />
-                <p>No hay clientes sincronizados.</p>
-              </div>
-            )}
-            {clientes && clientes.map((cliente) => (
-              <div key={cliente.id} className="p-4 flex flex-col gap-3">
-                <div>
-                  <div className="font-semibold text-white text-lg">{cliente.nombre}</div>
-                  {cliente.identificacion && <div className="text-xs text-neutral-500 font-mono mt-1">ID: {cliente.identificacion}</div>}
-                </div>
-                
-                <div className="bg-neutral-950 rounded-lg p-3 space-y-2 border border-neutral-800/50">
-                  {cliente.email && (
-                    <div className="flex items-center gap-2 text-neutral-400 text-sm">
-                      <Mail size={14} className="text-indigo-400" /> {cliente.email}
-                    </div>
-                  )}
-                  {cliente.telefono && (
-                    <div className="flex items-center gap-2 text-neutral-400 text-sm">
-                      <Phone size={14} className="text-indigo-400" /> {cliente.telefono}
-                    </div>
-                  )}
-                  {cliente.direccion && (
-                    <div className="flex items-center gap-2 text-neutral-500 text-sm">
-                      <MapPin size={14} className="text-indigo-400" /> <span className="truncate">{cliente.direccion}</span>
-                    </div>
-                  )}
-                  {!cliente.email && !cliente.telefono && !cliente.direccion && <span className="text-neutral-600 italic text-sm">Sin datos de contacto</span>}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      <DirectorioClientes clientes={clientes} />
     </div>
   );
 }
-

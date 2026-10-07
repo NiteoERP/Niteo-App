@@ -74,7 +74,7 @@ export default function VentaAlCostoSlideOver({
     const q = Number(qtyToAdd);
     if (!q || q <= 0) return;
     if (q > selectedInsumo.cantidad_actual) {
-      setErrorMsg(`Cantidad mÃ¡xima disponible: ${selectedInsumo.cantidad_actual}`);
+      setErrorMsg(`Cantidad máxima disponible: ${selectedInsumo.cantidad_actual}`);
       return;
     }
 
@@ -192,7 +192,7 @@ export default function VentaAlCostoSlideOver({
 
               {/* Info */}
               <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-2xl p-3.5 text-xs text-indigo-300/90 leading-relaxed">
-                Esta operaciÃ³n deduce el insumo al <strong>costo promedio registrado</strong>, sincerando el inventario sin registrar ganancia.
+                Esta operación deduce el insumo al <strong>costo promedio registrado</strong>, sincerando el inventario sin registrar ganancia.
               </div>
 
               {/* Datos Persona */}
@@ -208,7 +208,7 @@ export default function VentaAlCostoSlideOver({
                   />
                   <input
                     type="text" value={notas} onChange={e => setNotas(e.target.value)}
-                    placeholder="Notas o justificaciÃ³n (Opcional)"
+                    placeholder="Notas o justificación (Opcional)"
                     className="w-full bg-neutral-900 border border-neutral-800 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
                   />
                 </div>

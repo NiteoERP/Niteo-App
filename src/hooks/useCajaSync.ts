@@ -14,7 +14,7 @@ export function useCajaSync(
   const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected'>('disconnected');
   const [onlineCount, setOnlineCount] = useState(0);
 
-  // Ref para saber si el Ãºltimo cambio vino de la red (para no rebotarlo)
+  // Ref para saber si el último cambio vino de la red (para no rebotarlo)
   const isRemoteRef = useRef(false);
 
   // Ref para tener los datos frescos en los eventos sin necesidad de re-suscribir
@@ -28,7 +28,7 @@ export function useCajaSync(
 
     setStatus('connecting');
 
-    // Identificador Ãºnico para este cliente en esta sesiÃ³n
+    // Identificador único para este cliente en esta sesión
     const clientId = Math.random().toString(36).substring(7);
 
     const channel = supabase.channel(`caja-sync-${sedeId}`, {
@@ -41,7 +41,7 @@ export function useCajaSync(
     channel
       .on('presence', { event: 'sync' }, () => {
         const newState = channel.presenceState();
-        // Contar el nÃºmero de clientes Ãºnicos
+        // Contar el número de clientes únicos
         setOnlineCount(Object.keys(newState).length);
       })
       .on('broadcast', { event: 'state_update' }, (payload: any) => {
@@ -54,7 +54,7 @@ export function useCajaSync(
         }
       })
       .on('broadcast', { event: 'request_state' }, () => {
-        // Alguien entrÃ³, le enviamos nuestro estado si tenemos datos
+        // Alguien entró, le enviamos nuestro estado si tenemos datos
         const currentState = stateRef.current;
         if (currentState.transacciones.length > 0 || currentState.metodos.length > 5) {
           channel.send({ 

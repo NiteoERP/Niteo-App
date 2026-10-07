@@ -16,7 +16,7 @@ export default async function CierreDetallePage(props: { params: Promise<{ id: s
 
   const { data: cierre, error } = await supabase
     .from('cierres_caja')
-    .select('id, fecha_cierre, sistema_total_esperado, real_efectivo_usd, real_bancos_usd, real_efectivo_bs, real_bancos_bs, tasa_cambio, diferencia_total, observaciones, sedes(nombre_sede)')
+    .select('id, fecha_cierre, sistema_total_esperado, real_efectivo_usd, real_bancos_usd, real_efectivo_bs, real_bancos_bs, tasa_cambio, diferencia_total, editado_por, fecha_edicion, sedes(nombre_sede)')
     .eq('id', params.id)
     .single();
 
@@ -28,10 +28,17 @@ export default async function CierreDetallePage(props: { params: Promise<{ id: s
   if (error || !cierre) {
     return (
       <div className="p-6">
-        <h1 className="text-xl text-rose-400">Cierre no encontrado</h1>
+        <h1 className="text-xl text-rose-400">Cierre no encontrado {error?.message} - {params.id}</h1>
         <Link href="/dashboard/caja" className="text-indigo-400 underline mt-4 inline-block">Volver</Link>
       </div>
     );
+  }
+
+  
+  let editorNombre = null;
+  if (cierre.editado_por) {
+    const { data: ed } = await supabase.from('perfiles').select('nombre').eq('id', cierre.editado_por).single();
+    if (ed) editorNombre = ed.nombre;
   }
 
   // Ensure JSON defaults
@@ -46,7 +53,14 @@ export default async function CierreDetallePage(props: { params: Promise<{ id: s
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-white">Detalle de Cierre</h1>
+            
             <p className="text-neutral-400">{new Date(cierre.fecha_cierre + 'T12:00:00Z').toLocaleDateString('es-VE')} - {Array.isArray(cierre.sedes) ? (cierre.sedes[0] as any)?.nombre_sede : (cierre.sedes as any)?.nombre_sede}</p>
+            {editorNombre && (
+              <p className="text-amber-500/80 text-xs mt-1 font-medium bg-amber-500/10 inline-block px-2 py-0.5 rounded-full border border-amber-500/20">
+                ?? Editado por {editorNombre}
+              </p>
+            )}
+
           </div>
         </div>
         <CierreBotonesControl cierreId={cierre.id} isMaster={isMaster} />

@@ -531,6 +531,7 @@ async function handleMermasYRegaliasReport(
         )
       `)
       .ilike('tipo_pago', '%cortes%')
+      .eq('ventas_facturas.estado_activo', true)
       .eq('ventas_facturas.empresa_id', empresaId)
       .gte('ventas_facturas.fecha_venta', start)
       .lte('ventas_facturas.fecha_venta', end)
@@ -1183,5 +1184,6 @@ export async function obtenerComprasNetasSede(
     return { success: false, error: err.message || 'Error inesperado al calcular compras netas.' };
   }
 }
+
 
 

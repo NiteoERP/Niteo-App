@@ -43,6 +43,7 @@ export async function fetchDeliveryData(
       repartidor:perfiles!ventas_facturas_repartidor_id_fkey(nombre_completo)
     `)
     .eq('empresa_id', perfil.empresa_id)
+    .eq('estado_activo', true)
     .eq('estado_delivery', 'ENTREGADO')
     .gte('fecha_registro_real', startDateTime)
     .lte('fecha_registro_real', endDateTime);
@@ -64,3 +65,4 @@ export async function fetchDeliveryData(
 
   return data || [];
 }
+

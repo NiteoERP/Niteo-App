@@ -147,7 +147,7 @@ export async function registrarAbonoGlobal(clienteId: string, sedeId: string, mo
   const { data: profile } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
   if (!profile) return { success: false, error: "Perfil no encontrado" };
 
-  let query = supabase.from('ventas_facturas').select('id, saldo_pendiente').eq('cliente_id', clienteId).eq('empresa_id', profile.empresa_id).gt('saldo_pendiente', 0).order('fecha_venta', { ascending: true });
+  let query = supabase.from('ventas_facturas').select('id, saldo_pendiente').eq('estado_activo', true).eq('cliente_id', clienteId).eq('empresa_id', profile.empresa_id).gt('saldo_pendiente', 0).order('fecha_venta', { ascending: true });
   if (sedeId !== 'ALL') query = query.eq('sede_id', sedeId);
 
   const { data: facturas, error: errFacs } = await query;
@@ -236,6 +236,7 @@ export async function getHistorialAbonosCliente(clienteId: string) {
         total
       )
     `)
+    .eq('ventas_facturas.estado_activo', true)
     .eq('ventas_facturas.cliente_id', clienteId)
     .eq('empresa_id', profile.empresa_id)
     .neq('tipo_pago', 'Credito')
@@ -294,3 +295,4 @@ export async function getTasaBCVActual(): Promise<number> {
     .maybeSingle();
   return data?.tasa_bcv ?? 1;
 }
+

@@ -1,4 +1,4 @@
-'use server';
+﻿'use server';
 
 import { createClient } from '@/utils/supabase/server';
 import { registrarAsiento } from './contabilidad-actions';
@@ -19,7 +19,7 @@ export interface VentaPOS {
   cajero_nombre?: string;
   mesero_nombre?: string;
   pagos?: { tipo_pago: string, monto: number }[];
-  metodo_pago?: string;       // resumen del primer método de pago registrado
+  metodo_pago?: string;       // resumen del primer mÃ©todo de pago registrado
   detalles: VentaDetalle[];
 }
 
@@ -130,7 +130,7 @@ export async function getProductosCatalogo(empresaId: string): Promise<ProductoP
 }
 
 /**
- * Catálogo filtrado para el Terminal Virtual de Niteo.
+ * CatÃ¡logo filtrado para el Terminal Virtual de Niteo.
  * Solo incluye productos con canal_venta = 'SOLO_NITEO' o 'AMBOS'.
  */
 export async function getProductosCatalogoVirtual(empresaId: string): Promise<ProductoPOS[]> {
@@ -410,3 +410,80 @@ export async function generarAsientoVentaPOS(facturaId: string) {
     return { success: false, error: err.message };
   }
 }
+
+
+export async function procesarReembolsoPOS(facturaId: string, detalles: any[], metodoPago: string) {
+  const supabase = await createClient();
+  const { data: factura, error: errFac } = await supabase
+    .from('ventas_facturas')
+    .select('*')
+    .eq('id', facturaId)
+    .single();
+
+  if (errFac || !factura) return { success: false, error: 'Factura no encontrada' };
+
+  // Calcular total a reembolsar
+  const totalDevolver = detalles.reduce((acc, it) => acc + (it.cantidadDevolver * it.precio_unitario), 0);
+
+  // Crear documento de reembolso
+  const nuevoNumero = 'NC-' + (factura.numero_documento || factura.id.slice(0, 8).toUpperCase());
+  const nuevoId = crypto.randomUUID();
+
+  const { error: errIns } = await supabase.from('ventas_facturas').insert({
+    id: nuevoId,
+    empresa_id: factura.empresa_id,
+    sede_id: factura.sede_id,
+    cajero_nombre: factura.cajero_nombre,
+    mesero_nombre: factura.mesero_nombre,
+    cliente_id: factura.cliente_id,
+    cliente_nombre: factura.cliente_nombre,
+    numero_documento: nuevoNumero,
+    numero_orden: factura.numero_orden,
+    tipo_documento: 'REEMBOLSO',
+    total: -totalDevolver, // MONTO NEGATIVO
+    descuento: 0,
+    estado_pago: 1, // Pagado/Completado
+    estado_activo: true,
+    verificado: true
+  , id_pos: nuevoId});
+
+  if (errIns) return { success: false, error: 'Error al crear documento de reembolso: ' + errIns.message };
+
+  // Insertar detalles en negativo
+  const { error: errDet } = await supabase.from('ventas_detalles').insert(
+    detalles.map(d => ({
+      empresa_id: factura.empresa_id,
+      id_pos: crypto.randomUUID(),
+
+      factura_id: nuevoId,
+      producto_id: d.producto_id,
+      cantidad: -d.cantidadDevolver, // CANTIDAD NEGATIVA
+      precio_unitario: d.precio_unitario,
+      total: -(d.cantidadDevolver * d.precio_unitario),
+      descuento: 0
+    
+    }))
+  );
+
+  if (errDet) return { success: false, error: 'Error al insertar detalles: ' + errDet.message };
+
+  // Insertar pago en negativo
+  const { error: errPago } = await supabase.from('ventas_pagos').insert({
+    empresa_id: factura.empresa_id,
+    id_pos: crypto.randomUUID(),
+
+    factura_id: nuevoId,
+    tipo_pago: metodoPago,
+    monto: -totalDevolver, // PAGO NEGATIVO
+    moneda: 'USD'
+  
+  });
+
+  if (errPago) return { success: false, error: 'Error al registrar pago de reembolso: ' + errPago.message };
+
+  // Actualizar estado de la factura original si fue reembolso total
+  // (opcional, por ahora lo dejamos como VENTA activa, y el reembolso balancea la matematica)
+
+  return { success: true };
+}
+

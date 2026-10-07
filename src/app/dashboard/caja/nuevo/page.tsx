@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -62,6 +62,7 @@ export default function NuevoCierreCaja() {
     
   // Transacciones
   const [transacciones, setTransacciones] = useState<Transaccion[]>([]);
+  const [esperadoPorMetodo, setEsperadoPorMetodo] = useState<Record<string, number>>({});
   const [expandedMetodo, setExpandedMetodo] = useState<string | null>('Pago Móvil');
 
   // Metodos dinámicos
@@ -85,9 +86,17 @@ export default function NuevoCierreCaja() {
       const metodos_custom = mets.filter(m => m.isCustom).map(m => ({
         id: m.id, color: m.color, defaultMoneda: m.defaultMoneda, isCustom: true, iconKey: 'GripHorizontal',
       }));
+      if (txs.length === 0 && metodos_custom.length === 0) {
+        localStorage.removeItem(draftKey);
+        if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current as any);
+        cloudSaveTimer.current = setTimeout(() => {
+          clearCloudDraft(sedeId).catch(console.error);
+        }, 1000);
+        return;
+      }
       localStorage.setItem(draftKey, JSON.stringify({ transacciones: txs, metodos_custom }));
 
-      if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
+      if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current as any);
       cloudSaveTimer.current = setTimeout(() => {
         saveCloudDraft(sedeId, txs, metodos_custom).catch(console.error);
       }, 5000);
@@ -137,6 +146,71 @@ export default function NuevoCierreCaja() {
     return false;
   };
 
+  
+  // Polling para sincronizaci�n en tiempo real con la nube (Niteo POS <-> Web) con Fusi�n Inteligente (Smart Merge)
+  useEffect(() => {
+    let interval: any = null;
+    if (selectedSedeId) {
+      interval = setInterval(async () => {
+        try {
+          const cloudDraft = await getCloudDraft(selectedSedeId);
+          if (cloudDraft && (cloudDraft.transacciones?.length > 0 || cloudDraft.metodos_custom?.length > 0)) {
+            setTransacciones((prevTxs) => {
+              const cloudTxs = cloudDraft.transacciones || [];
+              let merged = [...prevTxs];
+              let hasChanges = false;
+
+              for (const c of cloudTxs) {
+                const existingIndex = merged.findIndex((l) => l.id === c.id);
+                if (existingIndex !== -1) {
+                  // Si existe, y es diferente, actualizamos con el de la nube (la nube gana en ediciones)
+                  if (JSON.stringify(merged[existingIndex]) !== JSON.stringify(c)) {
+                    merged[existingIndex] = { ...c };
+                    hasChanges = true;
+                  }
+                } else {
+                  // No existe por ID. Verificamos si es un duplicado por referencia.
+                  const isDup = merged.find(
+                    (l) =>
+                      l.metodo === c.metodo &&
+                      Number(l.monto) === Number(c.monto) &&
+                      l.referencia &&
+                      c.referencia &&
+                      l.referencia.trim().toLowerCase() === c.referencia.trim().toLowerCase()
+                  );
+                  if (!isDup) {
+                    merged.push(c);
+                    hasChanges = true;
+                  }
+                }
+              }
+
+              if (hasChanges) {
+                setHasDraft(merged.length > 0);
+                return merged;
+              }
+              return prevTxs;
+            });
+            
+            setMetodos((prevMets) => {
+              const prevCustom = prevMets.filter((m: any) => m.isCustom);
+              const cloudCustom = cloudDraft.metodos_custom || [];
+              if (JSON.stringify(prevCustom) !== JSON.stringify(cloudCustom)) {
+                const customRestored = cloudCustom.map((m: any) => ({
+                  ...m, iconKey: m.iconKey || 'GripHorizontal',
+                }));
+                return [...METODOS_DEFAULT, ...customRestored];
+              }
+              return prevMets;
+            });
+          }
+        } catch(e) {}
+      }, 5000);
+    }
+    return () => clearInterval(interval);
+  }, [selectedSedeId]);
+
+
   // Guardar cada vez que transacciones cambie
   useEffect(() => {
     if (!loading && selectedSedeId && !isSpectator) {
@@ -146,6 +220,7 @@ export default function NuevoCierreCaja() {
   }, [transacciones, metodos, loading, selectedSedeId, isSpectator]);
 
   const limpiarBorrador = () => {
+    if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current as any);
     try { localStorage.removeItem('niteo_draft_cierre'); } catch (_) {}
     if (selectedSedeId) {
       localStorage.removeItem(`niteo_draft_cierre_${selectedSedeId}`);
@@ -155,7 +230,7 @@ export default function NuevoCierreCaja() {
     setMetodos(METODOS_DEFAULT);
     setHasDraft(false);
   };
-  // ─────────────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------------
 
   useEffect(() => {
     async function loadInitial() {
@@ -186,6 +261,7 @@ export default function NuevoCierreCaja() {
         setVentasTotales(cierreRes.ventasTotales || 0);
         setGastosTotales(cierreRes.gastosTotales || 0);
         setTotalEsperado(cierreRes.totalEsperado || 0);
+      if (cierreRes.esperadoPorMetodo) setEsperadoPorMetodo(cierreRes.esperadoPorMetodo);
         setBancosPorMetodo(bancosRes);
         if (customMetodos && customMetodos.length > 0) {
           const restoredMetodos = customMetodos.map((mName: string) => ({
@@ -196,9 +272,23 @@ export default function NuevoCierreCaja() {
             iconKey: 'GripHorizontal'
           }));
           
-          setMetodos(prev => {
-            const existingIds = new Set(prev.map(p => p.id));
-            const newMets = restoredMetodos.filter((r: any) => !existingIds.has(r.id));
+          setMetodos((prev: any[]) => {
+            const existingIds = new Set(prev.map(p => p.id.toLowerCase()));
+            const newMets = restoredMetodos.filter((r: any) => !existingIds.has(r.id.toLowerCase()));
+            
+            if (cierreRes.esperadoPorMetodo) {
+              Object.keys(cierreRes.esperadoPorMetodo).forEach(m => {
+                 if (!existingIds.has(m.toLowerCase()) && !newMets.some(nm => nm.id.toLowerCase() === m.toLowerCase())) {
+                    newMets.push({
+                      id: m,
+                      color: 'text-indigo-400',
+                      defaultMoneda: 'VES',
+                      isCustom: true,
+                      iconKey: 'GripHorizontal'
+                    });
+                 }
+              });
+            }
             return [...prev, ...newMets];
           });
         }
@@ -234,8 +324,22 @@ export default function NuevoCierreCaja() {
           }));
           
           setMetodos((prev: any[]) => {
-            const existingIds = new Set(prev.map(p => p.id));
-            const newMets = restoredMetodos.filter((r: any) => !existingIds.has(r.id));
+            const existingIds = new Set(prev.map(p => p.id.toLowerCase()));
+            const newMets = restoredMetodos.filter((r: any) => !existingIds.has(r.id.toLowerCase()));
+            
+            if (cierreRes.esperadoPorMetodo) {
+              Object.keys(cierreRes.esperadoPorMetodo).forEach(m => {
+                 if (!existingIds.has(m.toLowerCase()) && !newMets.some(nm => nm.id.toLowerCase() === m.toLowerCase())) {
+                    newMets.push({
+                      id: m,
+                      color: 'text-indigo-400',
+                      defaultMoneda: 'VES',
+                      isCustom: true,
+                      iconKey: 'GripHorizontal'
+                    });
+                 }
+              });
+            }
             return [...prev, ...newMets];
           });
         }
@@ -398,12 +502,7 @@ export default function NuevoCierreCaja() {
       if (res.error) {
         alert(res.error);
       } else {
-        // FIX 1: limpiar el borrador al guardar con éxito
-          if (selectedSedeId) {
-            localStorage.removeItem(`niteo_draft_cierre_${selectedSedeId}`);
-            clearCloudDraft(selectedSedeId).catch(console.error);
-          }
-        setHasDraft(false);
+        limpiarBorrador();
         alert('Cierre guardado correctamente!');
         router.push('/dashboard/caja');
       }
@@ -509,8 +608,8 @@ export default function NuevoCierreCaja() {
           const totalMetodo = getTotalByMetodo(metodo.id);
           
           // Simularemos la venta esperada por método temporalmente (hasta que la acción devuelva el desglose)
-          const esperadoMetodo = (totalEsperado / metodos.length); // mock value temporal
-          const diferencia = totalMetodo - esperadoMetodo;
+          
+          
 
           const banksSummary = getBanksSummary(metodo.id);
           const hasBanks = Object.keys(banksSummary).length > 0;
@@ -534,18 +633,11 @@ export default function NuevoCierreCaja() {
                     <p className="text-xs text-neutral-400">{txs.length} transacciones registradas</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-6">
-                  {/* Comparación visual Venta Sistema vs Físico */}
-                  <div className="hidden md:flex flex-col items-end mr-4">
-                    <span className="text-[10px] text-neutral-500 uppercase font-bold tracking-wider">Sistema</span>
-                    <span className="font-bold text-neutral-300 text-sm">${esperadoMetodo.toFixed(2)}</span>
-                  </div>
-                  <div className="hidden md:flex flex-col items-end">
-                    <span className="text-[10px] text-neutral-500 uppercase font-bold tracking-wider">Físico</span>
-                    <span className="font-bold text-emerald-400 text-sm">${totalMetodo.toFixed(2)}</span>
-                  </div>
-                  
-                  <div className="text-neutral-500 ml-2">
+                <div className="flex items-center gap-4">
+                  {totalMetodo > 0 && (
+                    <span className="font-bold text-emerald-400 text-lg hidden sm:block">+{totalMetodo.toFixed(2)}</span>
+                  )}
+                  <div className="text-neutral-500">
                     {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                   </div>
                 </div>
@@ -609,12 +701,12 @@ export default function NuevoCierreCaja() {
                                   inputMode="decimal"
                                   placeholder="0.00"
                                   value={tx.monto}
-                                  disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'monto', e.target.value)}
+                                  disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'monto', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleAddTransaccion(metodo.id, metodo.defaultMoneda); }}
                                   className="flex-1 bg-transparent px-2 text-white text-sm font-medium outline-none placeholder:text-neutral-600 w-full min-w-0"
                                 />
                               </div>
                               {tx.moneda === 'VES' && tx.monto && (
-                                <p className="text-[10px] text-neutral-500 mt-1 pl-1">≈ ${(parseFloat(tx.monto) / tasaCambio).toFixed(2)} USD</p>
+                                <p className="text-[10px] text-neutral-500 mt-1 pl-1"> ${(parseFloat(tx.monto) / tasaCambio).toFixed(2)} USD</p>
                               )}
                             </td>
 
@@ -623,7 +715,7 @@ export default function NuevoCierreCaja() {
                                 type="text" 
                                 placeholder="Ej: 1234"
                                 value={tx.referencia}
-                                disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'referencia', e.target.value)}
+                                disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'referencia', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleAddTransaccion(metodo.id, metodo.defaultMoneda); }}
                                 className="w-full bg-neutral-900 border border-neutral-800 focus:border-indigo-500 rounded-lg h-9 px-3 text-white text-sm outline-none transition-colors"
                               />
                             </td>
@@ -633,7 +725,7 @@ export default function NuevoCierreCaja() {
                                 type="text" 
                                 placeholder={metodo.id === 'Efectivo' ? 'N/A' : 'Ej: VZLA'}
                                 value={tx.banco}
-                                disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'banco', e.target.value)}
+                                disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'banco', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleAddTransaccion(metodo.id, metodo.defaultMoneda); }}
                                 list={`bancos-list-${metodo.id.replace(/[^a-zA-Z0-9]/g, '')}`}
                                 className="w-full bg-neutral-900 border border-neutral-800 focus:border-indigo-500 rounded-lg h-9 px-3 text-white text-sm outline-none transition-colors"
                               />
@@ -643,7 +735,7 @@ export default function NuevoCierreCaja() {
                                   type="text" 
                                   placeholder="Ej: Juan P."
                                   value={tx.cliente || ''}
-                                  disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'cliente', e.target.value)}
+                                  disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'cliente', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleAddTransaccion(metodo.id, metodo.defaultMoneda); }}
                                   className="w-full bg-neutral-900 border border-neutral-800 focus:border-indigo-500 rounded-lg h-9 px-3 text-white text-sm outline-none transition-colors"
                                 />
                               </td>
@@ -687,7 +779,7 @@ export default function NuevoCierreCaja() {
                                 inputMode="decimal"
                                 placeholder="0.00"
                                 value={tx.monto}
-                                disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'monto', e.target.value)}
+                                disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'monto', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleAddTransaccion(metodo.id, metodo.defaultMoneda); }}
                                 className="flex-1 bg-transparent px-3 text-white text-sm font-bold outline-none placeholder:text-neutral-600 min-w-0"
                               />
                           </div>
@@ -695,7 +787,7 @@ export default function NuevoCierreCaja() {
                             type="text" 
                             placeholder="Ref: 1234"
                             value={tx.referencia}
-                            disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'referencia', e.target.value)}
+                            disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'referencia', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleAddTransaccion(metodo.id, metodo.defaultMoneda); }}
                             className="bg-black/40 border border-neutral-800 focus:border-indigo-500 rounded-lg h-10 px-3 text-white text-sm outline-none transition-colors"
                           />
                           <div className="relative">
@@ -703,7 +795,7 @@ export default function NuevoCierreCaja() {
                               type="text" 
                               placeholder={metodo.id === 'Efectivo' ? 'N/A' : 'Banco'}
                               value={tx.banco}
-                              disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'banco', e.target.value)}
+                              disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'banco', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleAddTransaccion(metodo.id, metodo.defaultMoneda); }}
                               list={`bancos-list-${metodo.id.replace(/[^a-zA-Z0-9]/g, '')}`}
                               className="w-full bg-black/40 border border-neutral-800 focus:border-indigo-500 rounded-lg h-10 px-3 text-white text-sm outline-none transition-colors"
                             />
@@ -713,12 +805,12 @@ export default function NuevoCierreCaja() {
                               type="text" 
                               placeholder="Cliente (Opc.)"
                               value={tx.cliente || ''}
-                              disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'cliente', e.target.value)}
+                              disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'cliente', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleAddTransaccion(metodo.id, metodo.defaultMoneda); }}
                               className="col-span-2 bg-black/40 border border-neutral-800 focus:border-indigo-500 rounded-lg h-10 px-3 text-white text-sm outline-none transition-colors"
                             />
                         </div>
                         {tx.moneda === 'VES' && tx.monto && (
-                          <p className="text-[11px] text-neutral-400 text-center font-medium">≈ ${(parseFloat(tx.monto) / tasaCambio).toFixed(2)} USD</p>
+                          <p className="text-[11px] text-neutral-400 text-center font-medium"> ${(parseFloat(tx.monto) / tasaCambio).toFixed(2)} USD</p>
                         )}
                       </div>
                     ))}

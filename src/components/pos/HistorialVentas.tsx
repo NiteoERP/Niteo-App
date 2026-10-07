@@ -1,8 +1,9 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { HistorialVentaPOS, getHistorialVentasCompleto, toggleVentaVerificada, getResumenVerificacionMes } from '@/actions/pos-actions';
-import { Search, Calendar, ChevronDown, ChevronUp, Receipt, DollarSign, Clock, Users, CheckCircle2, Circle, Hash, ChevronLeft, ChevronRight, Printer, Ban, Sparkles, Filter, X, Contact, ConciergeBell } from 'lucide-react';
+import { HistorialVentaPOS, getHistorialVentasCompleto, toggleVentaVerificada, getResumenVerificacionMes, procesarReembolsoPOS } from '@/actions/pos-actions';
+import ReembolsoModal from './ReembolsoModal';
+import { Search, Calendar, ChevronDown, ChevronUp, Receipt, DollarSign, Clock, Users, CheckCircle2, Circle, Hash, ChevronLeft, ChevronRight, Printer, Ban, Sparkles, Filter, X, Contact, ConciergeBell, RotateCcw, Undo2 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { useEmpresa } from '@/components/providers/EmpresaProvider';
 import { normalizePaymentKey, getCanonicalPaymentMethodName, unifyPaymentMethods } from '@/utils/payment-methods';
@@ -19,6 +20,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
   const [ventas, setVentas] = useState<HistorialVentaPOS[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [reembolsoVenta, setReembolsoVenta] = useState<HistorialVentaPOS | null>(null);
   
   // Filtros
   const [fechaFiltro, setFechaFiltro] = useState('');
@@ -112,6 +114,20 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
       alert("Venta anulada correctamente.");
     } else {
       alert("Error al anular: " + res.error);
+    }
+  };
+
+  const handleRestaurar = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (!confirm("¿Estás seguro de restaurar esta venta? Volverá a sumar en los informes.")) return;
+    
+    const { restaurarVentaPOS } = await import('@/actions/pos-actions');
+    const res = await restaurarVentaPOS(id);
+    if (res.success) {
+      setVentas(prev => prev.map(v => v.id_factura.toString() === id ? { ...v, estado_activo: true } : v));
+      alert("Venta restaurada correctamente.");
+    } else {
+      alert("Error al restaurar: " + res.error);
     }
   };
 
@@ -217,8 +233,26 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
     };
   }, [ventas, filtradas, filtroMetodo]);
 
-  return (
+  
+      return (
     <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 md:p-6 animate-in fade-in space-y-6">
+      {reembolsoVenta && (
+        <ReembolsoModal 
+          venta={reembolsoVenta}
+          metodosDisponibles={metodosDisponibles.length > 0 ? metodosDisponibles : ['Punto de Venta', 'Efectivo USD', 'Zelle', 'Pago Móvil']}
+          onClose={() => setReembolsoVenta(null)}
+          onConfirm={async (detalles, metodo) => {
+            const res = await procesarReembolsoPOS(reembolsoVenta.id_factura.toString(), detalles, metodo);
+            if (res.success) {
+              alert('Reembolso procesado exitosamente.');
+              setReembolsoVenta(null);
+              cargarVentas();
+            } else {
+              alert(res.error);
+            }
+          }}
+        />
+      )}
       
             <div className={`relative z-30 transition-all ${isCalendarOpen ? 'min-h-[440px]' : ''}`}>
         <div className="flex justify-between items-center bg-black/40 border border-neutral-800 rounded-2xl p-4 md:p-6 mb-4">
@@ -546,11 +580,20 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                        <button onClick={(e) => handleReimprimir(e, venta)} className="text-xs flex items-center gap-1.5 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 px-3 py-1.5 rounded-lg transition-colors font-semibold">
                           <Printer size={14} /> Reimprimir
                        </button>
-                       {venta.estado_activo !== false && (
+                       {venta.estado_activo !== false ? (
                          <button onClick={(e) => handleAnular(e, venta.id_factura.toString())} className="text-xs flex items-center gap-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 px-3 py-1.5 rounded-lg transition-colors font-semibold">
                             <Ban size={14} /> Anular / Reembolso
                          </button>
-                       )}
+                       ) : (
+                         <button onClick={(e) => handleRestaurar(e, venta.id_factura.toString())} className="text-xs flex items-center gap-1.5 bg-green-500/10 text-green-400 hover:bg-green-500/20 px-3 py-1.5 rounded-lg transition-colors font-semibold">
+                            <RotateCcw size={14} /> Restaurar Factura
+                           </button>
+                         )}
+                         {venta.estado_activo !== false && (venta.tipo_documento !== 'REEMBOLSO') && (
+                           <button onClick={(e) => { e.stopPropagation(); setReembolsoVenta(venta); }} className="text-xs flex items-center gap-1.5 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 px-3 py-1.5 rounded-lg transition-colors font-semibold">
+                              <Undo2 size={14} /> Reembolso
+                           </button>
+                         )}
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -563,6 +606,15 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                         <span className="text-neutral-400 font-medium">{formatCurrency(d.total)}</span>
                       </div>
                     ))}
+                    {Number(venta.propina) > 0 && (
+                      <div className="flex justify-between items-center text-sm py-1.5 border-b border-neutral-800/50 last:border-0 mt-2">
+                        <div className="flex items-center gap-2 text-amber-300">
+                          <span className="bg-amber-500/20 text-amber-400 border border-amber-500/40 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">Propina</span>
+                          <span className="font-semibold">{venta.mesero_nombre || 'Mesero'}</span>
+                        </div>
+                        <span className="text-amber-400 font-bold">+ {formatCurrency(Number(venta.propina))}</span>
+                      </div>
+                    )}
                   </div>
 
                   {((venta.pagos && venta.pagos.length > 0) || isCortesiaVenta(venta)) && (
@@ -627,3 +679,5 @@ function formatDocNumber(doc: string) {
   }
   return `#${doc}`;
 }
+
+

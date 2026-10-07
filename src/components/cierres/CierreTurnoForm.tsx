@@ -49,7 +49,7 @@ export default function CierreTurnoForm() {
     fetchCierre();
   }, [fecha]);
 
-  // 2. LÓGICA DE TRANSACCIONES (Agregar / Quitar)
+  // 2. LÃGICA DE TRANSACCIONES (Agregar / Quitar)
   const addTransaccion = () => {
     if (!nuevoTx.banco || !nuevoTx.referencia || nuevoTx.monto <= 0) return;
     setTransacciones([...transacciones, nuevoTx]);
@@ -61,7 +61,7 @@ export default function CierreTurnoForm() {
     setTransacciones(transacciones.filter((_, i) => i !== index));
   };
 
-  // 3. MATEMÁTICA EN TIEMPO REAL
+  // 3. MATEMÃTICA EN TIEMPO REAL
   // Convertimos todo a BS (Moneda Base) usando la tasa de cambio bloqueada
   const sistemaTotalEsperado = ventasEsperadas - gastosEsperados;
   
@@ -157,7 +157,7 @@ export default function CierreTurnoForm() {
             </div>
           </div>
 
-          {/* PANEL 2: DECLARACIÓN DE EFECTIVO */}
+          {/* PANEL 2: DECLARACIÃN DE EFECTIVO */}
           <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-sm border border-gray-200 dark:border-gray-800">
             <h2 className="text-lg font-bold mb-4">2. Billetes en Gaveta</h2>
             <div className="grid grid-cols-2 gap-4">
@@ -173,7 +173,7 @@ export default function CierreTurnoForm() {
           </div>
         </div>
 
-        {/* COLUMNA DERECHA: CONCILIACIÓN BANCARIA */}
+        {/* COLUMNA DERECHA: CONCILIACIÃN BANCARIA */}
         <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-sm border border-gray-200 dark:border-gray-800">
           <h2 className="text-lg font-bold mb-4 flex items-center gap-2"><Building2 className="text-blue-500"/> 3. Transacciones (La Lupa)</h2>
           
@@ -194,11 +194,11 @@ export default function CierreTurnoForm() {
               </select>
             </div>
             <div className="flex gap-2">
-              <input type="text" placeholder="Banco (Ej. Banesco)" value={nuevoTx.banco} onChange={(e) => setNuevoTx({...nuevoTx, banco: e.target.value})} className="h-10 bg-white border rounded-lg px-3 text-sm flex-1" />
-              <input type="text" placeholder="Ref (4 últ.)" value={nuevoTx.referencia} onChange={(e) => setNuevoTx({...nuevoTx, referencia: e.target.value})} className="h-10 bg-white border rounded-lg px-3 text-sm w-32" />
+              <input type="text" placeholder="Banco (Ej. Banesco)" value={nuevoTx.banco} onChange={(e) => setNuevoTx({...nuevoTx, banco: e.target.value})} onKeyDown={(e) => { if (e.key === 'Enter') addTransaccion(); }} className="h-10 bg-white border rounded-lg px-3 text-sm flex-1" />
+              <input type="text" placeholder="Ref (4 últ.)" value={nuevoTx.referencia} onChange={(e) => setNuevoTx({...nuevoTx, referencia: e.target.value})} onKeyDown={(e) => { if (e.key === 'Enter') addTransaccion(); }} className="h-10 bg-white border rounded-lg px-3 text-sm w-32" />
             </div>
             <div className="flex gap-2">
-              <input type="number" inputMode="decimal" placeholder="Monto" value={nuevoTx.monto || ''} onChange={(e) => setNuevoTx({...nuevoTx, monto: Number(e.target.value)})} className="h-10 bg-white border rounded-lg px-3 text-sm flex-1" />
+              <input type="number" inputMode="decimal" placeholder="Monto" value={nuevoTx.monto || ''} onChange={(e) => setNuevoTx({...nuevoTx, monto: Number(e.target.value)})} onKeyDown={(e) => { if (e.key === 'Enter') addTransaccion(); }} className="h-10 bg-white border rounded-lg px-3 text-sm flex-1" />
               <button onClick={addTransaccion} className="h-10 bg-blue-600 text-white rounded-lg px-4 flex items-center gap-1 hover:bg-blue-700 text-sm font-bold">
                 <PlusCircle size={16}/> Añadir
               </button>

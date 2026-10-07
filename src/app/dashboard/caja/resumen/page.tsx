@@ -14,7 +14,7 @@ export default function ResumenPagosPage() {
   const [data, setData] = useState<any[]>([]);
   const [sedes, setSedes] = useState<any[]>([]);
   
-  // Fechas por defecto (Últimos 7 días)
+  // Fechas por defecto (Ãltimos 7 días)
   const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
   const lastWeek = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
   
