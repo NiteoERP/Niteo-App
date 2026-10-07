@@ -405,7 +405,7 @@ export default function NuevoCierreCaja() {
     setExpandedMetodo(metodoId);
 
     setTimeout(() => {
-      const el = document.getElementById('monto-' + newId);
+      const el = document.getElementById('monto-' + newTx.id);
       if (el) el.focus();
     }, 50);
   };
@@ -973,6 +973,7 @@ export default function NuevoCierreCaja() {
 
 
 
+
 
 
 
