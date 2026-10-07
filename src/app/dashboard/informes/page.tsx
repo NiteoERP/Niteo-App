@@ -5,7 +5,7 @@ import {
   FileText, FileSpreadsheet, Printer, Search, ChevronDown, ChevronRight,
   TrendingUp, Clock, Calendar as CalendarIcon, Users, CreditCard, DollarSign,
   Package, AlertTriangle, Receipt, Star, BarChart2, X, Loader2,
-  Store, Tag, ShieldAlert, LayoutGrid, Trash2, List, RotateCw,
+  Store, Tag, ShieldAlert, LayoutGrid, Trash2, List, RotateCw, Coins,
 } from 'lucide-react';
 import { useEmpresa } from '@/components/providers/EmpresaProvider';
 import { useSedes, useCatalogosInformes, useGenerateReport, ExtraFilters } from '@/hooks/useInformesData';

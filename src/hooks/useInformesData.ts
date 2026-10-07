@@ -834,6 +834,51 @@ export function useGenerateReport(empresaId: string) {
         }
 
         // ── Reportes RPC estándar ──────────────────────────────────────────────
+        
+        if (reportId === 'propinas_mesero') {
+          let query = supabase
+            .from('ventas_facturas')
+            .select('mesero_nombre, propina, sede_id')
+            .eq('empresa_id', empresaId)
+            .gte('fecha_venta', p_fecha_inicio)
+            .lte('fecha_venta', p_fecha_fin)
+            .eq('estado_activo', true)
+            .gt('propina', 0);
+          
+          if (p_sede_id) query = query.eq('sede_id', p_sede_id);
+          if (p_cajero_id) query = query.ilike('mesero_nombre', `%${p_cajero_id}%`);
+          
+          const { data, error } = await query;
+          if (error) throw error;
+          
+          const map: Record<string, any> = {};
+          let totalProp = 0;
+          let totalMesas = 0;
+          (data || []).forEach((v: any) => {
+            const mesero = v.mesero_nombre || 'Sin asignar';
+            if (!map[mesero]) map[mesero] = { Mesero: mesero, 'Total Propina ($)': 0, 'Mesas Atendidas': 0 };
+            map[mesero]['Total Propina ($)'] += Number(v.propina);
+            map[mesero]['Mesas Atendidas'] += 1;
+            totalProp += Number(v.propina);
+            totalMesas += 1;
+          });
+          
+          const arr = Object.values(map);
+          arr.sort((a: any, b: any) => b['Total Propina ($)'] - a['Total Propina ($)']);
+          
+          if (arr.length > 0) {
+            arr.push({
+              Mesero: 'TOTAL',
+              'Total Propina ($)': totalProp,
+              'Mesas Atendidas': totalMesas
+            });
+          }
+          
+          setReportData(arr);
+          setIsGenerating(false);
+          return;
+        }
+
         let rpcName = '';
         let rpcParams: Record<string, any> = {};
 
