@@ -57,6 +57,8 @@ export default function NuevoCierreCaja() {
   const [gastosTotales, setGastosTotales] = useState(0);
   const [totalEsperado, setTotalEsperado] = useState(0);
   
+  const currentSedeRef = React.useRef<string>('');
+  
   // Listas sugeridas
   const [bancosPorMetodo, setBancosPorMetodo] = useState<Record<string, string[]>>({});
     
@@ -125,6 +127,8 @@ export default function NuevoCierreCaja() {
       }
 
       const cloudDraft = await getCloudDraft(sedeId);
+      if (currentSedeRef.current !== sedeId) return false;
+      
       if (cloudDraft && (cloudDraft.transacciones?.length > 0 || cloudDraft.metodos_custom?.length > 0)) {
         if (cloudDraft.transacciones?.length > 0) {
           setTransacciones(cloudDraft.transacciones);
@@ -154,6 +158,7 @@ export default function NuevoCierreCaja() {
       interval = setInterval(async () => {
         try {
           const cloudDraft = await getCloudDraft(selectedSedeId);
+          if (currentSedeRef.current !== selectedSedeId) return;
           if (cloudDraft && (cloudDraft.transacciones?.length > 0 || cloudDraft.metodos_custom?.length > 0)) {
             setTransacciones((prevTxs) => {
               const cloudTxs = cloudDraft.transacciones || [];
@@ -253,7 +258,7 @@ export default function NuevoCierreCaja() {
         
         const finalSedeId = cierreRes.targetSedeId || initialSedeId;
         if (finalSedeId) {
-          setSelectedSedeId(finalSedeId);
+          setSelectedSedeId(finalSedeId); currentSedeRef.current = finalSedeId;
           loadDraft(finalSedeId);
         }
 
@@ -305,7 +310,7 @@ export default function NuevoCierreCaja() {
 
   const handleSedeChange = async (newSedeId: string) => {
       localStorage.setItem('niteo_last_sede', newSedeId);
-    setSelectedSedeId(newSedeId);
+    setSelectedSedeId(newSedeId); currentSedeRef.current = newSedeId; setTransacciones([]); setMetodos(METODOS_DEFAULT); setHasDraft(false);
     loadDraft(newSedeId);
     setLoading(true);
     try {

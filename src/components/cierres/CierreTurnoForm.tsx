@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getCierrePrevio, guardarCierre } from '@/actions/cierres-actions';
 import { Loader2, DollarSign, Building2, PlusCircle, Trash2, CheckCircle2 } from 'lucide-react';
 
@@ -25,6 +25,10 @@ export default function CierreTurnoForm() {
   // Lupa de Transacciones (Bancos)
   const [transacciones, setTransacciones] = useState<Transaccion[]>([]);
   const [nuevoTx, setNuevoTx] = useState<Transaccion>({ metodo: 'PAGO_MOVIL', banco: '', referencia: '', monto: 0, moneda: 'BS' });
+
+  const bancoRef = useRef<HTMLInputElement>(null);
+  const referenciaRef = useRef<HTMLInputElement>(null);
+  const montoRef = useRef<HTMLInputElement>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,10 +55,14 @@ export default function CierreTurnoForm() {
 
   // 2. LÃGICA DE TRANSACCIONES (Agregar / Quitar)
   const addTransaccion = () => {
-    if (!nuevoTx.banco || !nuevoTx.referencia || nuevoTx.monto <= 0) return;
+    if (!nuevoTx.banco) { bancoRef.current?.focus(); return; }
+    if (!nuevoTx.referencia) { referenciaRef.current?.focus(); return; }
+    if (nuevoTx.monto <= 0) { montoRef.current?.focus(); return; }
+    
     setTransacciones([...transacciones, nuevoTx]);
     // Limpiar input
     setNuevoTx({ ...nuevoTx, banco: '', referencia: '', monto: 0 });
+    montoRef.current?.focus();
   };
 
   const removeTransaccion = (index: number) => {
@@ -194,11 +202,11 @@ export default function CierreTurnoForm() {
               </select>
             </div>
             <div className="flex gap-2">
-              <input type="text" placeholder="Banco (Ej. Banesco)" value={nuevoTx.banco} onChange={(e) => setNuevoTx({...nuevoTx, banco: e.target.value})} onKeyDown={(e) => { if (e.key === 'Enter') addTransaccion(); }} className="h-10 bg-white border rounded-lg px-3 text-sm flex-1" />
-              <input type="text" placeholder="Ref (4 últ.)" value={nuevoTx.referencia} onChange={(e) => setNuevoTx({...nuevoTx, referencia: e.target.value})} onKeyDown={(e) => { if (e.key === 'Enter') addTransaccion(); }} className="h-10 bg-white border rounded-lg px-3 text-sm w-32" />
+              <input ref={bancoRef} type="text" placeholder="Banco (Ej. Banesco)" value={nuevoTx.banco} onChange={(e) => setNuevoTx({...nuevoTx, banco: e.target.value})} onKeyDown={(e) => { if (e.key === 'Enter') { nuevoTx.banco ? referenciaRef.current?.focus() : addTransaccion(); } }} className="h-10 bg-white border rounded-lg px-3 text-sm flex-1" />
+              <input ref={referenciaRef} type="text" placeholder="Ref (4 últ.)" value={nuevoTx.referencia} onChange={(e) => setNuevoTx({...nuevoTx, referencia: e.target.value})} onKeyDown={(e) => { if (e.key === 'Enter') { nuevoTx.referencia ? montoRef.current?.focus() : addTransaccion(); } }} className="h-10 bg-white border rounded-lg px-3 text-sm w-32" />
             </div>
             <div className="flex gap-2">
-              <input type="number" inputMode="decimal" placeholder="Monto" value={nuevoTx.monto || ''} onChange={(e) => setNuevoTx({...nuevoTx, monto: Number(e.target.value)})} onKeyDown={(e) => { if (e.key === 'Enter') addTransaccion(); }} className="h-10 bg-white border rounded-lg px-3 text-sm flex-1" />
+              <input ref={montoRef} type="number" inputMode="decimal" placeholder="Monto" value={nuevoTx.monto || ''} onChange={(e) => setNuevoTx({...nuevoTx, monto: Number(e.target.value)})} onKeyDown={(e) => { if (e.key === 'Enter') addTransaccion(); }} className="h-10 bg-white border rounded-lg px-3 text-sm flex-1" />
               <button onClick={addTransaccion} className="h-10 bg-blue-600 text-white rounded-lg px-4 flex items-center gap-1 hover:bg-blue-700 text-sm font-bold">
                 <PlusCircle size={16}/> Añadir
               </button>
