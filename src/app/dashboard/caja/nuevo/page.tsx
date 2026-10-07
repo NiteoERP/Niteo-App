@@ -265,7 +265,7 @@ export default function NuevoCierreCaja() {
         setTasaCambio(cierreRes.tasaCambio || 36.5);
         setVentasTotales(cierreRes.ventasTotales || 0);
         setGastosTotales(cierreRes.gastosTotales || 0);
-        setTotalEsperado(cierreRes.totalEsperado || 0);
+        setTotalEsperado(cierreRes.totalEsperado || 0); if (cierreRes.esperadoPorMetodo) setEsperadoPorMetodo(cierreRes.esperadoPorMetodo);
       if (cierreRes.esperadoPorMetodo) setEsperadoPorMetodo(cierreRes.esperadoPorMetodo);
         setBancosPorMetodo(bancosRes);
         if (customMetodos && customMetodos.length > 0) {
@@ -351,7 +351,7 @@ export default function NuevoCierreCaja() {
       setTasaCambio(cierreRes.tasaCambio || 36.5);
       setVentasTotales(cierreRes.ventasTotales || 0);
       setGastosTotales(cierreRes.gastosTotales || 0);
-      setTotalEsperado(cierreRes.totalEsperado || 0);
+      setTotalEsperado(cierreRes.totalEsperado || 0); if (cierreRes.esperadoPorMetodo) setEsperadoPorMetodo(cierreRes.esperadoPorMetodo);
     } catch (err: any) {
       alert(err.message || 'Error cambiando de sede');
     } finally {
@@ -612,9 +612,7 @@ export default function NuevoCierreCaja() {
           const txs = transacciones.filter(t => t.metodo === metodo.id);
           const totalMetodo = getTotalByMetodo(metodo.id);
           
-          // Simularemos la venta esperada por mÃ©todo temporalmente (hasta que la acciÃ³n devuelva el desglose)
-          
-          
+          const esperadoMetodo = esperadoPorMetodo[metodo.id.toLowerCase()] || 0;
 
           const banksSummary = getBanksSummary(metodo.id);
           const hasBanks = Object.keys(banksSummary).length > 0;
@@ -638,11 +636,18 @@ export default function NuevoCierreCaja() {
                     <p className="text-xs text-neutral-400">{txs.length} transacciones registradas</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  {totalMetodo > 0 && (
-                    <span className="font-bold text-emerald-400 text-lg hidden sm:block">+{totalMetodo.toFixed(2)}</span>
-                  )}
-                  <div className="text-neutral-500">
+                <div className="flex items-center gap-6">
+                  {/* Comparación visual Venta Sistema vs Físico */}
+                  <div className="hidden md:flex flex-col items-end mr-4">
+                    <span className="text-[10px] text-neutral-500 uppercase font-bold tracking-wider">Sistema</span>
+                    <span className="font-bold text-neutral-300 text-sm">${esperadoMetodo.toFixed(2)}</span>
+                  </div>
+                  <div className="hidden md:flex flex-col items-end">
+                    <span className="text-[10px] text-neutral-500 uppercase font-bold tracking-wider">Físico</span>
+                    <span className="font-bold text-emerald-400 text-sm">${totalMetodo.toFixed(2)}</span>
+                  </div>
+                  
+                  <div className="text-neutral-500 ml-2">
                     {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                   </div>
                 </div>
@@ -917,6 +922,7 @@ export default function NuevoCierreCaja() {
     </div>
   );
 }
+
 
 
 
