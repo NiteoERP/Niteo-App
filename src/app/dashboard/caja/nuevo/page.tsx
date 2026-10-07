@@ -784,7 +784,8 @@ export default function NuevoCierreCaja() {
                               </button>
                             </td>
                           </tr>
-                        ))}
+                        );
+                      })}
                       </tbody>
                     </table>
                   </div>
@@ -850,7 +851,8 @@ export default function NuevoCierreCaja() {
                           <p className="text-[11px] text-neutral-400 text-center font-medium"> ${(parseFloat(tx.monto) / tasaCambio).toFixed(2)} USD</p>
                         )}
                       </div>
-                    ))}
+                    );
+                  })}
                   </div>
 
                   <button 
@@ -971,6 +973,9 @@ export default function NuevoCierreCaja() {
 
 
 
+
+
+
 
 
 
