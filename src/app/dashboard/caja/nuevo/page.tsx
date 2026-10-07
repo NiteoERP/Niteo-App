@@ -385,6 +385,11 @@ export default function NuevoCierreCaja() {
     };
     setTransacciones([...transacciones, newTx]);
     setExpandedMetodo(metodoId);
+
+    setTimeout(() => {
+      const el = document.getElementById('monto-' + newId);
+      if (el) el.focus();
+    }, 50);
   };
 
   const updateTransaccion = (id: string, field: keyof Transaccion, value: string) => {
@@ -710,7 +715,7 @@ export default function NuevoCierreCaja() {
                                   type="text" 
                                   inputMode="decimal"
                                   placeholder="0.00"
-                                  value={tx.monto}
+                                  id={`monto-${tx.id}`} value={tx.monto}
                                   disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'monto', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleAddTransaccion(metodo.id, metodo.defaultMoneda); }}
                                   className="flex-1 bg-transparent px-2 text-white text-sm font-medium outline-none placeholder:text-neutral-600 w-full min-w-0"
                                 />
@@ -788,7 +793,7 @@ export default function NuevoCierreCaja() {
                                 type="text" 
                                 inputMode="decimal"
                                 placeholder="0.00"
-                                value={tx.monto}
+                                id={`monto-${tx.id}`} value={tx.monto}
                                 disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'monto', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleAddTransaccion(metodo.id, metodo.defaultMoneda); }}
                                 className="flex-1 bg-transparent px-3 text-white text-sm font-bold outline-none placeholder:text-neutral-600 min-w-0"
                               />
