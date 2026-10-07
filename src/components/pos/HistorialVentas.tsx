@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { HistorialVentaPOS, getHistorialVentasCompleto, toggleVentaVerificada, getResumenVerificacionMes, procesarReembolsoPOS } from '@/actions/pos-actions';
@@ -475,7 +475,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
       ) : (
         <div className="space-y-3">
           {filtradas.map(venta => (
-            <div key={venta.id_factura} className={`bg-black/20 border ${venta.estado_activo === false ? 'border-red-900/50 opacity-75' : 'border-neutral-800'} rounded-lg overflow-hidden transition-all hover:border-neutral-700`}>
+            <div key={venta.id_factura} className={`bg-black/20 border ${venta.estado_activo === false ? 'border-red-900/50 opacity-75 border-l-4 border-l-amber-500' : (venta.tipo_documento === 'REEMBOLSO' ? 'border-neutral-800 border-l-4 border-l-red-500' : 'border-neutral-800')} rounded-lg overflow-hidden transition-all hover:border-neutral-700`}>
               {/* Resumen Fila */}
               <div 
                 className="p-4 cursor-pointer flex flex-wrap md:flex-nowrap items-center justify-between gap-4"
@@ -679,5 +679,8 @@ function formatDocNumber(doc: string) {
   }
   return `#${doc}`;
 }
+
+
+
 
 
