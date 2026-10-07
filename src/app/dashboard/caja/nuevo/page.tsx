@@ -637,13 +637,13 @@ export default function NuevoCierreCaja() {
                   </div>
                 </div>
                 <div className="flex items-center gap-6">
-                  {/* Comparación visual Venta Sistema vs Físico */}
+                  {/* ComparaciÃ³n visual Venta Sistema vs FÃ­sico */}
                   <div className="hidden md:flex flex-col items-end mr-4">
                     <span className="text-[10px] text-neutral-500 uppercase font-bold tracking-wider">Sistema</span>
                     <span className="font-bold text-neutral-300 text-sm">${esperadoMetodo.toFixed(2)}</span>
                   </div>
                   <div className="hidden md:flex flex-col items-end">
-                    <span className="text-[10px] text-neutral-500 uppercase font-bold tracking-wider">Físico</span>
+                    <span className="text-[10px] text-neutral-500 uppercase font-bold tracking-wider">FÃ­sico</span>
                     <span className="font-bold text-emerald-400 text-sm">${totalMetodo.toFixed(2)}</span>
                   </div>
                   
@@ -943,5 +943,4 @@ export default function NuevoCierreCaja() {
 
 
 
-
-
+
