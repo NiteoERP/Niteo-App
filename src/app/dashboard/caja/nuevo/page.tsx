@@ -374,6 +374,24 @@ export default function NuevoCierreCaja() {
     setShowNewMetodo(false);
   };
 
+  const getDuplicatedIds = () => {
+    const duplicates = new Set<string>();
+    const txsWithRef = transacciones.filter(t => t.referencia && t.referencia.trim() !== '');
+    for (let i = 0; i < txsWithRef.length; i++) {
+      for (let j = i + 1; j < txsWithRef.length; j++) {
+        if (
+          txsWithRef[i].referencia === txsWithRef[j].referencia && 
+          Number(txsWithRef[i].monto) === Number(txsWithRef[j].monto)
+        ) {
+          duplicates.add(txsWithRef[i].id);
+          duplicates.add(txsWithRef[j].id);
+        }
+      }
+    }
+    return duplicates;
+  };
+  const duplicatedIds = getDuplicatedIds();
+
   const handleAddTransaccion = (metodoId: string, defaultMoneda: Moneda) => {
     const newTx: Transaccion = {
       id: Math.random().toString(36).substr(2, 9),
@@ -697,12 +715,14 @@ export default function NuevoCierreCaja() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-neutral-800/50">
-                        {txs.map((tx, idx) => (
-                          <tr key={tx.id} className="group hover:bg-neutral-900/30 transition-colors animate-in slide-in-from-top-1 duration-200">
+                        {txs.map((tx, idx) => {
+                          const isDup = duplicatedIds.has(tx.id);
+                          return (
+                            <tr key={tx.id} className="group hover:bg-neutral-900/30 transition-colors animate-in slide-in-from-top-1 duration-200">
                             <td className="py-2 text-center text-xs text-neutral-500 font-medium">{idx + 1}</td>
                             
                             <td className="py-2 px-2 align-top pt-3">
-                              <div className="flex bg-neutral-900 border border-neutral-800 rounded-lg focus-within:border-indigo-500 overflow-hidden h-9">
+                              <div className={`flex rounded-lg overflow-hidden h-9 border focus-within:border-indigo-500 ${isDup ? 'bg-rose-500/20 border-rose-500/50' : 'bg-neutral-900 border-neutral-800'}`}>
                                 <select 
                                   value={tx.moneda}
                                   disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'moneda', e.target.value as any)}
@@ -731,7 +751,7 @@ export default function NuevoCierreCaja() {
                                 placeholder="Ej: 1234"
                                 value={tx.referencia}
                                 disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'referencia', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleAddTransaccion(metodo.id, metodo.defaultMoneda); }}
-                                className="w-full bg-neutral-900 border border-neutral-800 focus:border-indigo-500 rounded-lg h-9 px-3 text-white text-sm outline-none transition-colors"
+                                className={`w-full rounded-lg h-9 px-3 text-white text-sm outline-none transition-colors border focus:border-indigo-500 ${isDup ? 'bg-rose-500/20 border-rose-500/50' : 'bg-neutral-900 border-neutral-800'}`}
                               />
                             </td>
 
@@ -742,7 +762,7 @@ export default function NuevoCierreCaja() {
                                 value={tx.banco}
                                 disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'banco', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleAddTransaccion(metodo.id, metodo.defaultMoneda); }}
                                 list={`bancos-list-${metodo.id.replace(/[^a-zA-Z0-9]/g, '')}`}
-                                className="w-full bg-neutral-900 border border-neutral-800 focus:border-indigo-500 rounded-lg h-9 px-3 text-white text-sm outline-none transition-colors"
+                                className={`w-full rounded-lg h-9 px-3 text-white text-sm outline-none transition-colors border focus:border-indigo-500 ${isDup ? 'bg-rose-500/20 border-rose-500/50' : 'bg-neutral-900 border-neutral-800'}`}
                               />
                               </td>
                               <td className="py-2 px-2 align-top pt-3">
@@ -751,7 +771,7 @@ export default function NuevoCierreCaja() {
                                   placeholder="Ej: Juan P."
                                   value={tx.cliente || ''}
                                   disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'cliente', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleAddTransaccion(metodo.id, metodo.defaultMoneda); }}
-                                  className="w-full bg-neutral-900 border border-neutral-800 focus:border-indigo-500 rounded-lg h-9 px-3 text-white text-sm outline-none transition-colors"
+                                  className={`w-full rounded-lg h-9 px-3 text-white text-sm outline-none transition-colors border focus:border-indigo-500 ${isDup ? 'bg-rose-500/20 border-rose-500/50' : 'bg-neutral-900 border-neutral-800'}`}
                                 />
                               </td>
 
@@ -771,8 +791,10 @@ export default function NuevoCierreCaja() {
 
                   {/* TRANSACTIONS MOBILE FORMAT (CARDS) */}
                   <div className="sm:hidden mt-3 space-y-3">
-                    {txs.map((tx, idx) => (
-                      <div key={tx.id} className="bg-neutral-900 border border-neutral-800 rounded-xl p-3 flex flex-col gap-3 relative group animate-in slide-in-from-top-1 shadow-sm">
+                    {txs.map((tx, idx) => {
+                        const isDup = duplicatedIds.has(tx.id);
+                        return (
+                        <div key={tx.id} className="bg-neutral-900 border border-neutral-800 rounded-xl p-3 flex flex-col gap-3 relative group animate-in slide-in-from-top-1 shadow-sm">
                         <div className="flex justify-between items-center border-b border-neutral-800/50 pb-2">
                            <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Pago #{idx + 1}</span>
                            <button onClick={() => removeTransaccion(tx.id)} className="text-rose-500/70 hover:text-rose-400 p-1">
@@ -780,7 +802,7 @@ export default function NuevoCierreCaja() {
                            </button>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
-                          <div className="col-span-2 flex bg-black/40 border border-neutral-800 rounded-lg focus-within:border-indigo-500 overflow-hidden h-10">
+                          <div className={`col-span-2 flex rounded-lg overflow-hidden h-10 border focus-within:border-indigo-500 ${isDup ? 'bg-rose-500/20 border-rose-500/50' : 'bg-black/40 border-neutral-800'}`}>
                               <select 
                                 value={tx.moneda}
                                 disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'moneda', e.target.value as any)}
@@ -803,7 +825,7 @@ export default function NuevoCierreCaja() {
                             placeholder="Ref: 1234"
                             value={tx.referencia}
                             disabled={isSpectator} onChange={(e) => updateTransaccion(tx.id, 'referencia', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleAddTransaccion(metodo.id, metodo.defaultMoneda); }}
-                            className="bg-black/40 border border-neutral-800 focus:border-indigo-500 rounded-lg h-10 px-3 text-white text-sm outline-none transition-colors"
+                            className={`h-10 px-3 text-white text-sm outline-none transition-colors rounded-lg border focus:border-indigo-500 ${isDup ? 'bg-rose-500/20 border-rose-500/50' : 'bg-black/40 border-neutral-800'}`}
                           />
                           <div className="relative">
                             <input 
@@ -949,3 +971,7 @@ export default function NuevoCierreCaja() {
 
 
 
+
+
+
+
