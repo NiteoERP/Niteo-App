@@ -87,7 +87,10 @@ export async function getVentasRecientes(sedeId: string): Promise<VentaPOS[]> {
     descuento: v.descuento,
     tipo_documento: v.tipo_documento,
     esta_pagado: v.estado_pago === 1,
-    cliente_nombre: v.clientes?.nombre,
+    cliente_nombre: v.cliente_nombre || v.clientes?.nombre,
+    cajero_nombre: v.cajero_nombre,
+    mesero_nombre: v.mesero_nombre,
+    propina: v.propina,
     pagos: (v.ventas_pagos || []).map((p: any) => ({ tipo_pago: p.tipo_pago, monto: p.monto })),
     metodo_pago: (v.ventas_pagos || [])[0]?.tipo_pago,
     detalles: (v.ventas_detalles || []).map((d: any) => ({
@@ -167,6 +170,9 @@ export async function getProductosCatalogoVirtual(empresaId: string): Promise<Pr
 }
 
 export interface HistorialVentaPOS extends VentaPOS {
+  cajero_nombre?: string;
+  mesero_nombre?: string;
+  propina?: number;
   cliente_nombre?: string;
   pagos: { tipo_pago: string; monto: number }[];
   estado_activo: boolean;
@@ -236,8 +242,11 @@ export async function getHistorialVentasCompleto(
     tipo_documento: v.tipo_documento,
     estado_activo: v.estado_activo,
     esta_pagado: v.estado_pago === 1,
-    cliente_nombre: v.clientes?.nombre,
-    pagos: (v.ventas_pagos || []).map((p: any) => ({
+    cliente_nombre: v.clientes?.nombre || v.cliente_nombre,
+      cajero_nombre: v.cajero_nombre,
+      mesero_nombre: v.mesero_nombre,
+      propina: v.propina,
+      pagos: (v.ventas_pagos || []).map((p: any) => ({
       tipo_pago: p.tipo_pago,
       monto: p.monto
     })),
@@ -331,9 +340,22 @@ export async function anularVentaPOS(facturaId: string) {
     return { success: false, error: error.message };
   }
   
-  // Opcional: Revertir inventario si es necesario (el trigger on delete/update de ventas_detalles lo podría hacer,
-  // pero Niteo asume que cambiar estado_activo no revierte automáticamente a menos que haya un trigger.
-  // Por ahora, con inactivarlo lo saca de los reportes.
+  return { success: true };
+}
+
+export async function restaurarVentaPOS(facturaId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autorizado' };
+
+  const { error } = await supabase
+    .from('ventas_facturas')
+    .update({ estado_activo: true })
+    .eq('id', facturaId);
+  
+  if (error) {
+    return { success: false, error: error.message };
+  }
   
   return { success: true };
 }
