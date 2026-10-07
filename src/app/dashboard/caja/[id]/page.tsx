@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Edit, Wallet, Calendar, MapPin, CheckCircle, XCircle, ChevronDown } from 'lucide-react';
 import { createClient } from '@/utils/supabase/server';
@@ -72,7 +72,7 @@ export default async function CierreDetallePage(props: { params: Promise<{ id: s
           <p className="text-2xl font-black text-neutral-200">${Number(cierre.sistema_total_esperado || 0).toFixed(2)}</p>
         </div>
         <div className="bg-neutral-900 border border-neutral-800 p-5 rounded-2xl">
-          <p className="text-neutral-400 text-xs uppercase tracking-wider font-bold mb-1">Físico (Declarado)</p>
+          <p className="text-neutral-400 text-xs uppercase tracking-wider font-bold mb-1">FÃ­sico (Declarado)</p>
           <p className="text-2xl font-black text-white">${Number((cierre.real_efectivo_usd || 0) + (cierre.real_bancos_usd || 0) + ((cierre.real_efectivo_bs || 0) / (cierre.tasa_cambio || 1)) + ((cierre.real_bancos_bs || 0) / (cierre.tasa_cambio || 1))).toFixed(2)}</p>
         </div>
         <div className={`border p-5 rounded-2xl ${cierre.diferencia_total >= 0 ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-rose-500/10 border-rose-500/20'}`}>
@@ -85,7 +85,7 @@ export default async function CierreDetallePage(props: { params: Promise<{ id: s
 
       {/* DESGLOSE AGRUPADO POR MTODO */}
       <div className="space-y-3">
-        <h3 className="font-bold text-white mb-4">Desglose por Métodos de Pago</h3>
+        <h3 className="font-bold text-white mb-4">Desglose por MÃ©todos de Pago</h3>
         {txs.length > 0 ? (
           Object.entries(
             txs.reduce((acc, t) => {
@@ -121,17 +121,18 @@ export default async function CierreDetallePage(props: { params: Promise<{ id: s
           ))
         ) : (
           <div className="p-6 text-center text-neutral-500 bg-neutral-900 border border-neutral-800 rounded-2xl">
-            No hay métodos registrados
+            No hay mÃ©todos registrados
           </div>
         )}
       </div>
 
-      {cierre.observaciones && (
+      {(cierre as any).observaciones && (
         <div className="bg-neutral-900 border border-neutral-800 p-5 rounded-2xl mt-6">
           <p className="text-neutral-400 text-xs uppercase tracking-wider font-bold mb-2">Observaciones</p>
-          <p className="text-neutral-200">{cierre.observaciones}</p>
+          <p className="text-neutral-200">{(cierre as any).observaciones}</p>
         </div>
       )}
     </div>
   );
 }
+
