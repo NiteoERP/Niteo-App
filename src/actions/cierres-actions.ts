@@ -67,8 +67,8 @@ export async function getCierrePrevio(fechaStr: string, requestedSedeId?: string
     `)
     .eq('estado_activo', true)
     .eq('sede_id', targetSedeId)
-    .gte('fecha_venta', `${fechaStr}T00:00:00${tzOffset}`)
-    .lte('fecha_venta', `${fechaStr}T23:59:59.999${tzOffset}`);
+      .is('cierre_caja_id', null)
+      .gte('fecha_venta', new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()); // Solo arrastra max 3 dias atras
   
   
     const esperadoPorMetodo: Record<string, number> = {};
@@ -196,6 +196,18 @@ export async function guardarCierre(cierreData: any, transacciones: any[]) {
       // Opcional: AquÃ­ se podrÃ­a hacer un rollback borrando el cierre, pero dejemos el log por ahora
       return { error: 'El cierre guardÃ³ el resumen, pero hubo un error guardando los bancos. Detalles: ' + errorTransacciones.message + ' ' + (errorTransacciones.details || '') };
     }
+  }
+
+  // 3. Marcar las ventas como cerradas
+  const { error: errorUpdateVentas } = await supabase
+    .from('ventas_facturas')
+    .update({ cierre_caja_id: nuevoCierre.id })
+    .eq('sede_id', finalSedeId)
+    .is('cierre_caja_id', null)
+      .gte('fecha_venta', new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()); // Solo arrastra max 3 dias atras
+
+  if (errorUpdateVentas) {
+    console.error('Error actualizando ventas_facturas:', errorUpdateVentas);
   }
 
   revalidatePath('/dashboard/cierre');
@@ -504,8 +516,7 @@ export async function getCierreParaEditar(cierreId: string) {
       .select('total, tipo_documento, numero_orden, ventas_pagos (tipo_pago, monto)')
       .eq('estado_activo', true)
       .eq('sede_id', cierre.sede_id)
-      .gte('fecha_venta', `${cierre.fecha_cierre}T00:00:00${tzOffset}`)
-      .lte('fecha_venta', `${cierre.fecha_cierre}T23:59:59.999${tzOffset}`);
+      .eq('cierre_caja_id', cierre.id);
 
     const esperadoPorMetodo: Record<string, number> = {};
     const ventasTotales = ventasData ? ventasData.reduce((acc, curr) => {
@@ -715,5 +726,8 @@ export async function clearCloudDraft(sedeId: string) {
   );
   await adminSupabase.from('caja_drafts').delete().eq('sede_id', sedeId);
 }
+
+
+
 
 
