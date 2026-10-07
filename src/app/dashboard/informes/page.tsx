@@ -86,6 +86,13 @@ const REPORT_CATALOG: ReportGroup[] = [
         extraFilters: ['cajero'],
       },
       {
+        id: 'propinas_mesero',
+        name: 'Propinas por Mesero',
+        desc: 'Totales de propinas recolectadas por cada mesero',
+        icon: Coins,
+        extraFilters: ['cajero'],
+      },
+      {
         id: 'ventas_clientes',
         name: 'Clientes Frecuentes',
         desc: 'Ranking de mejores clientes por volumen de compras',
