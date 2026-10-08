@@ -20,7 +20,7 @@ export async function mergeInsumos(masterId: string, slaveIds: string[]) {
   // 3. Calculate new stock and average cost
   let totalStock = Number(master.cantidad_actual) || 0;
   let totalValue = totalStock * (Number(master.costo_promedio) || 0);
-  const keywords = new Set(master.palabras_clave ? master.palabras_clave.split(',').map(s => s.trim()).filter(Boolean) : []);
+  const keywords = new Set(master.palabras_clave ? master.palabras_clave.split(',').map((s: string) => s.trim()).filter(Boolean) : []);
 
   for (const slave of slaves) {
     const slaveStock = Number(slave.cantidad_actual) || 0;
@@ -32,7 +32,7 @@ export async function mergeInsumos(masterId: string, slaveIds: string[]) {
     // Add slave name and its keywords to master's keywords
     keywords.add(slave.nombre);
     if (slave.palabras_clave) {
-      slave.palabras_clave.split(',').forEach(k => keywords.add(k.trim()));
+      slave.palabras_clave.split(',').forEach((k: string) => keywords.add(k.trim()));
     }
   }
 

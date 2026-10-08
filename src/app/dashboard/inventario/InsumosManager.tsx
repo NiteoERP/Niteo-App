@@ -349,6 +349,7 @@ export default function InsumosManager({
 
   // Venta al Costo Modal state
   const [showMergeModal, setShowMergeModal] = useState(false);
+  const [isMerging, setIsMerging] = useState(false);
   const [mergeMasterId, setMergeMasterId] = useState('');
   const [mergeSlaveIds, setMergeSlaveIds] = useState<string[]>([]);
   const [showVentaCostoModal, setShowVentaCostoModal] = useState(false);
@@ -442,10 +443,10 @@ export default function InsumosManager({
   const handleMerge = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!mergeMasterId || mergeSlaveIds.length === 0) return;
-    setLoadingState(true);
+    setIsMerging(true);
     const res = await mergeInsumos(mergeMasterId, mergeSlaveIds);
     if (res.success) {
-      dispatchOptimistic({
+      addOptimisticInsumo({
         type: 'update',
         payload: [{
           id: mergeMasterId,
@@ -455,7 +456,7 @@ export default function InsumosManager({
       });
       // Remove slaves optimistically
       mergeSlaveIds.forEach(id => {
-        dispatchOptimistic({ type: 'delete', payload: id });
+        addOptimisticInsumo({ type: 'delete', payload: id });
       });
       setShowMergeModal(false);
       setMergeMasterId('');
@@ -463,7 +464,7 @@ export default function InsumosManager({
     } else {
       alert(res.error || 'Error al fusionar insumos');
     }
-    setLoadingState(false);
+    setIsMerging(false);
   };
 
   const handleCreate = async (e: React.FormEvent) => {
