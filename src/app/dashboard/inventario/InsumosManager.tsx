@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useOptimistic, useTransition, useState, useMemo } from 'react';
 import { createInsumo, deleteInsumo, ajustarInventarioBatch, registrarVentaAlCosto, updateInsumo } from './actions';
@@ -31,6 +31,7 @@ type Insumo = {
   categoria?: string;
   isOptimistic?: boolean;
   es_reventa?: boolean;
+  palabras_clave?: string;
 };
 
 type Movimiento = {
@@ -321,12 +322,15 @@ export default function InsumosManager({
   const [costo, setCosto] = useState('');
   const [stock, setStock] = useState('');
   const [categoria, setCategoria] = useState('General');
+  const [palabrasClave, setPalabrasClave] = useState('');
   const [filterCategoria, setFilterCategoria] = useState('TODOS');
   const [editModalInsumo, setEditModalInsumo] = useState<Insumo | null>(null);
   const [editNombre, setEditNombre] = useState('');
   const [editCategoria, setEditCategoria] = useState('');
+  const [editPalabrasClave, setEditPalabrasClave] = useState('');
 
   const [hideReventa, setHideReventa] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   // Internal tab
   const [activeTab, setActiveTab] = useState<'inventario' | 'movimientos'>('inventario');
 
@@ -389,6 +393,13 @@ export default function InsumosManager({
   
   const filteredInsumos = useMemo(() => {
     let filtered = optimisticInsumos;
+    if (searchQuery.trim() !== '') {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter((i: Insumo) => 
+        i.nombre.toLowerCase().includes(q) || 
+        (i.palabras_clave && i.palabras_clave.toLowerCase().includes(q))
+      );
+    }
     if (filterCategoria !== 'TODOS') {
         filtered = filtered.filter((i: Insumo) => (i.categoria || 'General') === filterCategoria);
     }
@@ -396,7 +407,7 @@ export default function InsumosManager({
         filtered = filtered.filter((i: Insumo) => !i.es_reventa);
     }
     return filtered;
-  }, [optimisticInsumos, filterCategoria, hideReventa]);
+  }, [optimisticInsumos, filterCategoria, hideReventa, searchQuery]);
 
   const totalValue = useMemo(
     () => optimisticInsumos.reduce((s, i) => s + (Number(i.costo_promedio) || 0) * (Number(i.cantidad_actual) || 0), 0),
@@ -435,6 +446,7 @@ export default function InsumosManager({
     setError('');
     const newInsumo = { empresa_id: empresaId, nombre, unidad_medida: unidad, costo_promedio: parseFloat(costo) || 0, cantidad_actual: parseFloat(stock) || 0, categoria: categoria || 'General' };
     setNombre(''); setCosto(''); setStock(''); setCategoria('General');
+      setPalabrasClave('');
     startTransition(async () => {
       addOptimisticInsumo({ type: 'add', payload: newInsumo });
       const res = await createInsumo(empresaId, sedeId, newInsumo.nombre, newInsumo.unidad_medida, newInsumo.costo_promedio, newInsumo.cantidad_actual, newInsumo.categoria);
@@ -515,7 +527,7 @@ export default function InsumosManager({
   const vcFilteredInsumos = useMemo(() => {
     if (!vcSearchQuery.trim()) return optimisticInsumos.slice(0, 15);
     const q = vcSearchQuery.toLowerCase();
-    return optimisticInsumos.filter(i => i.nombre.toLowerCase().includes(q)).slice(0, 25);
+    return optimisticInsumos.filter(i => i.nombre.toLowerCase().includes(q) || (i.palabras_clave && i.palabras_clave.toLowerCase().includes(q))).slice(0, 25);
   }, [optimisticInsumos, vcSearchQuery]);
 
   const vcCantidadNum = parseFloat(vcCantidad) || 0;
@@ -781,6 +793,12 @@ export default function InsumosManager({
           </div>
 
           {/* Filters */}
+          <div className="w-full mb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" size={16} />
+              <input type="text" placeholder="Buscar insumos por nombre o marca (ej. Plumrose, Jam�n)..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full bg-black/50 border border-neutral-800 text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500" />
+            </div>
+          </div>
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar">
               <button
@@ -847,6 +865,7 @@ export default function InsumosManager({
                               setEditModalInsumo(insumo);
                               setEditNombre(insumo.nombre);
                               setEditCategoria(insumo.categoria || 'General');
+      setEditPalabrasClave(insumo.palabras_clave || '');
                             }} 
                             disabled={insumo.isOptimistic}
                             className="text-neutral-500 hover:text-indigo-400 p-1.5 rounded-lg hover:bg-indigo-500/10 transition-colors disabled:opacity-50"
