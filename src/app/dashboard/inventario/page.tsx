@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { createClient } from '@/utils/supabase/server';
 import InsumosManager from './InsumosManager';
 import TransformacionesManager from './TransformacionesManager';
@@ -72,7 +72,7 @@ export default async function InventarioPage({ searchParams }: { searchParams: P
       .order('nombre');
 
     if (activeSedeId) {
-      queryInsumos = queryInsumos.eq('sede_id', activeSedeId);
+      queryInsumos = queryInsumos.or(`sede_id.eq.${activeSedeId},sede_id.is.null`);
     }
 
     const { data: insumosData } = await queryInsumos;
