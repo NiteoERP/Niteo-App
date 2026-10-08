@@ -30,10 +30,14 @@ export default async function TerminalPage() {
     return <div>Error: Perfil no encontrado</div>;
   }
 
-  const [catalogoVirtual, sedeVirtualId] = await Promise.all([
+  // Ahora obtenemos todas las sedes a las que el usuario tiene acceso
+  const { getSedesCaja } = await import('@/actions/sedes-actions');
+  const [catalogoVirtual, sedes] = await Promise.all([
     getProductosCatalogoVirtual(perfil.empresa_id),
-    getSedeVirtualId(),
+    getSedesCaja(),
   ]);
+
+  const sedesActivas = sedes.filter(s => s.estado_activo);
 
   const { data: empresaData } = await supabase
     .from('empresas')
@@ -51,6 +55,8 @@ export default async function TerminalPage() {
   const rateData = (!licencia?.bloqueoFuerte) ? await getTasaBcvAction() : { tasa: 1 };
   const tasaActiva = rateData.tasa || 1;
 
+  const TerminalWrapper = (await import('@/components/pos/TerminalWrapper')).default;
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -65,37 +71,14 @@ export default async function TerminalPage() {
         </div>
       </div>
 
-      {sedeVirtualId ? (
-        <TerminalVirtual
-          catalogo={catalogoVirtual}
-          sedeVirtualId={sedeVirtualId}
-          metodosDisponibles={metodosPago}
-          tasaActiva={tasaActiva}
-          empresaNombre={empresaData?.nombre_comercial || 'Mi Empresa'}
-          licencia={licencia}
-        />
-      ) : (
-        <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-            <ShoppingCart size={28} className="text-indigo-400" />
-          </div>
-          <div>
-            <h3 className="text-white font-bold text-lg">Sin Sede Virtual Configurada</h3>
-            <p className="text-neutral-400 text-sm mt-1 max-w-md">
-              Para usar el Terminal Virtual debes crear una sede de tipo{' '}
-              <span className="text-indigo-400 font-semibold">VIRTUAL</span> en
-              Configuración → Sedes.
-            </p>
-          </div>
-          <a
-            href="/dashboard/configuracion/sedes"
-            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors"
-          >
-            <Store size={16} />
-            Ir a Configuración de Sedes
-          </a>
-        </div>
-      )}
+      <TerminalWrapper
+        catalogo={catalogoVirtual}
+        sedes={sedesActivas}
+        metodosDisponibles={metodosPago}
+        tasaActiva={tasaActiva}
+        empresaNombre={empresaData?.nombre_comercial || 'Mi Empresa'}
+        licencia={licencia}
+      />
     </div>
   );
 }

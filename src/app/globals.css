@@ -75,3 +75,34 @@ select, input[type="date"], input[type="time"] {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: #52525b;
 }
+
+
+/* Niteo Custom Loader Styles */
+#nprogress .spinner {
+  display: flex !important;
+  position: fixed;
+  z-index: 9999;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(10, 10, 10, 0.4);
+  backdrop-filter: blur(4px);
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  animation: niteoFadeIn 0.2s forwards;
+  animation-delay: 200ms;
+}
+
+@keyframes niteoFadeIn {
+  to { opacity: 1; }
+}
+
+.niteo-logo-spinner {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  filter: drop-shadow(0 0 15px rgba(129, 140, 248, 0.6));
+}

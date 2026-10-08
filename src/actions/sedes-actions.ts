@@ -151,6 +151,7 @@ export async function crearSede(formData: FormData) {
   const nombreSede = formData.get('nombre_sede') as string;
   const direccion = formData.get('direccion') as string;
   const tipoSede = (formData.get('tipo_sede') as string) || 'FISICA';
+  const sistemaPos = null;
 
   if (!nombreSede) return { error: 'Nombre es requerido' };
 
@@ -174,6 +175,7 @@ export async function crearSede(formData: FormData) {
       nombre_sede: nombreSede,
       direccion: direccion || null,
       tipo_sede: tipoSede,
+      sistema_pos: sistemaPos,
       master_key: newMasterKey,
     });
 
@@ -208,7 +210,6 @@ export async function getSedeVirtualId(): Promise<string | null> {
     .from('sedes')
     .select('id')
     .eq('empresa_id', perfil.empresa_id)
-    .eq('tipo_sede', 'VIRTUAL')
     .eq('estado_activo', true)
     .limit(1)
     .single();
@@ -262,7 +263,7 @@ export async function getHistorialSede(sedeId: string): Promise<HistorialSedeInf
       supabase.from('compras_facturas').select('*', { count: 'exact', head: true }).eq('sede_id', sedeId),
       supabase.from('gastos_sede').select('*', { count: 'exact', head: true }).eq('sede_id', sedeId),
       supabase.from('inventario_insumos').select('*', { count: 'exact', head: true }).eq('sede_id', sedeId),
-      supabase.from('productos').select('*', { count: 'exact', head: true }).eq('sede_id', sedeId),
+      supabase.from('productos').select('*', { count: 'exact', head: true }).eq('empresa_id', perfil.empresa_id).or(`sede_id.eq.${sedeId},sede_id.is.null`),
       supabase.from('perfiles').select('*', { count: 'exact', head: true }).eq('sede_id', sedeId),
     ]);
 

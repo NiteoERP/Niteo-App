@@ -298,7 +298,12 @@ export default function CatalogoPublicoClient({ empresa, productos: productosIni
                           {prod.categorias.nombre}
                         </span>
                       )}
-                      {prod.stock_disponible !== null && prod.stock_disponible !== undefined && (
+                      {prod.stock_disponible !== null && prod.stock_disponible !== undefined && prod.stock_disponible < 5 && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-rose-400/90 mb-1 flex items-center gap-1">
+                          <AlertCircle size={12} /> ¡Quedan pocas unidades! ({prod.stock_disponible})
+                        </span>
+                      )}
+                      {prod.stock_disponible !== null && prod.stock_disponible !== undefined && prod.stock_disponible >= 5 && (
                         <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400/90 mb-1 block">
                           Solo {prod.stock_disponible} disponibles
                         </span>

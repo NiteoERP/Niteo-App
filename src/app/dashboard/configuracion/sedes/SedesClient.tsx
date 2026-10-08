@@ -1,8 +1,8 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useTransition } from 'react';
 import { Sede, generarMasterKey, crearSede, eliminarSede, activarSede, getHistorialSede, HistorialSedeInfo } from '@/actions/sedes-actions';
-import { Key, Plus, Star, MapPin, MonitorSmartphone, CheckCircle2, Clock, AlertCircle, Trash2, Power, Eye, X, FileText, Users, ShoppingCart, Package, DollarSign, Store, Edit2, Archive } from 'lucide-react';
+import { Key, Plus, Star, MapPin, MonitorSmartphone, CheckCircle2, Clock, AlertCircle, Trash2, Power, Eye, X, FileText, Users, ShoppingCart, Package, DollarSign, Store, Edit2, Archive, Download } from 'lucide-react';
 
 export default function SedesClient({ initialSedes }: { initialSedes: Sede[] }) {
   const [isPending, startTransition] = useTransition();
@@ -91,6 +91,27 @@ export default function SedesClient({ initialSedes }: { initialSedes: Sede[] }) 
 
   return (
     <div className="space-y-8">
+      {/* Banner Descargar Niteo POS */}
+      <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl p-5 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div>
+          <h3 className="text-white font-bold text-lg flex items-center gap-2">
+            <MonitorSmartphone className="text-indigo-400" size={20} />
+            Descargar Niteo POS
+          </h3>
+          <p className="text-neutral-400 text-sm mt-1">
+            Descarga el sistema de punto de venta para Windows e instálalo en tus sucursales físicas. Luego utiliza el <strong className="text-neutral-300">Pairing Code</strong> para vincularlo.
+          </p>
+        </div>
+        <a 
+          href="/downloads/niteo-pos-setup.exe" 
+          download 
+          className="shrink-0 flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 px-5 rounded-xl transition-colors"
+        >
+          <Download size={18} />
+          Descargar Instalador
+        </a>
+      </div>
+
       {/* Lista de Sedes */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {initialSedes.map((sede) => (
@@ -228,7 +249,7 @@ export default function SedesClient({ initialSedes }: { initialSedes: Sede[] }) 
                   <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4 text-center space-y-2 animate-in fade-in zoom-in duration-200">
                     <p className="text-sm text-indigo-200">Pairing Code generado:</p>
                     <p className="text-2xl font-mono font-bold text-white tracking-widest">{newKeyVisible.key}</p>
-                    <p className="text-[10px] text-indigo-300">Ingresa esto en Niteo Sync. Desaparecerá al recargar.</p>
+                    <p className="text-[10px] text-indigo-300">Ingresa esto en Niteo POS. Desaparecerá al recargar.</p>
                   </div>
                 ) : sede.master_key ? (
                   <button 
@@ -308,11 +329,11 @@ export default function SedesClient({ initialSedes }: { initialSedes: Sede[] }) 
                 defaultValue="FISICA"
                 className="w-full px-4 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all"
               >
-                <option value="FISICA">Sede Física (Con Aronium POS)</option>
-                <option value="VIRTUAL">Sede Virtual (Niteo Terminal POS)</option>
+                <option value="FISICA">Sede Física (Tienda o Local)</option>
+                <option value="VIRTUAL">Sede Virtual (Solo Online / Sin Local)</option>
               </select>
               <p className="text-xs text-neutral-500 mt-1">
-                La Sede Virtual permite registrar ventas directamente desde Niteo Web sin necesidad de un sistema POS físico.
+                Todas las sedes (físicas o virtuales) pueden utilizar Niteo Web Terminal para facturar desde el navegador.
               </p>
             </div>
           </div>

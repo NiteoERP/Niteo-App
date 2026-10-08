@@ -84,7 +84,8 @@ export async function createProducto(data: any) {
           nombre: data.nombre + ' (Reventa)',
           unidad_medida: 'Unidades',
           costo_promedio: parseFloat(data.costo) || 0,
-          cantidad_actual: 0
+          cantidad_actual: 0,
+          es_reventa: true
         })
         .select()
         .single();
@@ -383,4 +384,80 @@ export async function bulkDeleteProductos(ids: string[]) {
   return { success: true };
 }
 
+
+
+export async function toggleProductoEstado(id: string, nuevoEstado: boolean) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autorizado' };
+
+  const { error } = await supabase.from('productos').update({ estado_activo: nuevoEstado }).eq('id', id);
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath('/dashboard/catalogo');
+  return { success: true };
+}
+
+export async function quickUpdateProductoType(id: string, nuevoTipo: 'ELABORADO' | 'REVENTA' | 'SERVICIO') {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autorizado' };
+
+  const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
+  if (!perfil) return { success: false, error: 'Perfil no encontrado' };
+
+  // Fetch current product to check if we need to create an insumo
+  const { data: prod } = await supabase.from('productos').select('id, nombre, costo, sede_id').eq('id', id).single();
+  if (!prod) return { success: false, error: 'Producto no encontrado' };
+
+  const es_compuesto = nuevoTipo === 'ELABORADO';
+  const es_reventa = nuevoTipo === 'REVENTA';
+  const es_servicio = nuevoTipo === 'SERVICIO';
+
+  // If changing to REVENTA, ensure it has a backing insumo
+  if (es_reventa) {
+    const { data: recetas } = await supabase.from('recetas').select('id').eq('producto_id', id).limit(1);
+    if (!recetas || recetas.length === 0) {
+      // Find sede_id
+      const { data: sede } = await supabase.from('sedes').select('id').eq('empresa_id', perfil.empresa_id).limit(1).single();
+      const sedeId = prod.sede_id || sede?.id;
+
+      if (sedeId) {
+        const { data: nuevoInsumo, error: insumoErr } = await supabase
+          .from('inventario_insumos')
+          .insert({
+            empresa_id: perfil.empresa_id,
+            sede_id: sedeId,
+            nombre: prod.nombre + ' (Reventa)',
+            unidad_medida: 'Und',
+            costo_promedio: parseFloat(prod.costo) || 0,
+            cantidad_actual: 0,
+            es_reventa: true
+          })
+          .select()
+          .single();
+
+        if (!insumoErr && nuevoInsumo) {
+          await supabase.from('recetas').insert({
+            empresa_id: perfil.empresa_id,
+            producto_id: id,
+            insumo_id: nuevoInsumo.id,
+            cantidad_necesaria: 1,
+          });
+        }
+      }
+    }
+  }
+
+  const { error } = await supabase.from('productos').update({
+    es_compuesto,
+    es_reventa,
+    es_servicio
+  }).eq('id', id);
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath('/dashboard/catalogo');
+  return { success: true };
+}
 

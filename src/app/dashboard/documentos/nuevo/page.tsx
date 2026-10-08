@@ -2,7 +2,6 @@ import React from 'react';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { getProductosCatalogoVirtual } from '@/actions/pos-actions';
-import { getSedeVirtualId } from '@/actions/sedes-actions';
 import DocumentoForm from './DocumentoForm';
 import { Metadata } from 'next';
 
@@ -29,10 +28,13 @@ export default async function NuevoDocumentoPage() {
     return <div>Error: Perfil no encontrado</div>;
   }
 
-  const [catalogoVirtual, sedeVirtualId] = await Promise.all([
+  const { getSedesCaja } = await import('@/actions/sedes-actions');
+  const [catalogoVirtual, sedes] = await Promise.all([
     getProductosCatalogoVirtual(perfil.empresa_id),
-    getSedeVirtualId(),
+    getSedesCaja(),
   ]);
+
+  const sedeVirtualId = sedes.find(s => s.estado_activo)?.id || null;
 
   const { data: empresaData } = await supabase
     .from('empresas')

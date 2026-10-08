@@ -1,6 +1,6 @@
-﻿'use client';
+'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState, useTransition, useRef } from 'react';
 import { Plus, Search, Edit2, Trash2, PackageSearch, Box, Share2, Copy, Check, ExternalLink, ToggleLeft, ToggleRight, Link } from 'lucide-react';
 import ProductoForm from './ProductoForm';
 import BulkRecetaModal from './BulkRecetaModal';
@@ -39,6 +39,10 @@ export default function CatalogoClient({
   const [copied, setCopied] = useState(false);
   const [catalogoActivo, setCatalogoActivo] = useState(empresa?.catalogo_activo ?? false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const stateTimeouts = useRef<Record<string, NodeJS.Timeout>>({});
+  const typeTimeouts = useRef<Record<string, NodeJS.Timeout>>({});
+  const [optimisticStates, setOptimisticStates] = useState<Record<string, boolean>>({});
+  const [optimisticTypes, setOptimisticTypes] = useState<Record<string, 'ELABORADO' | 'REVENTA' | 'SERVICIO'>>({});
 
   const filtered = productos.filter(p => {
     const matchesSearch = (p.nombre?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
@@ -63,6 +67,35 @@ export default function CatalogoClient({
     } else {
       setSelectedIds(filtered.map(p => p.id));
     }
+  };
+
+  const handleToggleEstado = (id: string, currentState: boolean) => {
+    const newState = !currentState;
+    setOptimisticStates(prev => ({ ...prev, [id]: newState }));
+    
+    if (stateTimeouts.current[id]) clearTimeout(stateTimeouts.current[id]);
+    
+    stateTimeouts.current[id] = setTimeout(() => {
+      startTransition(async () => {
+        const { toggleProductoEstado } = await import('@/actions/catalogo-actions');
+        const res = await toggleProductoEstado(id, newState);
+        if (!res.success) alert(res.error);
+      });
+    }, 2000);
+  };
+
+  const handleUpdateTipo = (id: string, newType: 'ELABORADO' | 'REVENTA' | 'SERVICIO') => {
+    setOptimisticTypes(prev => ({ ...prev, [id]: newType }));
+    
+    if (typeTimeouts.current[id]) clearTimeout(typeTimeouts.current[id]);
+    
+    typeTimeouts.current[id] = setTimeout(() => {
+      startTransition(async () => {
+        const { quickUpdateProductoType } = await import('@/actions/catalogo-actions');
+        const res = await quickUpdateProductoType(id, newType);
+        if (!res.success) alert(res.error);
+      });
+    }, 2000);
   };
 
   const handleBulkDelete = async () => {
@@ -318,8 +351,11 @@ export default function CatalogoClient({
         
         {/* Mobile view (Cards) */}
         <div className="md:hidden divide-y divide-neutral-800/50">
-          {filtered.map(p => (
-                        <div key={p.id} className="p-4 hover:bg-neutral-800/40 transition-colors flex flex-col gap-3 cursor-pointer" onClick={(e) => { e.stopPropagation(); handleEdit(p); }}>
+          {filtered.map(p => {
+              const isActivo = optimisticStates[p.id] !== undefined ? optimisticStates[p.id] : (p.estado_activo !== false);
+              const currentType = optimisticTypes[p.id] || (p.es_servicio ? 'SERVICIO' : (p.es_compuesto ? 'ELABORADO' : 'REVENTA'));
+              return (
+              <div key={p.id} className="p-4 hover:bg-neutral-800/40 transition-colors flex flex-col gap-3 cursor-pointer" onClick={(e) => { e.stopPropagation(); handleEdit(p); }}>
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
                   <div onClick={e => e.stopPropagation()}>
@@ -354,15 +390,32 @@ export default function CatalogoClient({
                 ) : (
                   <span className="text-[10px] text-neutral-600 italic">Sin categoría</span>
                 )}
-                {p.es_compuesto ? (
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-medium border border-emerald-500/20">
-                    Elaborado
-                  </span>
-                ) : (
-                  <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-medium border border-blue-500/20">
-                    Reventa
-                  </span>
-                )}
+                <button 
+                  onClick={(e) => { e.stopPropagation(); handleToggleEstado(p.id, isActivo); }}
+                  disabled={isPending}
+                  className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${
+                    isActivo
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                      : 'bg-neutral-800 text-neutral-400 border-neutral-700'
+                  }`}
+                >
+                  {isActivo ? 'Activo' : 'Inactivo'}
+                </button>
+                <select
+                  value={currentType}
+                  onClick={e => e.stopPropagation()}
+                  onChange={(e) => handleUpdateTipo(p.id, e.target.value as any)}
+                  disabled={isPending}
+                  className={`text-[10px] font-medium rounded-md px-1.5 py-0.5 outline-none cursor-pointer border ${
+                    currentType === 'SERVICIO' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                    currentType === 'ELABORADO' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 
+                    'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                  }`}
+                >
+                  <option value="REVENTA" className="bg-neutral-900 text-white">Reventa</option>
+                  <option value="ELABORADO" className="bg-neutral-900 text-white">Elaborado</option>
+                  <option value="SERVICIO" className="bg-neutral-900 text-white">Servicio</option>
+                </select>
               </div>
 
               <div className="flex justify-between items-center bg-neutral-950/50 p-2 rounded-lg border border-neutral-800/50 mt-1">
@@ -376,8 +429,9 @@ export default function CatalogoClient({
                 </div>
               </div>
             </div>
-          ))}
-          {filtered.length === 0 && (
+          );
+            })}
+            {filtered.length === 0 && (
             <div className="p-8 text-center text-neutral-500 text-sm">No se encontraron productos.</div>
           )}
         </div>
@@ -398,6 +452,7 @@ export default function CatalogoClient({
                 <th className="px-6 py-4 font-medium">Producto</th>
                 <th className="px-6 py-4 font-medium">Sucursal</th>
                 <th className="px-6 py-4 font-medium">Categoría</th>
+                <th className="px-6 py-4 font-medium text-center">Estado</th>
                 <th className="px-6 py-4 font-medium">Tipo</th>
                 <th className="px-6 py-4 font-medium">Costo</th>
                 <th className="px-6 py-4 font-medium">P. Venta</th>
@@ -405,8 +460,11 @@ export default function CatalogoClient({
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-800/50 text-neutral-300">
-              {filtered.map(p => (
-                                <tr key={p.id} className="hover:bg-neutral-800/40 transition-colors cursor-pointer" onClick={(e) => { e.stopPropagation(); handleEdit(p); }}>
+              {filtered.map(p => {
+                const isActivo = optimisticStates[p.id] !== undefined ? optimisticStates[p.id] : (p.estado_activo !== false);
+                const currentType = optimisticTypes[p.id] || (p.es_servicio ? 'SERVICIO' : (p.es_compuesto ? 'ELABORADO' : 'REVENTA'));
+                return (
+                <tr key={p.id} className="hover:bg-neutral-800/40 transition-colors cursor-pointer" onClick={(e) => { e.stopPropagation(); handleEdit(p); }}>
                   <td className="px-6 py-4 w-12 text-center" onClick={e => e.stopPropagation()}>
                     <input 
                       type="checkbox" 
@@ -441,16 +499,35 @@ export default function CatalogoClient({
                       <span className="text-xs text-neutral-600 italic">Sin categoría</span>
                     )}
                   </td>
+                  <td className="px-6 py-4 text-center">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleToggleEstado(p.id, isActivo); }}
+                      disabled={isPending}
+                      className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
+                        isActivo
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
+                          : 'bg-neutral-800 text-neutral-400 border-neutral-700 hover:bg-neutral-700'
+                      }`}
+                    >
+                      {isActivo ? 'Activo' : 'Inactivo'}
+                    </button>
+                  </td>
                   <td className="px-6 py-4">
-                    {p.es_compuesto ? (
-                      <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-medium border border-emerald-500/20">
-                        Elaborado
-                      </span>
-                    ) : (
-                      <span className="px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-medium border border-blue-500/20">
-                        Reventa / Simple
-                      </span>
-                    )}
+                    <select
+                      value={currentType}
+                      onClick={e => e.stopPropagation()}
+                      onChange={(e) => handleUpdateTipo(p.id, e.target.value as any)}
+                      disabled={isPending}
+                      className={`text-[11px] font-medium rounded-md px-2 py-1 outline-none cursor-pointer border ${
+                        currentType === 'SERVICIO' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                        currentType === 'ELABORADO' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 
+                        'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                      }`}
+                    >
+                      <option value="REVENTA" className="bg-neutral-900 text-white">Reventa</option>
+                      <option value="ELABORADO" className="bg-neutral-900 text-white">Elaborado</option>
+                      <option value="SERVICIO" className="bg-neutral-900 text-white">Servicio</option>
+                    </select>
                   </td>
                   <td className="px-6 py-4 font-mono text-neutral-400">
                     ${(Number(p.costo) || 0).toFixed(2)}
@@ -465,8 +542,9 @@ export default function CatalogoClient({
                     </div>
                   </td>
                 </tr>
-              ))}
-              {filtered.length === 0 && (
+              );
+            })}
+            {filtered.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-neutral-500">No se encontraron productos.</td>
                 </tr>

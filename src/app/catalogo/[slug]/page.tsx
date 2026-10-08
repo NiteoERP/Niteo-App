@@ -83,9 +83,7 @@ export default async function CatalogoPublicoPage({ params }: Props) {
   const productosConStock = (productos || []).map(prod => {
     let stock_disponible = null; // null = infinito / no trackeado
 
-    if (prod.es_reventa && prod.id_insumo_vinculado) {
-      stock_disponible = insumosMap.get(prod.id_insumo_vinculado) ?? 0;
-    } else if (prod.es_compuesto) {
+    if (prod.es_reventa || prod.es_compuesto) {
       const recetasProd = (recetas || []).filter(r => r.producto_id === prod.id);
       if (recetasProd.length > 0) {
         let maxPosible = Infinity;
@@ -97,6 +95,8 @@ export default async function CatalogoPublicoPage({ params }: Props) {
           }
         });
         stock_disponible = maxPosible === Infinity ? 0 : maxPosible;
+      } else if (prod.es_reventa && prod.id_insumo_vinculado) {
+        stock_disponible = insumosMap.get(prod.id_insumo_vinculado) ?? 0;
       }
     }
 
