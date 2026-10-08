@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useOptimistic, useTransition, useState, useMemo } from 'react';
-import { createInsumo, deleteInsumo, ajustarInventarioBatch, registrarVentaAlCosto, updateInsumo } from './actions';
+import { createInsumo, deleteInsumo, ajustarInventarioBatch, registrarVentaAlCosto, updateInsumo, mergeInsumos } from './actions';
 import {
   PackageOpen, Plus, Trash2, Loader2, AlertCircle, FileText,
   Save, X, Edit3, DollarSign, Boxes,
   ArrowUpCircle, ArrowDownCircle, History, BarChart3, ChevronDown, ChevronUp,
-  PackageSearch, Activity, Download, Calendar, Lock, BadgePercent, CheckCircle2, Search,
+  PackageSearch, Activity, Download, Calendar, Lock, BadgePercent, CheckCircle2, Search, GitMerge,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
@@ -348,6 +348,9 @@ export default function InsumosManager({
   const [isAdjusting, setIsAdjusting] = useState(false);
 
   // Venta al Costo Modal state
+  const [showMergeModal, setShowMergeModal] = useState(false);
+  const [mergeMasterId, setMergeMasterId] = useState('');
+  const [mergeSlaveIds, setMergeSlaveIds] = useState<string[]>([]);
   const [showVentaCostoModal, setShowVentaCostoModal] = useState(false);
   const [vcSearchQuery, setVcSearchQuery] = useState('');
   const [vcSelectedInsumoId, setVcSelectedInsumoId] = useState<string>('');
@@ -436,6 +439,33 @@ export default function InsumosManager({
   }), [initialMovimientos, filterTipo, filterMotivo]);
 
   // -- Handlers ----------------------------------------------------------------
+  const handleMerge = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mergeMasterId || mergeSlaveIds.length === 0) return;
+    setLoadingState(true);
+    const res = await mergeInsumos(mergeMasterId, mergeSlaveIds);
+    if (res.success) {
+      dispatchOptimistic({
+        type: 'update',
+        payload: [{
+          id: mergeMasterId,
+          cantidad_actual: res.newStock,
+          palabras_clave: res.newPalabrasClave
+        }]
+      });
+      // Remove slaves optimistically
+      mergeSlaveIds.forEach(id => {
+        dispatchOptimistic({ type: 'delete', payload: id });
+      });
+      setShowMergeModal(false);
+      setMergeMasterId('');
+      setMergeSlaveIds([]);
+    } else {
+      alert(res.error || 'Error al fusionar insumos');
+    }
+    setLoadingState(false);
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nombre) return;

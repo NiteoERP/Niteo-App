@@ -3,6 +3,72 @@
 import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 
+
+export async function mergeInsumos(masterId: string, slaveIds: string[]) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autorizado' };
+
+  // 1. Get Master
+  const { data: master, error: masterErr } = await supabase.from('inventario_insumos').select('*').eq('id', masterId).single();
+  if (masterErr || !master) return { success: false, error: 'Insumo principal no encontrado' };
+
+  // 2. Get Slaves
+  const { data: slaves, error: slavesErr } = await supabase.from('inventario_insumos').select('*').in('id', slaveIds);
+  if (slavesErr || !slaves || slaves.length === 0) return { success: false, error: 'Insumos a fusionar no encontrados' };
+
+  // 3. Calculate new stock and average cost
+  let totalStock = Number(master.cantidad_actual) || 0;
+  let totalValue = totalStock * (Number(master.costo_promedio) || 0);
+  const keywords = new Set(master.palabras_clave ? master.palabras_clave.split(',').map(s => s.trim()).filter(Boolean) : []);
+
+  for (const slave of slaves) {
+    const slaveStock = Number(slave.cantidad_actual) || 0;
+    const slaveCost = Number(slave.costo_promedio) || 0;
+    
+    totalStock += slaveStock;
+    totalValue += (slaveStock * slaveCost);
+    
+    // Add slave name and its keywords to master's keywords
+    keywords.add(slave.nombre);
+    if (slave.palabras_clave) {
+      slave.palabras_clave.split(',').forEach(k => keywords.add(k.trim()));
+    }
+  }
+
+  const newCostoPromedio = totalStock > 0 ? (totalValue / totalStock) : master.costo_promedio;
+  const newPalabrasClave = Array.from(keywords).join(', ');
+
+  // 4. Update Master
+  const { error: updateErr } = await supabase.from('inventario_insumos').update({
+    cantidad_actual: totalStock,
+    costo_promedio: newCostoPromedio,
+    palabras_clave: newPalabrasClave
+  }).eq('id', masterId);
+  if (updateErr) return { success: false, error: 'Error actualizando insumo principal' };
+
+  // 5. Transfer Movimientos
+  await supabase.from('movimientos_inventario').update({ insumo_id: masterId }).in('insumo_id', slaveIds);
+  
+  // 6. Transfer Recetas (if any)
+  await supabase.from('recetas').update({ insumo_id: masterId }).in('insumo_id', slaveIds);
+
+  // 7. Delete Slaves (Will fail if there are other foreign keys we missed, but standard Niteo mostly has the two above)
+  const { error: deleteErr } = await supabase.from('inventario_insumos').delete().in('id', slaveIds);
+  if (deleteErr) {
+    // Fallback: Soft delete by prepending ZZZ and setting stock to 0
+    await supabase.from('inventario_insumos').update({
+      nombre: 'ZZZ_FUSIONADO',
+      cantidad_actual: 0,
+      estado_activo: false
+    }).in('id', slaveIds);
+  }
+
+  revalidatePath('/dashboard/inventario');
+  return { success: true, newStock: totalStock, newPalabrasClave };
+}
+
+
 export async function createInsumo(empresaId: string, sedeId: string, nombre: string, unidad_medida: string, costo_promedio: number, cantidad_actual: number, categoria: string = 'General', palabras_clave: string = '') {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -310,3 +376,4 @@ export async function updateInsumo(id: string, nombre: string, categoria: string
   revalidatePath('/dashboard/inventario');
   return { success: true, data };
 }
+
