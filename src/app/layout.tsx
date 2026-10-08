@@ -32,11 +32,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           crawlSpeed={200}
           height={3}
           crawl={true}
-          showSpinner={true}
+          showSpinner={false}
           easing="ease"
           speed={200}
           shadow="0 0 10px #818cf8,0 0 5px #818cf8"
-          template='<div class="bar" role="bar"><div class="peg"></div></div><div class="spinner" role="spinner"><img src="/logo.png" class="niteo-logo-spinner" alt="Cargando..." /></div>'
         />
         {children}
       </body>
