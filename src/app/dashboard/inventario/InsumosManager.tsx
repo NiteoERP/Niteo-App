@@ -31,7 +31,7 @@ type Insumo = {
   categoria?: string;
   isOptimistic?: boolean;
   es_reventa?: boolean;
-  palabras_clave?: string;
+  palabras_clave?: string[];
 };
 
 type Movimiento = {
@@ -401,7 +401,7 @@ export default function InsumosManager({
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter((i: Insumo) => 
         i.nombre.toLowerCase().includes(q) || 
-        (i.palabras_clave && i.palabras_clave.toLowerCase().includes(q))
+        (i.palabras_clave && i.palabras_clave.some(kw => kw.toLowerCase().includes(q)))
       );
     }
     if (filterCategoria !== 'TODOS') {
@@ -558,7 +558,7 @@ export default function InsumosManager({
   const vcFilteredInsumos = useMemo(() => {
     if (!vcSearchQuery.trim()) return optimisticInsumos.slice(0, 15);
     const q = vcSearchQuery.toLowerCase();
-    return optimisticInsumos.filter(i => i.nombre.toLowerCase().includes(q) || (i.palabras_clave && i.palabras_clave.toLowerCase().includes(q))).slice(0, 25);
+    return optimisticInsumos.filter(i => i.nombre.toLowerCase().includes(q) || (i.palabras_clave && i.palabras_clave.some(kw => kw.toLowerCase().includes(q)))).slice(0, 25);
   }, [optimisticInsumos, vcSearchQuery]);
 
   const vcCantidadNum = parseFloat(vcCantidad) || 0;
@@ -896,7 +896,7 @@ export default function InsumosManager({
                               setEditModalInsumo(insumo);
                               setEditNombre(insumo.nombre);
                               setEditCategoria(insumo.categoria || 'General');
-      setEditPalabrasClave(insumo.palabras_clave || '');
+      setEditPalabrasClave(insumo.palabras_clave ? insumo.palabras_clave.join(', ') : '');
                             }} 
                             disabled={insumo.isOptimistic}
                             className="text-neutral-500 hover:text-indigo-400 p-1.5 rounded-lg hover:bg-indigo-500/10 transition-colors disabled:opacity-50"
