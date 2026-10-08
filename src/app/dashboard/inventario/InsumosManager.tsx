@@ -401,7 +401,7 @@ export default function InsumosManager({
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter((i: Insumo) => 
         i.nombre.toLowerCase().includes(q) || 
-        (i.palabras_clave && i.palabras_clave.some(kw => kw.toLowerCase().includes(q)))
+        (i.palabras_clave && i.palabras_clave.some((kw: string) => kw.toLowerCase().includes(q)))
       );
     }
     if (filterCategoria !== 'TODOS') {
@@ -558,7 +558,7 @@ export default function InsumosManager({
   const vcFilteredInsumos = useMemo(() => {
     if (!vcSearchQuery.trim()) return optimisticInsumos.slice(0, 15);
     const q = vcSearchQuery.toLowerCase();
-    return optimisticInsumos.filter(i => i.nombre.toLowerCase().includes(q) || (i.palabras_clave && i.palabras_clave.some(kw => kw.toLowerCase().includes(q)))).slice(0, 25);
+    return optimisticInsumos.filter(i => i.nombre.toLowerCase().includes(q) || (i.palabras_clave && i.palabras_clave.some((kw: string) => kw.toLowerCase().includes(q)))).slice(0, 25);
   }, [optimisticInsumos, vcSearchQuery]);
 
   const vcCantidadNum = parseFloat(vcCantidad) || 0;
