@@ -1368,7 +1368,7 @@ export default function ProveedoresPage() {
               {facturaTab === 'insumos' && (
               <div className="flex bg-neutral-900/90 backdrop-blur-md rounded-xl p-1 mb-6 sticky top-2 z-10 shadow-2xl shadow-black/80 border border-neutral-800/80">
                 <button type="button" onClick={() => setFacStep(1)} className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all ${facStep === 1 ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-white'}`}>1. Datos Básicos</button>
-                <button type="button" onClick={() => setFacStep(2)} className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2 ${facStep === 2 ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-white'}`}>2. Ítems & Factura {facDetalles.length > 0 && <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${facStep === 2 ? 'bg-white/20 text-white' : 'bg-indigo-500/20 text-indigo-400'}`}>{facDetalles.length}</span>}</button>
+                <button type="button" onClick={() => setFacStep(2)} className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2 ${facStep === 2 ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-white'}`}>2. Ítems & Factura {facItems.length > 0 && <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${facStep === 2 ? 'bg-white/20 text-white' : 'bg-indigo-500/20 text-indigo-400'}`}>{facItems.length}</span>}</button>
               </div>
               )}
               {(facStep === 1 || facturaTab === 'gastos') && (<div className="space-y-6 animate-in fade-in slide-in-from-left-4">
