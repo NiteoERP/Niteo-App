@@ -1841,7 +1841,7 @@ export default function ProveedoresPage() {
                       </p>
                     )}
                   </div>
-              )}
+              </div>)}
 
               <div>
                 <label className="block text-sm text-neutral-400 mb-1.5 mt-2">Estado / Método de Pago</label>
