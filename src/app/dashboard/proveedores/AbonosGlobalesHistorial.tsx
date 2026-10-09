@@ -5,8 +5,8 @@ import { History, FileText, X, ChevronDown, ChevronUp } from "lucide-react";
 import { format } from "date-fns";
 import { getHistorialAbonosGlobales } from "./actions";
 import { useEmpresa } from "@/components/providers/EmpresaProvider";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+// import jsPDF from "jspdf";
+// import autoTable from "jspdf-autotable";
 import { formatFecha } from "@/utils/date-utils";
 
 export default function AbonosGlobalesHistorial({
@@ -41,7 +41,9 @@ export default function AbonosGlobalesHistorial({
     setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const exportPDF = () => {
+  const exportPDF = async () => {
+    const { default: jsPDF } = await import('jspdf');
+    const { default: autoTable } = await import('jspdf-autotable');
     const doc = new jsPDF();
     doc.setFontSize(16);
     doc.text(`Historial de Abonos - ${proveedorNombre}`, 14, 15);

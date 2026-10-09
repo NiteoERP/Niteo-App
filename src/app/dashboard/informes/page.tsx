@@ -13,9 +13,9 @@ import { format, subDays, startOfWeek, endOfWeek, startOfDay, endOfDay,
   startOfMonth, endOfMonth, startOfYear, endOfYear,
   subMonths,
 } from 'date-fns';
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+// import * as XLSX from 'xlsx';
+// import jsPDF from 'jspdf';
+// import autoTable from 'jspdf-autotable';
 import NiteoDateRangePicker from '@/components/ui/NiteoDateRangePicker';
 import InformeComprasNetas from '@/components/informes/InformeComprasNetas';
 
@@ -326,8 +326,9 @@ export default function InformesPage() {
   // ── Export Excel ──────────────────────────────────────────────────────────
 
   
-  const exportExcel = () => {
+  const exportExcel = async () => {
     if (!reportData || reportData.length === 0) return;
+    const XLSX = await import('xlsx');
     const keys = Array.from(new Set(reportData.flatMap(r => Object.keys(r))));
     const firstKeyCandidates = ['Fecha', 'FECHA', 'fecha', 'numero_orden', 'codigo', 'cliente', 'operador', 'OPERADOR', 'categoria', 'nombre_cajero', 'nombre_cliente'];
     const foundFirstKey = firstKeyCandidates.find(k => keys.includes(k));
@@ -357,8 +358,10 @@ export default function InformesPage() {
     XLSX.writeFile(wb, `${selectedReportName.replace(/ /g, '_')}_${format(new Date(), 'yyyyMMdd')}.xlsx`);
   };
 
-  const exportPDF = () => {
+  const exportPDF = async () => {
     if (!reportData || reportData.length === 0) return;
+    const { default: jsPDF } = await import('jspdf');
+    const { default: autoTable } = await import('jspdf-autotable');
     const doc = new jsPDF(pageOrientation);
     
     doc.setFontSize(22);

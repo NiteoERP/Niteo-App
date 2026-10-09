@@ -8,8 +8,8 @@ import { useEmpresa } from "@/components/providers/EmpresaProvider";
 import NiteoDateRangePicker from "@/components/ui/NiteoDateRangePicker";
 import CreatableSelect from "react-select/creatable";
 import { Store, Wallet, Search, FileText, ShoppingCart, Users, PlusCircle, X, Download, Hash, History, ArrowLeft } from "lucide-react";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+// import jsPDF from "jspdf";
+// import autoTable from "jspdf-autotable";
 
 // ── Safe date formatting helper (prevents 1969 epoch bugs or invalid date crashes) ──
 function safeFormatDate(dateVal: any, formatPattern: string = "dd/MM/yyyy HH:mm"): string {
@@ -344,10 +344,12 @@ export default function CreditosPage() {
     printWindow.document.close();
   };
 
-  const generatePDF = () => {
+  const generatePDF = async () => {
     if (!clienteSeleccionado) return;
     setIsExportingPDF(true);
     try {
+      const { default: jsPDF } = await import('jspdf');
+      const { default: autoTable } = await import('jspdf-autotable');
       const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
       // Encabezado estilizado

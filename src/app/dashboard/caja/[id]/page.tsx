@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Edit, Wallet, Calendar, MapPin, CheckCircle, XCircle, ChevronDown } from 'lucide-react';
 import { createClient } from '@/utils/supabase/server';
@@ -102,20 +102,50 @@ export default async function CierreDetallePage(props: { params: Promise<{ id: s
                   <span className="text-xs text-neutral-500 bg-neutral-800 px-2 py-1 rounded-md">{data.pagos.length} pagos</span>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className="font-black text-emerald-400">{data.total.toFixed(2)} {data.moneda}</span>
+                  <div className="text-right">
+                    <p className="font-black text-emerald-400">{data.total.toFixed(2)} {data.moneda}</p>
+                    {data.moneda === 'VES' && cierre.tasa_cambio && (
+                      <p className="text-xs text-neutral-500 font-medium">~${(data.total / cierre.tasa_cambio).toFixed(2)}</p>
+                    )}
+                  </div>
                   <ChevronDown className="text-neutral-500 group-open:rotate-180 transition-transform" size={18} />
                 </div>
               </summary>
               <div className="divide-y divide-neutral-800/50 border-t border-neutral-800">
-                {data.pagos.map((t: any) => (
-                  <div key={t.id} className="p-4 flex items-center justify-between bg-neutral-950/30 pl-8">
-                    <div>
-                      <p className="font-medium text-neutral-300 text-sm">{t.banco && t.banco !== 'N/A' ? t.banco : 'Sin banco/referencia'}</p>
-                      {t.referencia && t.referencia !== 'N/A' && <p className="text-xs text-neutral-500 mt-0.5">Ref: {t.referencia}</p>}
+                {(() => {
+                  const pagosPorBanco = data.pagos.reduce((bAcc: any, t: any) => {
+                    const b = (t.banco && t.banco !== 'N/A') ? t.banco : 'Sin banco/referencia';
+                    if (!bAcc[b]) bAcc[b] = { total: 0, pagos: [] };
+                    bAcc[b].pagos.push(t);
+                    bAcc[b].total += Number(t.monto);
+                    return bAcc;
+                  }, {});
+                  
+                  return Object.entries(pagosPorBanco).map(([banco, bData]: [string, any]) => (
+                    <div key={banco} className="p-4 bg-neutral-950/30 pl-8">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="font-bold text-neutral-300 text-sm flex items-center gap-2">
+                          <Wallet size={14} className="text-indigo-400" />
+                          {banco}
+                        </p>
+                        <div className="text-right">
+                          <span className="font-bold text-emerald-400 text-sm">{bData.total.toFixed(2)} {data.moneda}</span>
+                          {data.moneda === 'VES' && cierre.tasa_cambio && (
+                            <span className="text-xs text-neutral-500 ml-2 font-medium">(~${(bData.total / cierre.tasa_cambio).toFixed(2)})</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-1.5 pl-6 border-l-2 border-neutral-800/80 ml-1.5">
+                        {bData.pagos.map((t: any) => (
+                          <div key={t.id} className="flex justify-between text-xs text-neutral-400">
+                            <span>Ref: {t.referencia && t.referencia !== 'N/A' ? t.referencia : 'S/R'}</span>
+                            <span>{Number(t.monto).toFixed(2)} {data.moneda}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <span className="font-bold text-emerald-400/80 text-sm">{Number(t.monto).toFixed(2)} {t.moneda}</span>
-                  </div>
-                ))}
+                  ));
+                })()}
               </div>
             </details>
           ))

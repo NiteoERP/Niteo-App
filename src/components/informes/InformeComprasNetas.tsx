@@ -27,7 +27,7 @@ import {
 import { format, startOfMonth, endOfMonth, subDays, subMonths } from 'date-fns';
 import { obtenerComprasNetasSede, ComprasNetasResponse, MovimientoCompraNeta } from '@/actions/informes-actions';
 import NiteoDateRangePicker from '@/components/ui/NiteoDateRangePicker';
-import * as XLSX from 'xlsx';
+// import * as XLSX from 'xlsx';
 
 interface SedeOption {
   id: string;
@@ -118,8 +118,9 @@ export default function InformeComprasNetas({
   });
 
   // Exportar a Excel
-  const exportarExcel = () => {
+  const exportarExcel = async () => {
     if (!data) return;
+    const XLSX = await import('xlsx');
 
     const rowsExcel = data.movimientos.map(m => ({
       Fecha: m.fecha_formateada,

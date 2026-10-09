@@ -55,8 +55,8 @@ export default function MobileCompraForm() {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 2000;
-        const MAX_HEIGHT = 2000;
+        const MAX_WIDTH = 1000;
+        const MAX_HEIGHT = 1000;
         let width = img.width;
         let height = img.height;
 

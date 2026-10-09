@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { ArrowLeft, Calendar, Loader2, MapPin, Download, FileText, Table } from 'lucide-react';
 import { getResumenPagos } from '@/actions/cierres-actions';
 import { getSedesCaja } from '@/actions/sedes-actions';
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+// import * as XLSX from 'xlsx';
+// import jsPDF from 'jspdf';
+// import autoTable from 'jspdf-autotable';
 import NiteoDateRangePicker from '@/components/ui/NiteoDateRangePicker';
 
 export default function ResumenPagosPage() {
@@ -53,15 +53,17 @@ export default function ResumenPagosPage() {
   });
 
 
-  const exportExcel = () => {
+  const exportExcel = async () => {
     if (data.length === 0) return;
+    
+    const XLSX = await import('xlsx');
     
     // Preparar cabeceras
     const header = ['FECHA', 'TOTAL USD', ...methods];
     
     // Preparar filas
     const rows = data.map(row => {
-      const rowData = [
+      const rowData: any[] = [
         new Date(row.fecha + 'T12:00:00Z').toLocaleDateString('es-VE'),
         Number(row.total_usd.toFixed(2))
       ];
@@ -72,7 +74,7 @@ export default function ResumenPagosPage() {
     });
     
     // Fila de totales
-    const totalsRow = ['TOTALES', Number(grandTotal.toFixed(2))];
+    const totalsRow: any[] = ['TOTALES', Number(grandTotal.toFixed(2))];
     methods.forEach(m => {
       totalsRow.push(Number(methodTotals[m].toFixed(2)));
     });
@@ -86,8 +88,11 @@ export default function ResumenPagosPage() {
     XLSX.writeFile(wb, `Resumen_Pagos_${fechaInicio}_${fechaFin}.xlsx`);
   };
 
-  const exportPDF = () => {
+  const exportPDF = async () => {
     if (data.length === 0) return;
+    
+    const { default: jsPDF } = await import('jspdf');
+    const { default: autoTable } = await import('jspdf-autotable');
     
     const doc = new jsPDF('landscape');
     

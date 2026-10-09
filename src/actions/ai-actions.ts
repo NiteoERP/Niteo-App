@@ -12,8 +12,8 @@ export async function scanInvoice(base64Image: string, mimeType: string, invento
     
     // Lista de modelos a intentar en orden de preferencia (nombres verificados en API v1beta)
     const modelsToTry = [
-      'gemini-flash-latest',       // Modelo estable y rápido para lectura de facturas
-      'gemini-flash-lite-latest'   // Modelo ultra ligero de respaldo
+      'gemini-1.5-flash',       // Modelo estable y rápido para lectura de facturas
+      'gemini-1.5-flash-8b'     // Modelo ultra ligero de respaldo
     ];
 
     const inventoryContext = inventory.map(i => `{"id": "${i.id}", "nombre": "${i.nombre}", "unidad": "${i.unidad_medida}"${i.palabras_clave && i.palabras_clave.length > 0 ? `, "alias": "${i.palabras_clave.join(', ')}"` : ''}}`).join('\n');
@@ -32,7 +32,7 @@ Reglas de extracción y degradación (MUY IMPORTANTE):
 6. Extrae la fecha de emisión (YYYY-MM-DD).
 7. Si es una factura a crédito, extrae la "fecha_vencimiento" (fecha límite de pago, YYYY-MM-DD). Si no hay, null.
 8. Extrae el IVA y el Descuento (si los hay). Si no hay, usa 0.
-9. MATCHEA CON EL INVENTARIO: Busca el insumo semánticamente más cercano. Si el producto es "Harina Pan" pero en inventario está "Harina de Maíz Pan", úsalo. Si no hay nada parecido, pon null.
+9. MATCHEA CON EL INVENTARIO: Busca el insumo semánticamente más cercano. Utiliza el campo "alias" (palabras clave) para asegurar coincidencias. Si la factura dice "Harina Pan" y el inventario tiene "Harina de Maíz" con alias "Harina Pan", úsalo. Si no hay nada parecido, pon null.
 10. DETECTA BULTOS: Si indica caja, bulto o empaque múltiple (ej. "Bulto x 12"), pon "es_bulto": true, y extrae "unidades_por_bulto_estimado" (ej. 12). Si es unidad, false.
 11. UNIDAD DE MEDIDA: Extrae la unidad en la que se mide (ej. "Kg", "Litros", "Caja", "Galón"). Si no dice nada explícito, usa "Unidad".
 
