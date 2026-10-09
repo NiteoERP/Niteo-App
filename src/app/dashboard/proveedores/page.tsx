@@ -966,7 +966,7 @@ export default function ProveedoresPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between sm:justify-end gap-4 sm:w-auto">
+                  <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto mt-4 sm:mt-0 pt-4 sm:pt-0 border-t border-neutral-800/50 sm:border-0">
                     {prov.monto_adeudado !== undefined && (
                       <div className="text-right">
                         <p className="text-xs font-semibold uppercase text-neutral-500 mb-0.5">Adeudado</p>
@@ -1033,13 +1033,13 @@ export default function ProveedoresPage() {
                                   return <span className="text-xs text-neutral-500 border border-neutral-700 px-2 py-0.5 rounded">Vence: {safeDate(fac.fecha_vencimiento)}</span>;
                                 })()}
                               </div>
-                              <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                              <div className="flex items-center gap-2 sm:gap-3 mt-3 flex-wrap">
                                 <p className="text-xs text-neutral-500 flex items-center gap-1"><Clock size={12} /> Emisión: {safeDate(fac.fecha_emision)}</p>
                                 {fac.pagos && fac.pagos.length > 0 && (
                                   <button
                                     type="button"
                                     onClick={() => togglePagos(fac.id)}
-                                    className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-medium bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 px-2 py-0.5 rounded-lg transition-colors"
+                                    className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-medium bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 px-2.5 py-1.5 rounded-lg transition-colors"
                                   >
                                     <History size={11} />
                                     {expandedPagos[fac.id] ? 'Ocultar abonos' : `Ver abonos (${fac.pagos.length})`}
@@ -1048,7 +1048,7 @@ export default function ProveedoresPage() {
                                 <button
                                   type="button"
                                   onClick={() => openEditModal(fac)}
-                                  className="text-xs text-neutral-400 hover:text-white flex items-center gap-1 font-medium bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 px-2 py-0.5 rounded-lg transition-colors"
+                                  className="text-xs text-neutral-400 hover:text-white flex items-center gap-1 font-medium bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 px-2.5 py-1.5 rounded-lg transition-colors"
                                 >
                                   <Pencil size={11} />
                                   Editar
@@ -1056,7 +1056,7 @@ export default function ProveedoresPage() {
                                 <button
                                   type="button"
                                   onClick={() => handleVerDetallesFactura(fac)}
-                                  className="text-xs text-neutral-400 hover:text-white flex items-center gap-1 font-medium bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 px-2 py-0.5 rounded-lg transition-colors"
+                                  className="text-xs text-neutral-400 hover:text-white flex items-center gap-1 font-medium bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 px-2.5 py-1.5 rounded-lg transition-colors"
                                 >
                                   <FileText size={11} />
                                   Ver detalles
@@ -1065,7 +1065,7 @@ export default function ProveedoresPage() {
                                   <button
                                     type="button"
                                     onClick={() => handleEliminarFactura(fac.id)}
-                                    className="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 font-medium bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 px-2 py-0.5 rounded-lg transition-colors"
+                                    className="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 font-medium bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 px-2.5 py-1.5 rounded-lg transition-colors"
                                     title="Eliminar factura (Solo Master/Admin)"
                                   >
                                     <Trash2 size={11} />
@@ -1074,7 +1074,7 @@ export default function ProveedoresPage() {
                                 )}
                               </div>
                             </div>
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center justify-between w-full sm:w-auto gap-4 mt-4 sm:mt-0 pt-4 sm:pt-0 border-t border-neutral-800/50 sm:border-0">
                               <div className="text-right">
                                 <p className="text-xs text-neutral-500">
                                  - Total: {formatCurrency(fac.total)}
@@ -1145,7 +1145,7 @@ export default function ProveedoresPage() {
                         </div>
 
                         {/* Esquina superior derecha: Historial de facturas y Agregar factura */}
-                        <div className="flex items-center gap-2 flex-wrap">
+                          <div className="flex flex-row flex-wrap items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
                           {facturasPagadas.length > 0 && (
                             <button
                               type="button"
@@ -1868,7 +1868,7 @@ export default function ProveedoresPage() {
                       key={m}
                       type="button"
                       onClick={() => setFacMetodoPago(m)}
-                      className={`text-[10px] px-2 py-0.5 rounded-lg border transition-colors ${
+                      className={`text-[10px] px-2.5 py-1.5 rounded-lg border transition-colors ${
                         facMetodoPago === m
                           ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-400 font-semibold'
                           : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:text-white'
@@ -1963,7 +1963,7 @@ export default function ProveedoresPage() {
                         key={m}
                         type="button"
                         onClick={() => setMetodoPago(m)}
-                        className={`text-[10px] px-2 py-0.5 rounded-lg border transition-colors ${
+                        className={`text-[10px] px-2.5 py-1.5 rounded-lg border transition-colors ${
                           metodoPago === m
                             ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 font-semibold'
                             : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:text-white'
@@ -2086,7 +2086,7 @@ export default function ProveedoresPage() {
                         key={m}
                         type="button"
                         onClick={() => setMetodoPagoGeneral(m)}
-                        className={`text-[10px] px-2 py-0.5 rounded-lg border transition-colors ${
+                        className={`text-[10px] px-2.5 py-1.5 rounded-lg border transition-colors ${
                           metodoPagoGeneral === m
                             ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 font-semibold'
                             : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:text-white'
