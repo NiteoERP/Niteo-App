@@ -1,4 +1,4 @@
-﻿'use server'
+'use server'
 import { getTasaBcvAction, getTasaBcvForDateAction } from './config-actions';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers'; 
@@ -138,7 +138,7 @@ export async function getInsumos(targetSedeId?: string) {
 
   let query = supabase     
     .from('inventario_insumos')     
-    .select('id, nombre, unidad_medida, cantidad_actual, costo_promedio');
+    .select('id, nombre, unidad_medida, cantidad_actual, costo_promedio, palabras_clave');
 
   if (activeSedeId && activeSedeId !== 'ALL') {
     query = query.eq('sede_id', activeSedeId);

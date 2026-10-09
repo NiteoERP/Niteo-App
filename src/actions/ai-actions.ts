@@ -2,7 +2,7 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-export async function scanInvoice(base64Image: string, mimeType: string, inventory: any[]) {
+export async function scanInvoice(base64Image: string, mimeType: string, inventory: any[], proveedores?: string[]) {
   if (!process.env.GEMINI_API_KEY) {
     return { error: 'Falta configurar GEMINI_API_KEY en .env.local' };
   }
@@ -17,6 +17,7 @@ export async function scanInvoice(base64Image: string, mimeType: string, invento
     ];
 
     const inventoryContext = inventory.map(i => `{"id": "${i.id}", "nombre": "${i.nombre}", "unidad": "${i.unidad_medida}"${i.palabras_clave && i.palabras_clave.length > 0 ? `, "alias": "${i.palabras_clave.join(', ')}"` : ''}}`).join('\n');
+    const proveedoresContext = proveedores && proveedores.length > 0 ? `\nLista de proveedores registrados:\n${proveedores.join('\n')}\n` : '';
 
     const prompt = `
 Eres un asistente experto en contabilidad y gestión de inventarios para un negocio en Venezuela.
@@ -27,7 +28,7 @@ Reglas de extracción y degradación (MUY IMPORTANTE):
 2. LIMPIA EL NOMBRE: En "nombre_original_factura" devuelve SOLO el nombre base del producto. ELIMINA pesos (Kg, g), unidades, empaques, cajas, o palabras como "Bulto x 12". Ej. Si dice "Harina Pan 1Kg Bulto 24", extrae solo "Harina Pan".
 3. Si el precio o cantidad es ilegible, devuelve null en esos campos (el usuario los llenará manualmente).
 4. Detecta la moneda: "USD" (Dólares) o "VES" (Bolívares). Observa símbolos como "Ref", "$", "Bs", "Bs.D".
-5. Extrae el proveedor. Si es ilegible, usa "Desconocido".
+5. MATCHEA EL PROVEEDOR: Si hay una lista de proveedores registrados, busca el nombre más similar semánticamente o por errores ortográficos leves (ej: "Juan Dios" matchea con "Juan de Dios"). Si existe en la lista, devuelve el nombre EXACTO de la lista. Si es claramente nuevo, devuelve el nombre nuevo. Si es ilegible, usa "Desconocido".
 6. Extrae la fecha de emisión (YYYY-MM-DD).
 7. Si es una factura a crédito, extrae la "fecha_vencimiento" (fecha límite de pago, YYYY-MM-DD). Si no hay, null.
 8. Extrae el IVA y el Descuento (si los hay). Si no hay, usa 0.
@@ -36,7 +37,11 @@ Reglas de extracción y degradación (MUY IMPORTANTE):
 11. UNIDAD DE MEDIDA: Extrae la unidad en la que se mide (ej. "Kg", "Litros", "Caja", "Galón"). Si no dice nada explícito, usa "Unidad".
 
 Inventario disponible:
-?${inventoryContext}
+[
+${inventoryContext}
+]
+${proveedoresContext}
+
 
 Estructura JSON requerida (devuelve SOLO el objeto JSON):
 {
