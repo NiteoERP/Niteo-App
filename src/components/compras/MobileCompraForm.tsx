@@ -26,6 +26,7 @@ type CartItem = {
 };
 
 export default function MobileCompraForm() {
+  const [activeStep, setActiveStep] = useState<1 | 2>(1);
   const [fechaEmision, setFechaEmision] = useState(() => new Date().toISOString().split('T')[0]);
   const [insumos, setInsumos] = useState<Insumo[]>([]);
   const [tasaDelDia, setTasaDelDia] = useState<number>(36.5);
@@ -93,8 +94,8 @@ export default function MobileCompraForm() {
       const base64Str = await compressImage(file);
       const { scanInvoice } = await import('@/actions/ai-actions');
 
-      const invContext = insumos.map(i => ({ id: i.id, nombre: i.nombre, unidad_medida: i.unidad_medida }));
-      const res = await scanInvoice(base64Str, file.type || 'image/jpeg', invContext);
+      const invContext = insumos.map(i => ({ id: i.id, nombre: i.nombre, unidad_medida: i.unidad_medida, palabras_clave: (i as any).palabras_clave || [] }));
+      const res = await scanInvoice(base64Str, file.type || 'image/jpeg', invContext, tiendasFrecuentes);
 
       if (res.error) {
         const errorStr = res.error.toLowerCase();
@@ -420,7 +421,26 @@ export default function MobileCompraForm() {
             </div>
           )}
 
-          {/* ─ Cabecera de la factura ─ */}
+          {/* Navegación de Pasos (Stepper Mobile) */}
+          <div className="flex bg-neutral-900/90 backdrop-blur-md rounded-xl p-1 mb-6 sticky top-2 z-10 shadow-2xl shadow-black/80 border border-neutral-800/80">
+            <button 
+              onClick={() => setActiveStep(1)} 
+              className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all ${activeStep === 1 ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-white'}`}
+            >
+              1. Datos Básicos
+            </button>
+            <button 
+              onClick={() => setActiveStep(2)} 
+              className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2 ${activeStep === 2 ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-white'}`}
+            >
+              2. Ítems & Factura
+              {cart.length > 0 && <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${activeStep === 2 ? 'bg-white/20 text-white' : 'bg-indigo-500/20 text-indigo-400'}`}>{cart.length}</span>}
+            </button>
+          </div>
+
+          {activeStep === 1 && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-left-4 pb-24">
+              {/* ─ Cabecera de la factura ─ */}
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 bg-neutral-950/50 p-4 rounded-xl border border-neutral-800/50">
             <div className="sm:col-span-4">
               <label className="block text-sm font-medium text-neutral-400 mb-1">
@@ -492,7 +512,18 @@ export default function MobileCompraForm() {
             </div>
           </div>
 
-          <hr className="border-neutral-800" />
+              <button 
+                onClick={() => setActiveStep(2)} 
+                className="w-full bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-white font-medium py-4 rounded-xl transition-colors mt-4 flex justify-center items-center gap-2 shadow-md"
+              >
+                Siguiente Paso: Cargar Insumos →
+              </button>
+            </div>
+          )}
+
+          {activeStep === 2 && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 pb-12">
+              <hr className="hidden" />
 
           {/* ── Formulario para agregar ítem ─────────────────────────────── */}
           <div className="space-y-4">
@@ -826,6 +857,8 @@ export default function MobileCompraForm() {
               >
                 {isPending ? <><Loader2 className="animate-spin" /> Procesando...</> : 'Procesar Factura'}
               </button>
+            </div>
+          )}
             </div>
           )}
         </div>

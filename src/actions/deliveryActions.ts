@@ -63,8 +63,8 @@ export async function reclamarDeliveryManual(numeroOrden: string) {
       .from('productos')
       .select('id')
       .eq('empresa_id', perfil.empresa_id)
-      .ilike('nombre', '%delivery%')
-      .limit(5); // Puede haber varios productos con 'delivery' en el nombre
+      .or('nombre.ilike.%delivery%,nombre.ilike.%despacho%,nombre.ilike.%envío%,nombre.ilike.%envio%,nombre.ilike.%flete%,nombre.ilike.%transporte%')
+      .limit(10); // Puede haber varios productos de logística
 
     if (productoDelivery && productoDelivery.length > 0) {
       const idsDelivery = productoDelivery.map(p => p.id);
@@ -82,7 +82,7 @@ export async function reclamarDeliveryManual(numeroOrden: string) {
     }
 
     // 5. Actualizar la factura (Bloqueo Atómico con la condición estado_delivery != ENTREGADO)
-    const { error: updateError, count } = await supabase
+    const { error: updateError, data: updatedRows } = await supabase
       .from('ventas_facturas')
       .update({
         estado_delivery: 'ENTREGADO',
@@ -90,9 +90,10 @@ export async function reclamarDeliveryManual(numeroOrden: string) {
         pago_repartidor: pagoRepartidor
       })
       .eq('id', factura.id)
-      .neq('estado_delivery', 'ENTREGADO'); // Doble candado por si 2 le dan clic a la vez
+      .neq('estado_delivery', 'ENTREGADO')
+      .select('id'); // Obligatorio encadenar .select() en Supabase JS v2 para saber si la fila mutó
 
-    if (updateError || count === 0) {
+    if (updateError || !updatedRows || updatedRows.length === 0) {
       return { success: false, message: '⚠️ Hubo un conflicto, alguien reclamó esto en el último segundo.' };
     }
 

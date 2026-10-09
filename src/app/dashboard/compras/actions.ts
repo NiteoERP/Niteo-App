@@ -210,7 +210,11 @@ export async function getHistorialCompras(busqueda?: string, fechaInicio?: strin
       if (typeof concepto === 'string' && concepto.trim().startsWith('{')) {
         try {
           const parsed = JSON.parse(concepto);
-          concepto = parsed.texto ?? parsed.descripcion ?? concepto;
+          if (parsed.is_insumos && Array.isArray(parsed.items)) {
+            concepto = `Compra de ${parsed.items.length} insumos`;
+          } else {
+            concepto = parsed.texto ?? parsed.descripcion ?? concepto;
+          }
         } catch (_) {
           // Si el parse falla, mantenemos el original (puede ser texto libre)
         }
@@ -431,19 +435,23 @@ export async function registrarFactura(
       const { error: insertErr } = await supabase.from('compras_mercancia').insert(lineas);
       if (insertErr) throw insertErr;
 
-        for (const p of productosFactura) {
-        if (p.id_producto) {
+      // Optimización N+1: Obtener todos los productos afectados de una vez
+      const productIds = productosFactura.map(p => p.id_producto).filter(Boolean);
+      
+      if (productIds.length > 0) {
+        const { data: prodsData } = await supabase
+          .from('productos')
+          .select('id, stock_actual, costo')
+          .in('id', productIds)
+          .eq('empresa_id', idEmpresa);
+
+        const prodsMap = new Map(prodsData?.map(p => [p.id, p]) || []);
+
+        const updatePromises = productosFactura.filter(p => p.id_producto).map(p => {
           const nuevoCostoUnitario = Number(p.precio); 
           const cantidadComprada = Number(p.cantidad);
 
-          // 1. Obtener el stock actual y costo actual del producto
-          const { data: prodData } = await supabase
-            .from('productos')
-            .select('stock_actual, costo')
-            .eq('id', p.id_producto)
-            .eq('empresa_id', idEmpresa)
-            .single();
-
+          const prodData = prodsMap.get(p.id_producto);
           const stockActual = prodData?.stock_actual ? Number(prodData.stock_actual) : 0;
           const costoAnterior = prodData?.costo ? Number(prodData.costo) : 0;
           const nuevoStock = stockActual + cantidadComprada;
@@ -453,8 +461,7 @@ export async function registrarFactura(
              finalCosto = ((stockActual * costoAnterior) + (cantidadComprada * nuevoCostoUnitario)) / nuevoStock;
           }
 
-          // 2. Actualizar costo y sumar al stock
-          await supabase
+          return supabase
             .from('productos')
             .update({ 
               costo: finalCosto,
@@ -462,7 +469,9 @@ export async function registrarFactura(
             })
             .eq('id', p.id_producto)
             .eq('empresa_id', idEmpresa);
-        }
+        });
+
+        await Promise.all(updatePromises);
       }
 
 
