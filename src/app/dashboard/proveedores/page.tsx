@@ -1373,7 +1373,7 @@ export default function ProveedoresPage() {
               )}
               {(facStep === 1 || facturaTab === 'gastos') && (<div className="space-y-6 animate-in fade-in slide-in-from-left-4">
               {/* Campos comunes (siempre visibles) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
                   <label className="block text-sm text-neutral-400 mb-1.5">Proveedor *</label>
                   <div className="relative">
@@ -1447,7 +1447,7 @@ export default function ProveedoresPage() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                 <div>
                   <label className="block text-sm text-neutral-400 mb-1.5">Nº Factura</label>
                   <input type="text" value={facNumero} onChange={e => setFacNumero(e.target.value)}
@@ -1464,7 +1464,7 @@ export default function ProveedoresPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                 <div className={facMoneda === 'VES' ? "sm:col-span-1" : "sm:col-span-2"}>
                   <label className="block text-sm text-neutral-400 mb-1.5">Concepto / Descripción</label>
                   <input type="text" value={facConcepto} onChange={e => setFacConcepto(e.target.value)}
@@ -1843,6 +1843,7 @@ export default function ProveedoresPage() {
                   </div>
               </div>)}
 
+              {(facStep === 2 || facturaTab === 'gastos') && (<>
               <div>
                 <label className="block text-sm text-neutral-400 mb-1.5 mt-2">Estado / Método de Pago</label>
                 <div className="relative">
@@ -1878,14 +1879,20 @@ export default function ProveedoresPage() {
                   ))}
                 </div>
               </div>
-              {errorFactura && <p className="text-rose-400 text-sm flex items-center gap-2"><AlertCircle size={14} /> {errorFactura}</p>}
+              {errorFactura && <p className="text-rose-400 text-sm flex items-center gap-2"><AlertCircle size={14} /> {errorFactura}</p>}</>)}
             </div>
-              <div className="p-6 border-t border-neutral-800 flex gap-3 justify-end">
+              <div className="p-6 border-t border-neutral-800 flex gap-3 justify-end bg-neutral-900/80 backdrop-blur-sm sticky bottom-0 z-20">
                 <button onClick={() => setShowFacturaModal(false)} className="px-5 py-2.5 rounded-xl text-neutral-300 hover:bg-neutral-800 text-sm">Cancelar</button>
-                <button onClick={handleCrearFactura} disabled={enviandoFactura}
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50">
-                  {enviandoFactura ? 'Registrando...' : <><FileText size={16} /> Registrar Factura</>}
-                </button>
+                {(facStep === 2 || facturaTab === 'gastos') ? (
+                  <button onClick={handleCrearFactura} disabled={enviandoFactura}
+                    className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 disabled:opacity-50">
+                    {enviandoFactura ? 'Registrando...' : <><FileText size={16} /> Registrar Factura</>}
+                  </button>
+                ) : (
+                  <button onClick={() => setFacStep(2)} type="button" className="bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-white font-medium px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 transition-colors">
+                    Siguiente Paso →
+                  </button>
+                )}
               </div>
           </div>
         </div>
