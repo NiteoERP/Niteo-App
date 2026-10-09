@@ -1365,11 +1365,13 @@ export default function ProveedoresPage() {
               
             <div className="p-6 space-y-4 pt-4 pb-24">
               {/* NAVEGACIÓN TIPO STEPPER PARA MOBILE */}
+              {facturaTab === 'insumos' && (
               <div className="flex bg-neutral-900/90 backdrop-blur-md rounded-xl p-1 mb-6 sticky top-2 z-10 shadow-2xl shadow-black/80 border border-neutral-800/80">
                 <button type="button" onClick={() => setFacStep(1)} className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all ${facStep === 1 ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-white'}`}>1. Datos Básicos</button>
                 <button type="button" onClick={() => setFacStep(2)} className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2 ${facStep === 2 ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-white'}`}>2. Ítems & Factura {facDetalles.length > 0 && <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${facStep === 2 ? 'bg-white/20 text-white' : 'bg-indigo-500/20 text-indigo-400'}`}>{facDetalles.length}</span>}</button>
               </div>
-              {facStep === 1 && (<div className="space-y-6 animate-in fade-in slide-in-from-left-4">
+              )}
+              {(facStep === 1 || facturaTab === 'gastos') && (<div className="space-y-6 animate-in fade-in slide-in-from-left-4">
               {/* Campos comunes (siempre visibles) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
@@ -1499,7 +1501,7 @@ export default function ProveedoresPage() {
               </div>
 
               {/* Campos específicos por tab */}
-              {facturaTab === 'gastos' ? (
+              {facturaTab === 'gastos' && (
                 <div className="pt-2 border-t border-neutral-800 space-y-2">
                   <div>
                     <label className="block text-sm text-neutral-400 mb-1.5">
@@ -1518,16 +1520,18 @@ export default function ProveedoresPage() {
                     </div>
                   )}
                 </div>
-              ) : (
+              )}
+              {facturaTab === 'insumos' && (
                   <button type="button" onClick={() => setFacStep(2)} className="w-full mt-2 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-white font-medium py-4 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-md">Siguiente Paso: Cargar Ítems →</button>
+              )}
                 </div>
               )}
-              {facStep === 2 && (<div className="space-y-6 animate-in fade-in slide-in-from-right-4 pb-12">
+              {facStep === 2 && facturaTab === 'insumos' && (<div className="space-y-6 animate-in fade-in slide-in-from-right-4 pb-12">
                   <div className="space-y-3 pt-2 border-t border-neutral-800">
                     <div className="flex items-center justify-between">
                       <label className="block text-sm font-bold text-white flex items-center gap-2">
                         <Package size={15} className="text-indigo-400" /> Insumos / Productos
-                    </label>
+                      </label>
                     <button
                       type="button"
                       onClick={() => { setCrearInsumoNuevo(!crearInsumoNuevo); setInsumoSearch(''); }}
