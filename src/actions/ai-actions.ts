@@ -12,8 +12,8 @@ export async function scanInvoice(base64Image: string, mimeType: string, invento
     
     // Lista de modelos a intentar en orden de preferencia (nombres verificados en API v1beta)
     const modelsToTry = [
-      'gemini-1.5-flash',       // Modelo estable y rápido para lectura de facturas
-      'gemini-1.5-flash-8b'     // Modelo ultra ligero de respaldo
+      'gemini-flash-latest',       // Modelo estable y rápido para lectura de facturas
+      'gemini-flash-lite-latest'   // Modelo ultra ligero de respaldo
     ];
 
     const inventoryContext = inventory.map(i => `{"id": "${i.id}", "nombre": "${i.nombre}", "unidad": "${i.unidad_medida}"${i.palabras_clave && i.palabras_clave.length > 0 ? `, "alias": "${i.palabras_clave.join(', ')}"` : ''}}`).join('\n');
