@@ -58,6 +58,9 @@ export default function NuevoCierreCaja() {
   const [totalEsperado, setTotalEsperado] = useState(0);
   
   const currentSedeRef = React.useRef<string>('');
+  const [fechaCierre, setFechaCierre] = useState(() => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]);
+  const [yaCerrado, setYaCerrado] = useState(false);
+  const maxDate = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
   
   // Listas sugeridas
   const [bancosPorMetodo, setBancosPorMetodo] = useState<Record<string, string[]>>({});
@@ -251,7 +254,7 @@ export default function NuevoCierreCaja() {
         }
         
         const [cierreRes, bancosRes, customMetodos] = await Promise.all([
-          getCierrePrevio(today, initialSedeId),
+          getCierrePrevio(fechaCierre, initialSedeId),
           getBancosUtilizados(),
           initialSedeId ? getMetodosHistorialSede(initialSedeId) : Promise.resolve([])
         ]);
@@ -266,7 +269,9 @@ export default function NuevoCierreCaja() {
         setVentasTotales(cierreRes.ventasTotales || 0);
         setGastosTotales(cierreRes.gastosTotales || 0);
         setTotalEsperado(cierreRes.totalEsperado || 0); if (cierreRes.esperadoPorMetodo) setEsperadoPorMetodo(cierreRes.esperadoPorMetodo);
+          setYaCerrado(cierreRes.yaCerrado || false);
       if (cierreRes.esperadoPorMetodo) setEsperadoPorMetodo(cierreRes.esperadoPorMetodo);
+          setYaCerrado(cierreRes.yaCerrado || false);
         setBancosPorMetodo(bancosRes);
         if (customMetodos && customMetodos.length > 0) {
           const restoredMetodos = customMetodos.map((mName: string) => ({
@@ -308,6 +313,25 @@ export default function NuevoCierreCaja() {
   }, []);
 
 
+  const handleFechaChange = async (newFecha: string) => {
+    if (!newFecha) return;
+    setFechaCierre(newFecha);
+    setLoading(true);
+    try {
+      const cierreRes = await getCierrePrevio(newFecha, selectedSedeId);
+      setTasaCambio(cierreRes.tasaCambio || 36.5);
+      setVentasTotales(cierreRes.ventasTotales || 0);
+      setGastosTotales(cierreRes.gastosTotales || 0);
+      setTotalEsperado(cierreRes.totalEsperado || 0);
+      setEsperadoPorMetodo(cierreRes.esperadoPorMetodo || {});
+      setYaCerrado(cierreRes.yaCerrado || false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSedeChange = async (newSedeId: string) => {
       localStorage.setItem('niteo_last_sede', newSedeId);
     setSelectedSedeId(newSedeId); currentSedeRef.current = newSedeId; setTransacciones([]); setMetodos(METODOS_DEFAULT); setHasDraft(false);
@@ -316,7 +340,7 @@ export default function NuevoCierreCaja() {
     try {
       const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
       const [cierreRes, customMetodos] = await Promise.all([
-          getCierrePrevio(today, newSedeId),
+          getCierrePrevio(fechaCierre, newSedeId),
           getMetodosHistorialSede(newSedeId)
         ]);
         if (customMetodos && customMetodos.length > 0) {
@@ -352,6 +376,7 @@ export default function NuevoCierreCaja() {
       setVentasTotales(cierreRes.ventasTotales || 0);
       setGastosTotales(cierreRes.gastosTotales || 0);
       setTotalEsperado(cierreRes.totalEsperado || 0); if (cierreRes.esperadoPorMetodo) setEsperadoPorMetodo(cierreRes.esperadoPorMetodo);
+          setYaCerrado(cierreRes.yaCerrado || false);
     } catch (err: any) {
       alert(err.message || 'Error cambiando de sede');
     } finally {
@@ -514,7 +539,7 @@ export default function NuevoCierreCaja() {
 
       const cierreData = {
         sede_id: selectedSedeId,
-        fecha_cierre: hoy,
+        fecha_cierre: fechaCierre,
         tasa_cambio: tasaCambio,
         sistema_ventas_brutas: ventasTotales,
         sistema_gastos_operativos: gastosTotales,
@@ -552,7 +577,24 @@ export default function NuevoCierreCaja() {
     <div className="animate-in fade-in duration-500 space-y-6 pb-24 max-w-4xl mx-auto">
 
       {/* FIX 1: BANNER DE BORRADOR ACTIVO */}
-      {hasDraft && !isSpectator && (
+      
+      {/* BANNER YA CERRADO */}
+      {yaCerrado && (
+        <div className="flex items-center justify-between gap-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl px-5 py-3 mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0">
+              <span className="text-rose-500 font-bold">!</span>
+            </div>
+            <div>
+              <p className="text-rose-400 text-sm font-semibold">Cierre Existente</p>
+              <p className="text-rose-500/80 text-xs">
+                Ya existe un cierre guardado para esta fecha. Debes seleccionar otro día o editar el cierre existente desde el historial.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+{hasDraft && !isSpectator && (
         <div className="flex items-center justify-between gap-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl px-5 py-3">
           <div className="flex items-center gap-3">
             <RotateCcw size={18} className="text-amber-400 shrink-0" />
@@ -620,6 +662,15 @@ export default function NuevoCierreCaja() {
               </select>
             </div>
           )}
+          
+          <div className="flex items-center gap-3 bg-black/30 border border-neutral-800 p-2 rounded-xl mt-3 inline-flex">
+            <label className="text-xs uppercase font-bold text-neutral-500 ml-2">Fecha del Cierre:</label>
+            <input type="date" max={maxDate}
+              value={fechaCierre}
+              onChange={(e) => handleFechaChange(e.target.value)}
+              className="bg-neutral-800 text-white text-sm font-medium rounded-lg px-3 py-1.5 outline-none focus:border-indigo-500 cursor-pointer [&::-webkit-calendar-picker-indicator]:invert"
+            />
+          </div>
         </div>
         <div className="text-right hidden sm:block bg-black/40 px-6 py-3 rounded-xl border border-neutral-800">
           <p className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold mb-1">Venta del Sistema</p>
@@ -939,7 +990,7 @@ export default function NuevoCierreCaja() {
           )}
         </div>
         <button 
-          disabled={saving || transacciones.length === 0}
+          disabled={saving || transacciones.length === 0 || yaCerrado}
           onClick={handleGuardarCierre}
           className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-neutral-800 disabled:text-neutral-500 text-white px-6 md:px-8 py-3 md:py-4 rounded-xl font-bold flex items-center gap-2 transition-colors shadow-lg shadow-indigo-500/20"
         >

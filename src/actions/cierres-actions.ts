@@ -27,6 +27,15 @@ export async function getCierrePrevio(fechaStr: string, requestedSedeId?: string
   const targetSedeId = requestedSedeId || profile.sede_id;
   if (!targetSedeId) throw new Error("Debe seleccionar una sede para consultar el cierre");
 
+  // CHECK SI YA EXISTE CIERRE PARA ESTA FECHA
+  const { count: countCierres } = await supabase
+    .from('cierres_caja')
+    .select('id', { count: 'exact', head: true })
+    .eq('sede_id', targetSedeId)
+    .eq('fecha_cierre', fechaStr);
+
+  const yaCerrado = (countCierres || 0) > 0;
+
   // 1. Consultar la Tasa de Cambio y Zona Horaria de la Empresa
   let tasaCambio = 814.69; // Valor de fallback
   const { data: empData } = await supabase
@@ -116,6 +125,7 @@ export async function getCierrePrevio(fechaStr: string, requestedSedeId?: string
   const totalEsperado = ventasTotales - gastosTotales;
 
   return {
+    yaCerrado,
     tasaCambio,
     ventasTotales,
     gastosTotales,

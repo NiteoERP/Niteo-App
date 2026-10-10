@@ -1,0 +1,1 @@
+const fs = require('fs'); const code = fs.readFileSync('src/app/dashboard/proveedores/page.tsx', 'utf8'); try { require('@babel/parser').parse(code, {sourceType: 'module', plugins: ['jsx', 'typescript']}); console.log('Parsed successfully!'); } catch (e) { console.error(e); }
