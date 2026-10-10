@@ -143,6 +143,11 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
         setVentasTotales((cierreRes || {}).cierre?.sistema_ventas_brutas || 0);
         setGastosTotales((cierreRes || {}).cierre?.sistema_gastos_operativos || 0);
         setTotalEsperado((cierreRes || {}).cierre?.sistema_total_esperado || 0);
+        if ((cierreRes || {}).cierre?.fecha_cierre) {
+          const rawF = (cierreRes || {}).cierre.fecha_cierre;
+          const cleanFecha = rawF.includes('T') ? rawF.split('T')[0] : rawF.split(' ')[0];
+          setFechaCierre(cleanFecha);
+        }
         setBancosPorMetodo(bancosRes);
         if (customMetodos && customMetodos.length > 0) {
           const restoredMetodos = customMetodos.map((mName: string) => ({
@@ -205,6 +210,11 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
       setVentasTotales((cierreRes || {}).cierre?.sistema_ventas_brutas || 0);
       setGastosTotales((cierreRes || {}).cierre?.sistema_gastos_operativos || 0);
       setTotalEsperado((cierreRes || {}).cierre?.sistema_total_esperado || 0);
+      if ((cierreRes || {}).cierre?.fecha_cierre) {
+        const rawF = (cierreRes || {}).cierre.fecha_cierre;
+        const cleanFechaSede = rawF.includes('T') ? rawF.split('T')[0] : rawF.split(' ')[0];
+        setFechaCierre(cleanFechaSede);
+      }
     } catch (err: any) {
       alert(err.message || 'Error cambiando de sede');
     } finally {
@@ -387,57 +397,47 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
       
 
       {/* HEADER */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 md:p-8 flex justify-between items-center shadow-sm">
+      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-sm">
         <div>
           <div className="flex items-center gap-3">
-              <button onClick={() => router.push('/dashboard/caja')} className="w-8 h-8 flex items-center justify-center rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white transition-colors" title="Volver al Historial (Se guardará el borrador)">
-                <ArrowLeft size={18} />
-              </button>
-              <h1 className="text-2xl font-bold text-white tracking-tight">Cierre de Caja</h1>
-            </div>
+            <button onClick={() => router.push('/dashboard/caja')} className="w-8 h-8 flex items-center justify-center rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white transition-colors" title="Volver al Historial">
+              <ArrowLeft size={18} />
+            </button>
+            <h1 className="text-2xl font-bold text-white tracking-tight">Editar Cierre de Caja</h1>
+          </div>
           <p className="text-neutral-400 text-sm mt-1 mb-4">Tasa BCV: <span className="text-emerald-400 font-medium">{tasaCambio.toFixed(2)} Bs/$</span></p>
           
-          
-            {/* FECHA MOBILE */}
-            <div className="sm:hidden flex items-center gap-3 bg-black/30 border border-neutral-800 p-2 rounded-xl mb-3 mt-3">
-                <label className="text-xs uppercase font-bold text-neutral-500 ml-2">Fecha:</label>
-                <input 
-                  type="date"
-                  max={new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]}
-                  value={fechaCierre}
-                  onChange={(e) => setFechaCierre(e.target.value)}
-                  className="bg-neutral-800 text-white text-sm font-medium rounded-lg px-3 py-1.5 outline-none focus:border-indigo-500 cursor-pointer w-full [&::-webkit-calendar-picker-indicator]:invert"
-                />
-            </div>
-    {sedes.length > 1 && (
-            <div className="flex items-center gap-3 bg-black/30 border border-neutral-800 p-2 rounded-xl">
-              <label className="text-xs uppercase font-bold text-neutral-500 ml-2">Sede:</label>
-              <select
+          <div className="flex flex-wrap items-center gap-3">
+            {sedes.length > 1 && (
+              <div className="flex items-center gap-3 bg-black/30 border border-neutral-800 p-2 rounded-xl">
+                <label className="text-xs uppercase font-bold text-neutral-500 ml-2">Sede:</label>
+                <select
                   value={selectedSedeId}
                   disabled
-                  onChange={(e) => handleSedeChange(e.target.value)}
-                className="bg-neutral-800 text-white text-sm font-medium rounded-lg px-3 py-1.5 outline-none focus:border-indigo-500 cursor-pointer"
-              >
-                {sedes.map(s => (
-                  <option key={s.id} value={s.id}>{s.nombre_sede}</option>
-                ))}
-              </select>
+                  className="bg-neutral-800 text-white text-sm font-medium rounded-lg px-3 py-1.5 outline-none cursor-not-allowed opacity-80"
+                >
+                  {sedes.map(s => (
+                    <option key={s.id} value={s.id}>{s.nombre_sede}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            
+            <div className="flex items-center gap-3 bg-black/30 border border-neutral-800 p-2 rounded-xl">
+              <label className="text-xs uppercase font-bold text-neutral-500 ml-2">Fecha del Cierre:</label>
+              <input 
+                type="date"
+                max={new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]}
+                value={fechaCierre}
+                onClick={(e) => { try { (e.currentTarget as any).showPicker?.(); } catch (_) {} }}
+                onChange={(e) => setFechaCierre(e.target.value)}
+                className="bg-neutral-800 text-white text-sm font-medium rounded-lg px-3 py-1.5 outline-none focus:border-indigo-500 cursor-pointer [&::-webkit-calendar-picker-indicator]:invert"
+              />
             </div>
-          )}
-        </div>
-        
-          {/* FECHA DEL CIERRE */}
-          <div className="bg-black/40 px-6 py-3 rounded-xl border border-neutral-800 hidden sm:block">
-            <label className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold mb-1 block">Fecha del Cierre</label>
-            <input 
-              type="date"
-              max={new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]}
-              value={fechaCierre}
-              onChange={(e) => setFechaCierre(e.target.value)}
-              className="bg-transparent text-white font-black text-lg outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert w-full"
-            />
           </div>
-<div className="text-right hidden sm:block bg-black/40 px-6 py-3 rounded-xl border border-neutral-800">
+        </div>
+
+        <div className="text-right hidden sm:block bg-black/40 px-6 py-3 rounded-xl border border-neutral-800 self-stretch md:self-auto flex flex-col justify-center">
           <p className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold mb-1">Venta del Sistema</p>
           <p className="text-xl font-black text-white">${totalEsperado.toFixed(2)}</p>
         </div>

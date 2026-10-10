@@ -328,6 +328,7 @@ export async function actualizarCierre(cierreId: string, cierreData: any, transa
   const { error: errorCierre } = await supabase
     .from('cierres_caja')
     .update({
+      fecha_cierre: cierreData.fecha_cierre,
       real_efectivo_bs: cierreData.real_efectivo_bs,
       real_efectivo_usd: cierreData.real_efectivo_usd,
       real_bancos_bs: cierreData.real_bancos_bs,
@@ -342,6 +343,7 @@ export async function actualizarCierre(cierreId: string, cierreData: any, transa
       .eq('id', cierreId);
 
   if (errorCierre) {
+    if (errorCierre.code === '23505') return { error: 'Ya existe un cierre registrado para esta fecha y sede.' };
     console.error('Error actualizando cierre:', errorCierre);
     return { error: 'Error al actualizar el resumen del cierre. Detalles: ' + errorCierre.message };
   }
