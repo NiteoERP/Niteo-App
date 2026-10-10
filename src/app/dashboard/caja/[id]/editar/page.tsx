@@ -344,7 +344,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
 
       const cierreData = {
         sede_id: selectedSedeId,
-        fecha_cierre: hoy,
+        
         tasa_cambio: tasaCambio,
         sistema_ventas_brutas: ventasTotales,
         sistema_gastos_operativos: gastosTotales,
