@@ -397,7 +397,19 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
             </div>
           <p className="text-neutral-400 text-sm mt-1 mb-4">Tasa BCV: <span className="text-emerald-400 font-medium">{tasaCambio.toFixed(2)} Bs/$</span></p>
           
-          {sedes.length > 1 && (
+          
+            {/* FECHA MOBILE */}
+            <div className="sm:hidden flex items-center gap-3 bg-black/30 border border-neutral-800 p-2 rounded-xl mb-3 mt-3">
+                <label className="text-xs uppercase font-bold text-neutral-500 ml-2">Fecha:</label>
+                <input 
+                  type="date"
+                  max={new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]}
+                  value={fechaCierre}
+                  onChange={(e) => setFechaCierre(e.target.value)}
+                  className="bg-neutral-800 text-white text-sm font-medium rounded-lg px-3 py-1.5 outline-none focus:border-indigo-500 cursor-pointer w-full [&::-webkit-calendar-picker-indicator]:invert"
+                />
+            </div>
+    {sedes.length > 1 && (
             <div className="flex items-center gap-3 bg-black/30 border border-neutral-800 p-2 rounded-xl">
               <label className="text-xs uppercase font-bold text-neutral-500 ml-2">Sede:</label>
               <select
@@ -413,7 +425,19 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
             </div>
           )}
         </div>
-        <div className="text-right hidden sm:block bg-black/40 px-6 py-3 rounded-xl border border-neutral-800">
+        
+          {/* FECHA DEL CIERRE */}
+          <div className="bg-black/40 px-6 py-3 rounded-xl border border-neutral-800 hidden sm:block">
+            <label className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold mb-1 block">Fecha del Cierre</label>
+            <input 
+              type="date"
+              max={new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]}
+              value={fechaCierre}
+              onChange={(e) => setFechaCierre(e.target.value)}
+              className="bg-transparent text-white font-black text-lg outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:invert w-full"
+            />
+          </div>
+<div className="text-right hidden sm:block bg-black/40 px-6 py-3 rounded-xl border border-neutral-800">
           <p className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold mb-1">Venta del Sistema</p>
           <p className="text-xl font-black text-white">${totalEsperado.toFixed(2)}</p>
         </div>
