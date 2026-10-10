@@ -48,6 +48,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
   const cierreId = routerParams.id as string;
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
+  const [fechaCierre, setFechaCierre] = useState('');
   const [saving, setSaving] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
   
@@ -348,6 +349,7 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
         sistema_ventas_brutas: ventasTotales,
         sistema_gastos_operativos: gastosTotales,
         sistema_total_esperado: totalEsperado,
+        fecha_cierre: fechaCierre || undefined,
         real_efectivo_bs,
         real_efectivo_usd,
         real_bancos_bs,
