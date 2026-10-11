@@ -15,12 +15,25 @@ declare module 'jspdf' {
 // 1. GENERADOR DE TICKET POS EXPRESS (Formato Térmico 80mm)
 // ─────────────────────────────────────────────────────────────────────────────
 export function generarTicketPOS(factura: any, empresa: any, items: any[], pagos: any[], tasa: number) {
-  // 80mm de ancho. El alto es dinámico, calculamos uno base seguro.
-  // 1 mm = 2.83465 pt. 80mm = ~226 pt.
+  // 80mm de ancho. Calculamos alto dinámico para evitar desperdicio de papel térmico
+  let estimatedLines = 0;
+  (items || []).forEach((item) => {
+    const rawNombre = item.nombre || item.producto_nombre || 'Producto';
+    estimatedLines += Math.max(1, Math.ceil(rawNombre.length / 22));
+    if (item.combo_items && Array.isArray(item.combo_items)) {
+      estimatedLines += item.combo_items.length * 1.2;
+    }
+  });
+
+  const baseHeader = 50;
+  const baseFooter = 55 + ((pagos?.length || 1) * 4.5) + (Number(factura?.saldo_pendiente || 0) > 0 ? 8 : 0);
+  const itemsHeight = estimatedLines * 4.5;
+  const totalHeight = Math.max(130, Math.ceil(baseHeader + itemsHeight + baseFooter));
+
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
-    format: [80, 200] // 80mm x 200mm base, se puede ajustar
+    format: [80, totalHeight]
   });
 
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -38,7 +51,10 @@ export function generarTicketPOS(factura: any, empresa: any, items: any[], pagos
 
   // Cabecera Empresa
   addCenteredText(empresa?.nombre_comercial || 'Niteo POS', yPos, 14, true);
-  const fechaStr = new Date(factura.fecha_venta).toLocaleString('es-VE', {
+  yPos += 5;
+
+  const fechaVal = factura?.fecha_venta ? new Date(factura.fecha_venta) : new Date();
+  const fechaStr = fechaVal.toLocaleString('es-VE', {
     timeZone: 'America/Caracas',
     day: '2-digit',
     month: '2-digit',
@@ -49,17 +65,17 @@ export function generarTicketPOS(factura: any, empresa: any, items: any[], pagos
   });
   addCenteredText(`Fecha: ${fechaStr}`, yPos, 8);
   yPos += 4;
-  addCenteredText(`Ticket: ${factura.numero_documento}`, yPos, 8);
+  addCenteredText(`Ticket: ${factura?.numero_documento || 'VENTA'}`, yPos, 8);
   yPos += 6;
 
   // Cliente y Vendedor
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
-  if (factura.cliente_nombre || factura.cliente_id) {
+  if (factura?.cliente_nombre || factura?.cliente_id) {
     doc.text(`Cliente: ${factura.cliente_nombre || 'Registrado'}`, margin, yPos);
     yPos += 4;
   }
-  if (factura.mesero_nombre) {
+  if (factura?.mesero_nombre) {
     doc.text(`Atendido por: ${factura.mesero_nombre}`, margin, yPos);
     yPos += 4;
   }
@@ -83,13 +99,42 @@ export function generarTicketPOS(factura: any, empresa: any, items: any[], pagos
 
   // Items
   doc.setFont('helvetica', 'normal');
-  items.forEach((item) => {
-    // Nombre multilinea si es largo
-    const splitName = doc.splitTextToSize(item.nombre || 'Producto', 35);
-    doc.text(`${item.cantidad}`, margin, yPos);
+  (items || []).forEach((item) => {
+    let rawNombre = item.nombre || item.producto_nombre || 'Producto';
+    const hasComboItems = item.combo_items && Array.isArray(item.combo_items) && item.combo_items.length > 0;
+    
+    // Si tiene combo_items y el nombre trae resumen concatenado entre paréntesis, lo limpiamos para que el desglose indentado resalte
+    if (hasComboItems && rawNombre.includes(' (')) {
+      rawNombre = rawNombre.split(' (')[0];
+    }
+
+    const splitName = doc.splitTextToSize(rawNombre, 40);
+    const cant = Number(item.cantidad || 1);
+    const unitPrice = Number(item.precio_unitario || 0);
+    const itemTotal = Number(item.total !== undefined ? item.total : (unitPrice * cant));
+
+    doc.text(`${cant}`, margin, yPos);
     doc.text(splitName, margin + 10, yPos);
-    doc.text(`$${(item.precio_unitario * item.cantidad).toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
-    yPos += (splitName.length * 3) + 2;
+    doc.text(`$${itemTotal.toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
+    yPos += (splitName.length * 3.5) + 1.5;
+
+    // Sub-productos de promociones o combos (cócteles servidos en la barra)
+    if (hasComboItems) {
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(80, 80, 80);
+      item.combo_items.forEach((sub: any) => {
+        const subCant = Number(sub.cantidad || 1);
+        const subPrefix = subCant > 1 ? `${subCant}x ` : '';
+        const subLine = `  - ${subPrefix}${sub.nombre || 'Sub-producto'}`;
+        const splitSub = doc.splitTextToSize(subLine, 45);
+        doc.text(splitSub, margin + 10, yPos);
+        yPos += (splitSub.length * 2.8) + 1;
+      });
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(8);
+      yPos += 1;
+    }
   });
 
   doc.line(margin, yPos, pageWidth - margin, yPos);
@@ -99,16 +144,16 @@ export function generarTicketPOS(factura: any, empresa: any, items: any[], pagos
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.text('TOTAL USD:', margin, yPos);
-  doc.text(`$${Number(factura.total).toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
+  doc.text(`$${Number(factura?.total || 0).toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
   yPos += 5;
 
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
   doc.text('TASA:', margin, yPos);
-  doc.text(`Bs ${tasa.toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
+  doc.text(`Bs ${Number(tasa || 1).toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
   yPos += 4;
   doc.text('EQUIVALENTE:', margin, yPos);
-  doc.text(`Bs ${(Number(factura.total) * tasa).toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
+  doc.text(`Bs ${(Number(factura?.total || 0) * Number(tasa || 1)).toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
   yPos += 6;
 
   // Pagos
@@ -116,13 +161,13 @@ export function generarTicketPOS(factura: any, empresa: any, items: any[], pagos
     doc.text('MÉTODOS DE PAGO:', margin, yPos);
     yPos += 4;
     pagos.forEach(p => {
-       doc.text(p.tipo_pago, margin, yPos);
-       doc.text(`$${Number(p.monto).toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
+       doc.text(p.tipo_pago || 'Pago', margin, yPos);
+       doc.text(`$${Number(p.monto || 0).toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
        yPos += 4;
     });
   }
 
-  if (Number(factura.saldo_pendiente) > 0) {
+  if (Number(factura?.saldo_pendiente || 0) > 0) {
     yPos += 2;
     doc.setFont('helvetica', 'bold');
     doc.text('PENDIENTE A CRÉDITO:', margin, yPos);
@@ -135,11 +180,6 @@ export function generarTicketPOS(factura: any, empresa: any, items: any[], pagos
   yPos += 5;
   addCenteredText('Generado por Niteo', yPos, 6, false);
 
-  // Recortar página al alto real (un poco más largo para la guillotina)
-  // No hay un API directa simple en jsPDF para recortar después de crear,
-  // pero el navegador la imprime ajustada en modo thermal usualmente si se guarda.
-  // Abriremos en nueva pestaña.
-  
   // Guardado local (blob url) para previsualización e impresión
   const blob = doc.output('blob');
   const url = URL.createObjectURL(blob);
@@ -229,13 +269,25 @@ export function generarDocumentoA4(factura: any, empresa: any, items: any[], cli
   yPos += 10;
 
   // Tabla
-  const tableData = items.map(item => [
-    item.cantidad,
-    item.nombre || item.producto_id,
-    `$${Number(item.precio_unitario).toFixed(2)}`,
-    `$${Number(item.descuento || 0).toFixed(2)}`,
-    `$${(Number(item.cantidad) * Number(item.precio_unitario) - Number(item.descuento || 0)).toFixed(2)}`
-  ]);
+  const tableData = items.map(item => {
+    let desc = item.nombre || item.producto_nombre || item.producto_id || 'Producto';
+    if (item.combo_items && Array.isArray(item.combo_items) && item.combo_items.length > 0) {
+      if (desc.includes(' (')) desc = desc.split(' (')[0];
+      const subs = item.combo_items.map((s: any) => `  * ${s.cantidad > 1 ? `${s.cantidad}x ` : ''}${s.nombre}`).join('\n');
+      desc = `${desc}\n${subs}`;
+    }
+    const unitPrice = Number(item.precio_unitario || 0);
+    const cant = Number(item.cantidad || 1);
+    const descMonto = Number(item.descuento || 0);
+    const totalLine = Number(item.total !== undefined ? item.total : (cant * unitPrice - descMonto));
+    return [
+      cant,
+      desc,
+      `$${unitPrice.toFixed(2)}`,
+      `$${descMonto.toFixed(2)}`,
+      `$${totalLine.toFixed(2)}`
+    ];
+  });
 
   doc.autoTable({
     startY: yPos,

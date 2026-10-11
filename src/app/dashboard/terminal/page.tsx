@@ -30,11 +30,13 @@ export default async function TerminalPage() {
     return <div>Error: Perfil no encontrado</div>;
   }
 
-  // Ahora obtenemos todas las sedes a las que el usuario tiene acceso
+  // Ahora obtenemos sedes, catálogo y promociones activas
   const { getSedesCaja } = await import('@/actions/sedes-actions');
-  const [catalogoVirtual, sedes] = await Promise.all([
+  const { getPromocionesActivas } = await import('@/actions/promociones-actions');
+  const [catalogoVirtual, sedes, promocionesActivas] = await Promise.all([
     getProductosCatalogoVirtual(perfil.empresa_id),
     getSedesCaja(),
+    getPromocionesActivas(perfil.empresa_id),
   ]);
 
   const sedesActivas = sedes.filter(s => s.estado_activo);
@@ -74,6 +76,7 @@ export default async function TerminalPage() {
       <TerminalWrapper
         catalogo={catalogoVirtual}
         sedes={sedesActivas}
+        promociones={promocionesActivas}
         metodosDisponibles={metodosPago}
         tasaActiva={tasaActiva}
         empresaNombre={empresaData?.nombre_comercial || 'Mi Empresa'}

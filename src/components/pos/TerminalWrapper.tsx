@@ -6,9 +6,12 @@ import { Store, ShoppingCart, MapPin } from 'lucide-react';
 import type { ProductoPOS } from '@/actions/pos-actions';
 import type { Sede } from '@/actions/sedes-actions';
 
+import type { PromocionCombo } from '@/actions/promociones-actions';
+
 interface TerminalWrapperProps {
   catalogo: ProductoPOS[];
   sedes: Sede[];
+  promociones?: PromocionCombo[];
   metodosDisponibles?: string[];
   tasaActiva?: number;
   empresaNombre?: string;
@@ -18,6 +21,7 @@ interface TerminalWrapperProps {
 export default function TerminalWrapper({
   catalogo,
   sedes,
+  promociones = [],
   metodosDisponibles,
   tasaActiva,
   empresaNombre,
@@ -85,6 +89,7 @@ export default function TerminalWrapper({
         key={selectedSedeId}
         catalogo={catalogo}
         sedeVirtualId={selectedSedeId}
+        promociones={promociones}
         metodosDisponibles={metodosDisponibles}
         tasaActiva={tasaActiva}
         empresaNombre={empresaNombre}

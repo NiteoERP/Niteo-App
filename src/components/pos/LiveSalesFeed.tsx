@@ -407,12 +407,28 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
                       <h4 className="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3">Items del Ticket</h4>
                       <div className="space-y-2">
                         {sale.detalles.map((d: any) => (
-                          <div key={d.id_detalle} className="flex justify-between items-center bg-black/20 p-2 rounded text-sm">
-                            <span className="text-neutral-300">
-                              <span className="text-neutral-500 mr-2">{d.cantidad}x</span> 
-                              {privacyMode ? 'Producto Oculto' : (d.producto_nombre || 'Producto S/N')}
-                            </span>
-                            <span className="text-neutral-400 font-medium">{formatCurrency(d.total)}</span>
+                          <div key={d.id_detalle} className="bg-black/20 p-2 rounded text-sm space-y-1">
+                            <div className="flex justify-between items-center">
+                              <span className="text-neutral-300 flex items-center gap-1.5 flex-wrap">
+                                <span className="text-neutral-500 mr-1">{d.cantidad}x</span> 
+                                {privacyMode ? 'Producto Oculto' : (d.producto_nombre || 'Producto S/N')}
+                                {d.combo_items && d.combo_items.length > 0 && (
+                                  <span className="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1.5 py-0.2 rounded font-bold uppercase">
+                                    Promo
+                                  </span>
+                                )}
+                              </span>
+                              <span className="text-neutral-400 font-medium font-mono">{formatCurrency(d.total)}</span>
+                            </div>
+                            {d.combo_items && d.combo_items.length > 0 && !privacyMode && (
+                              <div className="ml-5 pl-2 border-l border-indigo-500/40 text-[11px] text-neutral-400 space-y-0.5">
+                                {d.combo_items.map((sub: any, sIdx: number) => (
+                                  <div key={sIdx}>
+                                    ↳ {sub.cantidad > 1 ? `${sub.cantidad}x ` : ''}{sub.nombre}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>

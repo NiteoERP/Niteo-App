@@ -975,6 +975,78 @@ export function useGenerateReport(empresaId: string) {
           });
         }
 
+        if (reportId === 'productos_vendidos' && Array.isArray(dataToProcess)) {
+          try {
+            let queryCombos = supabase
+              .from('ventas_detalles')
+              .select(`
+                producto_id,
+                cantidad,
+                combo_items,
+                productos!inner (
+                  id,
+                  nombre
+                ),
+                ventas_facturas!inner (
+                  empresa_id,
+                  sede_id,
+                  fecha_venta,
+                  estado_activo
+                )
+              `)
+              .eq('ventas_facturas.empresa_id', p_empresa_id)
+              .eq('ventas_facturas.estado_activo', true)
+              .not('combo_items', 'is', null);
+
+            if (p_sede_id) {
+              queryCombos = queryCombos.eq('ventas_facturas.sede_id', p_sede_id);
+            }
+            if (p_fecha_inicio) {
+              queryCombos = queryCombos.gte('ventas_facturas.fecha_venta', p_fecha_inicio);
+            }
+            if (p_fecha_fin) {
+              queryCombos = queryCombos.lte('ventas_facturas.fecha_venta', p_fecha_fin);
+            }
+
+            const { data: comboSales } = await queryCombos;
+
+            if (comboSales && comboSales.length > 0) {
+              const promoSubItemsMap: Record<string, Record<string, number>> = {};
+              for (const sale of comboSales) {
+                const promoNombre = (sale.productos as any)?.nombre;
+                if (!promoNombre) continue;
+                if (!promoSubItemsMap[promoNombre]) {
+                  promoSubItemsMap[promoNombre] = {};
+                }
+                const items = Array.isArray(sale.combo_items) ? sale.combo_items : [];
+                const promoQty = Number(sale.cantidad || 1);
+                for (const sub of items) {
+                  const subName = sub.nombre || 'Sub-producto';
+                  const subQty = Number(sub.cantidad || 1) * promoQty;
+                  promoSubItemsMap[promoNombre][subName] = (promoSubItemsMap[promoNombre][subName] || 0) + subQty;
+                }
+              }
+
+              dataToProcess = dataToProcess.map((row: any) => {
+                if (row.producto && promoSubItemsMap[row.producto]) {
+                  const desglose = Object.entries(promoSubItemsMap[row.producto]).map(([nombre, cantidad]) => ({
+                    nombre,
+                    cantidad,
+                  }));
+                  desglose.sort((a, b) => b.cantidad - a.cantidad);
+                  return {
+                    ...row,
+                    combo_desglose: desglose,
+                  };
+                }
+                return row;
+              });
+            }
+          } catch (errCombo) {
+            console.warn('Advertencia en useInformesData obteniendo desglose de promociones:', errCombo);
+          }
+        }
+
         const processed = appendReportTotals(reportId, dataToProcess);
         setReportData(processed);
       } catch (err: any) {

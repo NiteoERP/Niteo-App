@@ -329,7 +329,7 @@ export default function InformesPage() {
   const exportExcel = async () => {
     if (!reportData || reportData.length === 0) return;
     const XLSX = await import('xlsx');
-    const keys = Array.from(new Set(reportData.flatMap(r => Object.keys(r))));
+    const keys = Array.from(new Set(reportData.flatMap(r => Object.keys(r)))).filter(k => k !== 'combo_desglose');
     const firstKeyCandidates = ['Fecha', 'FECHA', 'fecha', 'numero_orden', 'codigo', 'cliente', 'operador', 'OPERADOR', 'categoria', 'nombre_cajero', 'nombre_cliente'];
     const foundFirstKey = firstKeyCandidates.find(k => keys.includes(k));
     if (foundFirstKey && keys.indexOf(foundFirstKey) > 0) {
@@ -340,7 +340,12 @@ export default function InformesPage() {
     const normalizedData = reportData.map(row => {
       const obj: Record<string, any> = {};
       keys.forEach(k => {
-        obj[k] = row[k] ?? '';
+        if (k === 'producto' && Array.isArray(row.combo_desglose) && row.combo_desglose.length > 0) {
+          const desgloseText = row.combo_desglose.map((s: any) => `${s.nombre} x${s.cantidad}`).join(', ');
+          obj[k] = `${row[k]} [Sub-productos: ${desgloseText}]`;
+        } else {
+          obj[k] = row[k] ?? '';
+        }
       });
       return obj;
     });
@@ -377,7 +382,7 @@ export default function InformesPage() {
     doc.text(`Período: ${format(sheetStartDate, 'dd/MM/yyyy')} - ${format(sheetEndDate, 'dd/MM/yyyy')}`, 14, 36);
     doc.text(`Generado el: ${new Date().toLocaleString()}`, 14, 42);
 
-    const keys = Array.from(new Set(reportData.flatMap(r => Object.keys(r))));
+    const keys = Array.from(new Set(reportData.flatMap(r => Object.keys(r)))).filter(k => k !== 'combo_desglose');
     const firstKeyCandidates = ['Fecha', 'FECHA', 'fecha', 'numero_orden', 'codigo', 'cliente', 'operador', 'OPERADOR', 'categoria', 'nombre_cajero', 'nombre_cliente'];
     const foundFirstKey = firstKeyCandidates.find(k => keys.includes(k));
     if (foundFirstKey && keys.indexOf(foundFirstKey) > 0) {
@@ -390,6 +395,10 @@ export default function InformesPage() {
     const body = reportData.map(row => {
       return keys.map(k => {
         const val = row[k];
+        if (k === 'producto' && Array.isArray(row.combo_desglose) && row.combo_desglose.length > 0) {
+          const desgloseText = row.combo_desglose.map((s: any) => `  ↳ ${s.nombre} (x${s.cantidad})`).join('\n');
+          return `${val}\n${desgloseText}`;
+        }
         if (typeof val === 'number') {
           return val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
@@ -935,7 +944,7 @@ export default function InformesPage() {
               </div>
 
               {(() => {
-                const keys = Array.from(new Set(reportData.flatMap(r => Object.keys(r))));
+                const keys = Array.from(new Set(reportData.flatMap(r => Object.keys(r)))).filter(k => k !== 'combo_desglose');
                 const firstKeyCandidates = ['Fecha', 'FECHA', 'fecha', 'Día', 'Dia', 'DIA', 'numero_orden', 'codigo', 'cliente', 'operador', 'OPERADOR', 'categoria', 'nombre_cajero', 'nombre_cliente'];
                 const foundFirstKey = firstKeyCandidates.find(k => keys.includes(k));
                 if (foundFirstKey && keys.indexOf(foundFirstKey) > 0) {
@@ -966,11 +975,33 @@ export default function InformesPage() {
                               {keys.map(key => {
                                 const val = row[key];
                                 const isNumber = typeof val === 'number';
+                                const hasDesglose = key === 'producto' && Array.isArray(row.combo_desglose) && row.combo_desglose.length > 0;
                                 return (
                                   <td key={key} className={`whitespace-nowrap ${isWide ? 'px-3 py-2' : 'px-5 py-4'} ${
                                     isTotalRow ? 'font-black text-neutral-950 bg-neutral-100/90' : 'text-neutral-800 font-medium'
                                   }`}>
-                                    {isNumber ? val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : (val ?? '-')}
+                                    {hasDesglose ? (
+                                      <div>
+                                        <div className="font-bold text-neutral-900 flex items-center gap-1.5">
+                                          <span>{String(val ?? '')}</span>
+                                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 font-bold uppercase tracking-wider">
+                                            PROMO
+                                          </span>
+                                        </div>
+                                        <div className="mt-1 pl-2 border-l-2 border-indigo-400 text-[10px] text-neutral-600 space-y-0.5">
+                                          <div className="text-[9px] uppercase font-bold text-indigo-600">Sub-productos servidos:</div>
+                                          {row.combo_desglose.map((sub: any) => (
+                                            <div key={sub.nombre} className="flex items-center gap-1.5">
+                                              <span className="text-indigo-500 font-mono">↳</span>
+                                              <span>{sub.nombre}</span>
+                                              <span className="font-bold text-neutral-900 font-mono">x{sub.cantidad}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      isNumber ? val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : (val ?? '-')
+                                    )}
                                   </td>
                                 );
                               })}
@@ -1274,7 +1305,7 @@ function ResultTable({ data }: { data: any[] }) {
   }, [data]);
 
   if (!data || data.length === 0) return null;
-  const keys = Array.from(new Set(data.flatMap(r => Object.keys(r))));
+  const keys = Array.from(new Set(data.flatMap(r => Object.keys(r)))).filter(k => k !== 'combo_desglose');
   const firstKeyCandidates = ['Fecha', 'FECHA', 'fecha', 'numero_orden', 'codigo', 'cliente', 'operador', 'OPERADOR', 'categoria', 'nombre_cajero', 'nombre_cliente'];
   const foundFirstKey = firstKeyCandidates.find(k => keys.includes(k));
   if (foundFirstKey && keys.indexOf(foundFirstKey) > 0) {
@@ -1307,13 +1338,39 @@ function ResultTable({ data }: { data: any[] }) {
                   {keys.map((key, i) => {
                     const val = row[key];
                     const isNumber = typeof val === 'number';
+                    const hasDesglose = key === 'producto' && Array.isArray(row.combo_desglose) && row.combo_desglose.length > 0;
                     return (
                       <td key={key} className={`px-6 py-3 whitespace-nowrap ${
                         isTotalRow 
                           ? (i === 0 ? 'font-black text-amber-400 sticky left-0 bg-neutral-800 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]' : 'font-black text-amber-300')
                           : (i === 0 ? 'font-medium text-white sticky left-0 bg-neutral-900 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)] z-10' : 'text-neutral-300')
                       }`}>
-                        {isNumber ? val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : String(val ?? '')}
+                        {hasDesglose ? (
+                          <div className="py-1">
+                            <div className="font-semibold text-white flex items-center gap-2">
+                              <span>{String(val ?? '')}</span>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 uppercase tracking-wider">
+                                Promo / Combo
+                              </span>
+                            </div>
+                            <div className="mt-2 pl-3 border-l-2 border-indigo-500/40 space-y-1">
+                              <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-400 block">
+                                Desglose en barra / sub-productos:
+                              </span>
+                              {row.combo_desglose.map((sub: any) => (
+                                <div key={sub.nombre} className="flex items-center gap-2 text-xs text-neutral-300">
+                                  <span className="text-indigo-400 font-mono">↳</span>
+                                  <span className="font-medium">{sub.nombre}</span>
+                                  <span className="px-1.5 py-0.5 rounded bg-neutral-800 text-indigo-300 border border-neutral-700 text-[11px] font-mono font-semibold">
+                                    x{sub.cantidad} servidos
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          isNumber ? val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : String(val ?? '')
+                        )}
                       </td>
                     );
                   })}

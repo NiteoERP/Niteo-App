@@ -1,4 +1,4 @@
-﻿'use server';
+'use server';
 
 import { createClient } from '@/utils/supabase/server';
 import { registrarAsiento } from './contabilidad-actions';
@@ -31,6 +31,8 @@ export interface VentaDetalle {
   total: number;
   producto_nombre?: string;
   producto_codigo?: string;
+  promo_id?: string;
+  combo_items?: any[];
 }
 
 export interface ProductoPOS {
@@ -39,6 +41,7 @@ export interface ProductoPOS {
   nombre: string;
   precio_venta: number;
   costo: number;
+  categoria_id?: string;
   precio_modificable?: boolean;
   aplica_listas_precios?: boolean;
   precios_dinamicos?: Record<string, number>;
@@ -59,6 +62,8 @@ export async function getVentasRecientes(sedeId: string): Promise<VentaPOS[]> {
         cantidad,
         precio_unitario,
         total,
+        promo_id,
+        combo_items,
         productos (
           nombre,
           codigo_barras
@@ -99,6 +104,8 @@ export async function getVentasRecientes(sedeId: string): Promise<VentaPOS[]> {
       cantidad: d.cantidad,
       precio_unitario: d.precio_unitario,
       total: d.total,
+      promo_id: d.promo_id,
+      combo_items: d.combo_items,
       producto_nombre: d.productos?.nombre || 'Desconocido',
       producto_codigo: d.productos?.codigo_barras,
     }))
@@ -138,7 +145,7 @@ export async function getProductosCatalogoVirtual(empresaId: string): Promise<Pr
 
   const { data: productos, error } = await supabase
     .from('productos')
-    .select('id, codigo_barras, nombre, precio_venta, costo, precio_modificable, productos_precios(lista_precio_id, precio)')
+    .select('id, codigo_barras, nombre, precio_venta, costo, categoria_id, precio_modificable, productos_precios(lista_precio_id, precio)')
     .eq('empresa_id', empresaId)
     .eq('estado_activo', true)
     .in('canal_venta', ['SOLO_NITEO', 'AMBOS'])
@@ -162,6 +169,7 @@ export async function getProductosCatalogoVirtual(empresaId: string): Promise<Pr
       nombre: p.nombre,
       precio_venta: p.precio_venta,
       costo: p.costo,
+      categoria_id: p.categoria_id,
       precio_modificable: p.precio_modificable,
       aplica_listas_precios: p.aplica_listas_precios,
       precios_dinamicos: pd
@@ -204,7 +212,7 @@ export async function getHistorialVentasCompleto(
       clientes ( nombre ),
       ventas_pagos ( tipo_pago, monto ),
       ventas_detalles (
-        id, producto_id, cantidad, precio_unitario, total,
+        id, producto_id, cantidad, precio_unitario, total, promo_id, combo_items,
         productos ( nombre, codigo_barras )
       )
     `)
@@ -256,6 +264,8 @@ export async function getHistorialVentasCompleto(
       cantidad: d.cantidad,
       precio_unitario: d.precio_unitario,
       total: d.total,
+      promo_id: d.promo_id,
+      combo_items: d.combo_items,
       producto_nombre: d.productos?.nombre || 'Desconocido',
       producto_codigo: d.productos?.codigo_barras,
     }))

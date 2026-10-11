@@ -17,6 +17,8 @@ export interface ItemVentaVirtual {
   nombre: string;
   cantidad: number;
   precio_unitario: number;
+  promo_id?: string;
+  combo_items?: any;
 }
 
 export interface MetodoPagoVirtual {
@@ -213,6 +215,8 @@ export async function procesarVentaVirtual(input: ProcesarVentaVirtualInput): Pr
     precio_unitario: item.precio_unitario,
     total: item.precio_unitario * item.cantidad,
     descuento: 0,
+    promo_id: item.promo_id || null,
+    combo_items: item.combo_items || null,
   }));
 
   const { error: errorDetalles } = await supabase
@@ -247,8 +251,21 @@ export async function procesarVentaVirtual(input: ProcesarVentaVirtualInput): Pr
     }
   }
 
+  // ── PASO 4: Descontar inventario automáticamente (recetas y suministros) ──
+  await descontarInventarioVenta(
+    supabase,
+    empresaId,
+    input.sede_id,
+    user.id,
+    numeroDocumento,
+    input.items,
+    fechaVenta
+  );
+
   // ── Revalidar cache ────────────────────────────────────────────────────────
   revalidatePath('/dashboard/ventas');
+  revalidatePath('/dashboard/inventario');
+  revalidatePath('/dashboard/informes');
 
   return { 
     success: true, 
@@ -303,3 +320,210 @@ export async function buscarClientes(query: string) {
   if (error || !clientes) return [];
   return clientes;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers de deducción de inventario para ventas directas y combos/promociones
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function descontarInventarioVenta(
+  supabase: any,
+  empresaId: string,
+  sedeId: string,
+  userId: string,
+  numeroDocumento: string,
+  items: ItemVentaVirtual[],
+  fechaVenta: string
+) {
+  try {
+    for (const item of items) {
+      // Caso 1: Ítem con combo_items (Promoción / Combo)
+      if (item.combo_items && Array.isArray(item.combo_items) && item.combo_items.length > 0) {
+        for (const sub of item.combo_items) {
+          const subProductoId = sub.producto_id;
+          if (!subProductoId) continue;
+          const subQtyTotal = Number(sub.cantidad || 1) * Number(item.cantidad || 1);
+          await procesarDeduccionProducto(
+            supabase,
+            empresaId,
+            sedeId,
+            userId,
+            subProductoId,
+            subQtyTotal,
+            numeroDocumento,
+            `PROMO: ${item.nombre} -> ${sub.nombre || 'Sub-producto'}`,
+            fechaVenta
+          );
+        }
+      } else {
+        // Caso 2: Ítem individual estándar
+        if (item.producto_id) {
+          await procesarDeduccionProducto(
+            supabase,
+            empresaId,
+            sedeId,
+            userId,
+            item.producto_id,
+            Number(item.cantidad || 1),
+            numeroDocumento,
+            item.nombre,
+            fechaVenta
+          );
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[descontarInventarioVenta] Error durante la deducción de inventario:', err);
+  }
+}
+
+async function procesarDeduccionProducto(
+  supabase: any,
+  empresaId: string,
+  sedeId: string,
+  userId: string,
+  productoId: string,
+  cantidadVendida: number,
+  numeroDocumento: string,
+  descripcionItem: string,
+  fechaVenta: string
+) {
+  if (cantidadVendida <= 0) return;
+
+  // 1. Buscar si tiene receta(s) en `recetas`
+  const { data: recetas, error: errRecetas } = await supabase
+    .from('recetas')
+    .select('id, insumo_id, subproducto_id, cantidad_necesaria')
+    .eq('empresa_id', empresaId)
+    .eq('producto_id', productoId);
+
+  if (!errRecetas && recetas && recetas.length > 0) {
+    for (const rec of recetas) {
+      if (rec.insumo_id) {
+        const cantInsumoDescontar = Number(
+          (Number(rec.cantidad_necesaria || 0) * cantidadVendida).toFixed(4)
+        );
+        if (cantInsumoDescontar <= 0) continue;
+
+        await ejecutarSalidaInsumo(
+          supabase,
+          empresaId,
+          sedeId,
+          userId,
+          rec.insumo_id,
+          cantInsumoDescontar,
+          numeroDocumento,
+          descripcionItem,
+          fechaVenta
+        );
+      } else if (rec.subproducto_id) {
+        // Sub-receta anidada
+        const subCant = Number(
+          (Number(rec.cantidad_necesaria || 0) * cantidadVendida).toFixed(4)
+        );
+        if (subCant > 0) {
+          await procesarDeduccionProducto(
+            supabase,
+            empresaId,
+            sedeId,
+            userId,
+            rec.subproducto_id,
+            subCant,
+            numeroDocumento,
+            `${descripcionItem} (Sub-receta)`,
+            fechaVenta
+          );
+        }
+      }
+    }
+    return;
+  }
+
+  // 2. Si no tiene recetas, verificar si tiene insumo vinculado directamente en `productos`
+  const { data: prod } = await supabase
+    .from('productos')
+    .select('id, id_insumo_vinculado, nombre')
+    .eq('id', productoId)
+    .maybeSingle();
+
+  if (prod?.id_insumo_vinculado) {
+    await ejecutarSalidaInsumo(
+      supabase,
+      empresaId,
+      sedeId,
+      userId,
+      prod.id_insumo_vinculado,
+      cantidadVendida,
+      numeroDocumento,
+      descripcionItem,
+      fechaVenta
+    );
+  }
+}
+
+async function ejecutarSalidaInsumo(
+  supabase: any,
+  empresaId: string,
+  sedeId: string,
+  userId: string,
+  insumoId: string,
+  cantidadDescontar: number,
+  numeroDocumento: string,
+  motivoDetalle: string,
+  fechaVenta: string
+) {
+  if (cantidadDescontar <= 0) return;
+
+  // 1. Obtener el insumo origen
+  const { data: insumoMaster } = await supabase
+    .from('inventario_insumos')
+    .select('id, nombre, sede_id, cantidad_actual, costo_promedio')
+    .eq('id', insumoId)
+    .single();
+
+  if (!insumoMaster) return;
+
+  let targetInsumo = insumoMaster;
+
+  // Si el insumo está asociado a otra sede y la venta es en sedeId:
+  if (insumoMaster.sede_id && insumoMaster.sede_id !== sedeId) {
+    const { data: insumoSede } = await supabase
+      .from('inventario_insumos')
+      .select('id, nombre, sede_id, cantidad_actual, costo_promedio')
+      .eq('empresa_id', empresaId)
+      .eq('sede_id', sedeId)
+      .ilike('nombre', insumoMaster.nombre)
+      .maybeSingle();
+
+    if (insumoSede) {
+      targetInsumo = insumoSede;
+    }
+  }
+
+  // 2. Calcular nueva cantidad
+  const cantActual = Number(targetInsumo.cantidad_actual || 0);
+  const nuevaCant = Number((cantActual - cantidadDescontar).toFixed(4));
+
+  // 3. Descontar en inventario_insumos
+  await supabase
+    .from('inventario_insumos')
+    .update({
+      cantidad_actual: nuevaCant,
+    })
+    .eq('id', targetInsumo.id);
+
+  // 4. Registrar movimiento en movimientos_inventario
+  await supabase
+    .from('movimientos_inventario')
+    .insert({
+      empresa_id: empresaId,
+      insumo_id: targetInsumo.id,
+      usuario_id: userId,
+      tipo_movimiento: 'SALIDA',
+      motivo: 'VENTA',
+      cantidad: cantidadDescontar,
+      costo_perdido: 0,
+      notas: `Venta #${numeroDocumento} - ${motivoDetalle}`,
+      fecha_movimiento: fechaVenta,
+    });
+}
+

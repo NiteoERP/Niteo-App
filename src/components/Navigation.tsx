@@ -22,7 +22,8 @@ import {
   BookOpen,
   ShoppingBag,
   Building2,
-  UtensilsCrossed
+  UtensilsCrossed,
+  Sparkles
 } from 'lucide-react';
 
 interface NavProps {
@@ -96,6 +97,7 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
         { label: 'Facturación', path: '/dashboard/documentos/nuevo', icon: FileText, perm: hasPerm('pos') },
         { label: 'Historial', path: '/dashboard/ventas', icon: Receipt, perm: hasPerm('pos') },
         { label: 'Catálogo de Ventas', path: '/dashboard/catalogo', icon: BookOpen, perm: hasPerm('inventario') },
+        { label: 'Promociones y Combos', path: '/dashboard/promociones', icon: Sparkles, perm: hasPerm('inventario') || hasPerm('pos') },
         { label: 'Módulo Mesero', path: '/dashboard/mesas', icon: UtensilsCrossed, perm: hasPerm('mesas') },
       ].filter(i => i.perm !== false),
     },
@@ -404,6 +406,11 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
                       <BookOpen size={18} /> Catálogo de Ventas
                     </Link>
                   )}
+                  {(hasPerm('inventario') || hasPerm('pos')) && (
+                    <Link href="/dashboard/promociones" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/promociones')}>
+                      <Sparkles size={18} /> Promociones y Combos
+                    </Link>
+                  )}
                   {hasPerm('mesas') && (
                     <Link href="/dashboard/mesas" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/mesas')}>
                       <UtensilsCrossed size={18} /> Módulo Mesero
@@ -611,6 +618,22 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
                   <div className="flex-1 min-w-0">
                     <span className="font-semibold text-white text-[15px]">Catálogo de Productos</span>
                     <p className="text-xs text-neutral-400 truncate mt-0.5">Listado comercial con fotos y precios</p>
+                  </div>
+                </Link>
+              )}
+
+              {(hasPerm('inventario') || hasPerm('pos')) && (
+                <Link
+                  href="/dashboard/promociones"
+                  onClick={() => setVentasMenuOpen(false)}
+                  className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-neutral-950/70 hover:bg-neutral-800 active:bg-neutral-800 border border-neutral-800 hover:border-indigo-500/40 transition-all group"
+                >
+                  <div className="w-11 h-11 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 group-hover:scale-105 transition-transform shrink-0">
+                    <Sparkles size={22} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-semibold text-white text-[15px]">Promociones y Combos</span>
+                    <p className="text-xs text-neutral-400 truncate mt-0.5">2x1, combos de barra y ofertas activas</p>
                   </div>
                 </Link>
               )}

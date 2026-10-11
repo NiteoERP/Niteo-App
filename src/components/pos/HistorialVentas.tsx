@@ -598,12 +598,31 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                   </div>
                   <div className="space-y-2">
                     {venta.detalles.map(d => (
-                      <div key={d.id_detalle} className="flex justify-between items-center text-sm py-1.5 border-b border-neutral-800/50 last:border-0">
-                        <div className="flex items-center gap-2 text-neutral-300">
-                          <span className="bg-neutral-800 text-indigo-400 text-xs px-2 py-0.5 rounded-full font-medium">{d.cantidad}x</span>
-                          <span>{d.producto_nombre || 'Item Desconocido'}</span>
+                      <div key={d.id_detalle} className="py-1.5 border-b border-neutral-800/50 last:border-0 space-y-1">
+                        <div className="flex justify-between items-center text-sm">
+                          <div className="flex items-center gap-2 text-neutral-300">
+                            <span className="bg-neutral-800 text-indigo-400 text-xs px-2 py-0.5 rounded-full font-medium">{d.cantidad}x</span>
+                            <span className="font-medium text-white">{d.producto_nombre || 'Item'}</span>
+                            {d.combo_items && d.combo_items.length > 0 && (
+                              <span className="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1.5 py-0.2 rounded font-bold uppercase">
+                                Promo
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-neutral-300 font-medium font-mono">{formatCurrency(d.total)}</span>
                         </div>
-                        <span className="text-neutral-400 font-medium">{formatCurrency(d.total)}</span>
+
+                        {/* Desglose de cócteles / sub-productos en la orden */}
+                        {d.combo_items && d.combo_items.length > 0 && (
+                          <div className="ml-7 pl-2.5 border-l-2 border-indigo-500/40 space-y-0.5 text-xs text-neutral-400">
+                            {d.combo_items.map((sub: any, sIdx: number) => (
+                              <div key={sIdx} className="flex items-center justify-between text-[11px]">
+                                <span>↳ {sub.cantidad > 1 ? `${sub.cantidad}x ` : ''}{sub.nombre}</span>
+                                <span className="text-neutral-500 font-mono text-[10px]">(${Number(sub.precio_original || 0).toFixed(2)})</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                     {Number(venta.propina) > 0 && (

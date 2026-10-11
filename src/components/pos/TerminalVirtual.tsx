@@ -2,23 +2,36 @@
 
 import React, { useState, useTransition, useMemo, useCallback } from 'react';
 import {
-  Search, Plus, Minus, Trash2, Zap, X, ShoppingCart, User, UserCircle, CreditCard, ChevronLeft, ChevronRight, CheckCircle, Receipt, Edit3, History, AlertCircle, Package, Loader2, UserCheck, ChevronDown, ChevronUp
+  Search, Plus, Minus, Trash2, Zap, X, ShoppingCart, User, UserCircle, CreditCard, ChevronLeft, ChevronRight, CheckCircle, Receipt, Edit3, History, AlertCircle, Package, Loader2, UserCheck, ChevronDown, ChevronUp, Sparkles, Wine, Flame
 } from 'lucide-react';
 import HistorialVentas from '@/components/pos/HistorialVentas';
 import { procesarVentaVirtual, MetodoPagoVirtual } from '@/actions/ventas-virtual-actions';
 import type { ProductoPOS } from '@/actions/pos-actions';
+import type { PromocionCombo } from '@/actions/promociones-actions';
+import PromoSelectionModal, { type PromoBundleResult } from '@/components/pos/PromoSelectionModal';
 
 interface ItemCarrito {
+  id_item?: string;
   producto_id: string;
   nombre: string;
   precio_unitario: number;
   cantidad: number;
   precio_modificable?: boolean;
+  es_promo?: boolean;
+  promo_id?: string;
+  combo_instance_id?: string;
+  combo_items?: {
+    producto_id: string;
+    nombre: string;
+    cantidad: number;
+    precio_original: number;
+  }[];
 }
 
 interface TerminalVirtualProps {
   catalogo: ProductoPOS[];
   sedeVirtualId: string;
+  promociones?: PromocionCombo[];
   metodosDisponibles?: string[];
   tasaActiva?: number;
   empresaNombre?: string;
@@ -30,6 +43,7 @@ const METODOS_DEFAULT = ['Efectivo USD', 'Transferencia', 'Zelle', 'Pago Móvil'
 export default function TerminalVirtual({
   catalogo,
   sedeVirtualId,
+  promociones = [],
   metodosDisponibles = METODOS_DEFAULT,
   tasaActiva = 1,
   empresaNombre = 'Mi Empresa',
@@ -40,6 +54,10 @@ export default function TerminalVirtual({
   const [carritoAbierto, setCarritoAbierto] = useState(false);
   const [resultado, setResultado] = useState<{ ok: boolean; msg: string } | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  // Estados de Promociones y Combos
+  const [promoModalAbierta, setPromoModalAbierta] = useState(false);
+  const [promoSeleccionada, setPromoSeleccionada] = useState<PromocionCombo | null>(null);
 
   // Campos extras (Cliente Express o Registrado)
   const [clienteNombre, setClienteNombre] = useState('');
@@ -134,17 +152,46 @@ export default function TerminalVirtual({
   );
   const cantidadItems = carrito.reduce((acc, i) => acc + i.cantidad, 0);
 
+  const abrirPromoModal = (p: PromocionCombo) => {
+    setPromoSeleccionada(p);
+    setPromoModalAbierta(true);
+  };
+
+  const handleConfirmarPromo = (bundle: PromoBundleResult) => {
+    const instanceId = `promo-inst-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    const resumenItems = bundle.items_seleccionados
+      .map((i) => `${i.cantidad > 1 ? `${i.cantidad}x ` : ''}${i.nombre}`)
+      .join(' + ');
+
+    setCarrito((prev) => [
+      ...prev,
+      {
+        id_item: instanceId,
+        producto_id: bundle.producto_id,
+        nombre: `${bundle.promo_nombre} (${resumenItems})`,
+        precio_unitario: bundle.precio_unitario,
+        cantidad: 1,
+        es_promo: true,
+        promo_id: bundle.promo_id,
+        combo_instance_id: instanceId,
+        combo_items: bundle.items_seleccionados,
+      },
+    ]);
+    setResultado(null);
+  };
+
   const agregarProducto = useCallback((prod: ProductoPOS) => {
     setCarrito((prev) => {
-      const existe = prev.find((i) => i.producto_id === prod.producto_id);
+      const existe = prev.find((i) => !i.es_promo && i.producto_id === prod.producto_id);
       if (existe) {
         return prev.map((i) =>
-          i.producto_id === prod.producto_id ? { ...i, cantidad: i.cantidad + 1 } : i
+          !i.es_promo && i.producto_id === prod.producto_id ? { ...i, cantidad: i.cantidad + 1 } : i
         );
       }
       return [
         ...prev,
         {
+          id_item: prod.producto_id,
           producto_id: prod.producto_id,
           nombre: prod.nombre,
           precio_unitario: prod.precio_venta,
@@ -156,16 +203,16 @@ export default function TerminalVirtual({
     setResultado(null);
   }, []);
 
-  const cambiarCantidad = useCallback((producto_id: string, delta: number) => {
+  const cambiarCantidad = useCallback((key: string, delta: number) => {
     setCarrito((prev) =>
       prev
-        .map((i) => (i.producto_id === producto_id ? { ...i, cantidad: i.cantidad + delta } : i))
+        .map((i) => ((i.id_item || i.producto_id) === key ? { ...i, cantidad: i.cantidad + delta } : i))
         .filter((i) => i.cantidad > 0)
     );
   }, []);
 
-  const eliminarItem = useCallback((producto_id: string) => {
-    setCarrito((prev) => prev.filter((i) => i.producto_id !== producto_id));
+  const eliminarItem = useCallback((key: string) => {
+    setCarrito((prev) => prev.filter((i) => (i.id_item || i.producto_id) !== key));
   }, []);
 
   const vaciarCarrito = () => {
@@ -237,6 +284,8 @@ export default function TerminalVirtual({
         nombre: i.nombre,
         cantidad: i.cantidad,
         precio_unitario: i.precio_unitario,
+        promo_id: i.promo_id,
+        combo_items: i.combo_items,
       }));
 
       const res = await procesarVentaVirtual({
@@ -376,6 +425,59 @@ export default function TerminalVirtual({
         )}
 
         <div className="flex-1 overflow-y-auto">
+          {/* Promociones y Combos Activos */}
+          {promociones && promociones.length > 0 && !busqueda && (
+            <div className="mb-5 space-y-2.5">
+              <div className="flex items-center gap-2">
+                <Sparkles size={15} className="text-amber-400" />
+                <span className="text-xs font-bold uppercase tracking-wider text-neutral-300">
+                  Promociones y Combos Activos
+                </span>
+                <span className="text-[10px] bg-indigo-500/20 text-indigo-300 font-bold px-2 py-0.5 rounded-full border border-indigo-500/30">
+                  {promociones.length} activa{promociones.length > 1 ? 's' : ''}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                {promociones.map((p) => {
+                  const cant = p.config_seleccion?.cantidad_total || 2;
+                  const cobrar = p.config_seleccion?.cobrar_cantidad || 1;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => abrirPromoModal(p)}
+                      className="group relative flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-indigo-950/40 via-neutral-900 to-purple-950/30 border border-indigo-500/30 hover:border-indigo-400 hover:shadow-xl hover:shadow-indigo-500/10 text-left transition-all active:scale-[0.98]"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0 group-hover:scale-105 transition-transform">
+                          <Wine size={18} />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-indigo-500/25 text-indigo-200">
+                              {cant}x{cobrar} {p.tipo === 'NX_M' ? 'PROMO' : 'COMBO'}
+                            </span>
+                          </div>
+                          <h4 className="text-xs sm:text-sm font-bold text-white truncate">
+                            {p.nombre}
+                          </h4>
+                          <p className="text-[11px] text-neutral-400 truncate mt-0.5">
+                            Toca para seleccionar {cant} cócteles
+                          </p>
+                        </div>
+                      </div>
+
+                      <span className="text-xs font-bold text-indigo-400 group-hover:translate-x-1 transition-transform shrink-0 ml-2">
+                        Elegir →
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {catalogoFiltrado.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-neutral-500 gap-3">
               <Package size={40} className="text-neutral-700" />
@@ -637,74 +739,132 @@ export default function TerminalVirtual({
                     <p className="text-xs">Toca un producto para agregarlo</p>
                   </div>
                 ) : (
-                  carrito.map((item) => (
-                    <div
-                      key={item.producto_id}
-                      className="flex items-center gap-3 bg-neutral-950/50 border border-neutral-800/50 rounded-xl p-3 relative group"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-neutral-200 truncate pr-4">{item.nombre}</p>
-                        
-                        {editandoPrecioId === item.producto_id ? (
-                           <div className="flex items-center gap-1 mt-1">
-                             <span className="text-xs text-neutral-500">$</span>
-                             <input 
-                               type="number" 
-                               autoFocus
-                               className="bg-neutral-900 border border-indigo-500/50 rounded px-1 w-16 text-xs text-white outline-none"
-                               value={precioEditTemp}
-                               onChange={e => setPrecioEditTemp(e.target.value)}
-                               onKeyDown={e => { if(e.key === 'Enter') guardarPrecioEditado(item.producto_id); }}
-                               onBlur={() => guardarPrecioEditado(item.producto_id)}
-                             />
-                           </div>
-                        ) : (
-                           <div className="flex items-center gap-1">
-                              <p className="text-xs text-emerald-400 font-medium">
-                                ${Number(item.precio_unitario).toFixed(2)} c/u
-                              </p>
-                              {item.precio_modificable && (
-                                 <button 
-                                   onClick={() => { setEditandoPrecioId(item.producto_id); setPrecioEditTemp(item.precio_unitario.toString()); }}
-                                   className="text-neutral-600 hover:text-indigo-400 p-0.5 transition-colors hidden group-hover:block"
-                                   title="Editar precio"
-                                 >
-                                    <Edit3 size={10} />
-                                 </button>
-                              )}
-                           </div>
-                        )}
-                      </div>
+                  carrito.map((item) => {
+                    const itemKey = item.id_item || item.combo_instance_id || item.producto_id;
 
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <button
-                          onClick={() => cambiarCantidad(item.producto_id, -1)}
-                          className="w-6 h-6 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 flex items-center justify-center"
+                    if (item.es_promo) {
+                      return (
+                        <div
+                          key={itemKey}
+                          className="bg-indigo-950/20 border border-indigo-500/40 rounded-xl p-3 relative group space-y-2 shadow-sm shadow-indigo-500/5"
                         >
-                          <Minus size={10} />
-                        </button>
-                        <span className="text-sm font-bold text-white w-5 text-center">{item.cantidad}</span>
-                        <button
-                          onClick={() => cambiarCantidad(item.producto_id, 1)}
-                          className="w-6 h-6 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 flex items-center justify-center"
-                        >
-                          <Plus size={10} />
-                        </button>
-                      </div>
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="p-1 rounded-md bg-indigo-500/20 text-indigo-300 shrink-0">
+                                <Wine size={14} />
+                              </span>
+                              <div className="min-w-0">
+                                <span className="inline-block text-[10px] font-bold uppercase tracking-wider bg-indigo-500/30 text-indigo-200 px-1.5 py-0.2 rounded mb-0.5">
+                                  Promo Aplicada
+                                </span>
+                                <p className="text-xs font-bold text-white truncate">{item.nombre}</p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => eliminarItem(itemKey)}
+                              className="text-neutral-500 hover:text-red-400 p-1 transition-colors shrink-0"
+                              title="Eliminar promoción"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
 
-                      <div className="flex flex-col items-end gap-1 shrink-0 w-12">
-                        <span className="text-sm font-bold text-white">
-                          ${(item.precio_unitario * item.cantidad).toFixed(2)}
-                        </span>
-                        <button
-                          onClick={() => eliminarItem(item.producto_id)}
-                          className="text-neutral-600 hover:text-red-400 transition-colors"
-                        >
-                          <Trash2 size={11} />
-                        </button>
+                          {/* Desglose de cócteles incluidos */}
+                          {item.combo_items && item.combo_items.length > 0 && (
+                            <div className="bg-neutral-950/70 rounded-lg p-2 space-y-1 text-[11px] border border-neutral-800/60">
+                              <span className="text-[10px] uppercase font-bold text-neutral-500 block mb-0.5">
+                                Cócteles en la promo:
+                              </span>
+                              {item.combo_items.map((sub, sIdx) => (
+                                <div key={sIdx} className="flex justify-between items-center text-neutral-300">
+                                  <span>• {sub.cantidad > 1 ? `${sub.cantidad}x ` : ''}{sub.nombre}</span>
+                                  <span className="text-neutral-500 font-mono text-[10px]">(${Number(sub.precio_original).toFixed(2)})</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-between pt-1 border-t border-indigo-500/20">
+                            <span className="text-[11px] text-neutral-400 font-medium">
+                              Total Promo (mayor precio):
+                            </span>
+                            <span className="text-sm font-bold text-emerald-400 font-mono">
+                              ${Number(item.precio_unitario).toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div
+                        key={itemKey}
+                        className="flex items-center gap-3 bg-neutral-950/50 border border-neutral-800/50 rounded-xl p-3 relative group"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-neutral-200 truncate pr-4">{item.nombre}</p>
+                          
+                          {editandoPrecioId === item.producto_id ? (
+                             <div className="flex items-center gap-1 mt-1">
+                               <span className="text-xs text-neutral-500">$</span>
+                               <input 
+                                 type="number" 
+                                 autoFocus
+                                 className="bg-neutral-900 border border-indigo-500/50 rounded px-1 w-16 text-xs text-white outline-none"
+                                 value={precioEditTemp}
+                                 onChange={e => setPrecioEditTemp(e.target.value)}
+                                 onKeyDown={e => { if(e.key === 'Enter') guardarPrecioEditado(item.producto_id); }}
+                                 onBlur={() => guardarPrecioEditado(item.producto_id)}
+                               />
+                             </div>
+                          ) : (
+                             <div className="flex items-center gap-1">
+                                <p className="text-xs text-emerald-400 font-medium">
+                                  ${Number(item.precio_unitario).toFixed(2)} c/u
+                                </p>
+                                {item.precio_modificable && (
+                                   <button 
+                                     onClick={() => { setEditandoPrecioId(item.producto_id); setPrecioEditTemp(item.precio_unitario.toString()); }}
+                                     className="text-neutral-600 hover:text-indigo-400 p-0.5 transition-colors hidden group-hover:block"
+                                     title="Editar precio"
+                                   >
+                                      <Edit3 size={10} />
+                                   </button>
+                                )}
+                             </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            onClick={() => cambiarCantidad(itemKey, -1)}
+                            className="w-6 h-6 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 flex items-center justify-center"
+                          >
+                            <Minus size={10} />
+                          </button>
+                          <span className="text-sm font-bold text-white w-5 text-center">{item.cantidad}</span>
+                          <button
+                            onClick={() => cambiarCantidad(itemKey, 1)}
+                            className="w-6 h-6 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 flex items-center justify-center"
+                          >
+                            <Plus size={10} />
+                          </button>
+                        </div>
+
+                        <div className="flex flex-col items-end gap-1 shrink-0 w-12">
+                          <span className="text-sm font-bold text-white">
+                            ${(item.precio_unitario * item.cantidad).toFixed(2)}
+                          </span>
+                          <button
+                            onClick={() => eliminarItem(itemKey)}
+                            className="text-neutral-600 hover:text-red-400 transition-colors"
+                          >
+                            <Trash2 size={11} />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
 
@@ -880,6 +1040,15 @@ export default function TerminalVirtual({
           </div>
         </div>
       )}
+
+      {/* ── Modal de Selección de Promociones / Combos ── */}
+      <PromoSelectionModal
+        isOpen={promoModalAbierta}
+        onClose={() => setPromoModalAbierta(false)}
+        promo={promoSeleccionada}
+        catalogo={catalogo}
+        onConfirmar={handleConfirmarPromo}
+      />
 
     </div>
   );
