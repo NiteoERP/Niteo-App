@@ -220,7 +220,19 @@ export async function guardarCierre(cierreData: any, transacciones: any[]) {
     console.error('Error actualizando ventas_facturas:', errorUpdateVentas);
   }
 
-  revalidatePath('/dashboard/cierre');
+  // 4. Limpiar borrador de caja en la nube para esta sede
+  try {
+    const adminSupabase = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    await adminSupabase.from('caja_drafts').delete().eq('sede_id', finalSedeId);
+  } catch (errDraft) {
+    console.error('Error limpiando caja_drafts:', errDraft);
+  }
+
+  revalidatePath('/dashboard/caja');
+  revalidatePath('/dashboard/caja/resumen');
   return { success: true };
 }
 
