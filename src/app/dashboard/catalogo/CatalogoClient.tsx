@@ -370,6 +370,15 @@ export default function CatalogoClient({
                   <div>
                     <p className="font-medium text-white">{p.nombre}</p>
                     {p.descripcion && <p className="text-xs text-neutral-400 line-clamp-1">{p.descripcion}</p>}
+                    {p.notas_preparacion && p.notas_preparacion.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {p.notas_preparacion.map((nota: string, idx: number) => (
+                          <span key={idx} className="inline-block text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/20 px-1.5 py-0.5 rounded font-mono">
+                            {nota}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     <p className="text-[11px] text-neutral-500 mt-0.5">{p.codigo_barras || 'Sin código'}</p>
                   </div>
                 </div>
@@ -481,7 +490,16 @@ export default function CatalogoClient({
                         {p.descripcion && (
                           <p className="text-xs text-neutral-400 max-w-xs line-clamp-1">{p.descripcion}</p>
                         )}
-                        <p className="text-[11px] text-neutral-500">{p.codigo_barras || 'Sin código'}</p>
+                        {p.notas_preparacion && p.notas_preparacion.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1 max-w-sm">
+                            {p.notas_preparacion.map((nota: string, idx: number) => (
+                              <span key={idx} className="inline-block text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/20 px-1.5 py-0.5 rounded font-mono">
+                                {nota}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <p className="text-[11px] text-neutral-500 mt-0.5">{p.codigo_barras || 'Sin código'}</p>
                       </div>
                     </div>
                   </td>

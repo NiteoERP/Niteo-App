@@ -58,7 +58,8 @@ export async function createProducto(data: any) {
       es_compuesto: data.tipo === 'ELABORADO', // Si es elaborado requiere receta
       es_reventa: data.tipo === 'REVENTA',
         es_servicio: data.tipo === 'SERVICIO',
-      porcentaje_ganancia: parseFloat(data.porcentaje_ganancia) || 0
+      porcentaje_ganancia: parseFloat(data.porcentaje_ganancia) || 0,
+      notas_preparacion: Array.isArray(data.notas_preparacion) ? data.notas_preparacion : []
     })
     .select()
     .single();
@@ -173,7 +174,8 @@ export async function updateProducto(id: string, data: any) {
       es_compuesto: data.tipo === 'ELABORADO',
       es_reventa: data.tipo === 'REVENTA',
         es_servicio: data.tipo === 'SERVICIO',
-      porcentaje_ganancia: parseFloat(data.porcentaje_ganancia) || 0
+      porcentaje_ganancia: parseFloat(data.porcentaje_ganancia) || 0,
+      notas_preparacion: Array.isArray(data.notas_preparacion) ? data.notas_preparacion : []
   }).eq('id', id);
   
   if (error) return { success: false, error: error.message };
