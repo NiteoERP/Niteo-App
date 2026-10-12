@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Minus, Send, MessageSquare, Loader2, CheckCircle2, RefreshCw, ShoppingCart, X, Trash2, User, Search, Hash } from 'lucide-react';
-import { obtenerCatalogoMesa, enviarComanda, buscarClientePorCedula, type ItemComanda } from '@/actions/mesas-actions';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Plus, Minus, Send, MessageSquare, Loader2, CheckCircle2, RefreshCw, ShoppingCart, X, Trash2, User, UserCheck, Search, Hash, ChevronRight } from 'lucide-react';
+import { obtenerCatalogoMesa, enviarComanda, buscarClientePorCedula, buscarClientesMesa, type ItemComanda, type ClienteSugeridoMesa } from '@/actions/mesas-actions';
 import type { TerminalVinculado } from './MesasHub';
 
 interface CartItem extends ItemComanda {
@@ -42,27 +42,78 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
   const [carrito, setCarrito] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [mesa, setMesa] = useState('');
+  const [clienteId, setClienteId] = useState('');
   const [clienteNombre, setClienteNombre] = useState('');
   const [clienteTelefono, setClienteTelefono] = useState('');
   const [clienteCedula, setClienteCedula] = useState('');
-  const [showClienteForm, setShowClienteForm] = useState(false);
+  const [showClienteForm, setShowClienteForm] = useState(true);
   const [buscandoCliente, setBuscandoCliente] = useState(false);
+  const [sugerenciasClientes, setSugerenciasClientes] = useState<ClienteSugeridoMesa[]>([]);
+  const [mostrarDropdownClientes, setMostrarDropdownClientes] = useState(false);
+  const debounceClienteRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cacheClientesRef = useRef<Map<string, ClienteSugeridoMesa[]>>(new Map());
 
-  useEffect(() => {
-    const timer = setTimeout(async () => {
-      const cedula = clienteCedula.trim();
-      if (cedula.length >= 4) {
-        setBuscandoCliente(true);
-        const data = await buscarClientePorCedula(cedula);
-        if (data) {
-          if (data.nombre) setClienteNombre(data.nombre);
-          if (data.telefono) setClienteTelefono(data.telefono);
+  const dispararBusquedaClientes = (termino: string, esCedula = false) => {
+    if (debounceClienteRef.current) clearTimeout(debounceClienteRef.current);
+    const trimmed = termino.trim();
+    if (trimmed.length < 2) {
+      setSugerenciasClientes([]);
+      setMostrarDropdownClientes(false);
+      return;
+    }
+
+    const cacheKey = trimmed.toLowerCase();
+    if (cacheClientesRef.current.has(cacheKey)) {
+      const cached = cacheClientesRef.current.get(cacheKey)!;
+      setSugerenciasClientes(cached);
+      setMostrarDropdownClientes(cached.length > 0);
+      return;
+    }
+
+    debounceClienteRef.current = setTimeout(async () => {
+      setBuscandoCliente(true);
+      try {
+        const resultados = await buscarClientesMesa(trimmed);
+        cacheClientesRef.current.set(cacheKey, resultados || []);
+        setSugerenciasClientes(resultados || []);
+        setMostrarDropdownClientes((resultados && resultados.length > 0) || false);
+
+        // Si escribió una cédula de 5+ dígitos y hay coincidencia exacta única y aún no tiene nombre, autocompletar
+        if (esCedula && trimmed.length >= 5 && resultados.length === 1) {
+          const unico = resultados[0];
+          const soloNumInput = trimmed.replace(/^[VEJGvejg][-]?/, '');
+          const soloNumDb = (unico.rif_cedula || '').trim().replace(/^[VEJGvejg][-]?/, '');
+          if (soloNumDb && soloNumDb === soloNumInput && !clienteNombre.trim()) {
+            setClienteNombre(unico.nombre);
+            if (unico.telefono) setClienteTelefono(unico.telefono);
+          }
         }
+      } catch {
+        // Ignorar errores de red momentáneos
+      } finally {
         setBuscandoCliente(false);
       }
-    }, 700);
-    return () => clearTimeout(timer);
-  }, [clienteCedula]);
+    }, 300);
+  };
+
+  const seleccionarClienteSugerido = (sug: ClienteSugeridoMesa) => {
+    setClienteId(sug.id);
+    setClienteNombre(sug.nombre || '');
+    setClienteCedula(sug.rif_cedula || '');
+    setClienteTelefono(sug.telefono || '');
+    setMostrarDropdownClientes(false);
+    setSugerenciasClientes([]);
+  };
+
+  const limpiarClienteSeleccionado = () => {
+    setClienteId('');
+    setClienteNombre('');
+    setClienteCedula('');
+    setClienteTelefono('');
+    setMostrarDropdownClientes(false);
+    setSugerenciasClientes([]);
+  };
+
   const [comentarioGeneral, setComentarioGeneral] = useState('');
   const [propina, setPropina] = useState<number>(0);
   const [loading, setLoading] = useState(true);
@@ -194,10 +245,13 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
         setEnviado(false);
         setCarrito([]);
         setMesa('');
+        setClienteId('');
         setClienteNombre('');
         setClienteTelefono('');
         setClienteCedula('');
-        setShowClienteForm(false);
+        setSugerenciasClientes([]);
+        setMostrarDropdownClientes(false);
+        setShowClienteForm(true);
         setComentarioGeneral('');
         setPropina(0);
         setCartOpen(false);
@@ -395,42 +449,117 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
             
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {showClienteForm && (
-                <div className="bg-neutral-950/80 border border-indigo-500/30 p-4 rounded-xl mb-4 space-y-3 shadow-inner">
-                  <div>
-                    <label className="text-xs font-bold text-indigo-400/80 mb-1.5 block uppercase tracking-wider">Nombre del Cliente</label>
-                    <input
-                      type="text"
-                      value={clienteNombre}
-                      onChange={e => setClienteNombre(e.target.value)}
-                      placeholder="Ej: Juan Pérez"
-                      className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-bold text-indigo-400/80 mb-1.5 block uppercase tracking-wider">Teléfono</label>
-                      <input
-                        type="tel"
-                        value={clienteTelefono}
-                        onChange={e => setClienteTelefono(e.target.value)}
-                        placeholder="Opcional"
-                        className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
-                      />
+                <div className="bg-neutral-950/80 border border-indigo-500/30 p-4 rounded-xl mb-4 space-y-3 shadow-inner relative">
+                  {clienteId ? (
+                    <div className="flex items-center justify-between bg-indigo-500/10 border border-indigo-500/30 rounded-xl px-3 py-2.5">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <UserCheck size={16} className="text-indigo-400 shrink-0" />
+                        <div className="truncate">
+                          <span className="text-sm font-bold text-indigo-200 block truncate">{clienteNombre}</span>
+                          <span className="text-xs text-neutral-400 block truncate">
+                            {clienteCedula ? `CI: ${clienteCedula}` : ''} {clienteTelefono ? `· Tel: ${clienteTelefono}` : ''}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={limpiarClienteSeleccionado}
+                        className="p-1.5 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition-colors ml-2 shrink-0"
+                        title="Cambiar cliente"
+                      >
+                        <X size={15} />
+                      </button>
                     </div>
-                    <div>
-                      <label className="text-xs font-bold text-indigo-400/80 mb-1.5 flex items-center justify-between uppercase tracking-wider">
-                        <span>Cédula / NIT</span>
-                        {buscandoCliente && <Loader2 size={12} className="animate-spin text-indigo-400" />}
-                      </label>
-                      <input
-                        type="text"
-                        value={clienteCedula}
-                        onChange={e => setClienteCedula(e.target.value)}
-                        placeholder="Opcional"
-                        className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
-                      />
-                    </div>
-                  </div>
+                  ) : (
+                    <>
+                      <div>
+                        <label className="text-xs font-bold text-indigo-400/80 mb-1.5 flex items-center justify-between uppercase tracking-wider">
+                          <span>Nombre del Cliente</span>
+                          {buscandoCliente && <Loader2 size={12} className="animate-spin text-indigo-400" />}
+                        </label>
+                        <input
+                          type="text"
+                          value={clienteNombre}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setClienteNombre(val);
+                            dispararBusquedaClientes(val, false);
+                          }}
+                          onFocus={() => {
+                            if (sugerenciasClientes.length > 0) setMostrarDropdownClientes(true);
+                          }}
+                          placeholder="Buscar o escribir nombre (Ej: Juan Pérez)"
+                          className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs font-bold text-indigo-400/80 mb-1.5 flex items-center justify-between uppercase tracking-wider">
+                            <span>Cédula / NIT</span>
+                            {buscandoCliente && <Loader2 size={12} className="animate-spin text-indigo-400" />}
+                          </label>
+                          <input
+                            type="text"
+                            value={clienteCedula}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setClienteCedula(val);
+                              dispararBusquedaClientes(val, true);
+                            }}
+                            onFocus={() => {
+                              if (sugerenciasClientes.length > 0) setMostrarDropdownClientes(true);
+                            }}
+                            placeholder="Ej: 29752069"
+                            className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-bold text-indigo-400/80 mb-1.5 block uppercase tracking-wider">Teléfono</label>
+                          <input
+                            type="tel"
+                            value={clienteTelefono}
+                            onChange={e => setClienteTelefono(e.target.value)}
+                            placeholder="Opcional"
+                            className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Dropdown con clientes sugeridos (por nombre o por cédula) */}
+                      {mostrarDropdownClientes && sugerenciasClientes.length > 0 && (
+                        <div className="bg-neutral-900 border border-indigo-500/40 rounded-xl shadow-2xl overflow-hidden divide-y divide-neutral-800 mt-2 animate-in fade-in duration-150">
+                          <div className="px-3 py-1.5 text-[10px] font-bold text-indigo-400 uppercase tracking-wider bg-neutral-950/90 flex items-center justify-between">
+                            <span>Clientes Sugeridos ({sugerenciasClientes.length})</span>
+                            <button
+                              type="button"
+                              onClick={() => setMostrarDropdownClientes(false)}
+                              className="text-neutral-500 hover:text-white"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                          <div className="max-h-44 overflow-y-auto">
+                            {sugerenciasClientes.map(sug => (
+                              <button
+                                key={sug.id}
+                                type="button"
+                                onClick={() => seleccionarClienteSugerido(sug)}
+                                className="w-full text-left px-3 py-2.5 hover:bg-neutral-800 active:bg-neutral-800 flex items-center justify-between text-xs text-white transition-colors"
+                              >
+                                <div className="truncate">
+                                  <span className="font-bold text-sm block truncate text-white">{sug.nombre}</span>
+                                  <span className="text-[11px] text-neutral-400 block truncate">
+                                    {sug.rif_cedula ? `CI: ${sug.rif_cedula}` : 'Sin CI'} {sug.telefono ? `· Tel: ${sug.telefono}` : ''}
+                                  </span>
+                                </div>
+                                <ChevronRight size={14} className="text-indigo-400 shrink-0 ml-2" />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               )}
               {carrito.map((item) => {

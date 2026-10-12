@@ -137,20 +137,97 @@ export async function obtenerMesasAbiertas(sedeId: string) {
 }
 
 
+export interface ClienteSugeridoMesa {
+  id: string;
+  nombre: string;
+  rif_cedula: string;
+  telefono: string;
+}
+
+async function obtenerEmpresaIdMesero(supabase: any, user: any): Promise<string | null> {
+  if (user?.app_metadata?.empresa_id) return user.app_metadata.empresa_id;
+  const { data: perfil } = await supabase
+    .from('perfiles')
+    .select('empresa_id')
+    .eq('id', user.id)
+    .maybeSingle();
+  return perfil?.empresa_id || null;
+}
+
+export async function buscarClientesMesa(query: string): Promise<ClienteSugeridoMesa[]> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const empresaId = await obtenerEmpresaIdMesero(supabase, user);
+  if (!empresaId) return [];
+
+  const q = query.trim().replace(/[,()]/g, '');
+  if (q.length < 2) return [];
+
+  const { createAdminClient } = await import('@/utils/supabase/admin');
+  const admin = createAdminClient();
+
+  const { data, error } = await admin
+    .from('clientes')
+    .select('id, nombre, rif_cedula, telefono')
+    .eq('empresa_id', empresaId)
+    .or(`nombre.ilike.%${q}%,rif_cedula.ilike.%${q}%`)
+    .order('nombre')
+    .limit(15);
+
+  if (error || !data) return [];
+
+  const vistos = new Set<string>();
+  const unicos: ClienteSugeridoMesa[] = [];
+  for (const c of data) {
+    const key = `${(c.nombre || '').trim().toUpperCase()}|${(c.rif_cedula || '').trim().toUpperCase()}`;
+    if (!vistos.has(key)) {
+      vistos.add(key);
+      unicos.push({
+        id: c.id,
+        nombre: c.nombre || '',
+        rif_cedula: c.rif_cedula || '',
+        telefono: c.telefono || '',
+      });
+    }
+    if (unicos.length >= 6) break;
+  }
+
+  return unicos;
+}
+
 export async function buscarClientePorCedula(cedula: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const empresaId = user.app_metadata?.empresa_id;
+  const empresaId = await obtenerEmpresaIdMesero(supabase, user);
   if (!empresaId) return null;
 
-  const { data } = await supabase
+  const clean = cedula.trim();
+  if (!clean) return null;
+
+  const { createAdminClient } = await import('@/utils/supabase/admin');
+  const admin = createAdminClient();
+
+  // Intentar coincidencia exacta primero o coincidencia sin prefijo V/E/J
+  const soloNumeros = clean.replace(/^[VEJGvejg][-]?/, '');
+  const { data } = await admin
     .from('clientes')
-    .select('nombre, telefono')
+    .select('id, nombre, rif_cedula, telefono')
     .eq('empresa_id', empresaId)
-    .eq('rif_cedula', cedula)
-    .single();
-    
-  return data;
+    .or(`rif_cedula.ilike.${clean},rif_cedula.ilike.%${soloNumeros}%`)
+    .limit(5);
+
+  if (!data || data.length === 0) return null;
+
+  const exacto = data.find(
+    (c: any) =>
+      (c.rif_cedula || '').trim().toLowerCase() === clean.toLowerCase() ||
+      (c.rif_cedula || '').trim().replace(/^[VEJGvejg][-]?/, '') === soloNumeros
+  );
+
+  return exacto || data[0];
 }
+
