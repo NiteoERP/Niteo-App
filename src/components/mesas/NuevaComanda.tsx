@@ -79,7 +79,7 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
 
   const agregarAlCarrito = (prod: any) => {
     setCarrito(prev => {
-      const prodId = prod.id_pos || prod.id;
+      const prodId = prod.id;
       const existe = prev.find(i => i.producto_id === prodId && i.comentario === '');
       if (existe) {
         return prev.map(i => i.key === existe.key ? { ...i, cantidad: i.cantidad + 1 } : i);
@@ -243,7 +243,7 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
       ) : (
         <div className="grid grid-cols-2 gap-3">
             {prodsFiltrados.map((prod: any) => {
-              const prodId = prod.id_pos || prod.id;
+              const prodId = prod.id;
               const cartInfo = getCartInfo(prodId);
               const inCart = !!cartInfo;
               return (
