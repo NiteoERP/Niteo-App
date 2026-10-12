@@ -492,7 +492,7 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
                       </div>
                     )}
 
-                    <p className={`text-sm font-semibold line-clamp-2 leading-snug transition-colors pr-14 ${inCart ? 'text-white' : 'text-neutral-200 group-hover:text-white'}`}>
+                    <p className={`text-xs sm:text-sm font-semibold leading-snug break-words whitespace-normal transition-colors ${inCart ? 'pr-14 text-white' : 'text-neutral-200 group-hover:text-white'}`}>
                       {prod.nombre}
                     </p>
                     <div className="mt-3 flex flex-col items-start gap-0.5">
@@ -695,7 +695,7 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
                   <div key={item.key} className="space-y-2.5 bg-neutral-950/50 p-3 rounded-xl border border-neutral-800/80">
                     <div className="flex items-center gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm font-bold truncate">{item.nombre}</p>
+                        <p className="text-white text-xs sm:text-sm font-bold leading-snug break-words whitespace-normal">{item.nombre}</p>
                         <div className="flex items-baseline gap-1.5 flex-wrap">
                           <p className="text-indigo-400 text-xs font-semibold">${(item.cantidad * item.precio_unitario).toFixed(2)}</p>
                           {tasaEfectiva > 0 && (
@@ -724,7 +724,7 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
                     </div>
                     
                     <div className="space-y-2 pt-1">
-                      <div className="flex gap-2 items-center">
+                      <div className="flex gap-2 items-start">
                         <button
                           type="button"
                           onClick={() => setComentandoKey(comentandoKey === item.key ? null : item.key)}
@@ -736,13 +736,13 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
                           {!mostrarPanelComentarios && <span>Agregar nota</span>}
                         </button>
                         {mostrarPanelComentarios && (
-                          <input
-                            type="text"
+                          <textarea
+                            rows={2}
                             value={item.comentario}
                             onChange={e => actualizarComentario(item.key, e.target.value)}
-                            placeholder="Nota para cocina (sin cebolla, alergia...)"
+                            placeholder="Nota para cocina (sin cebolla, bien cocido...)"
                             autoFocus={comentandoKey === item.key}
-                            className="flex-1 bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white text-xs placeholder:text-neutral-600 focus:outline-none focus:border-amber-500 transition-colors"
+                            className="flex-1 bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white text-xs placeholder:text-neutral-600 focus:outline-none focus:border-amber-500 transition-colors resize-none break-words whitespace-pre-wrap leading-relaxed"
                           />
                         )}
                       </div>

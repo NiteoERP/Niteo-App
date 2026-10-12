@@ -204,13 +204,18 @@ export default function MesasAbiertas({ terminal, meseroNombre, metodosPago, onM
                     const subtotalBs = item.total_bs ? Number(item.total_bs) : (tasaItem > 0 ? subtotalUSD * tasaItem : 0);
 
                     return (
-                      <div key={i} className="flex justify-between items-baseline text-sm">
-                        <span className="text-neutral-400 truncate mr-2">
-                          <span className="text-neutral-300 font-medium">{cant}x</span> {item.nombre}
+                      <div key={i} className="flex justify-between items-start text-sm gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-neutral-300 text-xs sm:text-sm font-medium leading-snug break-words whitespace-normal">
+                            <span className="font-bold text-white mr-1.5">{cant}x</span>
+                            {item.nombre}
+                          </div>
                           {item.comentario && (
-                            <span className="text-neutral-600 text-xs"> — {item.comentario}</span>
+                            <p className="text-amber-400/90 text-xs mt-1 leading-snug break-words whitespace-pre-wrap bg-amber-500/10 px-2 py-1 rounded-md border border-amber-500/20">
+                              📝 {item.comentario}
+                            </p>
                           )}
-                        </span>
+                        </div>
                         <div className="text-right shrink-0">
                           <span className="text-neutral-300 text-xs font-semibold">
                             ${subtotalUSD.toFixed(2)}
