@@ -252,10 +252,13 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
   const toggleComentarioRapido = (key: string, texto: string) => {
     setCarrito(prev => prev.map(i => {
       if (i.key !== key) return i;
-      const partes = (i.comentario || '')
-        .split(/[,\n]/)
+      let partes = (i.comentario || '')
+        .split('\n')
         .map(s => s.trim())
         .filter(Boolean);
+      if (partes.length === 1 && partes[0].includes(',')) {
+        partes = partes[0].split(',').map(s => s.trim()).filter(Boolean);
+      }
       const existeIdx = partes.findIndex(p => p.toLowerCase() === texto.toLowerCase());
       let nuevasPartes: string[];
       if (existeIdx >= 0) {
@@ -263,20 +266,23 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
       } else {
         nuevasPartes = [...partes, texto];
       }
-      return { ...i, comentario: nuevasPartes.join(', ') };
+      return { ...i, comentario: nuevasPartes.join('\n') };
     }));
   };
 
   const seleccionarTodasNotasProducto = (key: string, notasProd: string[]) => {
     setCarrito(prev => prev.map(i => {
       if (i.key !== key) return i;
-      const partes = (i.comentario || '')
-        .split(/[,\n]/)
+      let partes = (i.comentario || '')
+        .split('\n')
         .map(s => s.trim())
         .filter(Boolean);
+      if (partes.length === 1 && partes[0].includes(',')) {
+        partes = partes[0].split(',').map(s => s.trim()).filter(Boolean);
+      }
       const faltantes = notasProd.filter(n => !partes.some(p => p.toLowerCase() === n.toLowerCase()));
       const nuevasPartes = [...partes, ...faltantes];
-      return { ...i, comentario: nuevasPartes.join(', ') };
+      return { ...i, comentario: nuevasPartes.join('\n') };
     }));
   };
 
@@ -369,13 +375,26 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
         </div>
         {/* Nota general debajo */}
         <div className="mt-3">
-          <label className="text-xs text-neutral-500 mb-1.5 block">Nota general (opcional)</label>
-          <input
-            type="text"
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-xs text-neutral-400 font-medium">Nota general de la mesa (opcional)</label>
+            <span className="text-[10px] text-neutral-500">Presiona Enter para escribir abajo ↵</span>
+          </div>
+          <textarea
+            rows={2}
             value={comentarioGeneral}
             onChange={e => setComentarioGeneral(e.target.value)}
-            placeholder="Ej: cliente alérgico a mariscos"
-            className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
+            onInput={e => {
+              const el = e.currentTarget;
+              el.style.height = 'auto';
+              el.style.height = Math.max(56, el.scrollHeight) + 'px';
+            }}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                e.stopPropagation();
+              }
+            }}
+            placeholder="Ej: cliente alérgico a mariscos&#10;mesa afuera bajo el toldo..."
+            className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3.5 py-2.5 text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors resize-y min-h-[56px] leading-relaxed break-words whitespace-pre-wrap"
           />
         </div>
 
@@ -740,9 +759,19 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
                             rows={2}
                             value={item.comentario}
                             onChange={e => actualizarComentario(item.key, e.target.value)}
+                            onInput={e => {
+                              const el = e.currentTarget;
+                              el.style.height = 'auto';
+                              el.style.height = Math.max(52, el.scrollHeight) + 'px';
+                            }}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') {
+                                e.stopPropagation();
+                              }
+                            }}
                             placeholder="Nota para cocina (sin cebolla, bien cocido...)"
                             autoFocus={comentandoKey === item.key}
-                            className="flex-1 bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white text-xs placeholder:text-neutral-600 focus:outline-none focus:border-amber-500 transition-colors resize-none break-words whitespace-pre-wrap leading-relaxed"
+                            className="flex-1 bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-white text-xs placeholder:text-neutral-600 focus:outline-none focus:border-amber-500 transition-colors resize-y min-h-[52px] break-words whitespace-pre-wrap leading-relaxed"
                           />
                         )}
                       </div>
