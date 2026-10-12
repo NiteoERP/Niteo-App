@@ -65,7 +65,7 @@ export async function obtenerCatalogoMesa(sedeId: string) {
 
   const { data: productos } = await supabase
     .from('productos')
-    .select('id, id_pos, nombre, precio_venta, sede_id, categorias(nombre)')
+    .select('id, id_pos, nombre, precio_venta, sede_id, notas_preparacion, categorias(nombre)')
     .eq('empresa_id', empresaId)
     .or(`sede_id.eq.${sedeId},sede_id.is.null`)
     .eq('estado_activo', true)

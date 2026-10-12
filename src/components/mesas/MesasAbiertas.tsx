@@ -140,7 +140,11 @@ export default function MesasAbiertas({ terminal, meseroNombre, metodosPago, onM
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xl font-bold text-white">Mesa {mesa.mesa_identificador}</span>
+                    <span className="text-xl font-bold text-white">
+                      {/^(mesa|orden|pedido|barra|terraza|llevar)/i.test(String(mesa.mesa_identificador || '').trim()) || (mesa.cliente_nombre && String(mesa.cliente_nombre).startsWith(String(mesa.mesa_identificador)))
+                        ? mesa.mesa_identificador
+                        : `Mesa ${mesa.mesa_identificador}`}
+                    </span>
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                       mesa.estado === 'pendiente'
                         ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'

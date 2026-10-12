@@ -7,7 +7,27 @@ import type { TerminalVinculado } from './MesasHub';
 
 interface CartItem extends ItemComanda {
   key: string;
+  notas_preparacion?: string[];
 }
+
+const COMENTARIOS_RAPIDOS = ['Comer aquí', 'Para llevar'];
+
+const extraerNotasPreparacion = (prod: any): string[] => {
+  if (!prod?.notas_preparacion) return [];
+  if (Array.isArray(prod.notas_preparacion)) {
+    return prod.notas_preparacion.map((n: any) => String(n).trim()).filter(Boolean);
+  }
+  if (typeof prod.notas_preparacion === 'string') {
+    try {
+      const parsed = JSON.parse(prod.notas_preparacion);
+      if (Array.isArray(parsed)) return parsed.map((n: any) => String(n).trim()).filter(Boolean);
+      if (typeof parsed === 'string' && parsed.trim()) return [parsed.trim()];
+    } catch {
+      return prod.notas_preparacion.split(',').map((s: string) => s.trim()).filter(Boolean);
+    }
+  }
+  return [];
+};
 
 interface Props {
   terminal: TerminalVinculado;
@@ -78,9 +98,12 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
   };
 
   const agregarAlCarrito = (prod: any) => {
+    const notasProd = extraerNotasPreparacion(prod);
+    const comentarioInicial = notasProd.length > 0 ? notasProd.join(', ') : '';
+
     setCarrito(prev => {
       const prodId = prod.id;
-      const existe = prev.find(i => i.producto_id === prodId && i.comentario === '');
+      const existe = prev.find(i => i.producto_id === prodId && i.comentario === comentarioInicial);
       if (existe) {
         return prev.map(i => i.key === existe.key ? { ...i, cantidad: i.cantidad + 1 } : i);
       }
@@ -90,7 +113,8 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
         nombre: prod.nombre,
         cantidad: 1,
         precio_unitario: Number(prod.precio_venta),
-        comentario: '',
+        comentario: comentarioInicial,
+        notas_preparacion: notasProd,
       }];
     });
   };
@@ -110,11 +134,41 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
     setCarrito(prev => prev.map(i => i.key === key ? { ...i, comentario } : i));
   };
 
+  const toggleComentarioRapido = (key: string, texto: string) => {
+    setCarrito(prev => prev.map(i => {
+      if (i.key !== key) return i;
+      const partes = (i.comentario || '')
+        .split(/[,\n]/)
+        .map(s => s.trim())
+        .filter(Boolean);
+      const existeIdx = partes.findIndex(p => p.toLowerCase() === texto.toLowerCase());
+      let nuevasPartes: string[];
+      if (existeIdx >= 0) {
+        nuevasPartes = partes.filter((_, idx) => idx !== existeIdx);
+      } else {
+        nuevasPartes = [...partes, texto];
+      }
+      return { ...i, comentario: nuevasPartes.join(', ') };
+    }));
+  };
+
+  const seleccionarTodasNotasProducto = (key: string, notasProd: string[]) => {
+    setCarrito(prev => prev.map(i => {
+      if (i.key !== key) return i;
+      const partes = (i.comentario || '')
+        .split(/[,\n]/)
+        .map(s => s.trim())
+        .filter(Boolean);
+      const faltantes = notasProd.filter(n => !partes.some(p => p.toLowerCase() === n.toLowerCase()));
+      const nuevasPartes = [...partes, ...faltantes];
+      return { ...i, comentario: nuevasPartes.join(', ') };
+    }));
+  };
+
   const subtotal = carrito.reduce((s, i) => s + i.cantidad * i.precio_unitario, 0);
   const total = subtotal + propina;
 
   const handleEnviar = async () => {
-    if (!mesa.trim()) { setError('Ingresa el número de mesa'); return; }
     if (carrito.length === 0) { setError('Agrega al menos un producto'); return; }
     setError('');
     setEnviando(true);
@@ -123,20 +177,23 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
       if (clienteCedula.trim()) nombreFinal += ` - CI/NIT: ${clienteCedula.trim()}`;
       if (clienteTelefono.trim()) nombreFinal += ` - Tel: ${clienteTelefono.trim()}`;
 
+      const mesaFinal = mesa.trim() || clienteNombre.trim() || `Orden #${String(Date.now()).slice(-4)}`;
+
       const result = await enviarComanda({
         terminalCode: terminal.terminalCode,
         tipo: 'comanda',
-        mesaIdentificador: mesa.trim(),
+        mesaIdentificador: mesaFinal,
         clienteNombre: nombreFinal || undefined,
         comentarioGeneral: comentarioGeneral.trim() || undefined,
         montoPropina: propina > 0 ? propina : undefined,
-        items: carrito.map(({ key, ...rest }) => rest),
+        items: carrito.map(({ key, notas_preparacion, ...rest }) => rest),
       });
       if (!result.success) { setError(result.error || 'Error enviando la comanda'); return; }
       setEnviado(true);
       setTimeout(() => {
         setEnviado(false);
         setCarrito([]);
+        setMesa('');
         setClienteNombre('');
         setClienteTelefono('');
         setClienteCedula('');
@@ -163,17 +220,17 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
 
   return (
     <div className="space-y-4 pb-24">
-      {/* Selector de Mesa */}
+      {/* Selector de Mesa (Opcional) */}
       <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4">
-        <label className="text-xs text-neutral-500 mb-2 block uppercase tracking-wider font-semibold">Mesa / Identificador *</label>
+        <label className="text-xs text-neutral-500 mb-2 block uppercase tracking-wider font-semibold">Mesa / Identificador (opcional)</label>
         <div className="relative flex items-center">
           <Hash size={18} className="absolute left-3.5 text-neutral-500" />
           <input
             type="text"
-            inputMode="numeric"
+            inputMode="text"
             value={mesa}
             onChange={e => setMesa(e.target.value)}
-            placeholder="Ej: 5, A3, Barra"
+            placeholder="Ej: 5, A3, Barra o dejar vacío"
             className="w-full h-14 bg-neutral-800 border border-neutral-700 rounded-xl pl-10 pr-10 text-white text-lg font-semibold placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
           />
           {mesa && (
@@ -376,79 +433,142 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
                   </div>
                 </div>
               )}
-              {carrito.map((item) => (
-                <div key={item.key} className="space-y-2 bg-neutral-950/50 p-3 rounded-xl border border-neutral-800/80">
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm font-bold truncate">{item.nombre}</p>
-                      <p className="text-indigo-400 text-xs font-semibold">${(item.cantidad * item.precio_unitario).toFixed(2)}</p>
+              {carrito.map((item) => {
+                const prodCatalogo = productos.find(p => p.id === item.producto_id);
+                const notasProd = (item.notas_preparacion && item.notas_preparacion.length > 0)
+                  ? item.notas_preparacion
+                  : extraerNotasPreparacion(prodCatalogo);
+                const partesActivas = (item.comentario || '')
+                  .split(/[,\n]/)
+                  .map(s => s.trim().toLowerCase())
+                  .filter(Boolean);
+                const mostrarPanelComentarios = comentandoKey === item.key || notasProd.length > 0 || Boolean(item.comentario);
+
+                return (
+                  <div key={item.key} className="space-y-2.5 bg-neutral-950/50 p-3 rounded-xl border border-neutral-800/80">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-bold truncate">{item.nombre}</p>
+                        <p className="text-indigo-400 text-xs font-semibold">${(item.cantidad * item.precio_unitario).toFixed(2)}</p>
+                      </div>
+                      
+                      <div className="flex items-center gap-1.5 bg-neutral-900 p-1 rounded-lg border border-neutral-800">
+                        <button onClick={() => cambiarCantidad(item.key, -1)} className="w-10 h-10 rounded-xl text-neutral-400 hover:bg-neutral-800 hover:text-white flex items-center justify-center transition-colors">
+                          <Minus size={14} />
+                        </button>
+                        <span className="text-white text-sm font-black w-6 text-center">{item.cantidad}</span>
+                        <button onClick={() => cambiarCantidad(item.key, 1)} className="w-10 h-10 rounded-xl text-neutral-400 hover:bg-neutral-800 hover:text-white flex items-center justify-center transition-colors">
+                          <Plus size={14} />
+                        </button>
+                      </div>
+                      <button 
+                        onClick={() => eliminarItem(item.key)}
+                        className="w-10 h-10 rounded-lg text-rose-500 hover:bg-rose-500/10 flex items-center justify-center transition-colors shrink-0"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                     
-                    <div className="flex items-center gap-1.5 bg-neutral-900 p-1 rounded-lg border border-neutral-800">
-                      <button onClick={() => cambiarCantidad(item.key, -1)} className="w-10 h-10 rounded-xl text-neutral-400 hover:bg-neutral-800 hover:text-white flex items-center justify-center transition-colors">
-                        <Minus size={14} />
-                      </button>
-                      <span className="text-white text-sm font-black w-6 text-center">{item.cantidad}</span>
-                      <button onClick={() => cambiarCantidad(item.key, 1)} className="w-10 h-10 rounded-xl text-neutral-400 hover:bg-neutral-800 hover:text-white flex items-center justify-center transition-colors">
-                        <Plus size={14} />
-                      </button>
-                    </div>
-                    <button 
-                      onClick={() => eliminarItem(item.key)}
-                      className="w-10 h-10 rounded-lg text-rose-500 hover:bg-rose-500/10 flex items-center justify-center transition-colors shrink-0"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                  
-                  <div className="flex gap-2 items-start mt-2">
-                    <button
-                      onClick={() => setComentandoKey(comentandoKey === item.key ? null : item.key)}
-                      className={`p-2 rounded-lg transition-colors shrink-0 ${
-                        item.comentario ? 'text-indigo-400 bg-indigo-500/10' : 'text-neutral-500 bg-neutral-800 hover:text-white'
-                      }`}
-                    >
-                      <MessageSquare size={14} />
-                    </button>
-                    {comentandoKey === item.key || item.comentario ? (
-                      <input
-                        type="text"
-                        value={item.comentario}
-                        onChange={e => actualizarComentario(item.key, e.target.value)}
-                        placeholder="Nota para cocina (sin cebolla, alergia...)"
-                        autoFocus={comentandoKey === item.key}
-                        className="flex-1 bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white text-xs placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
-                      />
-                    ) : null}
-                  </div>
-                </div>
-              ))}
-              
-              <div className="border-t border-neutral-800 pt-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-neutral-400 font-medium text-sm">Propina Sugerida</span>
-                  <div className="flex gap-2">
-                    {[10, 15, 20].map(pct => {
-                      const p = Number((subtotal * pct / 100).toFixed(2));
-                      return (
-                        <button key={pct} onClick={() => setPropina(propina === p ? 0 : p)} className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${propina === p ? 'bg-indigo-600 text-white' : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'}`}>
-                          {pct}%
+                    <div className="space-y-2 pt-1">
+                      <div className="flex gap-2 items-center">
+                        <button
+                          type="button"
+                          onClick={() => setComentandoKey(comentandoKey === item.key ? null : item.key)}
+                          className={`p-2 rounded-lg transition-colors shrink-0 flex items-center gap-1.5 text-xs font-medium ${
+                            item.comentario ? 'text-amber-400 bg-amber-500/10 border border-amber-500/30' : 'text-neutral-400 bg-neutral-800 hover:text-white'
+                          }`}
+                        >
+                          <MessageSquare size={14} />
+                          {!mostrarPanelComentarios && <span>Agregar nota</span>}
                         </button>
-                      )
-                    })}
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-neutral-400 font-medium text-sm">Propina Manual ($)</span>
-                  <input type="number" min="0" step="0.5" value={propina || ''} onChange={e => setPropina(Number(e.target.value) || 0)} className="w-24 bg-neutral-900 border border-neutral-800 rounded-lg px-2 py-1.5 text-white text-right text-sm outline-none focus:border-indigo-500" placeholder="0.00" />
-                </div>
-                <div className="flex items-center justify-between pt-2">
-                  <span className="text-neutral-300 font-bold">Total estimado</span>
-                  <span className="text-white text-xl font-black">${total.toFixed(2)}</span>
-                </div>
+                        {mostrarPanelComentarios && (
+                          <input
+                            type="text"
+                            value={item.comentario}
+                            onChange={e => actualizarComentario(item.key, e.target.value)}
+                            placeholder="Nota para cocina (sin cebolla, alergia...)"
+                            autoFocus={comentandoKey === item.key}
+                            className="flex-1 bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white text-xs placeholder:text-neutral-600 focus:outline-none focus:border-amber-500 transition-colors"
+                          />
+                        )}
+                      </div>
 
-                <span className="text-neutral-400 font-medium">Total estimado</span>
-                <span className="text-white text-xl font-black">${total.toFixed(2)}</span>
+                      {mostrarPanelComentarios && (
+                        <div className="space-y-2 pl-1">
+                          {notasProd.length > 0 && (
+                            <div className="flex flex-col gap-1.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">
+                                  Comentarios del producto:
+                                </span>
+                                {notasProd.length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => seleccionarTodasNotasProducto(item.key, notasProd)}
+                                    className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold underline"
+                                  >
+                                    + Seleccionar todas
+                                  </button>
+                                )}
+                              </div>
+                              <div className="flex flex-wrap gap-1.5">
+                                {notasProd.map((txt: string, idx: number) => {
+                                  const estaActivo = partesActivas.includes(txt.toLowerCase());
+                                  return (
+                                    <button
+                                      key={idx}
+                                      type="button"
+                                      onClick={() => toggleComentarioRapido(item.key, txt)}
+                                      className={`text-xs px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1 ${
+                                        estaActivo
+                                          ? 'bg-amber-500 text-neutral-950 font-bold border border-amber-400 shadow-sm'
+                                          : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30'
+                                      }`}
+                                    >
+                                      <span>{estaActivo ? '✓' : '+'}</span>
+                                      <span>{txt}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider mr-1">
+                              Recomendados:
+                            </span>
+                            {COMENTARIOS_RAPIDOS.map(txt => {
+                              const estaActivo = partesActivas.includes(txt.toLowerCase());
+                              return (
+                                <button
+                                  key={txt}
+                                  type="button"
+                                  onClick={() => toggleComentarioRapido(item.key, txt)}
+                                  className={`text-xs px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1 ${
+                                    estaActivo
+                                      ? 'bg-indigo-600 text-white font-bold border border-indigo-400'
+                                      : 'bg-neutral-800 hover:bg-neutral-700 text-neutral-300 border border-neutral-700'
+                                  }`}
+                                >
+                                  <span>{estaActivo ? '✓' : '+'}</span>
+                                  <span>{txt}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              
+              <div className="border-t border-neutral-800 pt-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-neutral-300 font-bold">Total estimado</span>
+                  <span className="text-white text-xl font-black">${subtotal.toFixed(2)}</span>
+                </div>
               </div>
 
               {error && (
@@ -461,7 +581,7 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
             <div className="p-4 bg-neutral-950 border-t border-neutral-800 pb-[env(safe-area-inset-bottom,16px)]">
               <button
                 onClick={handleEnviar}
-                disabled={enviando || carrito.length === 0 || !mesa.trim()}
+                disabled={enviando || carrito.length === 0}
                 className={`w-full py-4 rounded-2xl font-bold text-base transition-all flex items-center justify-center gap-2 ${
                   enviado
                     ? 'bg-emerald-600 text-white'
@@ -479,9 +599,6 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
               <p className="text-neutral-600 text-xs text-center mt-2">
                 Se enviará al Terminal POS · {terminal.terminalCode}
               </p>
-              {!mesa.trim() && (
-                <p className="text-rose-400 text-xs text-center mt-3 font-medium">Debes ingresar el número de mesa para enviar</p>
-              )}
             </div>
           </div>
         </div>
