@@ -1,4 +1,5 @@
 import React from 'react';
+import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import DeliveryReportClient from './DeliveryReportClient';
 
@@ -11,7 +12,7 @@ export default async function AdminDeliveryPage() {
   
   // 1. Obtener Empresa ID
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return <div className="text-white p-8">No autorizado</div>;
+  if (!user) redirect('/login');
 
   const { data: perfil } = await supabase
     .from('perfiles')
@@ -19,7 +20,21 @@ export default async function AdminDeliveryPage() {
     .eq('id', user.id)
     .single();
 
-  if (!perfil) return <div className="text-white p-8">Perfil no encontrado</div>;
+  if (!perfil) redirect('/dashboard');
+
+  if (perfil.empresa_id) {
+    const { data: sub } = await supabase
+      .from('suscripciones_empresas')
+      .select('modulos_activos')
+      .eq('empresa_id', perfil.empresa_id)
+      .maybeSingle();
+
+    if (sub?.modulos_activos && sub.modulos_activos.length > 0) {
+      if (sub.modulos_activos.includes('ninguno') || sub.modulos_activos.includes('none') || !sub.modulos_activos.includes('delivery')) {
+        redirect('/dashboard');
+      }
+    }
+  }
 
   // 2. Traer listas para los selectores (Sedes y Repartidores)
   const [sedesRes, perfilesRes] = await Promise.all([

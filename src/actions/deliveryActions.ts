@@ -29,6 +29,21 @@ export async function reclamarDeliveryManual(numeroOrden: string) {
       
     if (!perfil) throw new Error('Perfil no encontrado');
 
+    // Validar si el módulo delivery está activo para la empresa
+    if (perfil.empresa_id) {
+      const { data: sub } = await supabase
+        .from('suscripciones_empresas')
+        .select('modulos_activos')
+        .eq('empresa_id', perfil.empresa_id)
+        .maybeSingle();
+
+      if (sub?.modulos_activos && sub.modulos_activos.length > 0) {
+        if (sub.modulos_activos.includes('ninguno') || sub.modulos_activos.includes('none') || !sub.modulos_activos.includes('delivery')) {
+          return { success: false, message: '❌ El módulo de Delivery está deshabilitado para esta empresa.' };
+        }
+      }
+    }
+
     // 2. Buscar la factura por número de orden o documento
     const { data: factura, error: facturaError } = await supabase
       .from('ventas_facturas')

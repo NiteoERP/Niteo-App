@@ -27,6 +27,18 @@ export default async function MesasPage() {
   const empresaId = (user.app_metadata?.empresa_id || perfil?.empresa_id) as string | undefined;
   let metodosPago: string[] = ['Efectivo USD', 'Efectivo Bs', 'Pago Móvil', 'Punto de Venta', 'Zelle'];
   if (empresaId) {
+    const { data: sub } = await supabase
+      .from('suscripciones_empresas')
+      .select('modulos_activos')
+      .eq('empresa_id', empresaId)
+      .maybeSingle();
+
+    if (sub?.modulos_activos && sub.modulos_activos.length > 0) {
+      if (sub.modulos_activos.includes('ninguno') || sub.modulos_activos.includes('none') || !sub.modulos_activos.includes('mesas')) {
+        redirect('/dashboard');
+      }
+    }
+
     const { data: emp } = await supabase
       .from('empresas')
       .select('metodos_pago, rubro')

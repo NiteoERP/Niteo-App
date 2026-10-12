@@ -24,9 +24,10 @@ export interface ComandaPayload {
   clienteNombre?: string;
   comentarioGeneral?: string;
   metodoPagoSugerido?: string;
-    montoPropina?: number;
-    items: ItemComanda[];
-  }
+  montoPropina?: number;
+  numeroCopias?: number;
+  items: ItemComanda[];
+}
 
 export async function buscarTerminalPorCodigo(codigo: string): Promise<TerminalInfo | null> {
   const supabase = await createClient();
@@ -94,6 +95,11 @@ export async function enviarComanda(payload: ComandaPayload): Promise<{ success:
 
   if (!sede) return { success: false, error: 'Terminal no encontrado o no pertenece a tu empresa' };
 
+  let comentarioFinal = (payload.comentarioGeneral || '').trim();
+  if (payload.numeroCopias && payload.numeroCopias === 2) {
+    comentarioFinal = (comentarioFinal ? comentarioFinal + ' ' : '') + '[COPIAS:2]';
+  }
+
   const { data, error } = await supabase
     .from('comandas_mesero')
     .insert({
@@ -104,7 +110,7 @@ export async function enviarComanda(payload: ComandaPayload): Promise<{ success:
       tipo: payload.tipo,
       mesa_identificador: payload.mesaIdentificador,
       cliente_nombre: payload.clienteNombre || null,
-      comentario_general: payload.comentarioGeneral || null,
+      comentario_general: comentarioFinal || null,
       metodo_pago_sugerido: payload.metodoPagoSugerido || null,
       propina: payload.montoPropina || 0,
       items: payload.items,
@@ -122,18 +128,72 @@ export async function obtenerMesasAbiertas(sedeId: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const cutoff = new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString();
+  const { createAdminClient } = await import('@/utils/supabase/admin');
+  const admin = createAdminClient();
 
-  const { data: comandas } = await supabase
+  // 1. Obtener cuentas abiertas en vivo sincronizadas por el POS
+  const { data: posCuentas } = await admin
+    .from('pos_cuentas_abiertas')
+    .select('id, numero_documento, nombre_cuenta, total, fecha_apertura, actualizado_en, detalles')
+    .eq('sede_id', sedeId)
+    .order('actualizado_en', { ascending: false });
+
+  // 2. Obtener comandas enviadas por meseros que todavía están en tránsito hacia el POS (estado = 'pendiente')
+  const { data: comandasPendientes } = await admin
     .from('comandas_mesero')
     .select('id, mesa_identificador, mesero_nombre, cliente_nombre, items, tipo, estado, created_at, metodo_pago_sugerido')
     .eq('sede_id', sedeId)
-    .in('estado', ['pendiente', 'recibido'])
+    .eq('estado', 'pendiente')
     .eq('tipo', 'comanda')
-    .gte('created_at', cutoff)
     .order('created_at', { ascending: false });
 
-  return comandas || [];
+  const listaMesas: any[] = [];
+
+  // Formatear cuentas abiertas del POS
+  if (posCuentas && posCuentas.length > 0) {
+    for (const c of posCuentas) {
+      const items = Array.isArray(c.detalles) ? c.detalles : [];
+      const mesero = items[0]?.mesero_nombre || '';
+      listaMesas.push({
+        id: c.id,
+        mesa_identificador: c.nombre_cuenta || c.numero_documento || 'Mesa',
+        mesero_nombre: mesero,
+        cliente_nombre: '',
+        items: items,
+        tipo: 'comanda',
+        estado: 'recibido',
+        total: Number(c.total) || 0,
+        created_at: c.fecha_apertura || c.actualizado_en || new Date().toISOString(),
+        metodo_pago_sugerido: null,
+      });
+    }
+  }
+
+  // Anexar comandas pendientes que aún no hayan sido asimiladas en pos_cuentas_abiertas
+  if (comandasPendientes && comandasPendientes.length > 0) {
+    for (const cp of comandasPendientes) {
+      const yaExisteEnPOS = listaMesas.some(m =>
+        m.mesa_identificador === cp.mesa_identificador ||
+        m.mesa_identificador === `Mesa ${cp.mesa_identificador}`
+      );
+      if (!yaExisteEnPOS) {
+        listaMesas.push({
+          id: cp.id,
+          mesa_identificador: cp.mesa_identificador,
+          mesero_nombre: cp.mesero_nombre,
+          cliente_nombre: cp.cliente_nombre,
+          items: cp.items,
+          tipo: cp.tipo,
+          estado: 'pendiente',
+          total: Array.isArray(cp.items) ? cp.items.reduce((acc: number, it: any) => acc + (Number(it.cantidad) || 0) * (Number(it.precio_unitario) || 0), 0) : 0,
+          created_at: cp.created_at,
+          metodo_pago_sugerido: cp.metodo_pago_sugerido,
+        });
+      }
+    }
+  }
+
+  return listaMesas;
 }
 
 

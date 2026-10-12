@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useTransition } from 'react';
-import { cambiarPlan, extenderLicencia, suspenderEmpresa } from './actions';
-import { Building2, Calendar, CheckCircle, AlertTriangle, XCircle, Clock, ChevronDown, ChevronUp, RefreshCw, Plus, Minus, Shield } from 'lucide-react';
+import { cambiarPlan, extenderLicencia, suspenderEmpresa, actualizarModulosEmpresa } from './actions';
+import { Building2, Calendar, CheckCircle, AlertTriangle, XCircle, Clock, ChevronDown, ChevronUp, RefreshCw, Plus, Minus, Shield, UtensilsCrossed, Truck } from 'lucide-react';
 
 const PLAN_BADGE: Record<string, string> = {
   STARTER:    'bg-neutral-700 text-neutral-300',
@@ -107,6 +107,72 @@ function EmpresaCard({ empresa, onAction, isPending }: {
                   {p === plan ? '✓ ' : ''}{p}
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Módulos Habilitados */}
+          <div className="space-y-2">
+            <p className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Módulos del Negocio</p>
+            <div className="flex flex-wrap gap-2.5">
+              {(() => {
+                const rawModulos = sub?.modulos_activos;
+                const isConfigured = Array.isArray(rawModulos) && rawModulos.length > 0;
+                const activeList = isConfigured
+                  ? (rawModulos.includes('ninguno') || rawModulos.includes('none') ? [] : rawModulos)
+                  : ['mesas', 'delivery'];
+
+                return (
+                  <>
+                    <button
+                      disabled={isPending}
+                      onClick={() => {
+                        const isActivo = activeList.includes('mesas');
+                        const next = isActivo
+                          ? activeList.filter((m: string) => m !== 'mesas')
+                          : [...activeList, 'mesas'];
+                        onAction(() => actualizarModulosEmpresa(empresa.id, next.length > 0 ? next : ['ninguno']));
+                      }}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border flex items-center gap-2 ${
+                        activeList.includes('mesas')
+                          ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300 shadow-sm'
+                          : 'bg-neutral-800/80 border-neutral-700/80 text-neutral-400 hover:text-white hover:bg-neutral-700'
+                      } disabled:opacity-50`}
+                    >
+                      <UtensilsCrossed size={14} className={activeList.includes('mesas') ? 'text-emerald-400' : 'text-neutral-500'} />
+                      <span>Módulo Mesero</span>
+                      <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${
+                        activeList.includes('mesas') ? 'bg-emerald-500/25 text-emerald-300' : 'bg-neutral-700 text-neutral-400'
+                      }`}>
+                        {activeList.includes('mesas') ? 'Habilitado' : 'Deshabilitado'}
+                      </span>
+                    </button>
+
+                    <button
+                      disabled={isPending}
+                      onClick={() => {
+                        const isActivo = activeList.includes('delivery');
+                        const next = isActivo
+                          ? activeList.filter((m: string) => m !== 'delivery')
+                          : [...activeList, 'delivery'];
+                        onAction(() => actualizarModulosEmpresa(empresa.id, next.length > 0 ? next : ['ninguno']));
+                      }}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border flex items-center gap-2 ${
+                        activeList.includes('delivery')
+                          ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300 shadow-sm'
+                          : 'bg-neutral-800/80 border-neutral-700/80 text-neutral-400 hover:text-white hover:bg-neutral-700'
+                      } disabled:opacity-50`}
+                    >
+                      <Truck size={14} className={activeList.includes('delivery') ? 'text-emerald-400' : 'text-neutral-500'} />
+                      <span>Módulo Delivery</span>
+                      <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${
+                        activeList.includes('delivery') ? 'bg-emerald-500/25 text-emerald-300' : 'bg-neutral-700 text-neutral-400'
+                      }`}>
+                        {activeList.includes('delivery') ? 'Habilitado' : 'Deshabilitado'}
+                      </span>
+                    </button>
+                  </>
+                );
+              })()}
             </div>
           </div>
 

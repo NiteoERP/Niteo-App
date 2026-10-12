@@ -69,11 +69,12 @@ export default function MesasDashboard({ terminal, meseroNombre, meseroId, metod
         </button>
       </div>
 
-      {tab === 'nueva' ? (
+      <div className={tab === 'nueva' ? 'block' : 'hidden'}>
         <NuevaComanda terminal={terminal} meseroNombre={meseroNombre} />
-      ) : (
+      </div>
+      <div className={tab === 'abiertas' ? 'block' : 'hidden'}>
         <MesasAbiertas terminal={terminal} meseroNombre={meseroNombre} metodosPago={metodosPago} onMesasLoaded={setMesasCount} />
-      )}
+      </div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, Minus, Send, MessageSquare, Loader2, CheckCircle2, RefreshCw, ShoppingCart, X, Trash2, User, UserCheck, Search, Hash, ChevronRight } from 'lucide-react';
+import { Plus, Minus, Send, MessageSquare, Loader2, CheckCircle2, RefreshCw, ShoppingCart, X, Trash2, User, UserCheck, Search, Hash, ChevronRight, Printer } from 'lucide-react';
 import { obtenerCatalogoMesa, enviarComanda, buscarClientePorCedula, buscarClientesMesa, type ItemComanda, type ClienteSugeridoMesa } from '@/actions/mesas-actions';
 import type { TerminalVinculado } from './MesasHub';
 
@@ -116,11 +116,60 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
 
   const [comentarioGeneral, setComentarioGeneral] = useState('');
   const [propina, setPropina] = useState<number>(0);
+  const [copias, setCopias] = useState<number>(1);
   const [loading, setLoading] = useState(true);
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [error, setError] = useState('');
   const [comentandoKey, setComentandoKey] = useState<string | null>(null);
+
+  const DRAFT_KEY = `niteo_comanda_draft_${terminal.terminalCode}`;
+
+  // Restaurar borrador de localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed.carrito) && parsed.carrito.length > 0) {
+          setCarrito(parsed.carrito);
+        }
+        if (parsed.mesa) setMesa(parsed.mesa);
+        if (parsed.clienteNombre) setClienteNombre(parsed.clienteNombre);
+        if (parsed.clienteCedula) setClienteCedula(parsed.clienteCedula);
+        if (parsed.clienteTelefono) setClienteTelefono(parsed.clienteTelefono);
+        if (parsed.clienteId) setClienteId(parsed.clienteId);
+        if (parsed.comentarioGeneral) setComentarioGeneral(parsed.comentarioGeneral);
+        if (parsed.propina) setPropina(Number(parsed.propina) || 0);
+        if (parsed.copias) setCopias(Number(parsed.copias) === 2 ? 2 : 1);
+      }
+    } catch {
+      // Ignorar error al leer borrador
+    }
+  }, [DRAFT_KEY]);
+
+  // Persistir borrador de comanda automáticamente
+  useEffect(() => {
+    try {
+      if (carrito.length > 0 || mesa || clienteNombre || comentarioGeneral) {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({
+          carrito,
+          mesa,
+          clienteNombre,
+          clienteCedula,
+          clienteTelefono,
+          clienteId,
+          comentarioGeneral,
+          propina,
+          copias,
+        }));
+      } else {
+        localStorage.removeItem(DRAFT_KEY);
+      }
+    } catch {
+      // Ignorar error de cuota de localStorage
+    }
+  }, [DRAFT_KEY, carrito, mesa, clienteNombre, clienteCedula, clienteTelefono, clienteId, comentarioGeneral, propina, copias]);
 
   const cargarCatalogo = useCallback(async () => {
     setLoading(true);
@@ -237,6 +286,7 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
         clienteNombre: nombreFinal || undefined,
         comentarioGeneral: comentarioGeneral.trim() || undefined,
         montoPropina: propina > 0 ? propina : undefined,
+        numeroCopias: copias,
         items: carrito.map(({ key, notas_preparacion, ...rest }) => rest),
       });
       if (!result.success) { setError(result.error || 'Error enviando la comanda'); return; }
@@ -254,6 +304,8 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
         setShowClienteForm(true);
         setComentarioGeneral('');
         setPropina(0);
+        setCopias(1);
+        try { localStorage.removeItem(DRAFT_KEY); } catch {}
         setCartOpen(false);
       }, 1500);
     } catch {
@@ -303,6 +355,38 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
             placeholder="Ej: cliente alérgico a mariscos"
             className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
           />
+        </div>
+
+        {/* Impresiones de Comanda (1 o 2) */}
+        <div className="mt-3 flex items-center justify-between bg-neutral-800/80 border border-neutral-700/80 rounded-xl px-3.5 py-2.5">
+          <span className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+            <Printer size={15} className="text-indigo-400" />
+            Imprimir comanda:
+          </span>
+          <div className="flex bg-neutral-900 border border-neutral-700 rounded-lg p-0.5">
+            <button
+              type="button"
+              onClick={() => setCopias(1)}
+              className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
+                copias === 1
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              1 comanda
+            </button>
+            <button
+              type="button"
+              onClick={() => setCopias(2)}
+              className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
+                copias === 2
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              2 comandas
+            </button>
+          </div>
         </div>
       </div>
 
@@ -707,7 +791,39 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
               )}
             </div>
 
-            <div className="p-4 bg-neutral-950 border-t border-neutral-800 pb-[env(safe-area-inset-bottom,16px)]">
+            <div className="p-4 bg-neutral-950 border-t border-neutral-800 pb-[env(safe-area-inset-bottom,16px)] space-y-3">
+              {/* Selector de copias en modal */}
+              <div className="flex items-center justify-between bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5">
+                <span className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+                  <Printer size={15} className="text-indigo-400" />
+                  Imprimir comanda:
+                </span>
+                <div className="flex bg-neutral-950 border border-neutral-800 rounded-lg p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setCopias(1)}
+                    className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
+                      copias === 1
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    1 comanda
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCopias(2)}
+                    className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
+                      copias === 2
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    2 comandas
+                  </button>
+                </div>
+              </div>
+
               <button
                 onClick={handleEnviar}
                 disabled={enviando || carrito.length === 0}

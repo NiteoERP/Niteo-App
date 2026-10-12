@@ -31,7 +31,8 @@ export async function getEmpresas() {
         suscripciones_empresas (
           plan,
           estado,
-          fecha_vencimiento
+          fecha_vencimiento,
+          modulos_activos
         )
       `)
       .order('fecha_registro', { ascending: false });
@@ -135,6 +136,45 @@ export async function suspenderEmpresa(empresaId: string) {
     if (error) return { success: false, error: error.message };
 
     revalidatePath('/admin/empresas');
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function actualizarModulosEmpresa(empresaId: string, modulos: string[]) {
+  try {
+    const { supabase } = await requireSuperAdmin();
+
+    const { data: existing } = await supabase
+      .from('suscripciones_empresas')
+      .select('id')
+      .eq('empresa_id', empresaId)
+      .maybeSingle();
+
+    let error = null;
+    if (existing) {
+      const res = await supabase
+        .from('suscripciones_empresas')
+        .update({ modulos_activos: modulos })
+        .eq('empresa_id', empresaId);
+      error = res.error;
+    } else {
+      const res = await supabase
+        .from('suscripciones_empresas')
+        .insert({
+          empresa_id: empresaId,
+          plan: 'PRO',
+          estado: 'activa',
+          modulos_activos: modulos,
+        });
+      error = res.error;
+    }
+
+    if (error) return { success: false, error: error.message };
+
+    revalidatePath('/admin/empresas');
+    revalidatePath('/dashboard', 'layout');
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message };

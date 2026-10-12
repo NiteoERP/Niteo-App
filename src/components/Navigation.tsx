@@ -53,7 +53,15 @@ interface NavGroup {
 export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscripcion = 'STARTER', rubro }: NavProps) {
   const pathname = usePathname();
 
+  const isModuloHabilitado = (modulo: string) => {
+    if (!modulosActivos || modulosActivos.length === 0) return true;
+    if (modulosActivos.includes('ninguno') || modulosActivos.includes('none')) return false;
+    return modulosActivos.includes(modulo);
+  };
+
   const hasPerm = (p: string) => {
+    if (p === 'mesas' && !isModuloHabilitado('mesas')) return false;
+    if (p === 'delivery' && !isModuloHabilitado('delivery')) return false;
     if (userRole === 'MESERO' && permisos.length === 0) return p === 'mesas';
     if (userRole === 'REPARTIDOR' && permisos.length === 0) return p === 'delivery';
     if (p === 'mesas') {
@@ -274,7 +282,7 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
       )}
 
       {/* 5. Reporte de Delivery (Solo Admins) */}
-      {(userRole === 'MASTER' || userRole === 'SUPERADMIN') && (
+      {(isModuloHabilitado('delivery') && (userRole === 'MASTER' || userRole === 'SUPERADMIN')) && (
         <Link href="/dashboard/delivery" className={getSingleLinkClass('/dashboard/delivery')}>
           <Truck size={21} />
           <span>Reporte Entregas</span>
@@ -317,7 +325,15 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
     setVentasMenuOpen(false);
   }, [pathname]);
 
+  const isModuloHabilitado = (modulo: string) => {
+    if (!modulosActivos || modulosActivos.length === 0) return true;
+    if (modulosActivos.includes('ninguno') || modulosActivos.includes('none')) return false;
+    return modulosActivos.includes(modulo);
+  };
+
   const hasPerm = (p: string) => {
+    if (p === 'mesas' && !isModuloHabilitado('mesas')) return false;
+    if (p === 'delivery' && !isModuloHabilitado('delivery')) return false;
     if (userRole === 'MESERO' && permisos.length === 0) return p === 'mesas';
     if (userRole === 'REPARTIDOR' && permisos.length === 0) return p === 'delivery';
     if (p === 'mesas') {
@@ -505,7 +521,7 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
                   </Link>
                 )}
                 
-                {(userRole === 'MASTER' || userRole === 'SUPERADMIN') && (
+                {(isModuloHabilitado('delivery') && (userRole === 'MASTER' || userRole === 'SUPERADMIN')) && (
                   <Link href="/dashboard/delivery" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/delivery')}>
                     <Truck size={18} /> Reporte Entregas
                   </Link>

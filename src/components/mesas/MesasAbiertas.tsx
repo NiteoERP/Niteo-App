@@ -129,7 +129,7 @@ export default function MesasAbiertas({ terminal, meseroNombre, metodosPago, onM
       ) : (
         mesas.map((mesa: any) => {
           const items: any[] = Array.isArray(mesa.items) ? mesa.items : [];
-          const total = items.reduce((s: number, i: any) =>
+          const total = Number(mesa.total) > 0 ? Number(mesa.total) : items.reduce((s: number, i: any) =>
             s + (Number(i.cantidad) || 0) * (Number(i.precio_unitario) || 0), 0
           );
           const alertaEnviada = alertaYaEnviada(mesa.mesa_identificador);
