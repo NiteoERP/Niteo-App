@@ -380,7 +380,7 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
             <span className="text-[10px] text-neutral-500">Presiona Enter para escribir abajo ↵</span>
           </div>
           <textarea
-            rows={2}
+            rows={Math.min(6, Math.max(2, (comentarioGeneral || '').split('\n').length))}
             value={comentarioGeneral}
             onChange={e => setComentarioGeneral(e.target.value)}
             onInput={e => {
@@ -756,7 +756,7 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
                         </button>
                         {mostrarPanelComentarios && (
                           <textarea
-                            rows={2}
+                            rows={Math.min(6, Math.max(2, (item.comentario || '').split('\n').length))}
                             value={item.comentario}
                             onChange={e => actualizarComentario(item.key, e.target.value)}
                             onInput={e => {
