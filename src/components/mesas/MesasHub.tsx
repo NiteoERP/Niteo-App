@@ -16,6 +16,7 @@ export interface TerminalVinculado {
   terminalCode: string;
   sedeId: string;
   sedeNombre: string;
+  tasa?: number;
 }
 
 export default function MesasHub({ meseroNombre, meseroId, metodosPago }: MesasHubProps) {

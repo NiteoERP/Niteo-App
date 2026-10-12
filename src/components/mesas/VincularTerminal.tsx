@@ -29,6 +29,7 @@ export default function VincularTerminal({ onVincular, meseroNombre }: Props) {
         terminalCode: result.terminalCode,
         sedeId: result.sedeId,
         sedeNombre: result.sedeNombre,
+        tasa: result.tasa,
       });
     } catch {
       setError('Error de conexión. Verifica tu internet.');

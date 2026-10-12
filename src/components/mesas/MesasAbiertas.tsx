@@ -17,6 +17,14 @@ interface AlertaEnviada {
   expiresAt: number;
 }
 
+const formatearBs = (monto: number): string => {
+  const redondeado = Math.round(monto * 100) / 100;
+  return redondeado.toLocaleString('es-VE', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
 export default function MesasAbiertas({ terminal, meseroNombre, metodosPago, onMesasLoaded }: Props) {
   const [mesas, setMesas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -165,28 +173,57 @@ export default function MesasAbiertas({ terminal, meseroNombre, metodosPago, onM
                     <span className="text-neutral-600 text-xs flex items-center gap-1">
                       <Clock size={11} /> {formatTime(mesa.created_at)}
                     </span>
+                    {mesa.tasa_efectiva > 0 && (
+                      <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 font-bold">
+                        Tasa: {formatearBs(mesa.tasa_efectiva)}
+                      </span>
+                    )}
                   </div>
                 </div>
-                {total > 0 && (
-                  <span className="text-indigo-400 font-bold text-sm shrink-0">${total.toFixed(2)}</span>
-                )}
+                <div className="text-right shrink-0">
+                  {total > 0 && (
+                    <div className="text-white font-black text-sm">
+                      ${total.toFixed(2)}
+                    </div>
+                  )}
+                  {((mesa.total_bs && mesa.total_bs > 0) || (mesa.tasa_efectiva && mesa.tasa_efectiva > 0 && total > 0)) && (
+                    <div className="text-emerald-400 font-bold text-xs">
+                      Bs. {formatearBs(mesa.total_bs || (total * mesa.tasa_efectiva))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {items.length > 0 && (
-                <div className="space-y-1 border-t border-neutral-800 pt-3">
-                  {items.slice(0, 6).map((item: any, i: number) => (
-                    <div key={i} className="flex justify-between text-sm">
-                      <span className="text-neutral-400">
-                        <span className="text-neutral-300 font-medium">{item.cantidad}x</span> {item.nombre}
-                        {item.comentario && (
-                          <span className="text-neutral-600 text-xs"> — {item.comentario}</span>
-                        )}
-                      </span>
-                      <span className="text-neutral-500 text-xs shrink-0 ml-2">
-                        ${((Number(item.cantidad) || 0) * (Number(item.precio_unitario) || 0)).toFixed(2)}
-                      </span>
-                    </div>
-                  ))}
+                <div className="space-y-1.5 border-t border-neutral-800 pt-3">
+                  {items.slice(0, 6).map((item: any, i: number) => {
+                    const cant = Number(item.cantidad) || 0;
+                    const precio = Number(item.precio_unitario) || 0;
+                    const subtotalUSD = cant * precio;
+                    const tasaItem = Number(item.tasa_efectiva) || Number(mesa.tasa_efectiva) || 0;
+                    const subtotalBs = item.total_bs ? Number(item.total_bs) : (tasaItem > 0 ? subtotalUSD * tasaItem : 0);
+
+                    return (
+                      <div key={i} className="flex justify-between items-baseline text-sm">
+                        <span className="text-neutral-400 truncate mr-2">
+                          <span className="text-neutral-300 font-medium">{cant}x</span> {item.nombre}
+                          {item.comentario && (
+                            <span className="text-neutral-600 text-xs"> — {item.comentario}</span>
+                          )}
+                        </span>
+                        <div className="text-right shrink-0">
+                          <span className="text-neutral-300 text-xs font-semibold">
+                            ${subtotalUSD.toFixed(2)}
+                          </span>
+                          {subtotalBs > 0 && (
+                            <span className="text-emerald-400 text-[11px] font-bold block">
+                              Bs. {formatearBs(subtotalBs)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                   {items.length > 6 && (
                     <p className="text-neutral-600 text-xs">+{items.length - 6} ítems más</p>
                   )}

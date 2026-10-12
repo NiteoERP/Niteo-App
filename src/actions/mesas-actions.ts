@@ -7,6 +7,7 @@ export interface TerminalInfo {
   sedeNombre: string;
   empresaId: string;
   terminalCode: string;
+  tasa?: number;
 }
 
 export interface ItemComanda {
@@ -29,6 +30,50 @@ export interface ComandaPayload {
   items: ItemComanda[];
 }
 
+export async function obtenerTasaMesa(sedeId: string): Promise<number> {
+  try {
+    const supabase = await createClient();
+
+    // 1. Verificar si el POS sincronizó cuentas abiertas con tasa_efectiva
+    const { data: posRow } = await supabase
+      .from('pos_cuentas_abiertas')
+      .select('detalles')
+      .eq('sede_id', sedeId)
+      .order('actualizado_en', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (posRow?.detalles && Array.isArray(posRow.detalles) && posRow.detalles.length > 0) {
+      const tasaEnDetalle = Number(posRow.detalles[0]?.tasa_efectiva);
+      if (tasaEnDetalle > 0) {
+        return tasaEnDetalle;
+      }
+    }
+
+    // 2. Verificar si la sede tiene la tasa reportada en sistema_pos
+    const { data: sede } = await supabase
+      .from('sedes')
+      .select('sistema_pos')
+      .eq('id', sedeId)
+      .maybeSingle();
+
+    if (sede?.sistema_pos) {
+      const match = sede.sistema_pos.match(/TASA:([0-9.]+)/);
+      if (match && parseFloat(match[1]) > 0) {
+        return parseFloat(match[1]);
+      }
+    }
+
+    // 3. Fallback a la tasa activa oficial del sistema / empresa
+    const { getTasaBcvAction } = await import('@/actions/config-actions');
+    const tasaRes = await getTasaBcvAction();
+    return Number(tasaRes.tasa) || 1;
+  } catch (err) {
+    console.error('Error en obtenerTasaMesa:', err);
+    return 1;
+  }
+}
+
 export async function buscarTerminalPorCodigo(codigo: string): Promise<TerminalInfo | null> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -41,7 +86,7 @@ export async function buscarTerminalPorCodigo(codigo: string): Promise<TerminalI
 
   const { data: sede, error } = await supabase
     .from('sedes')
-    .select('id, nombre_sede, empresa_id, codigo_terminal')
+    .select('id, nombre_sede, empresa_id, codigo_terminal, sistema_pos')
     .eq('codigo_terminal', codigoNorm)
     .eq('empresa_id', empresaId)
     .eq('estado_activo', true)
@@ -49,11 +94,21 @@ export async function buscarTerminalPorCodigo(codigo: string): Promise<TerminalI
 
   if (error || !sede) return null;
 
+  let tasaSede = 0;
+  if (sede.sistema_pos) {
+    const match = sede.sistema_pos.match(/TASA:([0-9.]+)/);
+    if (match) tasaSede = parseFloat(match[1]);
+  }
+  if (!tasaSede || tasaSede <= 0) {
+    tasaSede = await obtenerTasaMesa(sede.id);
+  }
+
   return {
     sedeId: sede.id,
     sedeNombre: sede.nombre_sede,
     empresaId: sede.empresa_id,
     terminalCode: sede.codigo_terminal,
+    tasa: tasaSede,
   };
 }
 
@@ -147,6 +202,7 @@ export async function obtenerMesasAbiertas(sedeId: string) {
     .eq('tipo', 'comanda')
     .order('created_at', { ascending: false });
 
+  const baseTasa = await obtenerTasaMesa(sedeId);
   const listaMesas: any[] = [];
 
   // Formatear cuentas abiertas del POS
@@ -154,6 +210,9 @@ export async function obtenerMesasAbiertas(sedeId: string) {
     for (const c of posCuentas) {
       const items = Array.isArray(c.detalles) ? c.detalles : [];
       const mesero = items[0]?.mesero_nombre || '';
+      const tasaMesa = Number(items[0]?.tasa_efectiva) || baseTasa;
+      const totalUSD = Number(c.total) || 0;
+      const totalBs = Math.round(totalUSD * tasaMesa * 100) / 100;
       listaMesas.push({
         id: c.id,
         mesa_identificador: c.nombre_cuenta || c.numero_documento || 'Mesa',
@@ -162,7 +221,9 @@ export async function obtenerMesasAbiertas(sedeId: string) {
         items: items,
         tipo: 'comanda',
         estado: 'recibido',
-        total: Number(c.total) || 0,
+        total: totalUSD,
+        total_bs: totalBs,
+        tasa_efectiva: tasaMesa,
         created_at: c.fecha_apertura || c.actualizado_en || new Date().toISOString(),
         metodo_pago_sugerido: null,
       });
@@ -177,6 +238,8 @@ export async function obtenerMesasAbiertas(sedeId: string) {
         m.mesa_identificador === `Mesa ${cp.mesa_identificador}`
       );
       if (!yaExisteEnPOS) {
+        const totalUSD = Array.isArray(cp.items) ? cp.items.reduce((acc: number, it: any) => acc + (Number(it.cantidad) || 0) * (Number(it.precio_unitario) || 0), 0) : 0;
+        const totalBs = Math.round(totalUSD * baseTasa * 100) / 100;
         listaMesas.push({
           id: cp.id,
           mesa_identificador: cp.mesa_identificador,
@@ -185,7 +248,9 @@ export async function obtenerMesasAbiertas(sedeId: string) {
           items: cp.items,
           tipo: cp.tipo,
           estado: 'pendiente',
-          total: Array.isArray(cp.items) ? cp.items.reduce((acc: number, it: any) => acc + (Number(it.cantidad) || 0) * (Number(it.precio_unitario) || 0), 0) : 0,
+          total: totalUSD,
+          total_bs: totalBs,
+          tasa_efectiva: baseTasa,
           created_at: cp.created_at,
           metodo_pago_sugerido: cp.metodo_pago_sugerido,
         });

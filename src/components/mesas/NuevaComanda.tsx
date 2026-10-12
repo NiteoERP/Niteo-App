@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Plus, Minus, Send, MessageSquare, Loader2, CheckCircle2, RefreshCw, ShoppingCart, X, Trash2, User, UserCheck, Search, Hash, ChevronRight, Printer } from 'lucide-react';
-import { obtenerCatalogoMesa, enviarComanda, buscarClientePorCedula, buscarClientesMesa, type ItemComanda, type ClienteSugeridoMesa } from '@/actions/mesas-actions';
+import { obtenerCatalogoMesa, obtenerTasaMesa, enviarComanda, buscarClientePorCedula, buscarClientesMesa, type ItemComanda, type ClienteSugeridoMesa } from '@/actions/mesas-actions';
 import type { TerminalVinculado } from './MesasHub';
 
 interface CartItem extends ItemComanda {
@@ -11,6 +11,14 @@ interface CartItem extends ItemComanda {
 }
 
 const COMENTARIOS_RAPIDOS = ['Comer aquí', 'Para llevar'];
+
+function formatearBs(montoBs: number): string {
+  if (isNaN(montoBs) || montoBs < 0) return '0,00';
+  return montoBs.toLocaleString('es-VE', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
 
 const extraerNotasPreparacion = (prod: any): string[] => {
   if (!prod?.notas_preparacion) return [];
@@ -35,6 +43,7 @@ interface Props {
 }
 
 export default function NuevaComanda({ terminal, meseroNombre }: Props) {
+  const [tasaEfectiva, setTasaEfectiva] = useState<number>(terminal.tasa || 1);
   const [productos, setProductos] = useState<any[]>([]);
   const [categorias, setCategorias] = useState<string[]>([]);
   const [catActiva, setCatActiva] = useState<string>('Todos');
@@ -173,8 +182,14 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
 
   const cargarCatalogo = useCallback(async () => {
     setLoading(true);
-    const prods = await obtenerCatalogoMesa(terminal.sedeId);
+    const [prods, tasaActual] = await Promise.all([
+      obtenerCatalogoMesa(terminal.sedeId),
+      obtenerTasaMesa(terminal.sedeId),
+    ]);
     setProductos(prods);
+    if (tasaActual && tasaActual > 0) {
+      setTasaEfectiva(tasaActual);
+    }
     const cats = ['Todos', ...Array.from(new Set(
       prods.map((p: any) => p.categorias?.nombre as string || 'Sin categoría')
     ))];
@@ -328,7 +343,14 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
     <div className="space-y-4 pb-24">
       {/* Selector de Mesa (Opcional) */}
       <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4">
-        <label className="text-xs text-neutral-500 mb-2 block uppercase tracking-wider font-semibold">Mesa / Identificador (opcional)</label>
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-xs text-neutral-500 uppercase tracking-wider font-semibold">Mesa / Identificador (opcional)</label>
+          {tasaEfectiva > 0 && (
+            <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+              Tasa POS: Bs. {formatearBs(tasaEfectiva)}
+            </span>
+          )}
+        </div>
         <div className="relative flex items-center">
           <Hash size={18} className="absolute left-3.5 text-neutral-500" />
           <input
@@ -473,10 +495,15 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
                     <p className={`text-sm font-semibold line-clamp-2 leading-snug transition-colors pr-14 ${inCart ? 'text-white' : 'text-neutral-200 group-hover:text-white'}`}>
                       {prod.nombre}
                     </p>
-                    <div className="mt-3 flex items-baseline gap-1">
+                    <div className="mt-3 flex flex-col items-start gap-0.5">
                       <span className={`text-base font-extrabold ${inCart ? 'text-indigo-400' : 'text-neutral-300'}`}>
                         ${Number(prod.precio_venta).toFixed(2)}
                       </span>
+                      {tasaEfectiva > 0 && (
+                        <span className="text-[11px] font-semibold text-emerald-400">
+                          Bs. {formatearBs(Number(prod.precio_venta) * tasaEfectiva)}
+                        </span>
+                      )}
                     </div>
                   </button>
                 </div>
@@ -493,13 +520,20 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
           )}
           <button
             onClick={() => setCartOpen(true)}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl py-4 px-5 font-bold flex justify-between items-center transition-all shadow-lg shadow-indigo-600/20 text-base"
+            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl py-3 px-5 font-bold flex justify-between items-center transition-all shadow-lg shadow-indigo-600/20 text-base"
           >
             <div className="flex gap-2 items-center">
               <ShoppingCart size={20} />
               <span>Ver Comanda ({carrito.reduce((s, i) => s + i.cantidad, 0)} ítems)</span>
             </div>
-            <span>${total.toFixed(2)} USD</span>
+            <div className="text-right">
+              <span className="block font-black text-sm md:text-base">${total.toFixed(2)} USD</span>
+              {tasaEfectiva > 0 && (
+                <span className="block text-xs font-bold text-emerald-300">
+                  Bs. {formatearBs(total * tasaEfectiva)}
+                </span>
+              )}
+            </div>
           </button>
         </div>
       )}
@@ -662,7 +696,14 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
                     <div className="flex items-center gap-3">
                       <div className="flex-1 min-w-0">
                         <p className="text-white text-sm font-bold truncate">{item.nombre}</p>
-                        <p className="text-indigo-400 text-xs font-semibold">${(item.cantidad * item.precio_unitario).toFixed(2)}</p>
+                        <div className="flex items-baseline gap-1.5 flex-wrap">
+                          <p className="text-indigo-400 text-xs font-semibold">${(item.cantidad * item.precio_unitario).toFixed(2)}</p>
+                          {tasaEfectiva > 0 && (
+                            <span className="text-emerald-400 text-[11px] font-bold">
+                              · Bs. {formatearBs(item.cantidad * item.precio_unitario * tasaEfectiva)}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       
                       <div className="flex items-center gap-1.5 bg-neutral-900 p-1 rounded-lg border border-neutral-800">
@@ -777,11 +818,17 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
                 );
               })}
               
-              <div className="border-t border-neutral-800 pt-4">
+              <div className="border-t border-neutral-800 pt-4 space-y-1.5">
                 <div className="flex items-center justify-between">
                   <span className="text-neutral-300 font-bold">Total estimado</span>
                   <span className="text-white text-xl font-black">${subtotal.toFixed(2)}</span>
                 </div>
+                {tasaEfectiva > 0 && (
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-neutral-400">Total en Bolívares (Tasa: {formatearBs(tasaEfectiva)})</span>
+                    <span className="text-emerald-400 font-black text-base">Bs. {formatearBs(subtotal * tasaEfectiva)}</span>
+                  </div>
+                )}
               </div>
 
               {error && (
