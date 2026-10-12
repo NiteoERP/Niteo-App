@@ -13,7 +13,7 @@ const DashboardChart = dynamic(() => import('@/components/dashboard/DashboardCha
 });
 import {
   TrendingUp, TrendingDown, DollarSign, ShoppingCart,
-  Receipt, Loader2, Calendar, Store, FileOutput, AlertCircle,
+  Receipt, Loader2, Calendar, Store, FileOutput, AlertCircle, UtensilsCrossed,
 } from 'lucide-react';
 import RecentSalesWidget from '@/components/pos/RecentSalesWidget';
 import ReportPreviewModal from '@/components/reports/ReportPreviewModal';
@@ -63,6 +63,7 @@ export default function DashboardPage() {
   // Si el usuario no tiene permiso de ver métricas del dashboard general, mostrar el Hub de Trabajo
   if (!hasDashboard) {
     const modulesAvailable = [
+      { id: 'mesas', name: 'Módulo Mesero', desc: 'Toma de pedidos de mesas y envío a terminal POS.', icon: UtensilsCrossed, href: '/dashboard/mesas' },
       { id: 'pos', name: 'Punto de Venta (POS)', desc: 'Facturación y ventas en vivo.', icon: ShoppingCart, href: '/dashboard/ventas' },
       { id: 'caja', altId: 'finanzas', name: 'Cierre de Caja', desc: 'Arqueos y cuadres diarios.', icon: Receipt, href: '/dashboard/caja' },
       { id: 'inventario', name: 'Inventario & Recetas', desc: 'Existencias y catálogo de productos.', icon: Store, href: '/dashboard/inventario' },
@@ -71,7 +72,7 @@ export default function DashboardPage() {
       { id: 'clientes', name: 'Directorio de Clientes', desc: 'Gestión de clientes y contactos.', icon: Store, href: '/dashboard/clientes' },
       { id: 'creditos', name: 'Créditos & Cobranzas', desc: 'Cuentas por cobrar y abonos.', icon: Receipt, href: '/dashboard/creditos' },
       { id: 'equipo', altId: 'usuarios', name: 'Equipo de Trabajo', desc: 'Gestión de colaboradores y accesos.', icon: Store, href: '/dashboard/equipo' },
-    ].filter(m => permisos.includes(m.id) || (m.altId && permisos.includes(m.altId)));
+    ].filter(m => permisos.includes(m.id) || (m.altId && permisos.includes(m.altId)) || (m.id === 'mesas' && userRole === 'MESERO'));
 
     return (
       <div className="p-4 sm:p-8 max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">

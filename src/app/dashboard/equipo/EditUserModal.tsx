@@ -173,8 +173,10 @@ export default function EditUserModal({ member, sedes, isOpen, onClose, onUpdate
                   className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors"
                 >
                   <option value="CAJERO">Cajero - POS y Cierre de Caja</option>
+                  <option value="MESERO">Mesero - Solo Módulo Mesero</option>
                   <option value="GERENTE">Gerente - Operaciones de Sede</option>
                   <option value="COMPRADOR">Comprador - Inventario y Proveedores</option>
+                  <option value="REPARTIDOR">Repartidor - Solo Módulo Delivery</option>
                   <option value="MASTER">Master - Acceso Total</option>
                 </select>
               </div>

@@ -54,17 +54,19 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
   const pathname = usePathname();
 
   const hasPerm = (p: string) => {
-    if (userRole === 'MESERO') return p === 'mesas';
-    if (userRole === 'REPARTIDOR') return p === 'delivery'; // Restricción estricta para repartidores puros
+    if (userRole === 'MESERO' && permisos.length === 0) return p === 'mesas';
+    if (userRole === 'REPARTIDOR' && permisos.length === 0) return p === 'delivery';
     if (p === 'mesas') {
       if (userRole === 'MASTER') return false;
       if (rubro && rubro !== 'restaurante') return false;
-      if (userRole === 'SUPERADMIN') return true;
+      if (userRole === 'SUPERADMIN' || userRole === 'MESERO') return true;
       return permisos.includes('mesas');
     }
+    if (userRole === 'MESERO') return permisos.includes(p);
+    if (userRole === 'REPARTIDOR') return p === 'delivery'; // Restricción estricta para repartidores puros
     if (userRole === 'MASTER' || userRole === 'SUPERADMIN') return true;
     if (permisos.includes(p)) return true;
-    if (p === 'caja' && (permisos.includes('finanzas') || userRole === 'CAJERO')) return true;
+    if (p === 'caja' && (permisos.includes('finanzas') || (permisos.length === 0 && userRole === 'CAJERO'))) return true;
     if (p === 'finanzas' && permisos.includes('caja')) return true;
     if (p === 'equipo' && (permisos.includes('usuarios') || permisos.includes('equipo'))) return true;
     if (p === 'usuarios' && (permisos.includes('usuarios') || permisos.includes('equipo'))) return true;
@@ -316,16 +318,19 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
   }, [pathname]);
 
   const hasPerm = (p: string) => {
-    if (userRole === 'MESERO') return p === 'mesas';
+    if (userRole === 'MESERO' && permisos.length === 0) return p === 'mesas';
+    if (userRole === 'REPARTIDOR' && permisos.length === 0) return p === 'delivery';
     if (p === 'mesas') {
       if (userRole === 'MASTER') return false;
       if (rubro && rubro !== 'restaurante') return false;
-      if (userRole === 'SUPERADMIN') return true;
+      if (userRole === 'SUPERADMIN' || userRole === 'MESERO') return true;
       return permisos.includes('mesas');
     }
+    if (userRole === 'MESERO') return permisos.includes(p);
+    if (userRole === 'REPARTIDOR') return p === 'delivery';
     if (userRole === 'MASTER' || userRole === 'SUPERADMIN') return true;
     if (permisos.includes(p)) return true;
-    if (p === 'caja' && (permisos.includes('finanzas') || userRole === 'CAJERO')) return true;
+    if (p === 'caja' && (permisos.includes('finanzas') || (permisos.length === 0 && userRole === 'CAJERO'))) return true;
     if (p === 'finanzas' && permisos.includes('caja')) return true;
     if (p === 'equipo' && (permisos.includes('usuarios') || permisos.includes('equipo'))) return true;
     if (p === 'usuarios' && (permisos.includes('usuarios') || permisos.includes('equipo'))) return true;

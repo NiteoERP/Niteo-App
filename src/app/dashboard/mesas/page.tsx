@@ -16,7 +16,7 @@ export default async function MesasPage() {
   const permisos: string[] = perfil?.permisos || [];
   const rol = perfil?.rol || user.app_metadata?.user_role || 'CAJERO';
 
-  const tieneAcceso = permisos.includes('mesas') || rol === 'MASTER' || rol === 'SUPERADMIN';
+  const tieneAcceso = permisos.includes('mesas') || rol === 'MESERO' || rol === 'MASTER' || rol === 'SUPERADMIN';
   if (!tieneAcceso) redirect('/dashboard');
 
   const meseroNombre = perfil?.nombre_completo ||

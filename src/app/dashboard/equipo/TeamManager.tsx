@@ -51,6 +51,8 @@ export default function TeamManager({
       case 'MASTER': return 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20';
       case 'GERENTE': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
       case 'COMPRADOR': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+      case 'MESERO': return 'bg-violet-500/10 text-violet-400 border-violet-500/20';
+      case 'REPARTIDOR': return 'bg-orange-500/10 text-orange-400 border-orange-500/20';
       default: return 'bg-sky-500/10 text-sky-400 border-sky-500/20';
     }
   };

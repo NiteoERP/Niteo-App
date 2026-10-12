@@ -28,7 +28,7 @@ export async function login(prevState: any, formData: FormData) {
 
   const { data: perfil } = await supabase
     .from('perfiles')
-    .select('rol')
+    .select('rol, permisos')
     .eq('id', (await supabase.auth.getUser()).data.user?.id)
     .single()
 
@@ -42,6 +42,15 @@ export async function login(prevState: any, formData: FormData) {
   if (perfil?.rol === 'SUPERADMIN') {
     revalidatePath('/admin')
     redirect('/admin')
+  }
+
+  const esSoloMesero =
+    perfil?.rol === 'MESERO' ||
+    (Array.isArray(perfil?.permisos) && perfil.permisos.length === 1 && perfil.permisos[0] === 'mesas');
+
+  if (esSoloMesero) {
+    revalidatePath('/dashboard/mesas')
+    redirect('/dashboard/mesas')
   }
 
   revalidatePath('/dashboard')

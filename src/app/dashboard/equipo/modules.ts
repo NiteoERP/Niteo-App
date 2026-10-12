@@ -127,6 +127,7 @@ export const AVAILABLE_MODULES: ModuleDefinition[] = [
 
 export const ROLE_PRESETS: Record<string, string[]> = {
   CAJERO: ['pos', 'caja'],
+  MESERO: ['mesas'],
   GERENTE: [
     'dashboard', 'pos', 'caja', 'inventario', 'compras', 'proveedores',
     'despachos', 'clientes', 'creditos', 'reportes', 'finanzas', 'mesas'
