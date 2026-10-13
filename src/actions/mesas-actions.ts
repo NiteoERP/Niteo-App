@@ -462,3 +462,153 @@ export async function buscarClientePorCedula(cedula: string) {
   return exacto || data[0];
 }
 
+export interface CancelarItemPayload {
+  terminalCode: string;
+  mesaId?: string;
+  mesaIdentificador: string;
+  productoId: string;
+  nombreProducto: string;
+  cantidad: number;
+  precioUnitario: number;
+  motivo: string;
+}
+
+export async function cancelarItemMesa(payload: CancelarItemPayload): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'No autenticado' };
+
+    const empresaId = user.app_metadata?.empresa_id;
+    const meseroNombre = user.user_metadata?.nombre_completo ||
+      user.user_metadata?.full_name ||
+      user.email ||
+      'Mesero';
+
+    const { data: sede } = await supabase
+      .from('sedes')
+      .select('id')
+      .eq('codigo_terminal', payload.terminalCode.trim().toUpperCase())
+      .eq('empresa_id', empresaId)
+      .maybeSingle();
+
+    if (!sede) return { success: false, error: 'Terminal no encontrado o no pertenece a tu empresa' };
+
+    const motivoLimpio = payload.motivo?.trim() || 'Cancelado por mesero';
+    const comentarioCancelacion = `[CANCELACION] Motivo: ${motivoLimpio}`;
+
+    const { createAdminClient } = await import('@/utils/supabase/admin');
+    const admin = createAdminClient();
+
+    // 1. Insertar en comandas_mesero (tipo 'comanda') con etiqueta [CANCELACION]
+    const { error: errComanda } = await supabase
+      .from('comandas_mesero')
+      .insert({
+        empresa_id: empresaId,
+        sede_id: sede.id,
+        mesero_id: user.id,
+        mesero_nombre: meseroNombre,
+        tipo: 'comanda',
+        mesa_identificador: payload.mesaIdentificador,
+        comentario_general: comentarioCancelacion,
+        items: [{
+          producto_id: payload.productoId,
+          nombre: payload.nombreProducto,
+          cantidad: payload.cantidad,
+          precio_unitario: payload.precioUnitario,
+          comentario: `Cancelado: ${motivoLimpio}`,
+        }],
+        estado: 'pendiente',
+      });
+
+    if (errComanda) {
+      console.error('[cancelarItemMesa] Error insertando en comandas_mesero:', errComanda);
+      return { success: false, error: errComanda.message };
+    }
+
+    // 2. Registrar en auditoria_pos en la nube para trazabilidad inmediata
+    try {
+      const crypto = await import('crypto');
+      const auditId = crypto.randomUUID();
+      await admin
+        .from('auditoria_pos')
+        .insert({
+          id: auditId,
+          sede_id: sede.id,
+          usuario_id: meseroNombre,
+          accion: 'Cancelacion Producto Mesero',
+          detalle: `Mesa: ${payload.mesaIdentificador}\nMesero: ${meseroNombre}\nMotivo: ${motivoLimpio}\nItem cancelado: ${payload.cantidad}x ${payload.nombreProducto} ($${Number(payload.precioUnitario || 0).toFixed(2)})`,
+          gerente_aprobador_id: meseroNombre,
+        });
+    } catch (errAudit) {
+      console.warn('[cancelarItemMesa] No se pudo guardar auditoria_pos:', errAudit);
+    }
+
+    // 3. Actualizar inmediatamente pos_cuentas_abiertas para feedback instantáneo en UI
+    try {
+      let queryCuenta = admin
+        .from('pos_cuentas_abiertas')
+        .select('*')
+        .eq('sede_id', sede.id);
+
+      if (payload.mesaId) {
+        queryCuenta = queryCuenta.eq('id', payload.mesaId);
+      } else {
+        queryCuenta = queryCuenta.or(`nombre_cuenta.eq.${payload.mesaIdentificador},numero_documento.eq.${payload.mesaIdentificador},nombre_cuenta.eq.Mesa ${payload.mesaIdentificador}`);
+      }
+
+      const { data: cuenta } = await queryCuenta.maybeSingle();
+
+      if (cuenta && Array.isArray(cuenta.detalles)) {
+        const detalles = [...cuenta.detalles];
+        const prodIdTarget = String(payload.productoId).toLowerCase().trim();
+        const prodNombreTarget = String(payload.nombreProducto).toLowerCase().trim();
+
+        const idx = detalles.findIndex((it: any) => {
+          const itId = String(it.producto_id || it.id || '').toLowerCase().trim();
+          const itNom = String(it.nombre || it.producto || '').toLowerCase().trim();
+          return (itId && itId === prodIdTarget) || (itNom && itNom === prodNombreTarget);
+        });
+
+        if (idx !== -1) {
+          const currentCant = Number(detalles[idx].cantidad) || 1;
+          const cantRestar = Number(payload.cantidad) || 1;
+          const nuevaCant = currentCant - cantRestar;
+
+          if (nuevaCant <= 0) {
+            detalles.splice(idx, 1);
+          } else {
+            detalles[idx] = {
+              ...detalles[idx],
+              cantidad: nuevaCant,
+              total: Math.round(nuevaCant * (Number(detalles[idx].precio_unitario) || 0) * 100) / 100,
+              total_bs: detalles[idx].tasa_efectiva ? Math.round(nuevaCant * (Number(detalles[idx].precio_unitario) || 0) * Number(detalles[idx].tasa_efectiva) * 100) / 100 : 0,
+            };
+          }
+
+          const nuevoTotal = detalles.reduce((acc: number, it: any) => {
+            if (it.tipo === 'meta') return acc;
+            return acc + (Number(it.cantidad) || 0) * (Number(it.precio_unitario) || 0);
+          }, 0);
+
+          await admin
+            .from('pos_cuentas_abiertas')
+            .update({
+              detalles,
+              total: Math.round(nuevoTotal * 100) / 100,
+              actualizado_en: new Date().toISOString(),
+            })
+            .eq('id', cuenta.id);
+        }
+      }
+    } catch (errCuenta) {
+      console.warn('[cancelarItemMesa] Error actualizando pos_cuentas_abiertas:', errCuenta);
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('[cancelarItemMesa] Error inesperado:', err);
+    return { success: false, error: err?.message || 'Error cancelando el ítem' };
+  }
+}
+

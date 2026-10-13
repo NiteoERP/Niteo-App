@@ -19,6 +19,32 @@ type Tab = 'nueva' | 'abiertas';
 export default function MesasDashboard({ terminal, meseroNombre, meseroId, metodosPago, onDesvincular }: Props) {
   const [tab, setTab] = useState<Tab>('nueva');
   const [mesasCount, setMesasCount] = useState(0);
+  const [mesaParaAgregar, setMesaParaAgregar] = useState<{
+    identificador: string;
+    nombreCliente?: string;
+    totalActual?: number;
+  } | null>(null);
+  const [mesasAbiertasLista, setMesasAbiertasLista] = useState<any[]>([]);
+
+  const handleAgregarAEstaMesa = (mesa: any) => {
+    let cleanId = String(mesa.mesa_identificador || '').trim();
+    if (cleanId.toLowerCase().startsWith('mesa ')) {
+      cleanId = cleanId.substring(5).trim();
+    }
+    let cliente = mesa.cliente_nombre || '';
+    if (cleanId.includes(' - ')) {
+      const parts = cleanId.split(' - ');
+      cleanId = parts[0].trim();
+      if (!cliente && parts[1]) cliente = parts[1].trim();
+    }
+
+    setMesaParaAgregar({
+      identificador: cleanId,
+      nombreCliente: cliente,
+      totalActual: Number(mesa.total) || 0,
+    });
+    setTab('nueva');
+  };
 
   return (
     <div className="max-w-lg mx-auto">
@@ -70,11 +96,28 @@ export default function MesasDashboard({ terminal, meseroNombre, meseroId, metod
       </div>
 
       <div className={tab === 'nueva' ? 'block' : 'hidden'}>
-        <NuevaComanda terminal={terminal} meseroNombre={meseroNombre} />
+        <NuevaComanda
+          terminal={terminal}
+          meseroNombre={meseroNombre}
+          mesaPreseleccionada={mesaParaAgregar}
+          mesasAbiertas={mesasAbiertasLista}
+          onLimpiarMesaPreseleccionada={() => setMesaParaAgregar(null)}
+          onSeleccionarMesaAbierta={handleAgregarAEstaMesa}
+        />
       </div>
       <div className={tab === 'abiertas' ? 'block' : 'hidden'}>
-        <MesasAbiertas terminal={terminal} meseroNombre={meseroNombre} metodosPago={metodosPago} onMesasLoaded={setMesasCount} />
+        <MesasAbiertas
+          terminal={terminal}
+          meseroNombre={meseroNombre}
+          metodosPago={metodosPago}
+          onMesasLoaded={(count, lista) => {
+            setMesasCount(count);
+            if (lista) setMesasAbiertasLista(lista);
+          }}
+          onAgregarProductos={handleAgregarAEstaMesa}
+        />
       </div>
     </div>
   );
 }
+

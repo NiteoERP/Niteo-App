@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, Minus, Send, MessageSquare, Loader2, CheckCircle2, RefreshCw, ShoppingCart, X, Trash2, User, UserCheck, Search, Hash, ChevronRight, Printer } from 'lucide-react';
+import { Plus, Minus, Send, MessageSquare, Loader2, CheckCircle2, RefreshCw, ShoppingCart, X, Trash2, User, UserCheck, Search, Hash, ChevronRight, Printer, TableProperties } from 'lucide-react';
 import { obtenerCatalogoMesa, obtenerTasaMesa, enviarComanda, buscarClientePorCedula, buscarClientesMesa, type ItemComanda, type ClienteSugeridoMesa } from '@/actions/mesas-actions';
 import type { TerminalVinculado } from './MesasHub';
 
@@ -40,9 +40,24 @@ const extraerNotasPreparacion = (prod: any): string[] => {
 interface Props {
   terminal: TerminalVinculado;
   meseroNombre: string;
+  mesaPreseleccionada?: {
+    identificador: string;
+    nombreCliente?: string;
+    totalActual?: number;
+  } | null;
+  mesasAbiertas?: any[];
+  onLimpiarMesaPreseleccionada?: () => void;
+  onSeleccionarMesaAbierta?: (mesa: any) => void;
 }
 
-export default function NuevaComanda({ terminal, meseroNombre }: Props) {
+export default function NuevaComanda({
+  terminal,
+  meseroNombre,
+  mesaPreseleccionada,
+  mesasAbiertas,
+  onLimpiarMesaPreseleccionada,
+  onSeleccionarMesaAbierta,
+}: Props) {
   const [tasaEfectiva, setTasaEfectiva] = useState<number>(terminal.tasa || 1);
   const [productos, setProductos] = useState<any[]>([]);
   const [categorias, setCategorias] = useState<string[]>([]);
@@ -51,6 +66,17 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
   const [carrito, setCarrito] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [mesa, setMesa] = useState('');
+
+  // Sincronizar mesa cuando viene preseleccionada desde Mesas Abiertas
+  useEffect(() => {
+    if (mesaPreseleccionada?.identificador) {
+      setMesa(mesaPreseleccionada.identificador);
+      if (mesaPreseleccionada.nombreCliente) {
+        setClienteNombre(mesaPreseleccionada.nombreCliente);
+      }
+    }
+  }, [mesaPreseleccionada]);
+
   const [clienteId, setClienteId] = useState('');
   const [clienteNombre, setClienteNombre] = useState('');
   const [clienteTelefono, setClienteTelefono] = useState('');
@@ -334,6 +360,7 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
         setPropina(0);
         setCopias(1);
         try { localStorage.removeItem(DRAFT_KEY); } catch {}
+        onLimpiarMesaPreseleccionada?.();
         setCartOpen(false);
       }, 1500);
     } catch {
@@ -354,8 +381,62 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
 
   return (
     <div className="space-y-4 pb-24">
-      {/* Selector de Mesa (Opcional) */}
+      {/* Selector de Mesa (Opcional) y Mesas Activas */}
       <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4">
+        {/* Mesas Activas Rápidas */}
+        {mesasAbiertas && mesasAbiertas.length > 0 && (
+          <div className="mb-3.5 pb-3 border-b border-neutral-800">
+            <div className="flex items-center justify-between mb-2 px-0.5">
+              <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
+                <TableProperties size={13} className="text-indigo-400" /> Mesas Activas en Vivo
+              </span>
+              <span className="text-[10px] text-neutral-500 font-medium">
+                {mesasAbiertas.length} mesa{mesasAbiertas.length > 1 ? 's' : ''} abierta{mesasAbiertas.length > 1 ? 's' : ''}
+              </span>
+            </div>
+            <div className="flex gap-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden">
+              {mesasAbiertas.map((m: any) => {
+                let num = String(m.mesa_identificador || '').trim();
+                if (num.toLowerCase().startsWith('mesa ')) num = num.substring(5).trim();
+                if (num.includes(' - ')) num = num.split(' - ')[0].trim();
+                const esSeleccionada =
+                  mesa.trim().toLowerCase() === num.trim().toLowerCase() ||
+                  mesa.trim().toLowerCase() === String(m.mesa_identificador).trim().toLowerCase();
+
+                return (
+                  <button
+                    key={m.id || num}
+                    type="button"
+                    onClick={() => {
+                      if (onSeleccionarMesaAbierta) {
+                        onSeleccionarMesaAbierta(m);
+                      } else {
+                        setMesa(num);
+                      }
+                    }}
+                    className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border flex items-center gap-1.5 active:scale-95 ${
+                      esSeleccionada
+                        ? 'bg-indigo-600 text-white border-indigo-400 shadow-sm shadow-indigo-500/30'
+                        : 'bg-neutral-800/90 hover:bg-neutral-800 text-neutral-300 border-neutral-700/80 hover:border-neutral-600'
+                    }`}
+                  >
+                    <span>{/^(mesa|orden|barra|terraza)/i.test(num) ? num : `Mesa ${num}`}</span>
+                    {Number(m.total) > 0 && (
+                      <span
+                        className={`text-[10px] px-1 py-0.2 rounded font-mono font-bold ${
+                          esSeleccionada ? 'bg-indigo-700 text-indigo-100' : 'bg-neutral-900 text-emerald-400'
+                        }`}
+                      >
+                        ${Number(m.total).toFixed(2)}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-between mb-2">
           <label className="text-xs text-neutral-500 uppercase tracking-wider font-semibold">Mesa / Identificador (opcional)</label>
           {tasaEfectiva > 0 && (
@@ -375,13 +456,44 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
             className="w-full h-14 bg-neutral-800 border border-neutral-700 rounded-xl pl-10 pr-10 text-white text-lg font-semibold placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
           />
           {mesa && (
-            <button onClick={() => setMesa('')} className="absolute right-3 text-neutral-500 hover:text-white transition-colors">
+            <button
+              onClick={() => {
+                setMesa('');
+                onLimpiarMesaPreseleccionada?.();
+              }}
+              className="absolute right-3 text-neutral-500 hover:text-white transition-colors"
+            >
               <X size={18} />
             </button>
           )}
         </div>
+
+        {/* Indicador visual de agregar a mesa existente */}
+        {mesa.trim() && (
+          <div className="mt-2.5 bg-indigo-500/10 border border-indigo-500/25 rounded-xl px-3 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+              <span className="text-xs text-indigo-200 truncate">
+                Agregando ronda a: <strong>{/^(mesa|orden|barra)/i.test(mesa) ? mesa : `Mesa ${mesa}`}</strong>
+                {mesaPreseleccionada?.totalActual ? ` (Total previo: $${mesaPreseleccionada.totalActual.toFixed(2)})` : ''}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setMesa('');
+                onLimpiarMesaPreseleccionada?.();
+              }}
+              className="text-[11px] text-neutral-400 hover:text-white underline shrink-0 ml-2"
+            >
+              Nueva mesa
+            </button>
+          </div>
+        )}
+
         {/* Nota general debajo */}
         <div className="mt-3">
+
           <div className="flex items-center justify-between mb-1.5">
             <label className="text-xs text-neutral-400 font-medium">Nota general de la mesa (opcional)</label>
             <span className="text-[10px] text-neutral-500">Presiona Enter para escribir abajo ↵</span>
