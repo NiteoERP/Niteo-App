@@ -554,7 +554,8 @@ export async function cancelarItemMesa(payload: CancelarItemPayload): Promise<{ 
       if (payload.mesaId) {
         queryCuenta = queryCuenta.eq('id', payload.mesaId);
       } else {
-        queryCuenta = queryCuenta.or(`nombre_cuenta.eq.${payload.mesaIdentificador},numero_documento.eq.${payload.mesaIdentificador},nombre_cuenta.eq.Mesa ${payload.mesaIdentificador}`);
+        const mClean = payload.mesaIdentificador.replace(/"/g, '');
+        queryCuenta = queryCuenta.or(`nombre_cuenta.eq."${mClean}",numero_documento.eq."${mClean}",nombre_cuenta.eq."Mesa ${mClean}"`);
       }
 
       const { data: cuenta } = await queryCuenta.maybeSingle();

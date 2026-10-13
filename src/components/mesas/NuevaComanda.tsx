@@ -866,11 +866,12 @@ export default function NuevaComanda({
                         <button
                           type="button"
                           onClick={() => setComentandoKey(comentandoKey === item.key ? null : item.key)}
-                          className={`p-2 rounded-lg transition-colors shrink-0 flex items-center gap-1.5 text-xs font-medium ${
-                            item.comentario ? 'text-amber-400 bg-amber-500/10 border border-amber-500/30' : 'text-neutral-400 bg-neutral-800 hover:text-white'
+                          className={`min-w-12 min-h-12 px-3 rounded-xl transition-colors shrink-0 flex items-center justify-center gap-2 text-sm font-semibold active:scale-95 touch-manipulation ${
+                            item.comentario ? 'text-amber-400 bg-amber-500/10 border border-amber-500/40' : 'text-neutral-300 bg-neutral-800 border border-neutral-700 hover:text-white'
                           }`}
+                          title="Agregar nota para cocina"
                         >
-                          <MessageSquare size={14} />
+                          <MessageSquare size={22} />
                           {!mostrarPanelComentarios && <span>Agregar nota</span>}
                         </button>
                         {mostrarPanelComentarios && (

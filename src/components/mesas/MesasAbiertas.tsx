@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   BellRing,
   RefreshCw,
@@ -66,9 +66,11 @@ export default function MesasAbiertas({ terminal, meseroNombre, metodosPago, onM
     return 'border-red-500/40';
   };
 
+  const onMesasLoadedRef = useRef(onMesasLoaded);
+  useEffect(() => { onMesasLoadedRef.current = onMesasLoaded; }, [onMesasLoaded]);
+
   const cargar = useCallback(async (showRefresh = false) => {
     if (showRefresh) setRefreshing(true);
-    else if (mesas.length === 0) setLoading(true);
     try {
       const data = await obtenerMesasAbiertas(terminal.sedeId);
       // Agrupar por mesa_identificador — quedar con la comanda más reciente de cada mesa
@@ -83,12 +85,12 @@ export default function MesasAbiertas({ terminal, meseroNombre, metodosPago, onM
         String(a.mesa_identificador).localeCompare(String(b.mesa_identificador))
       );
       setMesas(listaFinal);
-      onMesasLoaded?.(listaFinal.length, listaFinal);
+      onMesasLoadedRef.current?.(listaFinal.length, listaFinal);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [terminal.sedeId, onMesasLoaded]);
+  }, [terminal.sedeId]);
 
   useEffect(() => {
     cargar();
