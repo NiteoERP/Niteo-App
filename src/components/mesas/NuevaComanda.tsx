@@ -87,14 +87,18 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
         setSugerenciasClientes(resultados || []);
         setMostrarDropdownClientes((resultados && resultados.length > 0) || false);
 
-        // Si escribió una cédula de 5+ dígitos y hay coincidencia exacta única y aún no tiene nombre, autocompletar
-        if (esCedula && trimmed.length >= 5 && resultados.length === 1) {
-          const unico = resultados[0];
-          const soloNumInput = trimmed.replace(/^[VEJGvejg][-]?/, '');
-          const soloNumDb = (unico.rif_cedula || '').trim().replace(/^[VEJGvejg][-]?/, '');
-          if (soloNumDb && soloNumDb === soloNumInput && !clienteNombre.trim()) {
-            setClienteNombre(unico.nombre);
-            if (unico.telefono) setClienteTelefono(unico.telefono);
+        // Si escribió una cédula de 5+ dígitos y hay coincidencia, autocompletar clienteId, nombre y teléfono
+        if (esCedula && trimmed.length >= 5 && resultados && resultados.length >= 1) {
+          const soloNumInput = trimmed.replace(/[^0-9]/g, '');
+          const match = resultados.find(u => {
+            const soloNumDb = (u.rif_cedula || '').trim().replace(/[^0-9]/g, '');
+            return soloNumDb && soloNumDb === soloNumInput;
+          }) || (resultados.length === 1 ? resultados[0] : null);
+
+          if (match && (!clienteNombre.trim() || !clienteId)) {
+            setClienteId(match.id);
+            if (!clienteNombre.trim()) setClienteNombre(match.nombre);
+            if (match.telefono && !clienteTelefono.trim()) setClienteTelefono(match.telefono);
           }
         }
       } catch {
@@ -305,6 +309,9 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
         tipo: 'comanda',
         mesaIdentificador: mesaFinal,
         clienteNombre: nombreFinal || undefined,
+        clienteCedula: clienteCedula.trim() || undefined,
+        clienteTelefono: clienteTelefono.trim() || undefined,
+        clienteId: clienteId || undefined,
         comentarioGeneral: comentarioGeneral.trim() || undefined,
         montoPropina: propina > 0 ? propina : undefined,
         numeroCopias: copias,
@@ -609,26 +616,6 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
                     </div>
                   ) : (
                     <>
-                      <div>
-                        <label className="text-xs font-bold text-indigo-400/80 mb-1.5 flex items-center justify-between uppercase tracking-wider">
-                          <span>Nombre del Cliente</span>
-                          {buscandoCliente && <Loader2 size={12} className="animate-spin text-indigo-400" />}
-                        </label>
-                        <input
-                          type="text"
-                          value={clienteNombre}
-                          onChange={e => {
-                            const val = e.target.value;
-                            setClienteNombre(val);
-                            dispararBusquedaClientes(val, false);
-                          }}
-                          onFocus={() => {
-                            if (sugerenciasClientes.length > 0) setMostrarDropdownClientes(true);
-                          }}
-                          placeholder="Buscar o escribir nombre (Ej: Juan Pérez)"
-                          className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
-                        />
-                      </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className="text-xs font-bold text-indigo-400/80 mb-1.5 flex items-center justify-between uppercase tracking-wider">
@@ -660,6 +647,26 @@ export default function NuevaComanda({ terminal, meseroNombre }: Props) {
                             className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
                           />
                         </div>
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-indigo-400/80 mb-1.5 flex items-center justify-between uppercase tracking-wider">
+                          <span>Nombre del Cliente</span>
+                          {buscandoCliente && <Loader2 size={12} className="animate-spin text-indigo-400" />}
+                        </label>
+                        <input
+                          type="text"
+                          value={clienteNombre}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setClienteNombre(val);
+                            dispararBusquedaClientes(val, false);
+                          }}
+                          onFocus={() => {
+                            if (sugerenciasClientes.length > 0) setMostrarDropdownClientes(true);
+                          }}
+                          placeholder="Buscar o escribir nombre (Ej: Juan Pérez)"
+                          className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
+                        />
                       </div>
 
                       {/* Dropdown con clientes sugeridos (por nombre o por cédula) */}

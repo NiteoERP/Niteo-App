@@ -23,6 +23,9 @@ export interface ComandaPayload {
   tipo: 'comanda' | 'alerta_pago';
   mesaIdentificador: string;
   clienteNombre?: string;
+  clienteCedula?: string;
+  clienteTelefono?: string;
+  clienteId?: string;
   comentarioGeneral?: string;
   metodoPagoSugerido?: string;
   montoPropina?: number;
@@ -155,6 +158,80 @@ export async function enviarComanda(payload: ComandaPayload): Promise<{ success:
     comentarioFinal = (comentarioFinal ? comentarioFinal + ' ' : '') + '[COPIAS:2]';
   }
 
+  // 1. Extraer y sanear datos del cliente
+  let nombreSolo = (payload.clienteNombre || '').trim();
+  let cedulaLimpia = (payload.clienteCedula || '').trim();
+  let telefonoLimpio = (payload.clienteTelefono || '').trim();
+
+  if (nombreSolo.includes(' - CI/NIT: ')) {
+    const idx = nombreSolo.indexOf(' - CI/NIT: ');
+    const rest = nombreSolo.substring(idx + ' - CI/NIT: '.length);
+    nombreSolo = nombreSolo.substring(0, idx).trim();
+    if (rest.includes(' - Tel: ')) {
+      const tidx = rest.indexOf(' - Tel: ');
+      if (!cedulaLimpia) cedulaLimpia = rest.substring(0, tidx).trim();
+      if (!telefonoLimpio) telefonoLimpio = rest.substring(tidx + ' - Tel: '.length).trim();
+    } else {
+      if (!cedulaLimpia) cedulaLimpia = rest.trim();
+    }
+  }
+
+  // 2. Auto-registrar o vincular cliente en tabla 'clientes' de Supabase
+  let finalClienteId = payload.clienteId || null;
+  const { createAdminClient } = await import('@/utils/supabase/admin');
+  const admin = createAdminClient();
+
+  if (cedulaLimpia) {
+    const soloNumeros = cedulaLimpia.replace(/[^0-9]/g, '');
+    let queryCed = admin
+      .from('clientes')
+      .select('id, nombre, telefono, rif_cedula')
+      .eq('empresa_id', empresaId);
+
+    if (soloNumeros.length >= 4) {
+      queryCed = queryCed.or(`rif_cedula.eq.${cedulaLimpia},rif_cedula.ilike.%${soloNumeros}%`);
+    } else {
+      queryCed = queryCed.eq('rif_cedula', cedulaLimpia);
+    }
+
+    const { data: existingClient } = await queryCed.limit(1).maybeSingle();
+
+    if (existingClient) {
+      finalClienteId = existingClient.id;
+      if (telefonoLimpio && !existingClient.telefono) {
+        await admin
+          .from('clientes')
+          .update({ telefono: telefonoLimpio, updated_at: new Date().toISOString() })
+          .eq('id', existingClient.id);
+      }
+    } else if (nombreSolo) {
+      const clientPosId = `MESERO_${Date.now().toString(36).toUpperCase()}_${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      const { data: newClient, error: errNewCli } = await admin
+        .from('clientes')
+        .insert({
+          empresa_id: empresaId,
+          id_pos: clientPosId,
+          nombre: nombreSolo,
+          rif_cedula: cedulaLimpia,
+          telefono: telefonoLimpio || null,
+          estado_activo: true,
+        })
+        .select('id')
+        .maybeSingle();
+
+      if (newClient) {
+        finalClienteId = newClient.id;
+      }
+      if (errNewCli) {
+        console.warn('[enviarComanda] No se pudo registrar cliente en clientes:', errNewCli.message);
+      }
+    }
+  }
+
+  let clienteNombreComanda = nombreSolo;
+  if (cedulaLimpia) clienteNombreComanda += ` - CI/NIT: ${cedulaLimpia}`;
+  if (telefonoLimpio) clienteNombreComanda += ` - Tel: ${telefonoLimpio}`;
+
   const { data, error } = await supabase
     .from('comandas_mesero')
     .insert({
@@ -164,7 +241,7 @@ export async function enviarComanda(payload: ComandaPayload): Promise<{ success:
       mesero_nombre: meseroNombre,
       tipo: payload.tipo,
       mesa_identificador: payload.mesaIdentificador,
-      cliente_nombre: payload.clienteNombre || null,
+      cliente_nombre: clienteNombreComanda || null,
       comentario_general: comentarioFinal || null,
       metodo_pago_sugerido: payload.metodoPagoSugerido || null,
       propina: payload.montoPropina || 0,
@@ -287,17 +364,31 @@ export async function buscarClientesMesa(query: string): Promise<ClienteSugerido
   const empresaId = await obtenerEmpresaIdMesero(supabase, user);
   if (!empresaId) return [];
 
-  const q = query.trim().replace(/[,()]/g, '');
-  if (q.length < 2) return [];
+  const raw = query.trim().replace(/[,()]/g, '');
+  if (raw.length < 2) return [];
 
   const { createAdminClient } = await import('@/utils/supabase/admin');
   const admin = createAdminClient();
+
+  const soloNumeros = raw.replace(/[^0-9]/g, '');
+  const sinPrefijo = raw.replace(/^[VEJGvejg][-]?/, '').replace(/\./g, '');
+
+  const orClauses: string[] = [
+    `nombre.ilike.%${raw}%`,
+    `rif_cedula.ilike.%${raw}%`
+  ];
+  if (soloNumeros.length >= 3 && soloNumeros !== raw) {
+    orClauses.push(`rif_cedula.ilike.%${soloNumeros}%`);
+  }
+  if (sinPrefijo.length >= 3 && sinPrefijo !== raw && sinPrefijo !== soloNumeros) {
+    orClauses.push(`rif_cedula.ilike.%${sinPrefijo}%`);
+  }
 
   const { data, error } = await admin
     .from('clientes')
     .select('id, nombre, rif_cedula, telefono')
     .eq('empresa_id', empresaId)
-    .or(`nombre.ilike.%${q}%,rif_cedula.ilike.%${q}%`)
+    .or(orClauses.join(','))
     .order('nombre')
     .limit(15);
 
@@ -316,7 +407,7 @@ export async function buscarClientesMesa(query: string): Promise<ClienteSugerido
         telefono: c.telefono || '',
       });
     }
-    if (unicos.length >= 6) break;
+    if (unicos.length >= 8) break;
   }
 
   return unicos;
@@ -330,27 +421,42 @@ export async function buscarClientePorCedula(cedula: string) {
   const empresaId = await obtenerEmpresaIdMesero(supabase, user);
   if (!empresaId) return null;
 
-  const clean = cedula.trim();
+  const clean = cedula.trim().replace(/[,()]/g, '');
   if (!clean) return null;
 
   const { createAdminClient } = await import('@/utils/supabase/admin');
   const admin = createAdminClient();
 
-  // Intentar coincidencia exacta primero o coincidencia sin prefijo V/E/J
-  const soloNumeros = clean.replace(/^[VEJGvejg][-]?/, '');
+  const soloNumeros = clean.replace(/[^0-9]/g, '');
+  const sinPrefijo = clean.replace(/^[VEJGvejg][-]?/, '').replace(/\./g, '');
+
+  const orClauses = [`rif_cedula.ilike.%${clean}%`];
+  if (soloNumeros.length >= 3 && soloNumeros !== clean) {
+    orClauses.push(`rif_cedula.ilike.%${soloNumeros}%`);
+  }
+  if (sinPrefijo.length >= 3 && sinPrefijo !== clean && sinPrefijo !== soloNumeros) {
+    orClauses.push(`rif_cedula.ilike.%${sinPrefijo}%`);
+  }
+
   const { data } = await admin
     .from('clientes')
     .select('id, nombre, rif_cedula, telefono')
     .eq('empresa_id', empresaId)
-    .or(`rif_cedula.ilike.${clean},rif_cedula.ilike.%${soloNumeros}%`)
+    .or(orClauses.join(','))
     .limit(5);
 
   if (!data || data.length === 0) return null;
 
   const exacto = data.find(
-    (c: any) =>
-      (c.rif_cedula || '').trim().toLowerCase() === clean.toLowerCase() ||
-      (c.rif_cedula || '').trim().replace(/^[VEJGvejg][-]?/, '') === soloNumeros
+    (c: any) => {
+      const dbRif = (c.rif_cedula || '').trim().toLowerCase();
+      const dbSoloNum = dbRif.replace(/[^0-9]/g, '');
+      return (
+        dbRif === clean.toLowerCase() ||
+        (soloNumeros && dbSoloNum === soloNumeros) ||
+        (sinPrefijo && dbRif.replace(/^[VEJGvejg][-]?/, '').replace(/\./g, '') === sinPrefijo.toLowerCase())
+      );
+    }
   );
 
   return exacto || data[0];
