@@ -273,7 +273,7 @@ export async function obtenerMesasAbiertas(sedeId: string) {
   // 2. Obtener comandas enviadas por meseros que todavía están en tránsito hacia el POS (estado = 'pendiente')
   const { data: comandasPendientes } = await admin
     .from('comandas_mesero')
-    .select('id, mesa_identificador, mesero_nombre, cliente_nombre, items, tipo, estado, created_at, metodo_pago_sugerido')
+    .select('id, mesa_identificador, mesero_nombre, cliente_nombre, comentario_general, items, tipo, estado, created_at, metodo_pago_sugerido')
     .eq('sede_id', sedeId)
     .eq('estado', 'pendiente')
     .eq('tipo', 'comanda')
@@ -290,11 +290,17 @@ export async function obtenerMesasAbiertas(sedeId: string) {
       const tasaMesa = Number(items[0]?.tasa_efectiva) || baseTasa;
       const totalUSD = Number(c.total) || 0;
       const totalBs = Math.round(totalUSD * tasaMesa * 100) / 100;
+      const nombreCuenta = String(c.nombre_cuenta || c.numero_documento || 'Mesa').trim();
+      let clienteExtraido = '';
+      if (nombreCuenta.includes(' - ')) {
+        clienteExtraido = nombreCuenta.split(' - ').slice(1).join(' - ').trim();
+      }
       listaMesas.push({
         id: c.id,
-        mesa_identificador: c.nombre_cuenta || c.numero_documento || 'Mesa',
+        mesa_identificador: nombreCuenta,
+        numero_documento: c.numero_documento || '',
         mesero_nombre: mesero,
-        cliente_nombre: '',
+        cliente_nombre: clienteExtraido,
         items: items,
         tipo: 'comanda',
         estado: 'recibido',
@@ -307,13 +313,23 @@ export async function obtenerMesasAbiertas(sedeId: string) {
     }
   }
 
-  // Anexar comandas pendientes que aún no hayan sido asimiladas en pos_cuentas_abiertas
+  // Anexar comandas pendientes que aún no hayan sido asimiladas en pos_cuentas_abiertas (ignorando cancelaciones)
   if (comandasPendientes && comandasPendientes.length > 0) {
     for (const cp of comandasPendientes) {
-      const yaExisteEnPOS = listaMesas.some(m =>
-        m.mesa_identificador === cp.mesa_identificador ||
-        m.mesa_identificador === `Mesa ${cp.mesa_identificador}`
-      );
+      if (String(cp.comentario_general || '').includes('[CANCELACION]')) {
+        continue;
+      }
+      const cpClean = String(cp.mesa_identificador || '').trim().replace(/^mesa\s+/i, '').toLowerCase();
+      const yaExisteEnPOS = listaMesas.some(m => {
+        const mStr = String(m.mesa_identificador || '').trim().toLowerCase();
+        const mSinPref = mStr.replace(/^mesa\s+/i, '');
+        const mBase = mSinPref.split(' - ')[0].trim();
+        return (
+          mStr === cpClean ||
+          mSinPref === cpClean ||
+          mBase === cpClean
+        );
+      });
       if (!yaExisteEnPOS) {
         const totalUSD = Array.isArray(cp.items) ? cp.items.reduce((acc: number, it: any) => acc + (Number(it.cantidad) || 0) * (Number(it.precio_unitario) || 0), 0) : 0;
         const totalBs = Math.round(totalUSD * baseTasa * 100) / 100;
