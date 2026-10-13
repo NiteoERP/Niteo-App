@@ -267,36 +267,20 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
       </div>
 
       {/* Resumen de Resultados Filtrados */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-3.5 py-2.5 bg-black/30 border border-neutral-800/80 rounded-lg text-xs">
-        <div className="flex items-center gap-3 text-neutral-400 flex-wrap">
-          <span>
-            Mostrando <strong className="text-white">{filtradas.length}</strong> de {sales.length} en vivo
-          </span>
-          {filtroMetodo === 'CORTESIA' && (
-            <span className="flex items-center gap-1 text-amber-400 font-medium bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
-              ⭐ Filtro: Solo Cortesías
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-3.5 py-3 bg-black/30 border border-neutral-800/80 rounded-xl text-xs">
+        <div className="flex items-center justify-between sm:justify-start gap-2 text-neutral-400 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span>
+              Mostrando <strong className="text-white">{filtradas.length}</strong> de {sales.length} en vivo
             </span>
-          )}
-          {filtroMetodo !== 'TODOS' && filtroMetodo !== 'CORTESIA' && (
-            <span className="flex items-center gap-1 text-indigo-400 font-medium bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
-              Filtro: {filtroMetodo}
-            </span>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3 ml-auto">
-          <div className="text-right flex items-center gap-2">
-            <div>
-              <span className="text-neutral-400 mr-1.5">
-                {filtroMetodo === 'CORTESIA' ? 'Valor Regalado:' : 'Total Percibido:'}
+            {filtroMetodo === 'CORTESIA' && (
+              <span className="flex items-center gap-1 text-amber-400 font-medium bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                ⭐ Solo Cortesías
               </span>
-              <span className={`font-bold text-sm ${filtroMetodo === 'CORTESIA' ? 'text-amber-400' : 'text-emerald-400'}`}>
-                {formatCurrency(totalMontoFiltrado)}
-              </span>
-            </div>
-            {filtroMetodo !== 'CORTESIA' && totalValorRegalado > 0 && (
-              <span className="text-[11px] text-amber-400/90 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20" title="Valor en productos entregados por cortesía (excluidos del ingreso percibido)">
-                🎁 {formatCurrency(totalValorRegalado)} en cortesías
+            )}
+            {filtroMetodo !== 'TODOS' && filtroMetodo !== 'CORTESIA' && (
+              <span className="flex items-center gap-1 text-indigo-400 font-medium bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                {filtroMetodo}
               </span>
             )}
           </div>
@@ -306,7 +290,36 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
                 setBusqueda('');
                 setFiltroMetodo('TODOS');
               }}
-              className="text-[11px] text-neutral-400 hover:text-white underline ml-2 transition-colors cursor-pointer"
+              className="text-[11px] text-rose-400 hover:text-rose-300 underline transition-colors cursor-pointer sm:hidden"
+            >
+              Limpiar
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t border-neutral-800/70 sm:border-0">
+          <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+            <div className="flex items-center gap-1.5">
+              <span className="text-neutral-400">
+                {filtroMetodo === 'CORTESIA' ? 'Valor Regalado:' : 'Total Percibido:'}
+              </span>
+              <span className={`font-extrabold text-sm sm:text-base ${filtroMetodo === 'CORTESIA' ? 'text-amber-400' : 'text-emerald-400'}`}>
+                {formatCurrency(totalMontoFiltrado)}
+              </span>
+            </div>
+            {filtroMetodo !== 'CORTESIA' && totalValorRegalado > 0 && (
+              <span className="text-[11px] text-amber-400/90 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 whitespace-nowrap" title="Valor en productos entregados por cortesía (excluidos del ingreso percibido)">
+                🎁 {formatCurrency(totalValorRegalado)}
+              </span>
+            )}
+          </div>
+          {(busqueda || filtroMetodo !== 'TODOS') && (
+            <button
+              onClick={() => {
+                setBusqueda('');
+                setFiltroMetodo('TODOS');
+              }}
+              className="hidden sm:inline-block text-[11px] text-neutral-400 hover:text-white underline ml-2 transition-colors cursor-pointer whitespace-nowrap"
             >
               Limpiar filtros
             </button>
@@ -323,64 +336,83 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
             <p className="text-xs mt-1">Las transacciones del POS aparecerán aquí automáticamente.</p>
           </div>
         ) : (
-          <div className="flex flex-row md:flex-col overflow-x-auto md:overflow-visible snap-x snap-mandatory gap-4 md:gap-0 p-4 md:p-0 md:divide-y md:divide-neutral-800 custom-scrollbar">
+          <div className="flex flex-col divide-y divide-neutral-800">
             {filtradas.map((sale) => {
               const isExpanded = expandedRow === sale.id_factura;
               return (
-              <div key={sale.id_factura} className="min-w-[280px] md:min-w-0 shrink-0 snap-center group flex flex-col bg-neutral-950 md:bg-transparent border border-neutral-800 md:border-none rounded-xl md:rounded-none md:hover:bg-neutral-800/30 transition-colors duration-200">
+              <div key={sale.id_factura} className="group flex flex-col hover:bg-neutral-800/30 transition-colors duration-200">
                 
                 {/* Header (Resumen) */}
                 <div 
-                  className="flex flex-col md:flex-row md:items-center justify-between p-4 cursor-pointer gap-4 md:gap-0"
+                  className="flex flex-col md:flex-row md:items-center justify-between p-3.5 sm:p-4 cursor-pointer gap-3 md:gap-4"
                   onClick={() => setExpandedRow(isExpanded ? null : sale.id_factura)}
                 >
                   {/* Izquierda: Info Cliente y Hora */}
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 text-indigo-400 shrink-0">
-                      <Receipt size={18} />
+                  <div className="flex items-start sm:items-center justify-between md:justify-start gap-3">
+                    <div className="flex items-start sm:items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 text-indigo-400 shrink-0">
+                        <Receipt size={18} />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-neutral-200 font-medium flex items-center gap-2 text-sm sm:text-base flex-wrap">
+                          <span className="font-bold text-white uppercase truncate">{sale.numero_orden || (sale.tipo_documento === 'Sales' || sale.tipo_documento === 'VENTA' ? 'Venta de Caja' : sale.tipo_documento)}</span>
+                          {sale.esta_pagado && <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />}
+                          {isCortesiaVenta(sale) && (
+                            <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase flex items-center gap-1 shadow-sm">
+                              <span>⭐</span> Cortesía
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-neutral-500 text-xs sm:text-sm flex items-center gap-1 mt-0.5">
+                          <Clock size={12} className="shrink-0" /> {formatDateTime(sale.fecha_venta)}
+                          <span className="mx-1">•</span>
+                          <span className="font-semibold text-neutral-300">{formatDocNumber(sale.numero_documento)}</span>
+                        </p>
+                        {/* Cliente y Método de Pago */}
+                        <div className="flex flex-wrap gap-x-2.5 gap-y-1 mt-1.5">
+                          {sale.cliente_nombre && (
+                            <span className="text-xs text-neutral-300 flex items-center gap-1 bg-neutral-800/70 px-2 py-0.5 rounded border border-neutral-700/60">
+                              <Users size={11} className="text-indigo-400 shrink-0" />
+                              <span className="truncate max-w-[160px]">{privacyMode ? '****' : sale.cliente_nombre}</span>
+                            </span>
+                          )}
+                          {sale.pagos && sale.pagos.length > 0 ? (
+                            sale.pagos.map((p, idx) => (
+                              <span key={idx} className="text-[11px] font-medium text-emerald-400 flex items-center gap-1 bg-emerald-400/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                                <CreditCard size={11} className="shrink-0" />
+                                {getCanonicalPaymentMethodName(p.tipo_pago)}: {formatCurrency(p.monto)}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-[11px] font-medium text-neutral-500 flex items-center gap-1 bg-neutral-900 px-1.5 py-0.5 rounded border border-neutral-800">
+                              <CreditCard size={11} className="shrink-0" />
+                              {sale.esta_pagado ? 'No registrado' : 'A Crédito'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-neutral-200 font-medium flex items-center gap-2 text-base flex-wrap">
-                        <span className="font-bold text-white uppercase">{sale.numero_orden || (sale.tipo_documento === 'Sales' || sale.tipo_documento === 'VENTA' ? 'Venta de Caja' : sale.tipo_documento)}</span>
-                        {sale.esta_pagado && <CheckCircle2 size={14} className="text-emerald-500" />}
-                        {isCortesiaVenta(sale) && (
-                          <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase flex items-center gap-1 shadow-sm">
-                            <span>⭐</span> Cortesía
-                          </span>
+
+                    {/* Monto y Flecha visibles arriba a la derecha en móvil */}
+                    <div className="flex md:hidden items-center gap-2 shrink-0">
+                      <div className="text-right">
+                        {isCortesiaVenta(sale) ? (
+                          <div>
+                            <p className="text-amber-400 font-extrabold text-base">$0.00</p>
+                            <p className="text-amber-400/80 text-[10px] font-medium">({formatCurrency(sale.total)})</p>
+                          </div>
+                        ) : (
+                          <p className="text-emerald-400 font-extrabold text-base">{formatCurrency(sale.total)}</p>
                         )}
                       </div>
-                      <p className="text-neutral-500 text-sm flex items-center gap-1 mt-0.5">
-                        <Clock size={12} /> {formatDateTime(sale.fecha_venta)}
-                        <span className="mx-1">•</span>
-                        {formatDocNumber(sale.numero_documento)}
-                      </p>
-                      {/* FIX 5: Cliente y Método de Pago */}
-                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
-                        {sale.cliente_nombre && (
-                          <span className="text-xs text-neutral-400 flex items-center gap-1">
-                            <Users size={11} className="text-indigo-400" />
-                            {privacyMode ? '****' : sale.cliente_nombre}
-                          </span>
-                        )}
-                        {sale.pagos && sale.pagos.length > 0 ? (
-                          sale.pagos.map((p, idx) => (
-                            <span key={idx} className="text-[11px] font-medium text-emerald-400 flex items-center gap-1 bg-emerald-400/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
-                              <CreditCard size={11} />
-                              {getCanonicalPaymentMethodName(p.tipo_pago)}: {formatCurrency(p.monto)}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-[11px] font-medium text-neutral-500 flex items-center gap-1 bg-neutral-900 px-1.5 py-0.5 rounded border border-neutral-800">
-                            <CreditCard size={11} />
-                            {sale.esta_pagado ? 'No registrado' : 'A Crédito'}
-                          </span>
-                        )}
+                      <div className="p-1 rounded-lg bg-neutral-800/60 text-neutral-400">
+                        {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                       </div>
                     </div>
                   </div>
 
-                  {/* Derecha: Total y Flecha */}
-                  <div className="flex items-center justify-between md:justify-end gap-6 border-t md:border-t-0 border-neutral-800 pt-3 md:pt-0 mt-3 md:mt-0">
+                  {/* Derecha (Escritorio): Total y Flecha */}
+                  <div className="hidden md:flex items-center justify-end gap-6 shrink-0">
                     <div className="text-right">
                       {isCortesiaVenta(sale) ? (
                         <div>

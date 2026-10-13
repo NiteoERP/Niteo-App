@@ -94,50 +94,50 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
         
         </div>
         {/* Tabs Navigation */}
-        <div className="flex overflow-x-auto bg-neutral-900 border border-neutral-800 rounded-lg p-1 hide-scrollbar">
+        <div className="grid grid-cols-2 sm:flex bg-neutral-900 border border-neutral-800 rounded-xl p-1.5 gap-1">
           <a
             href={`?tab=ventas${activeSedeId ? `&sede=${activeSedeId}` : ''}`}
-            className={`flex flex-1 items-center justify-center gap-2 h-14 px-4 rounded-md text-sm font-medium transition-all whitespace-nowrap shrink-0 ${
+            className={`flex flex-1 items-center justify-center gap-2 h-11 sm:h-12 px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
               tab === 'ventas'
-                ? 'bg-neutral-800 text-white shadow-sm'
+                ? 'bg-neutral-800 text-white shadow-sm border border-neutral-700/60'
                 : 'text-neutral-400 hover:text-white hover:bg-neutral-800/50'
             }`}
           >
-            <Store size={16} />
-            Ventas en Vivo
+            <Store size={15} className="shrink-0" />
+            <span>Ventas en Vivo</span>
           </a>
           <a
             href={`?tab=cuentas${activeSedeId ? `&sede=${activeSedeId}` : ''}`}
-            className={`flex flex-1 items-center justify-center gap-2 h-14 px-4 rounded-md text-sm font-medium transition-all whitespace-nowrap shrink-0 ${
+            className={`flex flex-1 items-center justify-center gap-2 h-11 sm:h-12 px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
               tab === 'cuentas'
-                ? 'bg-neutral-800 text-white shadow-sm'
+                ? 'bg-neutral-800 text-white shadow-sm border border-neutral-700/60'
                 : 'text-neutral-400 hover:text-white hover:bg-neutral-800/50'
             }`}
           >
-            <Users size={16} />
-            Cuentas Abiertas
+            <Users size={15} className="shrink-0" />
+            <span>Cuentas Abiertas</span>
           </a>
           <a
             href={`?tab=catalogo${activeSedeId ? `&sede=${activeSedeId}` : ''}`}
-            className={`flex flex-1 items-center justify-center gap-2 h-14 px-4 rounded-md text-sm font-medium transition-all whitespace-nowrap shrink-0 ${
+            className={`flex flex-1 items-center justify-center gap-2 h-11 sm:h-12 px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
               tab === 'catalogo'
-                ? 'bg-neutral-800 text-white shadow-sm'
+                ? 'bg-neutral-800 text-white shadow-sm border border-neutral-700/60'
                 : 'text-neutral-400 hover:text-white hover:bg-neutral-800/50'
             }`}
           >
-            <PackageSearch size={16} />
-            Catálogo
+            <PackageSearch size={15} className="shrink-0" />
+            <span>Catálogo</span>
           </a>
           <a
             href={`?tab=historial${activeSedeId ? `&sede=${activeSedeId}` : ''}`}
-            className={`flex flex-1 items-center justify-center gap-2 h-14 px-4 rounded-md text-sm font-medium transition-all whitespace-nowrap shrink-0 ${
+            className={`flex flex-1 items-center justify-center gap-2 h-11 sm:h-12 px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
               tab === 'historial'
-                ? 'bg-neutral-800 text-white shadow-sm'
+                ? 'bg-neutral-800 text-white shadow-sm border border-neutral-700/60'
                 : 'text-neutral-400 hover:text-white hover:bg-neutral-800/50'
             }`}
           >
-            <History size={16} />
-            Historial de Ventas
+            <History size={15} className="shrink-0" />
+            <span>Historial de Ventas</span>
           </a>
         </div>
       </div>

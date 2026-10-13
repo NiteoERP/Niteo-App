@@ -866,13 +866,17 @@ export default function NuevaComanda({
                         <button
                           type="button"
                           onClick={() => setComentandoKey(comentandoKey === item.key ? null : item.key)}
-                          className={`min-w-12 min-h-12 px-3 rounded-xl transition-colors shrink-0 flex items-center justify-center gap-2 text-sm font-semibold active:scale-95 touch-manipulation ${
-                            item.comentario ? 'text-amber-400 bg-amber-500/10 border border-amber-500/40' : 'text-neutral-300 bg-neutral-800 border border-neutral-700 hover:text-white'
+                          className={`${
+                            mostrarPanelComentarios ? 'min-w-12 min-h-12 px-3.5' : 'w-full min-h-12 px-4 py-3'
+                          } rounded-xl transition-colors shrink-0 flex items-center justify-center gap-2.5 text-sm font-semibold active:scale-95 touch-manipulation ${
+                            item.comentario
+                              ? 'text-amber-400 bg-amber-500/15 border border-amber-500/40'
+                              : 'text-neutral-200 bg-neutral-800/90 border border-neutral-700 hover:bg-neutral-800 hover:text-white'
                           }`}
                           title="Agregar nota para cocina"
                         >
-                          <MessageSquare size={22} />
-                          {!mostrarPanelComentarios && <span>Agregar nota</span>}
+                          <MessageSquare size={22} className="text-amber-400 shrink-0" />
+                          {!mostrarPanelComentarios && <span>Agregar comentario / nota de cocina</span>}
                         </button>
                         {mostrarPanelComentarios && (
                           <textarea
