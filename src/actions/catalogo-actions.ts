@@ -127,28 +127,19 @@ export async function deleteProducto(id: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'No autorizado' };
 
-  const { error } = await supabase.from('productos').delete().eq('id', id);
-  if (error) {
-    if (error.code === '23503' || error.message.includes('foreign key constraint')) {
-      const { error: updateError } = await supabase
-        .from('productos')
-        .update({ estado_activo: false })
-        .eq('id', id);
+  const { error } = await supabase
+    .from('productos')
+    .update({ archivado: true, estado_activo: false })
+    .eq('id', id);
 
-      if (updateError) return { success: false, error: updateError.message };
-
-      revalidatePath('/dashboard/catalogo');
-      return { 
-        success: true, 
-        archived: true, 
-        message: 'El producto posee historial de ventas previo. Ha sido archivado y desactivado del catálogo y del POS para proteger la integridad contable.' 
-      };
-    }
-    return { success: false, error: error.message };
-  }
+  if (error) return { success: false, error: error.message };
 
   revalidatePath('/dashboard/catalogo');
-  return { success: true };
+  return { 
+    success: true, 
+    archived: true, 
+    message: 'Producto archivado y retirado del catálogo.' 
+  };
 }
 
 export async function updateProducto(id: string, data: any) {
@@ -401,43 +392,75 @@ export async function bulkDeleteProductos(ids: string[]) {
   if (!user) return { success: false, error: 'No autorizado' };
 
   if (!ids || ids.length === 0) {
-    return { success: true, deletedCount: 0, archivedCount: 0 };
+    return { success: true };
   }
 
-  let deletedCount = 0;
-  let archivedCount = 0;
+  const { error } = await supabase
+    .from('productos')
+    .update({ archivado: true, estado_activo: false })
+    .in('id', ids);
 
-  for (const id of ids) {
-    const { error } = await supabase.from('productos').delete().eq('id', id);
-    if (error) {
-      if (error.code === '23503' || error.message.includes('foreign key constraint')) {
-        const { error: updateError } = await supabase
-          .from('productos')
-          .update({ estado_activo: false })
-          .eq('id', id);
-
-        if (!updateError) {
-          archivedCount++;
-        } else {
-          return { success: false, error: updateError.message };
-        }
-      } else {
-        return { success: false, error: error.message };
-      }
-    } else {
-      deletedCount++;
-    }
-  }
+  if (error) return { success: false, error: error.message };
 
   revalidatePath('/dashboard/catalogo');
   return {
     success: true,
-    deletedCount,
-    archivedCount,
-    message: archivedCount > 0
-      ? `${deletedCount} productos eliminados definitivamente y ${archivedCount} archivados/desactivados para preservar tu historial de ventas y reportes contables.`
-      : `${deletedCount} productos eliminados exitosamente.`
+    message: `${ids.length} productos archivados y retirados del catálogo.`
   };
+}
+
+export async function restaurarProducto(id: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autorizado' };
+
+  const { error } = await supabase
+    .from('productos')
+    .update({ archivado: false, estado_activo: true })
+    .eq('id', id);
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath('/dashboard/catalogo');
+  return { success: true, message: 'Producto restaurado al catálogo activo.' };
+}
+
+export async function bulkRestaurarProductos(ids: string[]) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autorizado' };
+
+  if (!ids || ids.length === 0) return { success: true };
+
+  const { error } = await supabase
+    .from('productos')
+    .update({ archivado: false, estado_activo: true })
+    .in('id', ids);
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath('/dashboard/catalogo');
+  return { success: true, message: `${ids.length} productos restaurados al catálogo activo.` };
+}
+
+export async function hardDeleteProducto(id: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autorizado' };
+
+  const { error } = await supabase.from('productos').delete().eq('id', id);
+  if (error) {
+    if (error.code === '23503' || error.message.includes('foreign key constraint')) {
+      return { 
+        success: false, 
+        error: 'No se puede eliminar definitivamente este producto porque posee ventas o compras históricas asociadas. Debe mantenerse en Archivados para proteger tu contabilidad.' 
+      };
+    }
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/dashboard/catalogo');
+  return { success: true, message: 'Producto eliminado definitivamente.' };
 }
 
 

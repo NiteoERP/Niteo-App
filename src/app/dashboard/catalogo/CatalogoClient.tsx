@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useTransition, useRef } from 'react';
-import { Plus, Search, Edit2, Trash2, PackageSearch, Box, Share2, Copy, Check, ExternalLink, ToggleLeft, ToggleRight, Link } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, PackageSearch, Box, Share2, Copy, Check, ExternalLink, ToggleLeft, ToggleRight, Link, Archive, RotateCcw } from 'lucide-react';
 import ProductoForm from './ProductoForm';
 import BulkRecetaModal from './BulkRecetaModal';
 import DuplicarModal from './DuplicarModal';
-import { deleteProducto } from '@/actions/catalogo-actions';
+import { deleteProducto, restaurarProducto, bulkDeleteProductos, bulkRestaurarProductos, hardDeleteProducto } from '@/actions/catalogo-actions';
 import { updateCatalogoConfig } from '@/app/dashboard/configuracion/actions';
 
 export default function CatalogoClient({ 
@@ -39,16 +39,23 @@ export default function CatalogoClient({
   const [copied, setCopied] = useState(false);
   const [catalogoActivo, setCatalogoActivo] = useState(empresa?.catalogo_activo ?? false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [filterEstado, setFilterEstado] = useState<'activos' | 'inactivos' | 'todos'>('activos');
+  const [viewMode, setViewMode] = useState<'catalogo' | 'archivados'>('catalogo');
+  const [filterEstado, setFilterEstado] = useState<'todos' | 'activos' | 'inactivos'>('todos');
   const stateTimeouts = useRef<Record<string, NodeJS.Timeout>>({});
   const typeTimeouts = useRef<Record<string, NodeJS.Timeout>>({});
   const [optimisticStates, setOptimisticStates] = useState<Record<string, boolean>>({});
   const [optimisticTypes, setOptimisticTypes] = useState<Record<string, 'ELABORADO' | 'REVENTA' | 'SERVICIO'>>({});
 
-  const filtered = productos.filter(p => {
+  const normalProducts = productos.filter(p => !p.archivado);
+  const archivedProducts = productos.filter(p => !!p.archivado);
+  const currentList = viewMode === 'catalogo' ? normalProducts : archivedProducts;
+
+  const filtered = currentList.filter(p => {
     const isActivo = optimisticStates[p.id] !== undefined ? optimisticStates[p.id] : (p.estado_activo !== false);
-    if (filterEstado === 'activos' && !isActivo) return false;
-    if (filterEstado === 'inactivos' && isActivo) return false;
+    if (viewMode === 'catalogo') {
+      if (filterEstado === 'activos' && !isActivo) return false;
+      if (filterEstado === 'inactivos' && isActivo) return false;
+    }
 
     const matchesSearch = (p.nombre?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
       (p.codigo_barras?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
@@ -104,9 +111,8 @@ export default function CatalogoClient({
   };
 
   const handleBulkDelete = async () => {
-    if (!confirm(`¿Eliminar o dar de baja ${selectedIds.length} productos seleccionados?\n\nNota: Los productos con ventas históricas registradas serán archivados y desactivados automáticamente para proteger tus reportes contables.`)) return;
+    if (!confirm(`¿Archivar y retirar ${selectedIds.length} productos seleccionados del catálogo?\n\nPuedes restaurarlos en cualquier momento desde la pestaña "Archivados".`)) return;
     startTransition(async () => {
-      const { bulkDeleteProductos } = await import('@/actions/catalogo-actions');
       const res = await bulkDeleteProductos(selectedIds);
       if (!res.success && res.error) {
         alert(res.error);
@@ -117,7 +123,20 @@ export default function CatalogoClient({
     });
   };
 
-    const handleBulkAssignSede = async (sId: string) => {
+  const handleBulkRestore = async () => {
+    if (!confirm(`¿Restaurar ${selectedIds.length} productos seleccionados al catálogo activo?`)) return;
+    startTransition(async () => {
+      const res = await bulkRestaurarProductos(selectedIds);
+      if (!res.success && res.error) {
+        alert(res.error);
+      } else {
+        setSelectedIds([]);
+        if (res.message) alert(res.message);
+      }
+    });
+  };
+
+  const handleBulkAssignSede = async (sId: string) => {
     startTransition(async () => {
       const { bulkUpdateProductos } = await import('@/actions/catalogo-actions');
       const res = await bulkUpdateProductos(selectedIds, { sede_id: sId === 'GLOBAL' ? null : sId });
@@ -135,16 +154,38 @@ export default function CatalogoClient({
     });
   };
 
-
   const handleEdit = (p: any) => {
     setEditingProd(p);
     setIsFormOpen(true);
   };
 
   const handleDelete = (id: string) => {
-    if (!confirm('¿Seguro que deseas eliminar este producto?\n\nNota: Si tiene ventas históricas asociadas, se archivará y desactivará para proteger tus reportes contables.')) return;
+    if (!confirm('¿Seguro que deseas eliminar este producto?\n\nSe moverá a "Productos Archivados" y desaparecerá del catálogo activo. Podrás restaurarlo cuando lo desees.')) return;
     startTransition(async () => {
       const res = await deleteProducto(id);
+      if (!res.success && res.error) {
+        alert(res.error);
+      } else if (res.message) {
+        alert(res.message);
+      }
+    });
+  };
+
+  const handleRestore = (id: string) => {
+    startTransition(async () => {
+      const res = await restaurarProducto(id);
+      if (!res.success && res.error) {
+        alert(res.error);
+      } else if (res.message) {
+        alert(res.message);
+      }
+    });
+  };
+
+  const handleHardDelete = (id: string) => {
+    if (!confirm('¿Deseas intentar eliminar definitivamente este producto de la base de datos?\n\nSi posee facturas o movimientos contables históricos, el sistema no lo permitirá para proteger tu información.')) return;
+    startTransition(async () => {
+      const res = await hardDeleteProducto(id);
       if (!res.success && res.error) {
         alert(res.error);
       } else if (res.message) {
@@ -247,8 +288,57 @@ export default function CatalogoClient({
         </div>
       )}
 
+      {/* ── Selector de Pestañas: Catálogo vs Archivados ── */}
+      <div className="flex items-center gap-2 border-b border-neutral-800 pb-3">
+        <button
+          onClick={() => { setViewMode('catalogo'); setSelectedIds([]); }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            viewMode === 'catalogo'
+              ? 'bg-neutral-800 text-white border border-neutral-700 shadow-sm'
+              : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
+          }`}
+        >
+          <Box size={16} className={viewMode === 'catalogo' ? 'text-indigo-400' : 'text-neutral-500'} />
+          <span>Catálogo</span>
+          <span className={`text-xs px-2 py-0.5 rounded-full font-mono ${
+            viewMode === 'catalogo' ? 'bg-indigo-500/20 text-indigo-300' : 'bg-neutral-800 text-neutral-500'
+          }`}>
+            {normalProducts.length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => { setViewMode('archivados'); setSelectedIds([]); }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            viewMode === 'archivados'
+              ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30 shadow-sm'
+              : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
+          }`}
+        >
+          <Archive size={16} className={viewMode === 'archivados' ? 'text-amber-400' : 'text-neutral-500'} />
+          <span>Archivados</span>
+          {archivedProducts.length > 0 && (
+            <span className={`text-xs px-2 py-0.5 rounded-full font-mono ${
+              viewMode === 'archivados' ? 'bg-amber-500/20 text-amber-300' : 'bg-neutral-800 text-neutral-500'
+            }`}>
+              {archivedProducts.length}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* ── Mensaje informativo en Vista de Archivados ── */}
+      {viewMode === 'archivados' && (
+        <div className="flex items-start sm:items-center gap-3 p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-200 text-xs">
+          <Archive className="w-5 h-5 text-amber-400 shrink-0 mt-0.5 sm:mt-0" />
+          <p>
+            <strong className="font-semibold text-amber-300">Productos Archivados:</strong> Productos eliminados que se conservan en la base de datos para no alterar facturas y reportes contables históricos. Puedes devolverlos al catálogo activo en cualquier momento pulsando <strong className="text-emerald-400">Restaurar</strong>.
+          </p>
+        </div>
+      )}
+
       {/* ── Barra de búsqueda + botones ── */}
-            <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4">
+      <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4">
         <div className="flex flex-col sm:flex-row flex-1 items-stretch sm:items-center gap-3">
           <div className="relative w-full sm:max-w-sm shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 w-4 h-4" />
@@ -262,15 +352,17 @@ export default function CatalogoClient({
           </div>
 
           <div className="flex items-center gap-2 flex-1 sm:flex-none flex-wrap">
-            <select
-              value={filterEstado}
-              onChange={(e) => setFilterEstado(e.target.value as any)}
-              className="bg-neutral-900 border border-neutral-800 text-sm text-emerald-400 font-medium rounded-lg px-3 py-2 focus:border-indigo-500 outline-none transition-colors flex-1 sm:flex-none sm:w-[130px] truncate"
-            >
-              <option value="activos">Solo Activos</option>
-              <option value="inactivos">Inactivos / Archivados</option>
-              <option value="todos">Todos los productos</option>
-            </select>
+            {viewMode === 'catalogo' && (
+              <select
+                value={filterEstado}
+                onChange={(e) => setFilterEstado(e.target.value as any)}
+                className="bg-neutral-900 border border-neutral-800 text-sm text-emerald-400 font-medium rounded-lg px-3 py-2 focus:border-indigo-500 outline-none transition-colors flex-1 sm:flex-none sm:w-[130px] truncate"
+              >
+                <option value="todos">Todos los estados</option>
+                <option value="activos">Solo Activos</option>
+                <option value="inactivos">Solo Inactivos</option>
+              </select>
+            )}
             <select
               value={selectedSede}
               onChange={(e) => setSelectedSede(e.target.value)}
@@ -295,27 +387,29 @@ export default function CatalogoClient({
           </div>
         </div>
 
-        <div className="flex gap-2 shrink-0">
-          <button 
-            onClick={() => setIsBulkOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-white rounded-lg font-medium transition-colors text-sm"
-          >
-            <Box size={16} /> Receta Masiva
-          </button>
-          <button 
-            onClick={() => setIsDuplicarOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-indigo-300 rounded-lg font-medium transition-colors text-sm border border-neutral-700/50"
-            title="Duplicar Catálogo entre sedes"
-          >
-            <Copy size={16} /> <span className="hidden sm:inline">Duplicar Catálogo</span>
-          </button>
-          <button 
-            onClick={() => { setEditingProd(null); setIsFormOpen(true); }}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-colors text-sm"
-          >
-            <Plus size={16} /> Crear Producto
-          </button>
-        </div>
+        {viewMode === 'catalogo' && (
+          <div className="flex gap-2 shrink-0">
+            <button 
+              onClick={() => setIsBulkOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-white rounded-lg font-medium transition-colors text-sm"
+            >
+              <Box size={16} /> Receta Masiva
+            </button>
+            <button 
+              onClick={() => setIsDuplicarOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-indigo-300 rounded-lg font-medium transition-colors text-sm border border-neutral-700/50"
+              title="Duplicar Catálogo entre sedes"
+            >
+              <Copy size={16} /> <span className="hidden sm:inline">Duplicar Catálogo</span>
+            </button>
+            <button 
+              onClick={() => { setEditingProd(null); setIsFormOpen(true); }}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-colors text-sm"
+            >
+              <Plus size={16} /> Crear Producto
+            </button>
+          </div>
+        )}
       </div>
 
       {selectedIds.length > 0 && (
@@ -324,7 +418,9 @@ export default function CatalogoClient({
             <div className="bg-indigo-500/20 text-indigo-400 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm">
               {selectedIds.length}
             </div>
-            <span className="text-sm text-indigo-200 font-medium">Productos seleccionados</span>
+            <span className="text-sm text-indigo-200 font-medium">
+              {viewMode === 'catalogo' ? 'Productos seleccionados' : 'Productos archivados seleccionados'}
+            </span>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <button 
@@ -333,39 +429,51 @@ export default function CatalogoClient({
             >
               Seleccionar Todos
             </button>
-                        <select 
-              className="px-3 py-1.5 text-xs font-medium bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg transition-colors cursor-pointer outline-none"
-              onChange={(e) => {
-                if (!e.target.value) return;
-                handleBulkAssignCat(e.target.value);
-                e.target.value = "";
-              }}
-              disabled={isPending}
-            >
-              <option value="">Asignar Categoría...</option>
-              <option value="NULL">Sin Categoría</option>
-              {categorias.map(c => <option key={`bulk-cat-${c.id}`} value={c.id}>{c.nombre}</option>)}
-            </select>
-            <select 
-              className="px-3 py-1.5 text-xs font-medium bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg transition-colors cursor-pointer outline-none"
-              onChange={(e) => {
-                if (!e.target.value) return;
-                handleBulkAssignSede(e.target.value);
-                e.target.value = "";
-              }}
-              disabled={isPending}
-            >
-              <option value="">Asignar Sede...</option>
-              <option value="GLOBAL">Global / Todas</option>
-              {sedes.map(s => <option key={`bulk-sede-${s.id}`} value={s.id}>{s.nombre_sede}</option>)}
-            </select>
-            <button 
-              onClick={handleBulkDelete}
-              disabled={isPending}
-              className="px-3 py-1.5 text-xs font-medium bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors flex items-center gap-1.5"
-            >
-              <Trash2 size={14} /> Eliminar
-            </button>
+            {viewMode === 'catalogo' ? (
+              <>
+                <select 
+                  className="px-3 py-1.5 text-xs font-medium bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg transition-colors cursor-pointer outline-none"
+                  onChange={(e) => {
+                    if (!e.target.value) return;
+                    handleBulkAssignCat(e.target.value);
+                    e.target.value = "";
+                  }}
+                  disabled={isPending}
+                >
+                  <option value="">Asignar Categoría...</option>
+                  <option value="NULL">Sin Categoría</option>
+                  {categorias.map(c => <option key={`bulk-cat-${c.id}`} value={c.id}>{c.nombre}</option>)}
+                </select>
+                <select 
+                  className="px-3 py-1.5 text-xs font-medium bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg transition-colors cursor-pointer outline-none"
+                  onChange={(e) => {
+                    if (!e.target.value) return;
+                    handleBulkAssignSede(e.target.value);
+                    e.target.value = "";
+                  }}
+                  disabled={isPending}
+                >
+                  <option value="">Asignar Sede...</option>
+                  <option value="GLOBAL">Global / Todas</option>
+                  {sedes.map(s => <option key={`bulk-sede-${s.id}`} value={s.id}>{s.nombre_sede}</option>)}
+                </select>
+                <button 
+                  onClick={handleBulkDelete}
+                  disabled={isPending}
+                  className="px-3 py-1.5 text-xs font-medium bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors flex items-center gap-1.5"
+                >
+                  <Trash2 size={14} /> Eliminar
+                </button>
+              </>
+            ) : (
+              <button 
+                onClick={handleBulkRestore}
+                disabled={isPending}
+                className="px-3 py-1.5 text-xs font-medium bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg transition-colors flex items-center gap-1.5"
+              >
+                <RotateCcw size={14} /> Restaurar seleccionados
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -375,103 +483,148 @@ export default function CatalogoClient({
         {/* Mobile view (Cards) */}
         <div className="md:hidden divide-y divide-neutral-800/50">
           {filtered.map(p => {
-              const isActivo = optimisticStates[p.id] !== undefined ? optimisticStates[p.id] : (p.estado_activo !== false);
-              const currentType = optimisticTypes[p.id] || (p.es_servicio ? 'SERVICIO' : (p.es_compuesto ? 'ELABORADO' : 'REVENTA'));
-              return (
-              <div key={p.id} className="p-4 hover:bg-neutral-800/40 transition-colors flex flex-col gap-3 cursor-pointer" onClick={(e) => { e.stopPropagation(); handleEdit(p); }}>
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div onClick={e => e.stopPropagation()}>
-                    <input 
-                      type="checkbox" 
-                      className="w-4 h-4 rounded border-neutral-700 bg-neutral-900 text-indigo-500 cursor-pointer"
-                      checked={selectedIds.includes(p.id)}
-                      onChange={() => handleToggleSelect(p.id)}
-                    />
+            const isActivo = optimisticStates[p.id] !== undefined ? optimisticStates[p.id] : (p.estado_activo !== false);
+            const currentType = optimisticTypes[p.id] || (p.es_servicio ? 'SERVICIO' : (p.es_compuesto ? 'ELABORADO' : 'REVENTA'));
+            return (
+              <div 
+                key={p.id} 
+                className={`p-4 hover:bg-neutral-800/40 transition-colors flex flex-col gap-3 ${viewMode === 'catalogo' ? 'cursor-pointer' : ''}`}
+                onClick={(e) => {
+                  if (viewMode === 'catalogo') {
+                    e.stopPropagation();
+                    handleEdit(p);
+                  }
+                }}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div onClick={e => e.stopPropagation()}>
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded border-neutral-700 bg-neutral-900 text-indigo-500 cursor-pointer"
+                        checked={selectedIds.includes(p.id)}
+                        onChange={() => handleToggleSelect(p.id)}
+                      />
+                    </div>
+                    {p.es_compuesto ? <PackageSearch className="text-emerald-400 w-5 h-5 shrink-0" /> : <Box className="text-blue-400 w-5 h-5 shrink-0" />}
+                    <div className="min-w-0">
+                      <p className="font-medium text-white truncate">{p.nombre}</p>
+                      {p.descripcion && <p className="text-xs text-neutral-400 line-clamp-1">{p.descripcion}</p>}
+                      {p.notas_preparacion && p.notas_preparacion.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {p.notas_preparacion.map((nota: string, idx: number) => (
+                            <span key={idx} className="inline-block text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/20 px-1.5 py-0.5 rounded font-mono">
+                              {nota}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-[11px] text-neutral-500 mt-0.5">{p.codigo_barras || 'Sin código'}</p>
+                    </div>
                   </div>
-                  {p.es_compuesto ? <PackageSearch className="text-emerald-400 w-5 h-5 shrink-0" /> : <Box className="text-blue-400 w-5 h-5 shrink-0" />}
-                  <div>
-                    <p className="font-medium text-white">{p.nombre}</p>
-                    {p.descripcion && <p className="text-xs text-neutral-400 line-clamp-1">{p.descripcion}</p>}
-                    {p.notas_preparacion && p.notas_preparacion.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {p.notas_preparacion.map((nota: string, idx: number) => (
-                          <span key={idx} className="inline-block text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/20 px-1.5 py-0.5 rounded font-mono">
-                            {nota}
-                          </span>
-                        ))}
-                      </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {viewMode === 'catalogo' ? (
+                      <>
+                        <button onClick={(e) => { e.stopPropagation(); handleEdit(p); }} className="p-2 text-neutral-400 hover:text-indigo-400 bg-neutral-800/50 rounded-lg transition-colors" title="Editar"><Edit2 size={16} /></button>
+                        <button onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }} disabled={isPending} className="p-2 text-neutral-400 hover:text-rose-400 bg-neutral-800/50 rounded-lg transition-colors" title="Archivar"><Trash2 size={16} /></button>
+                      </>
+                    ) : (
+                      <>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleRestore(p.id); }} 
+                          disabled={isPending} 
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-lg transition-colors"
+                        >
+                          <RotateCcw size={13} /> Restaurar
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleHardDelete(p.id); }} 
+                          disabled={isPending} 
+                          title="Eliminar permanentemente de la BD"
+                          className="p-1.5 text-neutral-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </>
                     )}
-                    <p className="text-[11px] text-neutral-500 mt-0.5">{p.codigo_barras || 'Sin código'}</p>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={(e) => { e.stopPropagation(); handleEdit(p); }} className="p-2 text-neutral-400 hover:text-indigo-400 bg-neutral-800/50 rounded-lg transition-colors"><Edit2 size={16} /></button>
-                  <button onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }} disabled={isPending} className="p-2 text-neutral-400 hover:text-rose-400 bg-neutral-800/50 rounded-lg transition-colors"><Trash2 size={16} /></button>
-                </div>
-              </div>
 
-              <div className="flex flex-wrap items-center gap-2 mt-1">
-                <span className="px-2 py-0.5 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-medium truncate max-w-[100px]">
-                  {p.sedes_ids?.length > 1 ? p.sedes_ids.length + ' sedes' : sedes.find(s => s.id === (p.sede_id || p.sedes_ids?.[0]))?.nombre_sede || 'Global / Todas'}
-                </span>
-                {p.categorias?.nombre ? (
-                  <span className="px-2 py-0.5 rounded-md bg-neutral-800 border border-neutral-700 text-neutral-300 text-[10px] font-medium">
-                    {p.categorias.nombre}
+                <div className="flex flex-wrap items-center gap-2 mt-1">
+                  <span className="px-2 py-0.5 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-medium truncate max-w-[100px]">
+                    {p.sedes_ids?.length > 1 ? p.sedes_ids.length + ' sedes' : sedes.find(s => s.id === (p.sede_id || p.sedes_ids?.[0]))?.nombre_sede || 'Global / Todas'}
                   </span>
-                ) : (
-                  <span className="text-[10px] text-neutral-600 italic">Sin categoría</span>
-                )}
-                <button 
-                  onClick={(e) => { e.stopPropagation(); handleToggleEstado(p.id, isActivo); }}
-                  disabled={isPending}
-                  className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${
-                    isActivo
-                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                      : 'bg-neutral-800 text-neutral-400 border-neutral-700'
-                  }`}
-                >
-                  {isActivo ? 'Activo' : 'Inactivo'}
-                </button>
-                <select
-                  value={currentType}
-                  onClick={e => e.stopPropagation()}
-                  onChange={(e) => handleUpdateTipo(p.id, e.target.value as any)}
-                  disabled={isPending}
-                  className={`text-[10px] font-medium rounded-md px-1.5 py-0.5 outline-none cursor-pointer border ${
-                    currentType === 'SERVICIO' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
-                    currentType === 'ELABORADO' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 
-                    'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                  }`}
-                >
-                  <option value="REVENTA" className="bg-neutral-900 text-white">Reventa</option>
-                  <option value="ELABORADO" className="bg-neutral-900 text-white">Elaborado</option>
-                  <option value="SERVICIO" className="bg-neutral-900 text-white">Servicio</option>
-                </select>
-              </div>
+                  {p.categorias?.nombre ? (
+                    <span className="px-2 py-0.5 rounded-md bg-neutral-800 border border-neutral-700 text-neutral-300 text-[10px] font-medium">
+                      {p.categorias.nombre}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-neutral-600 italic">Sin categoría</span>
+                  )}
+                  {viewMode === 'catalogo' ? (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleToggleEstado(p.id, isActivo); }}
+                      disabled={isPending}
+                      className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${
+                        isActivo
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                          : 'bg-neutral-800 text-neutral-400 border-neutral-700'
+                      }`}
+                    >
+                      {isActivo ? 'Activo' : 'Inactivo'}
+                    </button>
+                  ) : (
+                    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                      Archivado
+                    </span>
+                  )}
+                  {viewMode === 'catalogo' ? (
+                    <select
+                      value={currentType}
+                      onClick={e => e.stopPropagation()}
+                      onChange={(e) => handleUpdateTipo(p.id, e.target.value as any)}
+                      disabled={isPending}
+                      className={`text-[10px] font-medium rounded-md px-1.5 py-0.5 outline-none cursor-pointer border ${
+                        currentType === 'SERVICIO' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                        currentType === 'ELABORADO' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 
+                        'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                      }`}
+                    >
+                      <option value="REVENTA" className="bg-neutral-900 text-white">Reventa</option>
+                      <option value="ELABORADO" className="bg-neutral-900 text-white">Elaborado</option>
+                      <option value="SERVICIO" className="bg-neutral-900 text-white">Servicio</option>
+                    </select>
+                  ) : (
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-400 border border-neutral-700">
+                      {currentType}
+                    </span>
+                  )}
+                </div>
 
-              <div className="flex justify-between items-center bg-neutral-950/50 p-2 rounded-lg border border-neutral-800/50 mt-1">
-                <div className="flex flex-col">
-                  <span className="text-[10px] text-neutral-500 uppercase font-semibold">Costo</span>
-                  <span className="font-mono text-neutral-300 text-sm">${(Number(p.costo) || 0).toFixed(2)}</span>
-                </div>
-                <div className="flex flex-col items-end">
-                  <span className="text-[10px] text-neutral-500 uppercase font-semibold">Precio Venta</span>
-                  <span className="font-mono text-emerald-400 text-sm font-bold">${(Number(p.precio_venta) || 0).toFixed(2)}</span>
+                <div className="flex justify-between items-center bg-neutral-950/50 p-2 rounded-lg border border-neutral-800/50 mt-1">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-neutral-500 uppercase font-semibold">Costo</span>
+                    <span className="font-mono text-neutral-300 text-sm">${(Number(p.costo) || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <span className="text-[10px] text-neutral-500 uppercase font-semibold">Precio Venta</span>
+                    <span className="font-mono text-emerald-400 text-sm font-bold">${(Number(p.precio_venta) || 0).toFixed(2)}</span>
+                  </div>
                 </div>
               </div>
+            );
+          })}
+          {filtered.length === 0 && (
+            <div className="p-8 text-center text-neutral-500 text-sm">
+              {viewMode === 'catalogo' ? 'No se encontraron productos en el catálogo.' : 'No hay productos archivados.'}
             </div>
-          );
-            })}
-            {filtered.length === 0 && (
-            <div className="p-8 text-center text-neutral-500 text-sm">No se encontraron productos.</div>
           )}
         </div>
 
         {/* Desktop view (Table) */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-sm whitespace-nowrap">
-                        <thead className="bg-neutral-950/50 text-neutral-400">
+            <thead className="bg-neutral-950/50 text-neutral-400">
               <tr>
                 <th className="px-6 py-4 w-12 text-center">
                   <input 
@@ -496,98 +649,141 @@ export default function CatalogoClient({
                 const isActivo = optimisticStates[p.id] !== undefined ? optimisticStates[p.id] : (p.estado_activo !== false);
                 const currentType = optimisticTypes[p.id] || (p.es_servicio ? 'SERVICIO' : (p.es_compuesto ? 'ELABORADO' : 'REVENTA'));
                 return (
-                <tr key={p.id} className="hover:bg-neutral-800/40 transition-colors cursor-pointer" onClick={(e) => { e.stopPropagation(); handleEdit(p); }}>
-                  <td className="px-6 py-4 w-12 text-center" onClick={e => e.stopPropagation()}>
-                    <input 
-                      type="checkbox" 
-                      className="w-4 h-4 rounded border-neutral-700 bg-neutral-900 text-indigo-500 cursor-pointer"
-                      checked={selectedIds.includes(p.id)}
-                      onChange={() => handleToggleSelect(p.id)}
-                    />
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      {p.es_compuesto ? <PackageSearch className="text-emerald-400 w-5 h-5" /> : <Box className="text-blue-400 w-5 h-5" />}
-                      <div>
-                        <p className="font-medium text-white">{p.nombre}</p>
-                        {p.descripcion && (
-                          <p className="text-xs text-neutral-400 max-w-xs line-clamp-1">{p.descripcion}</p>
-                        )}
-                        {p.notas_preparacion && p.notas_preparacion.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-1 max-w-sm">
-                            {p.notas_preparacion.map((nota: string, idx: number) => (
-                              <span key={idx} className="inline-block text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/20 px-1.5 py-0.5 rounded font-mono">
-                                {nota}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        <p className="text-[11px] text-neutral-500 mt-0.5">{p.codigo_barras || 'Sin código'}</p>
+                  <tr 
+                    key={p.id} 
+                    className={`hover:bg-neutral-800/40 transition-colors ${viewMode === 'catalogo' ? 'cursor-pointer' : ''}`}
+                    onClick={(e) => { 
+                      if (viewMode === 'catalogo') {
+                        e.stopPropagation(); 
+                        handleEdit(p); 
+                      }
+                    }}
+                  >
+                    <td className="px-6 py-4 w-12 text-center" onClick={e => e.stopPropagation()}>
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded border-neutral-700 bg-neutral-900 text-indigo-500 cursor-pointer"
+                        checked={selectedIds.includes(p.id)}
+                        onChange={() => handleToggleSelect(p.id)}
+                      />
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        {p.es_compuesto ? <PackageSearch className="text-emerald-400 w-5 h-5" /> : <Box className="text-blue-400 w-5 h-5" />}
+                        <div>
+                          <p className="font-medium text-white">{p.nombre}</p>
+                          {p.descripcion && (
+                            <p className="text-xs text-neutral-400 max-w-xs line-clamp-1">{p.descripcion}</p>
+                          )}
+                          {p.notas_preparacion && p.notas_preparacion.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1 max-w-sm">
+                              {p.notas_preparacion.map((nota: string, idx: number) => (
+                                <span key={idx} className="inline-block text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/20 px-1.5 py-0.5 rounded font-mono">
+                                  {nota}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          <p className="text-[11px] text-neutral-500 mt-0.5">{p.codigo_barras || 'Sin código'}</p>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="px-2 py-1 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-medium">
-                      {p.sedes_ids?.length > 1 ? p.sedes_ids.length + ' sedes' : sedes.find(s => s.id === (p.sede_id || p.sedes_ids?.[0]))?.nombre_sede || 'Global / Todas'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    {p.categorias?.nombre ? (
-                      <span className="px-2.5 py-0.5 rounded-md bg-neutral-800 border border-neutral-700 text-neutral-300 text-xs font-medium">
-                        {p.categorias.nombre}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="px-2 py-1 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-medium">
+                        {p.sedes_ids?.length > 1 ? p.sedes_ids.length + ' sedes' : sedes.find(s => s.id === (p.sede_id || p.sedes_ids?.[0]))?.nombre_sede || 'Global / Todas'}
                       </span>
-                    ) : (
-                      <span className="text-xs text-neutral-600 italic">Sin categoría</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleToggleEstado(p.id, isActivo); }}
-                      disabled={isPending}
-                      className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
-                        isActivo
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
-                          : 'bg-neutral-800 text-neutral-400 border-neutral-700 hover:bg-neutral-700'
-                      }`}
-                    >
-                      {isActivo ? 'Activo' : 'Inactivo'}
-                    </button>
-                  </td>
-                  <td className="px-6 py-4">
-                    <select
-                      value={currentType}
-                      onClick={e => e.stopPropagation()}
-                      onChange={(e) => handleUpdateTipo(p.id, e.target.value as any)}
-                      disabled={isPending}
-                      className={`text-[11px] font-medium rounded-md px-2 py-1 outline-none cursor-pointer border ${
-                        currentType === 'SERVICIO' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
-                        currentType === 'ELABORADO' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 
-                        'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                      }`}
-                    >
-                      <option value="REVENTA" className="bg-neutral-900 text-white">Reventa</option>
-                      <option value="ELABORADO" className="bg-neutral-900 text-white">Elaborado</option>
-                      <option value="SERVICIO" className="bg-neutral-900 text-white">Servicio</option>
-                    </select>
-                  </td>
-                  <td className="px-6 py-4 font-mono text-neutral-400">
-                    ${(Number(p.costo) || 0).toFixed(2)}
-                  </td>
-                  <td className="px-6 py-4 font-mono font-medium text-white">
-                    ${(Number(p.precio_venta) || 0).toFixed(2)}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <button onClick={(e) => { e.stopPropagation(); handleEdit(p); }} className="text-neutral-500 hover:text-indigo-400 transition-colors"><Edit2 size={16} /></button>
-                      <button onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }} disabled={isPending} className="text-neutral-500 hover:text-rose-400 transition-colors"><Trash2 size={16} /></button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-            {filtered.length === 0 && (
+                    </td>
+                    <td className="px-6 py-4">
+                      {p.categorias?.nombre ? (
+                        <span className="px-2.5 py-0.5 rounded-md bg-neutral-800 border border-neutral-700 text-neutral-300 text-xs font-medium">
+                          {p.categorias.nombre}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-neutral-600 italic">Sin categoría</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {viewMode === 'catalogo' ? (
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleToggleEstado(p.id, isActivo); }}
+                          disabled={isPending}
+                          className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
+                            isActivo
+                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
+                              : 'bg-neutral-800 text-neutral-400 border-neutral-700 hover:bg-neutral-700'
+                          }`}
+                        >
+                          {isActivo ? 'Activo' : 'Inactivo'}
+                        </button>
+                      ) : (
+                        <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                          Archivado
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      {viewMode === 'catalogo' ? (
+                        <select
+                          value={currentType}
+                          onClick={e => e.stopPropagation()}
+                          onChange={(e) => handleUpdateTipo(p.id, e.target.value as any)}
+                          disabled={isPending}
+                          className={`text-[11px] font-medium rounded-md px-2 py-1 outline-none cursor-pointer border ${
+                            currentType === 'SERVICIO' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                            currentType === 'ELABORADO' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 
+                            'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                          }`}
+                        >
+                          <option value="REVENTA" className="bg-neutral-900 text-white">Reventa</option>
+                          <option value="ELABORADO" className="bg-neutral-900 text-white">Elaborado</option>
+                          <option value="SERVICIO" className="bg-neutral-900 text-white">Servicio</option>
+                        </select>
+                      ) : (
+                        <span className="text-xs text-neutral-400 font-medium">
+                          {currentType}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 font-mono text-neutral-400">
+                      ${(Number(p.costo) || 0).toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 font-mono font-medium text-white">
+                      ${(Number(p.precio_venta) || 0).toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4">
+                      {viewMode === 'catalogo' ? (
+                        <div className="flex items-center gap-3">
+                          <button onClick={(e) => { e.stopPropagation(); handleEdit(p); }} className="text-neutral-500 hover:text-indigo-400 transition-colors" title="Editar"><Edit2 size={16} /></button>
+                          <button onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }} disabled={isPending} className="text-neutral-500 hover:text-rose-400 transition-colors" title="Archivar"><Trash2 size={16} /></button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleRestore(p.id); }} 
+                            disabled={isPending} 
+                            className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-lg transition-colors"
+                          >
+                            <RotateCcw size={13} /> Restaurar
+                          </button>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleHardDelete(p.id); }} 
+                            disabled={isPending} 
+                            title="Eliminar definitivamente (solo si no tiene ventas)"
+                            className="p-1.5 text-neutral-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+              {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-neutral-500">No se encontraron productos.</td>
+                  <td colSpan={9} className="px-6 py-12 text-center text-neutral-500">
+                    {viewMode === 'catalogo' ? 'No se encontraron productos en el catálogo.' : 'No hay productos archivados.'}
+                  </td>
                 </tr>
               )}
             </tbody>
@@ -612,6 +808,14 @@ export default function CatalogoClient({
           productos={productos}
           insumos={insumos}
           onClose={() => setIsBulkOpen(false)}
+        />
+      )}
+
+      {isDuplicarOpen && (
+        <DuplicarModal
+          sedes={sedes}
+          isOpen={isDuplicarOpen}
+          onClose={() => setIsDuplicarOpen(false)}
         />
       )}
     </div>
