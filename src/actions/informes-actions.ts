@@ -252,10 +252,150 @@ export async function generateReport(
       rpcParams = { p_empresa_id, p_sede_id, p_fecha_inicio, p_fecha_fin };
       break;
 
-    case 'cuentas_por_cobrar':
-      rpcName   = 'get_reporte_cuentas_por_cobrar';
-      rpcParams = { p_empresa_id, p_sede_id };
-      break;
+    case 'cuentas_por_cobrar': {
+      let allFacturas: any[] = [];
+      let from = 0;
+      const batchSize = 1000;
+
+      while (true) {
+        let query = supabase
+          .from('ventas_facturas')
+          .select(`
+            id,
+            numero_documento,
+            fecha_venta,
+            total,
+            saldo_pendiente,
+            estado_pago,
+            cajero_nombre,
+            cliente_nombre,
+            cliente_id,
+            clientes (
+              id,
+              nombre,
+              rif_cedula,
+              telefono
+            ),
+            sedes (
+              id,
+              nombre_sede
+            ),
+            ventas_pagos (
+              id_pos,
+              tipo_pago,
+              monto,
+              fecha_pago
+            )
+          `)
+          .eq('empresa_id', p_empresa_id)
+          .gte('fecha_venta', p_fecha_inicio)
+          .lte('fecha_venta', p_fecha_fin)
+          .eq('estado_activo', true)
+          .order('fecha_venta', { ascending: false })
+          .range(from, from + batchSize - 1);
+
+        if (p_sede_id) {
+          query = query.eq('sede_id', p_sede_id);
+        }
+        if (p_cliente_id) {
+          query = query.eq('cliente_id', p_cliente_id);
+        }
+
+        const { data, error: qErr } = await query;
+        if (qErr) {
+          return { success: false, error: qErr.message };
+        }
+        if (!data || data.length === 0) break;
+
+        allFacturas = allFacturas.concat(data);
+        if (data.length < batchSize) break;
+        from += batchSize;
+      }
+
+      const rows: Record<string, any>[] = [];
+      let sumTotalVenta = 0;
+      let sumCredito = 0;
+      let sumPagado = 0;
+      let sumSaldo = 0;
+
+      for (const f of allFacturas) {
+        const pagos = f.ventas_pagos || [];
+        const pagosCred = pagos.filter((p: any) => p.tipo_pago?.toLowerCase().includes('cred'));
+        const tienePagoCredito = pagosCred.length > 0;
+        const saldo = Number(f.saldo_pendiente || 0);
+        const tieneSaldo = saldo > 0 || f.estado_pago === 2;
+        const hasAbono = pagos.some((p: any) => p.id_pos?.startsWith('GLB_') || p.id_pos?.startsWith('WEB_GLB_'));
+
+        if (!tienePagoCredito && !tieneSaldo && !hasAbono) {
+          continue;
+        }
+
+        let montoCredito = 0;
+        if (tienePagoCredito) {
+          montoCredito = pagosCred.reduce((acc: number, p: any) => acc + Number(p.monto || 0), 0);
+        } else {
+          const pagosNoAbono = pagos.filter((p: any) => !p.id_pos?.startsWith('GLB_') && !p.id_pos?.startsWith('WEB_GLB_'));
+          const pagadoInicial = pagosNoAbono.reduce((acc: number, p: any) => acc + Number(p.monto || 0), 0);
+          montoCredito = Math.max(Number(f.total || 0) - pagadoInicial, saldo);
+        }
+
+        if (montoCredito <= 0 && saldo > 0) {
+          montoCredito = saldo;
+        }
+
+        const montoPagado = Math.max(0, montoCredito - saldo);
+        let estado = 'PAGADO';
+        if (saldo > 0.001) {
+          estado = montoPagado > 0.001 ? 'PARCIAL' : 'PENDIENTE';
+        }
+
+        const clienteNom = f.clientes?.nombre || f.cliente_nombre || 'Cliente Eventual';
+        const rif = f.clientes?.rif_cedula || '-';
+        const sedeNom = f.sedes?.nombre_sede || '-';
+        const fDate = new Date(f.fecha_venta);
+        const fechaStr = format(fDate, 'dd/MM/yyyy HH:mm');
+
+        const totVenta = Number(Number(f.total || 0).toFixed(2));
+        const mCred = Number(montoCredito.toFixed(2));
+        const mPag = Number(montoPagado.toFixed(2));
+        const mSaldo = Number(saldo.toFixed(2));
+
+        sumTotalVenta += totVenta;
+        sumCredito += mCred;
+        sumPagado += mPag;
+        sumSaldo += mSaldo;
+
+        rows.push({
+          Fecha: fechaStr,
+          'N° Documento': f.numero_documento || '-',
+          Cliente: clienteNom,
+          'Cédula / RIF': rif,
+          'Total Factura': totVenta,
+          'Monto Crédito': mCred,
+          'Monto Pagado': mPag,
+          'Saldo Pendiente': mSaldo,
+          Estado: estado,
+          Sucursal: sedeNom,
+        });
+      }
+
+      if (rows.length > 0) {
+        rows.push({
+          Fecha: 'TOTALES',
+          'N° Documento': `${rows.length} créditos`,
+          Cliente: '',
+          'Cédula / RIF': '',
+          'Total Factura': Number(sumTotalVenta.toFixed(2)),
+          'Monto Crédito': Number(sumCredito.toFixed(2)),
+          'Monto Pagado': Number(sumPagado.toFixed(2)),
+          'Saldo Pendiente': Number(sumSaldo.toFixed(2)),
+          Estado: '',
+          Sucursal: '',
+        });
+      }
+
+      return { success: true, data: rows };
+    }
 
     case 'cuentas_abiertas':
       rpcName   = 'get_reporte_cuentas_abiertas';

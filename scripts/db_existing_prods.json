@@ -1,0 +1,5211 @@
+[
+  {
+    "id": "00a9f4ba-15f6-4d00-89b2-a4b4ccc94ac0",
+    "nombre": "Promo Balde Feria ",
+    "precio_venta": 10,
+    "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "12 Cervezas"
+    ],
+    "sede_id": "b42d7e13-bfc8-40d8-94d4-61908ff269cd",
+    "sedes_ids": null
+  },
+  {
+    "id": "aaf14f84-7011-47ea-8069-ea439a2c631d",
+    "nombre": "Promo Feria Pizzas",
+    "precio_venta": 22,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "2 F Tradicional + Maíz\n1 Ref 1.5Lt\n1 Brownie"
+    ],
+    "sede_id": "b42d7e13-bfc8-40d8-94d4-61908ff269cd",
+    "sedes_ids": null
+  },
+  {
+    "id": "c38906d2-aea3-4b73-8db3-3d00f4ab4412",
+    "nombre": "PIZZA TRADICIONAL FAMILIAR",
+    "precio_venta": 11,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "560f8c35-c1eb-42e4-aa4f-38275fe866b8",
+    "nombre": "PIZZA TRADICIONAL MEDIANA",
+    "precio_venta": 8,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "c2d8897f-c1ef-44bf-aba3-94f1d5029f4f",
+    "nombre": "Promo Cócteles 2x1",
+    "precio_venta": 4,
+    "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+    "es_compuesto": false,
+    "descripcion": "2x1 en Coctelería: Escoge 2 cócteles de tu preferencia y se cobra el de mayor precio.",
+    "notas_preparacion": [],
+    "sede_id": null,
+    "sedes_ids": null
+  },
+  {
+    "id": "b76aeb94-37f5-48d0-8de7-2d847b47bfac",
+    "nombre": "PIZZA CAPRICHOSA PEQUEÑA",
+    "precio_venta": 7,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "ad8ed259-e1bc-431b-9e04-662818b89498",
+    "nombre": "PIZZA VEGETARIANA FAMILIAR ",
+    "precio_venta": 15,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "177618b6-3a31-4ed1-99c6-42b75cf7b8eb",
+    "nombre": "PIZZA VEGETARIANA MEDIANA",
+    "precio_venta": 9.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "c58c0e53-4625-46fd-9484-50b238f7cc4b",
+    "nombre": "PIZZA VEGETARIANA PEQUEÑA",
+    "precio_venta": 7,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "3657183e-96ac-4799-8be5-4b463cc7e9fd",
+    "nombre": "PIZZA ZULIANITA FAMILIAR ",
+    "precio_venta": 16,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "c5883ad2-5dd6-4f4d-bb8b-9fdc6c743ceb",
+    "nombre": "PIZZA 4 ESTACIONES FAMILIAR ",
+    "precio_venta": 16,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "fd909b52-6467-4f35-969c-432d27537c96",
+    "nombre": "PIZZA HAWAIANA FAMILIAR",
+    "precio_venta": 15,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "dbc105af-c5bd-4b4d-b4b5-de6c5cc30f66",
+    "nombre": "COMBO ARCOIRIS PIZZA ",
+    "precio_venta": 16,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "F JYQ + BORDE QUESO + MAIZ",
+      "GELATINA"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "5b451a52-572d-4112-afc9-db9e49f542e2",
+    "nombre": "COMBO 4 PIZZAS",
+    "precio_venta": 46,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "2 REF 1.5LT",
+      "F TRADICIONAL +",
+      "F TRADICIONAL + ADICION",
+      "F TRADICIONAL + ADICIONA",
+      "F TRADICIONAL + ADICIONAL"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "276df376-7f2c-4416-b5c4-a98a0a938130",
+    "nombre": "PIZZA PRIMAVERA FAMILIAR",
+    "precio_venta": 15,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "f0b2be50-684a-4ca8-be88-c0e663cf1919",
+    "nombre": "PIZZA PRIMAVERA MEDIANA",
+    "precio_venta": 9.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "b9ac3dd9-3cad-429f-8ba4-8b1e19f16954",
+    "nombre": "PIZZA PRIMAVERA PEQUEÑA",
+    "precio_venta": 7,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "4aa06e86-6835-4e5b-b145-fba3f7e0877a",
+    "nombre": "PIZZA AMERICANA FAMILIAR ",
+    "precio_venta": 15,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "c63e8392-a007-4d32-bca8-3edfa4660b49",
+    "nombre": "PIZZA AMERICANA MEDIANA ",
+    "precio_venta": 9.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "f0582e6d-02e8-4b7c-8f6c-f3a4b19547b8",
+    "nombre": "PIZZA AMERICANA PEQUEÑA",
+    "precio_venta": 7,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "1bf873c6-a979-40b7-96a2-cf83dc097475",
+    "nombre": "PIZZA JUAN PICANTE FAMILIAR",
+    "precio_venta": 15,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "2b3b8ccf-e22b-48f3-b72e-e0b3587696a2",
+    "nombre": "PIZZA JUAN PICANTE MEDIANA",
+    "precio_venta": 9.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "ccc57d40-1254-4692-97b2-06678366a746",
+    "nombre": "PIZZA JUAN PICANTE PEQUEÑA",
+    "precio_venta": 7,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "b9532694-673f-4e80-8a1a-2f0fb79ab4f1",
+    "nombre": "1 POLLO ASADO ENTERO",
+    "precio_venta": 20,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "43528b6b-f4a2-4b92-9f59-d6e3fe206758",
+    "nombre": "MEGA PARRILLA FAMILIAR ",
+    "precio_venta": 34,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "b082bd02-e926-405a-a7bc-a748d1464abf",
+    "nombre": "PARRILLA DE PUERCO",
+    "precio_venta": 7.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "d8cb562c-0236-42d2-897a-1ef3ecece109",
+    "nombre": "PARRILLA DE LOMITO",
+    "precio_venta": 7.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "c27c02cc-7e5d-41c5-99d2-1115779a5409",
+    "nombre": "PARRILLA DE CHORIZO",
+    "precio_venta": 7.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "c23153f0-eb0f-4a3a-a4ee-c31ea75033dd",
+    "nombre": "PARRILLA 2 PROTEINAS",
+    "precio_venta": 9.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "LOMITO Y CHORIZO",
+      "POLLO Y CHORIZO",
+      "POLLO Y LOMITO",
+      "POLLO Y PUERCO",
+      "PUERCO Y CHORIZO",
+      "PUERCO Y LOMITO"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "a458fb0c-71c3-4a8d-b1bb-79743e64dd46",
+    "nombre": "MALTEADA",
+    "precio_venta": 5.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "d4721d03-a557-4e94-a1f7-d993f97497a6",
+    "nombre": "MARQUESA CLASICA",
+    "precio_venta": 3,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "dd5ae9cb-52b6-4e9d-af18-4f0650594a69",
+    "nombre": "MARQUESA PREMIUM",
+    "precio_venta": 4,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "ec15245f-4b47-4a70-a053-ac803938ca91",
+    "nombre": "REFRESCO 2L",
+    "precio_venta": 3.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "d37c880e-fbb5-444d-9ff6-60d614c2efb2",
+    "nombre": "REFRESCO PEQUEÑO R",
+    "precio_venta": 1.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "f9005689-46e4-4291-8b59-fc9ecc7aae5e",
+    "nombre": "REFRESCO BOMBONITA",
+    "precio_venta": 1.3,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "14184932-0d19-4d5d-981b-d642b77b91bb",
+    "nombre": "PAPELON 1L",
+    "precio_venta": 3,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "dea7f144-34c1-4195-92e4-7cc88973c828",
+    "nombre": "CERVEZA ZULIA/POLAR",
+    "precio_venta": 1.2,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "85bb553a-67a1-4032-89d6-c3b25a18a146",
+    "nombre": "ADICIONAL PAPA CON BEBIDA",
+    "precio_venta": 2.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "fb0eee98-6d61-4712-95f4-716d0cde5bad",
+    "nombre": "PIZZA ZULIANITA MEDIANA ",
+    "precio_venta": 10.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "8aa4dd10-a75e-47e6-bbb8-d5821e2127d7",
+    "nombre": "PIZZA BBQ FAMILIAR ",
+    "precio_venta": 17.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "06dacae6-27b1-4c67-87ff-a42162f26a85",
+    "nombre": "PIZZA BBQ MEDIANA ",
+    "precio_venta": 11.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "38bd3170-3707-4933-9903-6dd201a68a4e",
+    "nombre": "PIZZA BBQ PEQUEÑA ",
+    "precio_venta": 8.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "8b660968-c323-4cdf-b576-e5d5785cb453",
+    "nombre": "1/2 BANDEJA TIPO PASAPALOS ",
+    "precio_venta": 14.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "c47355a2-99f7-4899-ac0b-58b9bb92def8",
+    "nombre": "PIZZA 4 ESTACIONES MEDIANA ",
+    "precio_venta": 10.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "8eb192dd-539a-44d6-812e-a2326d64b6c9",
+    "nombre": "AREPITA MIXTA ",
+    "precio_venta": 8.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "dc892329-6555-4d03-a17e-6a4099888ef9",
+    "nombre": "BACK TO SCHOOL 1",
+    "precio_venta": 10,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": [
+      "cee96ed9-216b-45fc-b669-4d170df5ab93"
+    ]
+  },
+  {
+    "id": "b917290b-31ba-4e76-9669-b6ac9539d52c",
+    "nombre": "BACK TO SCHOOL 2",
+    "precio_venta": 10,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": [
+      "cee96ed9-216b-45fc-b669-4d170df5ab93"
+    ]
+  },
+  {
+    "id": "09799b4e-cf10-4bc4-af92-59e33b877940",
+    "nombre": "COMBO NAVIDAD ",
+    "precio_venta": 11,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": [
+      "cee96ed9-216b-45fc-b669-4d170df5ab93"
+    ]
+  },
+  {
+    "id": "4134d547-a447-45a0-8d40-0d6ebe05649a",
+    "nombre": "HALLACA 1",
+    "precio_venta": 3,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": [
+      "cee96ed9-216b-45fc-b669-4d170df5ab93"
+    ]
+  },
+  {
+    "id": "591aaf13-ccff-410f-8ef8-cf9fcc07b7fe",
+    "nombre": "HALLACAS 2",
+    "precio_venta": 5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": [
+      "cee96ed9-216b-45fc-b669-4d170df5ab93"
+    ]
+  },
+  {
+    "id": "b007c8cd-db60-4195-8857-f0776ac0f93a",
+    "nombre": "COMBO NAVIDAD PERSONAL",
+    "precio_venta": 9,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": [
+      "cee96ed9-216b-45fc-b669-4d170df5ab93"
+    ]
+  },
+  {
+    "id": "8888e42f-be14-4ef0-ba00-492cbb99ba76",
+    "nombre": "PROMO DE FERIA CERVEZAS",
+    "precio_venta": 10,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": [
+      "cee96ed9-216b-45fc-b669-4d170df5ab93"
+    ]
+  },
+  {
+    "id": "da276bdf-33ed-4210-a48a-d6d1427c025b",
+    "nombre": "PROMO FERIA HAMBURGUESA",
+    "precio_venta": 5.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": null,
+    "sedes_ids": null
+  },
+  {
+    "id": "cd5f5868-0117-4558-9fc6-94fff14996bb",
+    "nombre": "PROMO FERIA PIZZAS FAMILIARES",
+    "precio_venta": 22,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": [
+      "cee96ed9-216b-45fc-b669-4d170df5ab93"
+    ]
+  },
+  {
+    "id": "4eda5ef8-18e0-46fa-9ccc-5a78affb711e",
+    "nombre": "BALDE DE CERVEZA ZULIA/POLAR",
+    "precio_venta": 10,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "55569e1c-6260-4f55-9784-b0c404c93fe7",
+    "nombre": "PIZZA DEL DIA",
+    "precio_venta": 11,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "FAMILIAR CAPRESA",
+      "FAMILIAR ESPECIAL",
+      "FAMILIAR JUAN PICANTE",
+      "FAMILIAR PELUCHE",
+      "FAMILIAR PRIMAVERA",
+      "FAMILIAR ZULIANITA",
+      "FAMILAIR CAPRICHOSA"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "14f044ad-0f90-4131-89cd-3726f620cc22",
+    "nombre": "EXTRA QUESO",
+    "precio_venta": 2,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "67c2bb2b-ce02-46e5-8990-2434cfcbcbcb",
+    "nombre": "SERVICIO TEQUEÑOS 10UNIDADES",
+    "precio_venta": 4,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "22d23e3d-7f57-4fd3-b081-3c6acd9291f1",
+    "nombre": "ADICIONAL PIMENTON",
+    "precio_venta": 1.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "94469f62-2c75-4ecd-a7db-7a04c5211ff4",
+    "nombre": "PAQUETE DE CUMPLEAÑOS 100$",
+    "precio_venta": 100,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "4 F DE PREFERENCIA (TRADICIONAL - PRIMAVERA - AMERICA - ESPECIAL)",
+      "3 REF 1.5LT",
+      "TEQUEÑOS 30 UNIDADES",
+      "2 BALDES DE CERVEZA O CINCO COCTELES"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "1f36c206-07be-4040-b625-44ad24e3e96f",
+    "nombre": "BALDE CON PIZZA",
+    "precio_venta": 10.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "P TRADICIONAL + 8 CERVEZAS"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "8046d1ac-bd10-4248-9204-df2456a3f5a8",
+    "nombre": "MINI MARQUESA CLASICAS",
+    "precio_venta": 1.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "c3bbd13c-2efd-4655-b5b6-bde32d80c04c",
+    "nombre": "PROMO POLLO ASADO",
+    "precio_venta": 22,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "INCLUYE PAPELON 1LT"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "d7f518f1-1d4c-47e7-adbc-2d47d952e9a9",
+    "nombre": "COMBO OHANA",
+    "precio_venta": 19,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "efe83e50-675e-469a-87c3-b766392f27c2",
+    "nombre": "PIZZA PEQUEÑA TRADICIONAL+MAIZ",
+    "precio_venta": 4,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "b42d7e13-bfc8-40d8-94d4-61908ff269cd",
+    "sedes_ids": [
+      "b42d7e13-bfc8-40d8-94d4-61908ff269cd"
+    ]
+  },
+  {
+    "id": "64a3368d-afc8-4d44-b708-988b002e4e6f",
+    "nombre": "QUESO P/ HAMBURGUESA",
+    "precio_venta": 1,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "7f78569a-c789-4d53-adab-b8d8141d5305",
+    "nombre": "50 TAMALES",
+    "precio_venta": 12,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "0f71144b-82a0-4ac1-ad95-02069e2a0ae1",
+    "nombre": "SALCHIPAPA ESPECIAL PROTEINA",
+    "precio_venta": 11.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "500GR PAPAS",
+      "SALCHICHA",
+      "POLLO",
+      "LOMITO",
+      "CHULETA"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "c770c93d-8fa5-45a1-8dcc-88ed723c53e1",
+    "nombre": "500 gr de BOLITAS DE CARNE",
+    "precio_venta": 12,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "9c2e3e7c-c41b-4937-b05a-131c7da9572b",
+    "nombre": "HAMBURGUESA CLASICA",
+    "precio_venta": 6,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "a8b36fd4-3174-4a58-b4c6-6695a19b0977",
+    "nombre": "HAMBURGUESA ZULIANITA ",
+    "precio_venta": 9,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "55ff0513-516d-48c2-9f3c-7d557f3ce4ff",
+    "nombre": "HAMBURGUESA AMERICANA ",
+    "precio_venta": 12,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "6e9b73d3-d840-48d9-92de-637346f47fac",
+    "nombre": "HAMBURGUESA MIXTA ",
+    "precio_venta": 12,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "a3228ef8-6506-4b3f-9682-fb83dcf97d72",
+    "nombre": "HAMBURGUESA CRISPY ",
+    "precio_venta": 10,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "ba2ebeb3-5108-4eeb-9a39-de6cd440fa14",
+    "nombre": "PERRO SENCILLO",
+    "precio_venta": 1.8,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "e93857a6-f53b-404c-8d15-4a185bdead0d",
+    "nombre": "PERRO FULL",
+    "precio_venta": 3.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "76c974a7-dfdb-4b96-aead-336797eadad4",
+    "nombre": "COMBO ARCOIRIS",
+    "precio_venta": 12.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "5f34d139-c2b2-4615-aae8-1b8837c5ac42",
+    "nombre": "SALCHIPAPA SENCILLA ",
+    "precio_venta": 7,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "6d692ecc-1e18-41fe-bbbd-6e20fb9073dc",
+    "nombre": "SALCHIPAPA MIXTA ",
+    "precio_venta": 9,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "778f5826-e41c-4d91-b8f7-e41b0af28bba",
+    "nombre": "AREPITA CLASICA ",
+    "precio_venta": 6.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "715f9ba4-3db8-4e77-86ce-620d3df52a91",
+    "nombre": "SERVICIO DE PAPA  200GR",
+    "precio_venta": 3.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "e92a4b60-a872-4c91-bf34-b77487d823b1",
+    "nombre": "PASTICHO 1/2 KG",
+    "precio_venta": 9,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "PAN Y ENSALADA"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "194071fc-81fe-4ae2-9a54-ac99d8661330",
+    "nombre": "PASTICHO 1 KG",
+    "precio_venta": 13,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "PAN Y ENSALADA"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "f2e69971-0476-4fec-8906-b05c53c35c4b",
+    "nombre": "PASTICHO 2 KG ",
+    "precio_venta": 30,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "PAN, BROWNIE Y REFRESCO 1.5L"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "a4f6bb04-2501-4f00-a4d9-034bb3625ed7",
+    "nombre": "PASTICHO CHARCUTERO 2 KG",
+    "precio_venta": 34,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "PAN, BROWNIE Y REFRESCO 1.5L"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "eaa350e6-9b87-424b-8a39-7e301a6586d2",
+    "nombre": "COMBO PERROS ENTRE PANAS",
+    "precio_venta": 12,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "1 BROWNIE",
+      "6 PERRO SENCILLOS",
+      "REF 1LT"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "4af86cc9-77b8-4500-923a-71cfc14ed446",
+    "nombre": "ADICIONAL AREPA",
+    "precio_venta": 0.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "b40529c4-7de9-4e1b-ad6a-5d24cbd23c92",
+    "nombre": "SHOT DE RON",
+    "precio_venta": 2,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "93d2ba50-0e31-476c-8ac9-c6b0ad011ff3",
+    "nombre": "BALDE MIXTO DE CERVEZA",
+    "precio_venta": 11,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "f6ec85f1-cf7e-4191-b997-641158f06968",
+    "nombre": "PIZZA NAPOLITANA FAMILIAR",
+    "precio_venta": 10,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "6e92e3a9-5ba2-472f-8ace-fdd7e9032892",
+    "nombre": "PIZZA NAPOLITANA MEDIANA ",
+    "precio_venta": 6.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "8809e236-ca57-4bd7-8346-8254b63f83d1",
+    "nombre": "PIZZA NAPOLITANA PEQUEÑA",
+    "precio_venta": 5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "b95f3899-ea0c-46d3-8ad2-4fbae5cd00b7",
+    "nombre": "CERVEZA SOLERA",
+    "precio_venta": 1.4,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "ba7f2915-d22c-453a-a3bc-35912a26fd48",
+    "nombre": "PIZZA CHARCUTERA FAMILIAR ",
+    "precio_venta": 17,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "b31640b9-35ff-41dd-9e2e-d960e6bf4cd3",
+    "nombre": "PIZZA CHARCUTERA MEDIANA ",
+    "precio_venta": 11.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "085cbd46-c9b5-435f-99e9-8cf31c3c0cb9",
+    "nombre": "PIZZA CHARCUTERA PEQUEÑA ",
+    "precio_venta": 8,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "226b508f-3b4a-4efe-9899-6de3248c0110",
+    "nombre": "PASTICHO PRIMAVERA 2 KG",
+    "precio_venta": 34,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "PAN, BROWNIE Y REFRESCO 1.5L"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "3bb93058-af7c-41a0-b308-b5720d725475",
+    "nombre": "PASTICHO 3 KG",
+    "precio_venta": 39,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "PAN, BROWNIE Y REFRESCO 1.5L"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "2e0cb034-200c-493a-a659-f27ac6e4f046",
+    "nombre": "PASTICHO PRIMAVERA 3 KG ",
+    "precio_venta": 45,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "PAN, BROWNIE Y REFRESCO 1.5L"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "caef9bcc-43bc-44bd-a506-be8ac3196c18",
+    "nombre": "PASTICHO CHARCUTERO 3 KG",
+    "precio_venta": 45,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "PAN, BROWNIE Y REFRESCO 1.5L"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "3f2ffa1b-ff96-4e76-ac67-c500661da4e1",
+    "nombre": "PASTICHO PRIMAVERA PERSONAL",
+    "precio_venta": 9,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "PAN Y ENSALADA"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "83ee8128-91b5-4b1b-bd54-2a0fa0c4a4a7",
+    "nombre": "PASTICHO CHARCUTERO PERSONAL ",
+    "precio_venta": 9,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "PAN Y ENSALADA"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "66329260-2af3-4dfa-b372-c9f1c1eb40e6",
+    "nombre": "1/4 PECHUGA BROASTER",
+    "precio_venta": 8,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "2d2bbaf8-3644-4755-bdee-7c2f1df526ed",
+    "nombre": "1/4 MUSLO BROASTER ",
+    "precio_venta": 7,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "a66f2160-e648-4d3d-91b6-bcca4a729688",
+    "nombre": "1/2 POLLO BROASTER",
+    "precio_venta": 14,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "5815fde5-5cbe-40ea-9868-dfc0c34e7a2d",
+    "nombre": "1 POLLO ENTERO BROASTER",
+    "precio_venta": 26,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "a4aa5de9-2c87-4426-b1b9-7dab48fce612",
+    "nombre": "TENDERS DE POLLO",
+    "precio_venta": 9,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "0d758f82-6f3c-4025-9cd2-6fe637a67788",
+    "nombre": "NUGGETS DE POLLO",
+    "precio_venta": 7.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "5618adb7-90a6-4733-a0e3-7918e04d2f70",
+    "nombre": "CAJITA FELIZ HAMBURGUESA ",
+    "precio_venta": 8,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "7cbf832c-34fe-42c8-a6ab-05d545f14f67",
+    "nombre": "CAJITA FELIZ NUGGETS",
+    "precio_venta": 8,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "bb600500-62b7-4675-bdce-041aae0c9488",
+    "nombre": "1/4 MUSLO ASADO",
+    "precio_venta": 6.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "7d78a957-5ec8-459e-bf2b-d6243f70fa9b",
+    "nombre": "1/4 PECHUGA ASADA",
+    "precio_venta": 7.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "c3e9b566-c429-4246-a484-420e0e256c74",
+    "nombre": "1/2 POLLO ASADO",
+    "precio_venta": 11,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "c5f288ec-65dd-424f-bf66-0a4648ddaa3d",
+    "nombre": "LINEA ESPECIAL",
+    "precio_venta": 10.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "56121c50-f7ae-4d9f-96de-a74bc353d73f",
+    "nombre": "MEGA PARRILLA NUEVA PROMO ",
+    "precio_venta": 36,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "1/2 POLLO",
+      "200GR LOMITO",
+      "200GR PUERCO",
+      "BROWNIE",
+      "CHORIZO 2",
+      "REFRE 2LTS"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "3626789e-9f94-4028-aa8b-718c42b8d750",
+    "nombre": "PIZZA TRADICIONAL PEQUEÑA",
+    "precio_venta": 5.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "58292a13-c703-4437-941a-adcfba38fd43",
+    "nombre": "COMBO 5 HALLACAS ",
+    "precio_venta": 11,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "819b3fde-3ae0-4c0f-a0da-508e26d4c2bf",
+    "nombre": "SERVICIO DE PAN",
+    "precio_venta": 1.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "f08e7e15-d25a-4bf9-8c27-405888239653",
+    "nombre": "AGUA GASIFICADA",
+    "precio_venta": 1,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "cf6723fc-b768-46c3-bd0e-f40dcd994554",
+    "nombre": "MERRY CHIRSMAS ",
+    "precio_venta": 17,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "PASTICHO 3KG",
+      "HALLACAS (10)",
+      "POLLO RELLENO",
+      "REF 2LT",
+      "1KG ENSALADA",
+      "MINI BROWNIES (2)"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "5a9c2638-1158-4cc2-96a5-7fae82dde1ad",
+    "nombre": "HALLACAS 2$ ",
+    "precio_venta": 2,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "341c24bc-7fc1-4c84-9016-c1df1acc5685",
+    "nombre": "LOMO NEGRO KG",
+    "precio_venta": 22,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "81fdf479-9c26-427f-a310-4de2f7c87f85",
+    "nombre": "POLLO RELLENO KG",
+    "precio_venta": 15,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "90bf9b9e-e206-4d6b-9439-b466b45c1b9b",
+    "nombre": "BROOKIE",
+    "precio_venta": 4,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "775fcafe-1250-432e-9c73-8bbbc0621c4d",
+    "nombre": "COMBO ESCOGE TU PIZZA MEDIANA",
+    "precio_venta": 13,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "COLECCION LILO Y STICH",
+      "M TRADICIONAL",
+      "REF 1LT",
+      "GALLETA CHOCO CHIPS"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "745552e3-c3b2-4a62-a16d-0e2d3864d417",
+    "nombre": "ADICIONAL JAMON",
+    "precio_venta": 1,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "a973d5dc-3991-4b9a-83d6-e12ccf067e8f",
+    "nombre": "EXPERIMENTO 626",
+    "precio_venta": 9.99,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "1/4 ASADO",
+      "1/4 BROASTER",
+      "REF PERSONAL",
+      "COLECCION LILO Y STICH",
+      "GOMITAS"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "089d1379-4743-4c56-affe-8251f3f48df4",
+    "nombre": "COMBO FULL CORN O SUPREMA",
+    "precio_venta": 17,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "1/4 MUSLO ASADO",
+      "1/4 MUSLO BROASTER",
+      "1 BEBIDA PERSONAL",
+      "1 JUGUETE MINECRAFT",
+      "1 GOMITA TRULULU"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "5c4080a1-8e5e-4e2e-bdda-d19801762194",
+    "nombre": "ALGODON AZUCAR",
+    "precio_venta": 1,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "aeafc745-a489-4c63-a2e8-494db6179e6d",
+    "nombre": "LINEA BASICA ",
+    "precio_venta": 8.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "3e243128-c0d0-49c3-9c81-3f190f09211b",
+    "nombre": "CAJA DE CERVEZA SOLERA",
+    "precio_venta": 28,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "8eb97e47-9b82-40bf-94ca-4cdc5cd601d7",
+    "nombre": "CAJITA FELIZ COMBO",
+    "precio_venta": 5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "f932af39-0fd1-4cf6-9f9a-b5af3d3e6af5",
+    "nombre": "BANDEJA TIPO PASAPALOS COMPLETA",
+    "precio_venta": 28,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "d89eb759-0428-48cc-a892-33f84eba222c",
+    "nombre": "HAMBURGUESA DE POLLO",
+    "precio_venta": 8,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "98eb8c25-eb95-413b-90fc-4d9133fa0067",
+    "nombre": "PIZZA ZULIANITA PEQUEÑA ",
+    "precio_venta": 8,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "43dfe585-28e4-44de-99ca-242dcfddc042",
+    "nombre": "PIZZA LA PELUCHE FAMILIAR ",
+    "precio_venta": 15,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "7d4c798a-5a6f-44ad-b67f-980671839c56",
+    "nombre": "PIZZA LA PELUCHE MEDIANA ",
+    "precio_venta": 9.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "19e26a59-6a1d-4a26-89c4-fdedca0bb2ed",
+    "nombre": "PIZZA LA PELUCHE PEQUEÑA",
+    "precio_venta": 7,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "9e2980a4-4002-4dcc-a7d8-635cf5760209",
+    "nombre": "PIZZA ESPECIAL FAMILIAR ",
+    "precio_venta": 15,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "fba0575c-6e87-4529-9446-8c9e7b3b33e1",
+    "nombre": "PIZZA ESPECIAL MEDIANA",
+    "precio_venta": 9.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "0ed66580-74e1-4ebb-b983-c374e2ecfcd8",
+    "nombre": "COMBO BROASTER 12 PIEZAS",
+    "precio_venta": 26,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "e9ed8b00-c38d-491e-98c3-5805daec206b",
+    "nombre": "PIZZA ESPECIAL PEQUEÑA",
+    "precio_venta": 7,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "d9fb4495-5c90-4e8f-9f8e-713869b8ef88",
+    "nombre": "HAMBURGUESA DE LOMITO",
+    "precio_venta": 8,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "0bbc0e7f-d978-4799-939f-0ce03513a171",
+    "nombre": "ADICIONAL ENSALADA DULCE",
+    "precio_venta": 0.75,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "1371218b-fc30-4c44-b03a-7ff44baf3dc3",
+    "nombre": "-",
+    "precio_venta": -1,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "e6e9f33a-0691-4123-a34d-2af95eaff805",
+    "nombre": "ADICIONAL DE PIEZA",
+    "precio_venta": 4,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "30544db3-7675-49d5-96cd-3f0f11d23456",
+    "nombre": "AGUA PEQUE",
+    "precio_venta": 0.8,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "fe19026b-08ea-4b8d-90fe-a16454c12bbf",
+    "nombre": "QUESO AMARILLO",
+    "precio_venta": 1,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "0d8d4464-ba0e-46b0-b325-70f59eacc72e",
+    "nombre": "LATA CERVEZA",
+    "precio_venta": 2,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "b9772b59-6d4a-4ebd-be37-984367e630bc",
+    "nombre": "ADICIONAL DOBLE QUESO",
+    "precio_venta": 2,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "249c463a-861c-418b-ae81-9685d2f3586c",
+    "nombre": "DOBLE AREPA",
+    "precio_venta": 0.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "78218c81-68ae-40dc-a8b9-18fa15cb26de",
+    "nombre": "SERVICIOS TOSTONES ",
+    "precio_venta": 1,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "a53c8235-bd54-4047-90c0-3f9eb70b2cb0",
+    "nombre": "PAN CON POLLO",
+    "precio_venta": 4,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "9f258b2c-13b2-4623-a63c-2f17c2866989",
+    "nombre": "DOBLE BAÑO MARIA",
+    "precio_venta": 0,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "a22c1fbc-7314-4b49-a375-78290c0113a7",
+    "nombre": "PIZZA HAWAIANA MEDIANA",
+    "precio_venta": 9.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "ca69aadb-9250-442e-b17d-6b0d37aefa1d",
+    "nombre": "PAN DE JAMON COMPLETO",
+    "precio_venta": 15,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "a95511c0-5663-4864-95cf-0211395b7509",
+    "nombre": "PERNIL KG",
+    "precio_venta": 22,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "5819966a-9249-4ce4-ad1d-fed9e01db74c",
+    "nombre": "COMBO CELEBRA 160",
+    "precio_venta": 160,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "1163f52d-8320-40dc-9bab-6ad41093b054",
+    "nombre": "PASTICHO CHARCUTERO 1 KG",
+    "precio_venta": 15,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "824ba814-60dd-478e-9449-bf2271c41c0f",
+    "nombre": "PARRILLA 2 PROTEINAS TRAB",
+    "precio_venta": 8.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "a3f7f940-be7e-47dd-af10-d7b157362f66",
+    "nombre": "DUO PASTICHOS PERSONALES",
+    "precio_venta": 14,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "ee142eb5-14df-4655-84c2-e7ec19fa18a1",
+    "nombre": "PIZZA HAWAIANA PEQUEÑA",
+    "precio_venta": 7,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "c459698e-8cd2-46f5-8cd6-267cc85e5406",
+    "nombre": "PIZZA CAPRICHOSA FAMILIAR ",
+    "precio_venta": 15,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "695a443e-6b11-4d1f-bce0-dd5cc576622f",
+    "nombre": "PIZZA CAPRICHOSA MEDIANA",
+    "precio_venta": 9.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "abb262d5-2ad5-4856-b1c9-d2ee7e7f798b",
+    "nombre": "COMBO CELEBRA 130",
+    "precio_venta": 130,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "1/4 TORTA AREQUIPE O CHOCOLATE",
+      "120 PASAPALOS DE FIESTA",
+      "2 BALDE DE CERVEZA",
+      "4 REFRESCO 2LT",
+      "5 PIZZAS + ADICIONAL CADA PIZZA"
+    ],
+    "sede_id": "b42d7e13-bfc8-40d8-94d4-61908ff269cd",
+    "sedes_ids": [
+      "b42d7e13-bfc8-40d8-94d4-61908ff269cd"
+    ]
+  },
+  {
+    "id": "5d0bb939-ffa7-4d7e-8a4f-19d6431219c8",
+    "nombre": "MEGA FAMILIAR NAVIDEÑO",
+    "precio_venta": 100,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "e1083f52-9b41-4c79-b574-6ac39bef28d9",
+    "nombre": "HAMBURGUESA DE POLLO TRAB",
+    "precio_venta": 8,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "4670a15d-9e1c-4a98-bce8-4f7031fa7af0",
+    "nombre": "HAMBURGUESA DE LOMITO TRAB",
+    "precio_venta": 8,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "a43f1373-7c55-46ff-a451-977a9f3cfb12",
+    "nombre": "AREPITA CLASICA TRAB",
+    "precio_venta": 6.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "8249964a-f88a-4e10-acd1-852f0679d2c9",
+    "nombre": "HAMBURGUESA ECONOMICA SENCILLA",
+    "precio_venta": 3.8,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "6f05c4df-0901-4cbb-9f47-9bbab8e54cec",
+    "nombre": "PATACON MIXTO TRAB",
+    "precio_venta": 8.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "9fb02f9a-a03d-4a2f-8d03-6d7eb6cbfdb9",
+    "nombre": "AREPITA MIXTO TRAB",
+    "precio_venta": 8.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "b9859e5c-4201-4102-9756-5f5ee85136f5",
+    "nombre": "1/4 MUSLO BROASTER TRAB",
+    "precio_venta": 7,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "029ad60e-f257-4df7-aa72-b0decd72e1e1",
+    "nombre": "PIZZA CHARCUTERA PEQUEÑA TRAB",
+    "precio_venta": 7.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "4bf9d357-ae12-427a-9447-0b2f4366363b",
+    "nombre": "PIZZA ZULIANITA PEQUEÑA TRAB",
+    "precio_venta": 7.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "c67f6ec9-04db-4fd3-9861-cbcd56c019fd",
+    "nombre": "PIZZA CAPRICHOSA PEQUEÑA TRAB",
+    "precio_venta": 6.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "b7e4d467-f497-4667-b6bc-d15406c40a7e",
+    "nombre": "PIZZA LA CAPRESA PEQUEÑA ",
+    "precio_venta": 7,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "0e9db7a0-9d8a-4248-a367-376bc9b6e707",
+    "nombre": "PIZZA SUPREMA FAMILIAR ",
+    "precio_venta": 17,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "d0b59227-3fd8-4c80-bb1b-1412ad16fb75",
+    "nombre": "PIZZA SUPREMA MEDIANA",
+    "precio_venta": 11.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "6ac57347-e3e1-4262-a3a1-3390545656ee",
+    "nombre": "PIZZA SUPREMA PEQUEÑA",
+    "precio_venta": 8,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "b2ad5c2b-9633-45d8-ae49-f9008862f039",
+    "nombre": "PERRO POLACO TRAB",
+    "precio_venta": 3,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "193b94d4-5cc0-4bac-abfc-e9d10553ba24",
+    "nombre": "PIZZA LA PELUCHE PEQUEÑA TRAB",
+    "precio_venta": 6.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "9d25b155-f631-4e8f-85f1-bb8bde9108bf",
+    "nombre": "PIZZA ESPECIAL PEQUEÑA TRAB",
+    "precio_venta": 6.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "c0409319-907d-4931-bda9-d40e41175314",
+    "nombre": "PIZZA 4 ESTACIONES PEQUEÑA TRAB",
+    "precio_venta": 7.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "1506eb74-512e-4131-b397-4698920293c0",
+    "nombre": "PIZZA AMERICANA PEQUEÑA TRAB",
+    "precio_venta": 6.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "e004b83a-1a7e-4fb8-a3d0-20d192237214",
+    "nombre": "MINI BROWNIES CON NUTELLA",
+    "precio_venta": 7.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "1bcc05e6-11a4-411a-a280-fffde210a7b3",
+    "nombre": "PATACON SENCILLO",
+    "precio_venta": 7,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "d3a45d53-9145-4b30-bc60-1afbd3056565",
+    "nombre": "PATACON MIXTO ",
+    "precio_venta": 9,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "0ece1186-d238-4ac7-9ee8-98dd1e408aaa",
+    "nombre": "PIZZA CORN CHICKEN FAMILIAR ",
+    "precio_venta": 17,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "275229c7-ea43-422d-bb26-fa377b8eac3a",
+    "nombre": "ARROZ CON LECHE",
+    "precio_venta": 3,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "a8cc0b30-02a5-4ab6-aca5-6d72dd30b2e3",
+    "nombre": "TINA DE HELADO",
+    "precio_venta": 1,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "57916782-ffb0-4cbc-99fd-5de142da59ce",
+    "nombre": "250 gr de ANTIPASTO",
+    "precio_venta": 8,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "643dd110-b83a-40bb-a19d-07aa748741b8",
+    "nombre": "1 kg DE ANTIPASTO",
+    "precio_venta": 30,
+    "categoria_id": null,
+    "es_compuesto": true,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "9b5836d9-f935-451d-af13-45070cc953d8",
+    "nombre": "2 PAQUETES DE GALLETAS O TOSTADAS + 4 TIPOS DE SALSAS (250gr c/u)",
+    "precio_venta": 30,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "2 BURGERS CRISPY ECONOMICAS",
+      "1 PIZZA TRADICIONAL FAMILIAR",
+      "1 REFRESCO 1 L"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "4387c6c1-4f90-437c-8a06-9f361d5a520b",
+    "nombre": "ADICIONAL BBQ",
+    "precio_venta": 1,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "964c4a56-ad33-4a00-96bf-0c748cd46428",
+    "nombre": "ADICIONAL HUEVO",
+    "precio_venta": 0.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "4e7b4841-6e5e-4362-91d5-bf803e6ad54f",
+    "nombre": "EXTRA JAMON",
+    "precio_venta": 1,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "637b0cd1-9492-4020-ad2a-435614533d31",
+    "nombre": "SERVICIO 250GR DE ENSALADA",
+    "precio_venta": 3,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "360fd700-d9e3-4f3e-8722-fc438b6e9e83",
+    "nombre": "COMBO ECONOMICO HAMBURGUESAS",
+    "precio_venta": 11,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "55fe1f52-a682-4ae0-8091-eb3f33d2c386",
+    "nombre": "BESO BLANCO",
+    "precio_venta": 3,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "6f2e5a7e-76ba-43cd-9135-9163160e0ddd",
+    "nombre": "COMBO MINECRAFT",
+    "precio_venta": 19.99,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "612ccb08-e30e-49c1-aee6-8be46db18736",
+    "nombre": "DIPLOMA COMBO",
+    "precio_venta": 7.99,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "fc692012-ef3e-4483-9c60-5483a52f3a12",
+    "nombre": "COMBO HAMBURGUESA",
+    "precio_venta": 15,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "2 H CLASICAS",
+      "2 SERV PAPAS 125GR",
+      "REF 1LT"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "0b270937-768a-43c3-98de-f980b16cc1d0",
+    "nombre": "COMPARTIR FAMILIAR",
+    "precio_venta": 83,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "7 HALLACAS",
+      "PASTICHO 2KG",
+      "1KG ENSALADA",
+      "1 PAN DE JAMON",
+      "POLLO RELLENO",
+      "REF 2LT",
+      "BROWNIE"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "de0bb20d-3ff3-400a-b598-d01593b700ea",
+    "nombre": "HAMBURGUESA ECONOMICA TRAB",
+    "precio_venta": 3.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "180bc334-5566-4743-8673-278cd3264ec6",
+    "nombre": "SALCHIPAPA SENCILLA TRAB",
+    "precio_venta": 6.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "ad20e64f-3ee2-4836-9fed-d026b9578c71",
+    "nombre": "SALCHIPAPA MIXTA TRAB",
+    "precio_venta": 8.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "23ef8c0b-20a4-4c1a-9e8f-b057542f1340",
+    "nombre": "PERRO SENCILLO TRAB",
+    "precio_venta": 1.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "8898e036-80f3-450f-b1ca-202044808892",
+    "nombre": "PIZZA PRIMAVERA PEQUEÑA TRAB",
+    "precio_venta": 6.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "d90390b5-5d45-4ba2-8345-a6c765230329",
+    "nombre": "PIZZA CORN CHICKEN PEQUEÑA TRAB ",
+    "precio_venta": 7.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "b72eab29-2f9f-4172-abce-93487e2e8648",
+    "nombre": "PARRILLA 3 PROTEINAS",
+    "precio_venta": 12.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "LOMITO, CHORIZO Y POLLO",
+      "LOMITO, PUERCO Y CHORIZO",
+      "POLLO, PUERCO Y CHORIZO",
+      "POLLO, PUERCO Y LOMITO"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "55dac997-ef4a-4f99-88d5-602d56f23e67",
+    "nombre": "GELATINA",
+    "precio_venta": 2.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "c03e7189-7560-4d1c-8a12-d6be2723fb86",
+    "nombre": "CHOCOQUESILLO",
+    "precio_venta": 4.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "8a6943ec-a519-4c8e-830a-72ea1f7b3844",
+    "nombre": "PIZZA 4 ESTACIONES PEQUEÑA ",
+    "precio_venta": 8,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "2c32b52d-c555-4c14-a997-901bf621a061",
+    "nombre": "PIZZA LA CAPRESA FAMILIAR ",
+    "precio_venta": 15,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "b5883b66-0183-46d9-827a-2d5f3b3b7d36",
+    "nombre": "PIZZA LA CAPRESA MEDIANA ",
+    "precio_venta": 9.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "d7e6be81-9fa3-4e22-8758-f152d5915fcd",
+    "nombre": "SAMANTHA",
+    "precio_venta": 0,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "7b1d09df-3405-4cae-8bb5-72656d2ae7e0",
+    "nombre": "ADICION PARA HAMBURGUESAS",
+    "precio_venta": 2,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "10cf97f0-df71-47a4-b7a1-9f4b9ac878c0",
+    "nombre": "ADICIONAL PAPAS RUSTICAS",
+    "precio_venta": 3,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "8a7a9ca7-49d0-438e-a6ff-a9144025fbd6",
+    "nombre": "GATORADE",
+    "precio_venta": 2,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "8e57a55b-8848-42c1-a05b-3a7bbc076a31",
+    "nombre": "BROWNIE",
+    "precio_venta": 2.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "14f40175-73ba-4652-bac6-4a2051fe5487",
+    "nombre": "SERVILLETAS Y CARAMELOS",
+    "precio_venta": 0.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "7f67e8d9-51db-4a78-a01e-955f6336dab1",
+    "nombre": "AGUA NEVADA 600ML",
+    "precio_venta": 1.4,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "9f52591c-f8ba-45a1-8a87-9d70d3d46d77",
+    "nombre": "DORITO GRANDE",
+    "precio_venta": 0,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "b0065c25-c932-4c51-aeeb-8b5fa5d2fd8b",
+    "nombre": "JUGO CAJA",
+    "precio_venta": 1,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "37238fb8-dc09-42aa-b779-9b69d63906f9",
+    "nombre": "PALETA CITRICA ",
+    "precio_venta": 0.8,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "9f421810-c2cd-4219-84f3-061fbd7f899c",
+    "nombre": "HELADOS ",
+    "precio_venta": 1,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "PALETAS REYENAS",
+      "SUNDAES",
+      "PAPIBATI",
+      "PAPAITO"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "71bddbeb-7562-41d0-a231-2a311ded8d78",
+    "nombre": "PAPACHONGO",
+    "precio_venta": 1.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "413dfb0a-6ef3-4bab-a4f1-d2fab1348b64",
+    "nombre": "PIZZA BBQ PEQUEÑA TRAB",
+    "precio_venta": 8.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "6c1e1be1-ca61-47a4-abb0-17a2519cb409",
+    "nombre": "ADICIONAL BORDE DE QUESO",
+    "precio_venta": 2.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "265d678a-97b1-4252-af71-fc3686af75eb",
+    "nombre": "PASTELADOS ",
+    "precio_venta": 1.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "9e9376d5-827c-4cdf-b3f1-1c0e7056e7a2",
+    "nombre": "PAPA CONO ",
+    "precio_venta": 1.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "0b78a639-d986-485b-88eb-5bed5cfd0615",
+    "nombre": "PROMO MALTEADA",
+    "precio_venta": 5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "6812d216-fc6d-4592-9260-aef5024760b5",
+    "nombre": "GALLETA",
+    "precio_venta": 1.8,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "e5a10758-f6f6-4f21-9529-5c8f74268f0b",
+    "nombre": "PASTICHO PARA 2 ESPECIAL",
+    "precio_venta": 15,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "4228caad-93c0-40bc-bf27-b313711c0a07",
+    "nombre": "COMBO PATACON 20",
+    "precio_venta": 20,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "3 PATACONES CLASICOS",
+      "1 REF 1.5 LT"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "7dadf5fb-85dd-496f-ab2a-2b7da9d7fb2e",
+    "nombre": "COMBO PERRO 10$ ",
+    "precio_venta": 10,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "f30567c2-0e97-4187-b3e6-305cf14546a3",
+    "nombre": "PAQUETE DE 85$",
+    "precio_venta": 85,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "4 PIZZAS TRADICIONAL",
+      "3 REF 1.5 LT",
+      "10 PALETAS",
+      "30 TEQUEÑOS",
+      "2 BALDES DE CERVEZA"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "4aac0cf1-7774-47aa-9903-f173821b2ff2",
+    "nombre": "ADICIONAL ACEITUNAS NEGRAS",
+    "precio_venta": 2.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "f0e20f0d-bea9-4e30-b6c3-417e7219b8e8",
+    "nombre": "ADICIONAL CARNE ",
+    "precio_venta": 3,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "9614a12a-c5c2-491a-9f6e-45a740f67dfa",
+    "nombre": "ADICIONAL PECORINO",
+    "precio_venta": 2,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "c3bfdf1b-3b7c-4884-a087-d1ca82fff077",
+    "nombre": "REFRESCO 1.5L",
+    "precio_venta": 2.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "da7f9705-942d-40fc-8ea4-e95b841c9251",
+    "nombre": "ADICIONAL DE LOMITO",
+    "precio_venta": 2.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "cc55a603-44da-49b7-9dcc-883f8c9777bf",
+    "nombre": "PASTICHO PERSONAL",
+    "precio_venta": 7,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "48ec035a-8462-4ceb-b99d-3e5d1f6c07c3",
+    "nombre": "BRAZO GITANO",
+    "precio_venta": 2.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "dfb6352e-7ccf-4048-862a-e7a4bc788c63",
+    "nombre": "PROMO ASADO FRIDAY ",
+    "precio_venta": 17,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "1db974a8-6701-4854-8fae-bdf2e7cc19af",
+    "nombre": "5 TARTARAS PEQUEÑAS",
+    "precio_venta": 1,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "4885a431-0849-4774-98ca-972e008b7b75",
+    "nombre": "COMBO NAVIDAD COMPARTIR",
+    "precio_venta": 28,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "e4877078-76a6-4abd-a360-1cb215f54aa1",
+    "nombre": "COMBO SENCILLO",
+    "precio_venta": 19.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "2742a913-a9b8-48cf-b3e8-9c3f8ac3e1c6",
+    "nombre": "PASTICHO 2 KG SOLO",
+    "precio_venta": 24,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "CARNE",
+      "POLLO"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "623a972d-3336-4533-a368-a5cfd641e79e",
+    "nombre": "PROMO SEMANA SANTA 8",
+    "precio_venta": 8,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "3d0cbc79-4d83-4cef-942d-e3b9b08355f1",
+    "nombre": "COMBO PARA 2",
+    "precio_venta": 14,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "M ESPECIAL",
+      "M HAWAIANA",
+      "M PRIMAVERA",
+      "M VEGETARIANA",
+      "REF LT"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "68b59fa7-e109-4566-a3d8-3980fea64211",
+    "nombre": "COMBO 4 PIZZAS SEMANA SANTA 40$",
+    "precio_venta": 40,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": null,
+    "sedes_ids": null
+  },
+  {
+    "id": "deacbfb9-6805-48a0-8153-387d13dcf328",
+    "nombre": "COMBO PREMIUM",
+    "precio_venta": 15,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "2 ADICIONALES A ESCOGER",
+      "F TRADICIONAL",
+      "P TRADICIONAL",
+      "REF 1.5LT"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "feca8acf-b028-4ef4-ac7e-7eb9ad357f2a",
+    "nombre": "COMBO FAMILIAR PASTICHO 2KG",
+    "precio_venta": 35,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "b77a4aad-769f-4fea-b522-9a6eddae31e6",
+    "nombre": "COMO FAMILIAR PASTICHO 3KG",
+    "precio_venta": 45,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "bf35aaa7-f037-4e8e-bec5-0f0213fd0ed5",
+    "nombre": "PERRO SENCILLO ES",
+    "precio_venta": 2,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "1b543af3-7fcb-4881-bfeb-4d4397f29605",
+    "nombre": "COMBO DUO CLASICAS HAMBURGIUESAS",
+    "precio_venta": 15,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "0e9efc7a-300a-4295-9310-f570bbd3e535",
+    "nombre": "COMBO DUO 28$",
+    "precio_venta": 28,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "87a69e30-287d-4650-9a71-4572b23cb6e0",
+    "nombre": "COMBO PIZZA TRADICIONAL ",
+    "precio_venta": 25,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "1 F TRADICIONAL + ADICIONAL",
+      "1 BALDE DE CERVEZA",
+      "2 COCTELES"
+    ],
+    "sede_id": "b42d7e13-bfc8-40d8-94d4-61908ff269cd",
+    "sedes_ids": [
+      "b42d7e13-bfc8-40d8-94d4-61908ff269cd"
+    ]
+  },
+  {
+    "id": "748faf7b-608a-4f1e-aee0-77bcaa2f7ea5",
+    "nombre": "COOKIES NUTELLA",
+    "precio_venta": 3.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "9cd62fdf-e808-4fcb-b55f-8602f5ef590e",
+    "nombre": "PROMO FAMILIAR 8$",
+    "precio_venta": 8,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "de4f0853-5e2a-409e-bc89-c86953c24dc7",
+    "nombre": "CAJA",
+    "precio_venta": 1,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "0a508229-d218-44ca-af50-b89f39f80e78",
+    "nombre": "COMBO  PENDON",
+    "precio_venta": 20,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "e36d64bc-e032-4cc1-b7ba-eda38a6a5ff5",
+    "nombre": "PIZZA TRADICIONAL 8$ ",
+    "precio_venta": 8,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "2 PASTICHOS PERSONALES",
+      "ENSALADA",
+      "PAN",
+      "REF 1LT"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "ac34c5d4-fd67-4b74-b849-52ccdced2d14",
+    "nombre": "CUCHAREABLES",
+    "precio_venta": 5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "F TRADICIONAL + MAIZ Y PIMENTON",
+      "REF 1LT",
+      "BROWNIE"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "6eb4145d-eda3-422d-929f-9467986e7b56",
+    "nombre": "COMBO PADRE 2KG",
+    "precio_venta": 35,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "ENSALADA 500GR",
+      "MINI BROWNIE",
+      "PAN",
+      "PASTICHO 3KG",
+      "REF 2LT"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "402a725b-c651-44c1-a0ce-73bc3dbb488b",
+    "nombre": "COMBO PADRE 3KG",
+    "precio_venta": 45,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "BROWNIE",
+      "ENSALADA 500GR",
+      "PAN",
+      "PASTICHO 2KG",
+      "REF 1.5"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "2f8edefe-a4ca-4f1d-81c8-dc10ffa4b0a9",
+    "nombre": "HAMBURGUESA POLLO ESPECIAL",
+    "precio_venta": 8.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "c12b2e24-0e5b-4046-9134-5b5821d33e09",
+    "nombre": "REFRESCO 1L",
+    "precio_venta": 2,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "8cbeb3c1-361d-45aa-9892-684fae6addcf",
+    "nombre": "REFRESCO 1.25L",
+    "precio_venta": 2,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "b22cf178-ae97-461b-9498-9835ad2f97d0",
+    "nombre": "PIZZA CORN CHICKEN MEDIANA ",
+    "precio_venta": 11.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "15f91084-e191-423c-9ffa-c37356ec70bf",
+    "nombre": "PIZZA CORN CHICKEN PEQUEÑA ",
+    "precio_venta": 9,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "799249d8-c9d1-42df-bf88-5bb314f962e3",
+    "nombre": "PAPELON PEQUEÑO",
+    "precio_venta": 2,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "f68b0a97-3ab5-4c5e-bfd7-a9ed579aa27c",
+    "nombre": "DELIVERY 1$",
+    "precio_venta": 1,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "d7432b3c-ccfd-48a4-a32c-c05688a276a3",
+    "nombre": "DELIVERY 1.5$",
+    "precio_venta": 1.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "fd78f144-ce83-4a22-97ea-369ac7ee4e95",
+    "nombre": "DELIVERY 2$",
+    "precio_venta": 2,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "8c9607ef-ead6-4dc0-bc55-75708e8cde01",
+    "nombre": "DELIVERY 2.5$",
+    "precio_venta": 2.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "da6e9dae-eb99-4bd2-aac4-d8f76e9050ab",
+    "nombre": "DELIVERY 3$",
+    "precio_venta": 3,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "e1f7343f-4a71-4fa9-937d-528741ad089b",
+    "nombre": "DELIVERY 3.5$",
+    "precio_venta": 3.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "c068305a-b03b-423b-ae07-1580302b9b93",
+    "nombre": "TEQUILA SUNRISE",
+    "precio_venta": 4.5,
+    "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+    "es_compuesto": true,
+    "descripcion": "Tequila, Granadina, Sumo Limón, Jugo Naranja.",
+    "notas_preparacion": [],
+    "sede_id": null,
+    "sedes_ids": null
+  },
+  {
+    "id": "64497072-8997-45b3-8d02-8b98d600cd5a",
+    "nombre": "DELIVERY 4$",
+    "precio_venta": 4,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "ef1ed8d2-7f9d-4856-95bd-5b17cdc135aa",
+    "nombre": "DELIVERY 5$",
+    "precio_venta": 5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "25fbeb8b-a0e3-4553-9dba-4cda9ce3d982",
+    "nombre": "COCTEL CORTESIA",
+    "precio_venta": 0,
+    "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": null,
+    "sedes_ids": null
+  },
+  {
+    "id": "a5c35ed2-31c5-4a2e-a923-545dff469404",
+    "nombre": "GRINCH",
+    "precio_venta": 4,
+    "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+    "es_compuesto": true,
+    "descripcion": "Vodka, Licor de coco, Triple Sec, Sumo Limón, Jugo Naranja.",
+    "notas_preparacion": [],
+    "sede_id": null,
+    "sedes_ids": null
+  },
+  {
+    "id": "359a5388-620a-4f70-8fbb-1d5944e9b961",
+    "nombre": "CUBA LIBRE",
+    "precio_venta": 4,
+    "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+    "es_compuesto": true,
+    "descripcion": "Ron Cacique, Coca Cola, Sumo Limón, Amargo Angostura.",
+    "notas_preparacion": [],
+    "sede_id": null,
+    "sedes_ids": null
+  },
+  {
+    "id": "56008f85-0129-446a-8b28-7dec3fd99087",
+    "nombre": "MICHELADA",
+    "precio_venta": 4,
+    "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+    "es_compuesto": true,
+    "descripcion": "Cerveza, Sumo Limón, Tajin, Picante.",
+    "notas_preparacion": [],
+    "sede_id": null,
+    "sedes_ids": null
+  },
+  {
+    "id": "96e3bd09-9553-47ae-af3c-a3b7d3e2ac56",
+    "nombre": "MOJITO CUBANO",
+    "precio_venta": 4,
+    "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+    "es_compuesto": true,
+    "descripcion": "Ron, Sumo Limón, Azucar, Hierba Buena, Refresco Limón.",
+    "notas_preparacion": [],
+    "sede_id": null,
+    "sedes_ids": null
+  },
+  {
+    "id": "9bad41ba-7464-44c0-a8e4-55101bc20753",
+    "nombre": "PIÑA COLADA",
+    "precio_venta": 5,
+    "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+    "es_compuesto": true,
+    "descripcion": "Ron, Piña, Licor Coco, Leche Condensada, Triple Sec.",
+    "notas_preparacion": [],
+    "sede_id": null,
+    "sedes_ids": null
+  },
+  {
+    "id": "2789313a-4446-4d96-8bd7-24b135125a38",
+    "nombre": "MARGARITA BLUE",
+    "precio_venta": 4.5,
+    "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+    "es_compuesto": true,
+    "descripcion": "Tequila, Triple Sec, Sumo Limón, Azucar, Curasao Azul.",
+    "notas_preparacion": [],
+    "sede_id": null,
+    "sedes_ids": null
+  },
+  {
+    "id": "16753bb1-b548-4bbd-903b-6937c37b1402",
+    "nombre": "BUSCANDO A NEMO",
+    "precio_venta": 4,
+    "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+    "es_compuesto": true,
+    "descripcion": "Ron, Vodka, Licor de Coco, Tequila, Triple Sec, Sumo Limón, Granadina, Curasao Azul, Jugo Naranja.",
+    "notas_preparacion": [],
+    "sede_id": null,
+    "sedes_ids": null
+  },
+  {
+    "id": "f768c2d9-1811-4f13-a222-49d72385b1ec",
+    "nombre": "SANGRIA GRANDE",
+    "precio_venta": 8.5,
+    "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "056e8280-a841-4cb5-8fd6-b511d4741fa0",
+    "nombre": "WHISKY 8 AÑOS",
+    "precio_venta": 4,
+    "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": null,
+    "sedes_ids": null
+  },
+  {
+    "id": "9c7766a3-b2e0-438c-8ac8-99c63a6d4b53",
+    "nombre": "WHISKY 12 AÑOS",
+    "precio_venta": 5.5,
+    "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": null,
+    "sedes_ids": null
+  },
+  {
+    "id": "d85512b3-2ef3-4e19-94eb-1c02d8321b8d",
+    "nombre": "PROMO AMERICANA",
+    "precio_venta": 14,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "F AMERICANA",
+      "REF 1LT"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "8b8c5f86-29a2-4917-b6a9-ecbb6f2d0a19",
+    "nombre": "PIZZA TRADICIONAL PROMO",
+    "precio_venta": 7,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "a8375599-9f9b-47a1-8aed-ad3b99aa5dd3",
+    "nombre": "SERVICIO ENSALADA 1KG",
+    "precio_venta": 12,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "7ee41e99-312f-431a-b728-aa62c9e30e34",
+    "nombre": "PIZZA NAPOLITANA PROMO",
+    "precio_venta": 7,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "efb56f97-55dd-4311-b19d-ce42dd66a994",
+    "nombre": "DUO PELUCHE",
+    "precio_venta": 22,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "2 F TRADICIONAL",
+      "REFRESCO 1.5L",
+      "REFRESCO 2L",
+      "TRULULU"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "eb27b48e-da8a-41b4-95ea-c168e06f88a1",
+    "nombre": "PROPINA",
+    "precio_venta": 1,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "5f8f5ae2-779b-42a4-8651-c3ca0f222997",
+    "nombre": "+",
+    "precio_venta": 1,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "8314788c-95c9-43a5-82b1-8d1a0d99c370",
+    "nombre": "SNACK",
+    "precio_venta": 0.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "7dae5e97-1449-43e2-b1b8-d8bfa0ba4a7e",
+    "nombre": "PASTICHO 2 KG COMBO",
+    "precio_venta": 34,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "924a5c9b-c099-4c9e-ad9d-8b6097ef8bb2",
+    "nombre": "SERVICIO ENSALADA 500G",
+    "precio_venta": 6,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "d9befd9c-1dcc-4a18-bd5a-746cb9660727",
+    "nombre": "JUGO NATURAL",
+    "precio_venta": 2.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "f3b53089-8c06-4a4e-a01c-a1b51ad7a01b",
+    "nombre": "COMBO FAMILY",
+    "precio_venta": 19,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "MEDIANA TRADICIONAL",
+      "REFRESCO 1.5L",
+      "FAMILIAR TRADICIONAL + MAIZ"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "fd1140eb-60b5-46e9-a2f7-68016e4a597f",
+    "nombre": "PASTICHO PRIMAVERA 1 KG",
+    "precio_venta": 15,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "ad949886-fe22-48de-88cf-8dacca750356",
+    "nombre": "SERVICIO TEQUEÑOS 20UNIDADES",
+    "precio_venta": 8,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "61721abd-6ad6-4a90-b464-0d3f1afe91b9",
+    "nombre": "PIZZA TRADICIONAL CUPON",
+    "precio_venta": 6,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "2d3bca46-c638-4d83-9858-6b04ae8b5246",
+    "nombre": "COMBO ESCOGE TU PIZZA FAMILIAR",
+    "precio_venta": 19,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "F TRADICIONAL",
+      "BORDE DE QUESO + MAIZ",
+      "REFRESCO 1.5L",
+      "BROWNIE"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "675fba5d-0c2d-48be-ba18-cb88e32f44a6",
+    "nombre": "COMBO MARQUESA",
+    "precio_venta": 14,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "4dfab11c-b828-4376-aabd-bb380a30f2c7",
+    "nombre": "COMBO AREPAS ",
+    "precio_venta": 18,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "3 AREPAS CLASICAS",
+      "REFRESCO 1.5L"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "9e528c76-02b9-4dcf-ba8b-f4c25cd27973",
+    "nombre": "SERVICIO ENSELADA 250GR",
+    "precio_venta": 3,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "c58e8e29-b4b4-4759-9a4f-21a522b585f0",
+    "nombre": "COMBO DUO",
+    "precio_venta": 24,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "F JYQ + ADICIONAL",
+      "F JYQ + ADICIONAL",
+      "REF 1.5",
+      "SNACK"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "7c502aa9-a55d-4fc0-a832-d4b62a6f381a",
+    "nombre": "PASTICHO 1 KG COMBO",
+    "precio_venta": 14,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "1e10a887-965f-41d5-9e87-c01708952c53",
+    "nombre": "TORTA DE CHOCOLATE ",
+    "precio_venta": 3.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "e8ba385f-7ff7-4395-bb05-67e7941ad285",
+    "nombre": "PIE DE LIMON/PARCHITA",
+    "precio_venta": 3.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "4109afef-21c1-42c8-9f40-bf1e5e847a8c",
+    "nombre": "ADICIONAL QUESO PARMESANO",
+    "precio_venta": 2,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "2cd039c0-b28b-4997-ac0a-2293e877678a",
+    "nombre": "DELIVERY",
+    "precio_venta": 0,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "284186d1-ebeb-4ec3-b766-9bf9f0d2e3f0",
+    "nombre": "SOPA",
+    "precio_venta": 4,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "COSTILLA",
+      "GALLINA"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "da1e0374-b117-491a-bbc5-e8a85dcc0c52",
+    "nombre": "HALLACA",
+    "precio_venta": 2.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "79581eda-0376-4ecc-b667-43058075beb2",
+    "nombre": "DELIVERY 6$",
+    "precio_venta": 6,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "45ff9ce0-2547-4b2e-b6dc-b5d85b8fcbaa",
+    "nombre": "PLATO NAVI  PARA 2 ",
+    "precio_venta": 18,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "PASTICHO 1KG",
+      "300GR ENSALADA",
+      "PAN TOSTADO",
+      "2 HALLACAS",
+      "REFRE 1LITRO",
+      "BROWNIE"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "324aeebe-08a2-4f02-a0da-4dd673f939d7",
+    "nombre": "ADICIONAL QUESO HAMBURGUESA",
+    "precio_venta": 1,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "1d45ebd6-0a06-460b-98d7-6c8eb82cd06c",
+    "nombre": "HAMBURGUESA CLASICA TRAB",
+    "precio_venta": 6,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "63ef170d-a8d6-4456-a5dd-986e18ebdd1b",
+    "nombre": "1/4 MUSLO ASADO TRAB",
+    "precio_venta": 6.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "bc44bd18-73b2-4e30-83fb-3bf1483cbaed",
+    "nombre": "1/4 PECHUGA ASADO TRAB",
+    "precio_venta": 7.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "892edaec-5826-4f26-8609-43a7550f166c",
+    "nombre": "1/4 PECHUGA BROASTER TRAB",
+    "precio_venta": 8,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "3ea4cadc-c425-47d9-afee-c5258ca5c259",
+    "nombre": "PLATO PERSONAL ",
+    "precio_venta": 9,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "PASTICHO PERSONAL",
+      "PAN+ENSALADA",
+      "HALLACAS",
+      "REFRE PQÑ"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "06ec1d98-507f-4b27-b6d6-51ef034af7dd",
+    "nombre": "COMBO HUESITO AMERICAN",
+    "precio_venta": 17,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "a2dfb732-7077-48e8-b04a-12d2ebec3d8f",
+    "nombre": "1/2 CAJA CERVEZA",
+    "precio_venta": 13,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "88620e75-1ace-474e-9af6-4993685d4da4",
+    "nombre": "ADICIONAL DE TOMATE",
+    "precio_venta": 1.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "41410724-5df9-43bd-ab6f-e32ee49f108d",
+    "nombre": "LATA SANGRIA PEQ",
+    "precio_venta": 2.5,
+    "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "06e8a9de-a8ee-4ee2-82ce-4a1ee479afcd",
+    "nombre": "LATA SANGRIA MOJITO",
+    "precio_venta": 3.5,
+    "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "840559b5-7bb9-4756-9eeb-cc0b67f4e935",
+    "nombre": "DOBLE YUCA",
+    "precio_venta": 1.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "4d2d0bd2-00fc-4336-93f2-e3b8509e84fb",
+    "nombre": "ADICIONAL PIÑA",
+    "precio_venta": 2,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "2eaa7870-df99-4195-9287-4dc3b2ff1b1a",
+    "nombre": "ADICIONAL PLATANO",
+    "precio_venta": 2,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "d80fc13b-851c-4e29-959e-54bfea6f3cef",
+    "nombre": "COMBO HAMBUR BLACK FRIDAY",
+    "precio_venta": 10,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "4b2e3261-8b31-4b41-99c4-9abaa20759a3",
+    "nombre": "FAMILIAR BLACK FRIDAY",
+    "precio_venta": 7,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "8eb6d35d-be2f-4a59-bd1d-7e883b7cd1d3",
+    "nombre": "PERROS BLACK FRIDAY",
+    "precio_venta": 10,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "6 PERROS",
+      "1 LT"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "e10a463d-ca8d-4df6-8092-e8787d5d54a7",
+    "nombre": "HAMBURGUESA BLACK FRIDAY",
+    "precio_venta": 10,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "2 HAMBURGUESAS CLASICAS",
+      "2 PAPAS PEQUEÑAS",
+      "1 REF 1LT"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "16be5d9b-59a6-4514-96a8-942a9db22b5b",
+    "nombre": "PASTICHO 1KG BLACK FRIDAY",
+    "precio_venta": 10,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "18b18175-0e7c-4c62-8aae-53b8d1193c06",
+    "nombre": "PASTICHO FAMILIAR NAVIDEÑO",
+    "precio_venta": 32,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "1f26b567-4743-49c3-b514-3f66a524f28c",
+    "nombre": "HALLACAS 3$",
+    "precio_venta": 3,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "PUERCO CON CARNE",
+      "POLLO"
+    ],
+    "sede_id": "b42d7e13-bfc8-40d8-94d4-61908ff269cd",
+    "sedes_ids": [
+      "b42d7e13-bfc8-40d8-94d4-61908ff269cd"
+    ]
+  },
+  {
+    "id": "3968c4ac-3fad-42f7-b91f-d07ac9a0e578",
+    "nombre": "COMBO HAWAINA ",
+    "precio_venta": 15,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "F HAWAINA+BQ+",
+      "REFRE 1.5",
+      "OBSEQUIO SORPRESA"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "356d5374-bbd6-41c1-96b5-22c9a4e821d3",
+    "nombre": "QUESILLO",
+    "precio_venta": 5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "8a121475-dd24-4197-bc76-6971898ced73",
+    "nombre": "DELIVERY 6.5",
+    "precio_venta": 6.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "6676e016-80e6-449f-930c-3f8bb2f5285c",
+    "nombre": "PLATO SENCILO 10$",
+    "precio_venta": 10,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "ENSALADA",
+      "HALLACA",
+      "PAN DE JAMON",
+      "PASTICHO TRADICIONAL PERSONAL"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "ff910801-0cac-4198-bef4-b92dcf6a7e05",
+    "nombre": "PLATO NAVIDEÑO FULL",
+    "precio_venta": 14,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "POLLO  RELLENO",
+      "LOMO NEGRO",
+      "PERNIL",
+      "HALLA + ENSALADA + PAN DE JAMON"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "28ec8bda-28c7-44c0-9b40-d02442935ec7",
+    "nombre": "ENSALADA DE GALLINA 1 KG",
+    "precio_venta": 16,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "63aab0c9-8fbd-4aff-a2e0-0207437dd1af",
+    "nombre": "COMBO MEGA FAMILIAR",
+    "precio_venta": 60,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "1 PEQUEÑA JYQ",
+      "10 HELADOS",
+      "3 REF 1.5LT",
+      "4 FAMILIARES + ADICIONAL"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "8fa03628-88df-4e26-b61c-fa01f0a0b245",
+    "nombre": "FAMILIAR BBQ COMBO",
+    "precio_venta": 22,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "BORDE DE QUESO",
+      "REF 1.5LT",
+      "SNACK"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "648e6356-d184-4ffe-b670-e4d3968b87cf",
+    "nombre": "BARQUILLA",
+    "precio_venta": 1.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "ce1e0aef-d9c2-48fb-938b-9e0b57ef2cad",
+    "nombre": "TINTO DE VERANO",
+    "precio_venta": 4.5,
+    "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+    "es_compuesto": true,
+    "descripcion": "Ron, Vino, Triple Sec, Granadina, Sumo Limón, Refresco Limón.",
+    "notas_preparacion": [],
+    "sede_id": null,
+    "sedes_ids": null
+  },
+  {
+    "id": "78e5b4aa-047e-4efc-a419-fdc2387d2491",
+    "nombre": "COSMOPOLITAN",
+    "precio_venta": 4.5,
+    "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+    "es_compuesto": true,
+    "descripcion": "Vodka, Triple Sec, Sumo limón, Granadina.",
+    "notas_preparacion": [],
+    "sede_id": null,
+    "sedes_ids": null
+  },
+  {
+    "id": "0509eee5-16e0-417b-9717-a95c630e2f54",
+    "nombre": "PERRO FULL TRAB",
+    "precio_venta": 3,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "78f7a04c-19a8-4e0b-8e16-efc5d991c0c4",
+    "nombre": "ADICIONAL CHAMPÍÑON",
+    "precio_venta": 2.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "58454027-1a2d-4f30-8e66-08cf6fcafd20",
+    "nombre": "ADICIONAL PEPPERONI",
+    "precio_venta": 2.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "a5d2a4ed-ca53-45d1-827b-de4ae09ec54b",
+    "nombre": "ADICIONAL JALAPEÑO",
+    "precio_venta": 2.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "b1dd31df-683f-44fe-9938-4c82e207dfaf",
+    "nombre": "PATACON CLASICO TRAB",
+    "precio_venta": 6.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "edf659f4-8cd8-454a-b662-eb9472683b4b",
+    "nombre": "ADICIONAL SALAMI",
+    "precio_venta": 3.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "fd459907-7c33-49e2-b113-42f34acdddc3",
+    "nombre": "ADICIONAL CHULETA AHUMADA",
+    "precio_venta": 3.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "ce256ef9-696c-42a3-9b57-37da1e7f3d3b",
+    "nombre": "ADICIONAL PESTO",
+    "precio_venta": 2,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "ca4fc8bc-b809-427b-b839-cfecb6edc1c5",
+    "nombre": "ADICIONAL ANCHOAS",
+    "precio_venta": 4,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "6199b0a8-309f-4a67-9551-92319702502f",
+    "nombre": "PIZZA TRADICIONAL PEQUEÑA TRAB",
+    "precio_venta": 5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "6a1436f3-06d5-4f4a-8d70-0b3624565c9e",
+    "nombre": "PIZZA HAWAIANA PEQUEÑA TRAB",
+    "precio_venta": 6.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "3c893202-922a-4a19-8b7d-9102a187c03a",
+    "nombre": "PIZZA JUAN PICANTE PEQUEÑA TRAB",
+    "precio_venta": 6.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "71c59c1c-955a-4237-ad52-a4fc975bfe2e",
+    "nombre": "PIZZA LA CAPRESA PEQUEÑA TRAB",
+    "precio_venta": 6.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "58d7bc4a-e8a6-431e-806b-25b6ced3ba55",
+    "nombre": "PIZZA SUPREMA PEQUEÑA TRAB",
+    "precio_venta": 7.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "ee6db689-a8a4-4675-93cf-62324b6b7aa2",
+    "nombre": "HAMBURGUESA ZULIANITA TRAB",
+    "precio_venta": 9,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "1163cb72-bd30-4588-bbcc-4ac571d97ba2",
+    "nombre": "PIZZA VEGETARIANA PEQUEÑA TRAB",
+    "precio_venta": 6.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "73bb464a-09ff-42ea-908a-d4c6c3ff08a8",
+    "nombre": "HAMBURGUESA CRISPY TRAB",
+    "precio_venta": 10,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "5f56d10b-1b53-4e35-80bd-a8b6f9228fac",
+    "nombre": "AGUA PELUCHE 1.5LT",
+    "precio_venta": 1.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "2 BALDE CERVEZAS",
+      "20 TINAS DE HELADO",
+      "4 REF 2LT",
+      "5 F JYQ",
+      "60 PASAPALOS",
+      "TORTA COMPLETA"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "e50cfde0-88cd-4ff1-9167-4029823b5804",
+    "nombre": "PARRILLA 1 PROTEINA TRAB",
+    "precio_venta": 7.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "a3a57b5d-c22c-4e37-b223-049e7d224dbc",
+    "nombre": "PASTICHO PERSONAL TRAB",
+    "precio_venta": 7,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "ef946bea-dabf-43bb-aeda-534e8cb02cbf",
+    "nombre": "PIZZA NAPOLITANA PEQUEÑA TRAB",
+    "precio_venta": 4.5,
+    "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "29279c29-7eb6-4063-9b01-a36fc0094b47",
+    "nombre": "ADICIONAL CEBOLLA",
+    "precio_venta": 1.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "aae444e6-f7dd-4f89-a703-347621dbd12a",
+    "nombre": "ADICIONAL CHORIZO",
+    "precio_venta": 2.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "bdb6e561-0a80-49ed-84e8-c711b25d1e41",
+    "nombre": "ADICIONAL MAIZ",
+    "precio_venta": 2,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "8f1732cb-d6e1-4dce-950e-4d29f4ec8941",
+    "nombre": "ADICIONAL QUESO AMARILLO",
+    "precio_venta": 2.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "a2d9bd1f-a630-45a4-ad73-2babb98c5abd",
+    "nombre": "ADICIONAL CEBOLLA CARAMELIZADA",
+    "precio_venta": 2,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "8e9778c8-2c7d-419b-b5e0-7bf984653133",
+    "nombre": "ADICIONAL TOCINETA",
+    "precio_venta": 2.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "a061883f-363d-4df4-9508-e24398206866",
+    "nombre": "ADICIONAL POLLO",
+    "precio_venta": 3,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "7c7483a7-cfbd-48a7-8f70-65f5fdb1988c",
+    "nombre": "POWERADE",
+    "precio_venta": 2.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "F 4 ESTACIONES",
+      "F CHARCUTERA",
+      "F ESPECIAL",
+      "F PRIMAVERA",
+      "REF 1.5LT"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "750df479-1f28-4b31-a366-02c157859ae0",
+    "nombre": "50 MINI PASTELITOS",
+    "precio_venta": 11,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "11d7d8e9-d900-4bfe-b855-986a5e6111c2",
+    "nombre": "50 MINI EMPANADAS",
+    "precio_venta": 14,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": null,
+    "sedes_ids": null
+  },
+  {
+    "id": "9b2234e6-1ad1-4c13-b193-5b2232bf8088",
+    "nombre": "SOMBRERO 3 PROTEINAS",
+    "precio_venta": 32,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "7a8ebf26-a361-4a10-ab17-c9b6a9df40a0",
+    "nombre": "50 SERPENTINAS",
+    "precio_venta": 14,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "MAIZ",
+      "QUESO",
+      "TOCINETA"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "7d423684-f5b1-4111-9ada-95e31b9b1c79",
+    "nombre": "50 MINI AREPAS",
+    "precio_venta": 14,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "55586b4c-6893-474d-8c04-8ddf84f30f5d",
+    "nombre": "50 DEDOS DE SALCHICHAS",
+    "precio_venta": 12,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "a51ac0dc-56ac-4456-b442-4525aa32b673",
+    "nombre": "1 KG DE BOLITAS DE CARNE + SALSA",
+    "precio_venta": 22,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "0980faca-3c1d-45fb-8317-784ba5399c9a",
+    "nombre": "COMBO DUO HALLACAS",
+    "precio_venta": 16,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "PASTICHO 1KG",
+      "HALLACAS (2)",
+      "ENSALADA"
+    ],
+    "sede_id": "b42d7e13-bfc8-40d8-94d4-61908ff269cd",
+    "sedes_ids": [
+      "b42d7e13-bfc8-40d8-94d4-61908ff269cd"
+    ]
+  },
+  {
+    "id": "da9af741-ee86-4649-8960-d632b4c8790f",
+    "nombre": "COMBO DUO NAVIDAD",
+    "precio_venta": 16,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "2 HALLACAS",
+      "ENSALADA",
+      "1 PASTICHO 1KG"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "5aeab622-9364-4a76-a846-2d6cecaeea5e",
+    "nombre": "COMBO PERSONAL PASTICHO",
+    "precio_venta": 9,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "PASTICHO PERSONAL",
+      "ENSALADA",
+      "HALLACA",
+      "PAN"
+    ],
+    "sede_id": "b42d7e13-bfc8-40d8-94d4-61908ff269cd",
+    "sedes_ids": [
+      "b42d7e13-bfc8-40d8-94d4-61908ff269cd"
+    ]
+  },
+  {
+    "id": "cf5fee75-bdb5-48fe-8d15-2fe3613e35f0",
+    "nombre": "ADICIONAL PARA HAMBURGUESA TOCINETA",
+    "precio_venta": 1,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "b42d7e13-bfc8-40d8-94d4-61908ff269cd",
+    "sedes_ids": [
+      "b42d7e13-bfc8-40d8-94d4-61908ff269cd"
+    ]
+  },
+  {
+    "id": "9d09e6a8-30f2-40b6-a6b1-84205aced80f",
+    "nombre": "AGUA NEVADA 1.5L",
+    "precio_venta": 1.8,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "b42d7e13-bfc8-40d8-94d4-61908ff269cd",
+    "sedes_ids": [
+      "b42d7e13-bfc8-40d8-94d4-61908ff269cd"
+    ]
+  },
+  {
+    "id": "b8f6cdbb-3ac5-4199-a026-7ac25d022294",
+    "nombre": "PARRILLAS 7$",
+    "precio_venta": 7,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "F CORN CHICKEN",
+      "F SUPREMA",
+      "REF1LT"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "3563bdbb-1e75-431a-9a39-e94ec0160f82",
+    "nombre": "COMBO AMOR Y AMISTAD",
+    "precio_venta": 24,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "2 H ECONOMICAS DE CARNE 100GR",
+      "2 SERV PAPAS 125GR",
+      "REF 1LT"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "4b24d25d-7d88-4a75-a9f6-1e5138022752",
+    "nombre": "BALDE DE CERVEZA SOLERA",
+    "precio_venta": 12,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "18b4a0a4-86a8-491f-ba73-b8d857983ef8",
+    "nombre": "COMBO FIESTA 100$",
+    "precio_venta": 100,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "3 REFRESCO 1.5L",
+      "4 PIZZAS A ESCOGER",
+      "30 TEQUEÑOS",
+      "2 BALDE DE CERVEZA"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "274f069d-431a-4d6e-beef-89b3dd28a57c",
+    "nombre": "COMBO DUO FAMILIAR",
+    "precio_venta": 26,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "CHARCURTERO",
+      "PRIMAVERA",
+      "PAN + MINI POSTRE + REF 1.5LT"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "b4b493e5-9d95-4c8b-91a8-0c54e870c67e",
+    "nombre": "PERRO POLACO PELUCHE",
+    "precio_venta": 3,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "3 F JYQ + MAIZ",
+      "2 REF 1.5LT",
+      "10 PALETAS",
+      "20 TEQUEÑOS"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "d9a1ed34-cea2-4e59-a6dd-04ca141ada80",
+    "nombre": "PERRO POLACO FULL",
+    "precio_venta": 5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "655156fb-51b3-41c0-9d63-42cf0cf42191",
+    "nombre": "JUGO DE PARCHITA",
+    "precio_venta": 3,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "DOS ADICIONALES DE PREFERENCIA",
+      "F JYQ",
+      "M JYQ",
+      "REF 1.5"
+    ],
+    "sede_id": "b42d7e13-bfc8-40d8-94d4-61908ff269cd",
+    "sedes_ids": [
+      "b42d7e13-bfc8-40d8-94d4-61908ff269cd"
+    ]
+  },
+  {
+    "id": "476e39b3-de5d-4c0a-bdfe-5c5d60cb5e77",
+    "nombre": "TORTA DE 3 LECHES",
+    "precio_venta": 4.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "83e6d251-0d36-4e6e-b2a9-34d2a83d02c5",
+    "nombre": "COMBO FIESTA 70$ ",
+    "precio_venta": 70,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "DOS ADICIONALES DE PREFERENCIA",
+      "F JYQ",
+      "M JYQ",
+      "REF 1.5"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "f86a32fa-05e8-4e0b-8b75-0bf42424bb80",
+    "nombre": "DELIVERY 1$ PROMO JUEVES",
+    "precio_venta": 1,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "COSTILLA",
+      "GALLINA"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "017bee9e-4085-4e23-958b-15e9ab37cf7f",
+    "nombre": "PROMO SEMANA SANTA 15",
+    "precio_venta": 15,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "0247818b-a636-4644-8b1e-c22d725b906c",
+    "nombre": "PAQUETE CUMPLEAÑOS 55$ ",
+    "precio_venta": 55,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "10 BARQUILLAS O PALETAS",
+      "2REF 1.5LT",
+      "3F JYQ + MAIZ",
+      "SERVI 20 TEQUEÑOS"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "0fcd37ce-1789-4ffc-93ae-77a365c727ba",
+    "nombre": "CAJA DE CERVEZA ",
+    "precio_venta": 30,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "b42d7e13-bfc8-40d8-94d4-61908ff269cd",
+    "sedes_ids": [
+      "b42d7e13-bfc8-40d8-94d4-61908ff269cd"
+    ]
+  },
+  {
+    "id": "d6b1c345-ab84-4a53-881e-3d43e0668820",
+    "nombre": "COMBO STITCH",
+    "precio_venta": 15,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "e49855a7-1830-4021-a603-b96466e9f4ac",
+    "nombre": "50 MINI TEQUEÑOS",
+    "precio_venta": 11,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "f02a856a-61c1-49ca-9305-3505fa3ad1a7",
+    "nombre": "COMBO FIESTA INFANTIL",
+    "precio_venta": 70,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "10 HELADOS",
+      "20 TEQUEÑOS",
+      "3 FAMILIARES + MAIZ",
+      "2 REF 1.5LT"
+    ],
+    "sede_id": "b42d7e13-bfc8-40d8-94d4-61908ff269cd",
+    "sedes_ids": [
+      "b42d7e13-bfc8-40d8-94d4-61908ff269cd"
+    ]
+  },
+  {
+    "id": "ce5b7f64-081c-4f2f-943a-1d36bf9efdf4",
+    "nombre": "PROMO EXPRESS 4$",
+    "precio_venta": 4,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "P JYQ + MAIZ"
+    ],
+    "sede_id": "b42d7e13-bfc8-40d8-94d4-61908ff269cd",
+    "sedes_ids": [
+      "b42d7e13-bfc8-40d8-94d4-61908ff269cd"
+    ]
+  },
+  {
+    "id": "67e53cea-83e5-47cd-9994-7834d5678ec1",
+    "nombre": "COMBO SALCHIPAPA 10$",
+    "precio_venta": 10,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "2 SALCHIPAPAS SENCILLAS"
+    ],
+    "sede_id": "b42d7e13-bfc8-40d8-94d4-61908ff269cd",
+    "sedes_ids": [
+      "b42d7e13-bfc8-40d8-94d4-61908ff269cd"
+    ]
+  },
+  {
+    "id": "98de89a7-ba01-455b-9a52-ebac52bcba61",
+    "nombre": "COMBO TOY STORY",
+    "precio_venta": 18,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "BROWNIE",
+      "F JYQ  + MAIZ + PIMENTON",
+      "REF 1LT"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "3cf5f476-947b-416c-ba43-23460b51bc9a",
+    "nombre": "FAMILIA KIDS ",
+    "precio_venta": 46,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": null,
+    "sedes_ids": null
+  },
+  {
+    "id": "a89167a6-3f66-4cfb-b8a8-314291ba83a1",
+    "nombre": "COMBO BUDDY",
+    "precio_venta": 27,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "7bf4ae36-d45a-4cdf-88fd-cdfe415c5efc",
+    "nombre": "COMBO IMPERDIBLE 1",
+    "precio_venta": 16,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "022be307-fa84-4403-9abe-87db57d7263f",
+    "nombre": "COMBO IMPERDIBLE 2",
+    "precio_venta": 32,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "04fdaed6-9196-4cd6-b29b-1d221019406e",
+    "nombre": "BROWNIE RELLENOS",
+    "precio_venta": 5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "848ea222-4608-4e2d-84f5-af5aa87e730d",
+    "nombre": "PROMO 40K",
+    "precio_venta": 10,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "3a71d37c-4207-4fdc-9072-6ba5b9073993",
+    "nombre": "PROMO SALCHIPAPA",
+    "precio_venta": 10,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "5e8fbd14-647f-4424-aa02-54c51f34b840",
+    "nombre": "PROMO EXPRESS PEQUEÑA",
+    "precio_venta": 4,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "460b6271-d8cc-4faa-812f-79fe34f373ec",
+    "nombre": "PARRILA MEGA",
+    "precio_venta": 40,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "LOMITO 200GR",
+      "PUERCO 200GR",
+      "1/2 POLLO",
+      "CHROZO (2)",
+      "BRORWNIE",
+      "REF 2LT"
+    ],
+    "sede_id": "b42d7e13-bfc8-40d8-94d4-61908ff269cd",
+    "sedes_ids": [
+      "b42d7e13-bfc8-40d8-94d4-61908ff269cd"
+    ]
+  },
+  {
+    "id": "7a59ada3-4322-420a-90d8-e3ccc54f5e37",
+    "nombre": "HAMBURGUESA LOMITO ESPECIAL",
+    "precio_venta": 8.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "a7102bb2-0961-4c12-8ccb-ce2e4ddc7f87",
+    "nombre": "HAMBURGUESA CRISPY ESPECIAL",
+    "precio_venta": 12,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "1 BROWNIE",
+      "1 FAMILIAR  TRAD CON MAIZ",
+      "1 REF 1.5LT",
+      "2 TINAS"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "d2a53fd4-5fad-4940-ad81-b87262e90199",
+    "nombre": "MAIZ P/ HAMBURGUESA",
+    "precio_venta": 1,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "5 F JYQ + 1 ADICIONAL PARA CADA PIZZA",
+      "4 REF 2LT",
+      "2 BALDES DE CERVEZA",
+      "120 PASAPALOS",
+      "1/4 TORTA DE CHOCOLATE"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "6d0da4bb-e128-40ca-948a-6a8277b1da0f",
+    "nombre": "TOCINETA P/ HAMBURGUESA",
+    "precio_venta": 1,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [
+      "6 F TRADICIONAL + ADICIONAL",
+      "2 BALDE DE CERVEZA",
+      "10 COCTELES",
+      "4 REF 1.5LT",
+      "40 TEQUEÑOS"
+    ],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "d7982b39-bbc1-4160-8d84-7652ddf9f8d0",
+    "nombre": "PAN CON POLLO SENCILLO",
+    "precio_venta": 4,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "67996c77-5da7-4296-b963-06299224fa14",
+    "nombre": "VINO",
+    "precio_venta": 3.5,
+    "categoria_id": null,
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+    "sedes_ids": null
+  },
+  {
+    "id": "7ecfb955-83c3-4110-b664-0d512bc94589",
+    "nombre": "LAGUNA AZUL",
+    "precio_venta": 4,
+    "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+    "es_compuesto": true,
+    "descripcion": "Vodka, Triple Sec, Sumo Limón, Azucar, Curasao Azul, Refresco Limón.",
+    "notas_preparacion": [],
+    "sede_id": null,
+    "sedes_ids": null
+  },
+  {
+    "id": "06d90309-337f-4746-9867-5f1fb9a840e3",
+    "nombre": "DAIQUIRI FRESA",
+    "precio_venta": 5,
+    "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+    "es_compuesto": true,
+    "descripcion": "Ron, Fresas, Sumo Limón, Azucar.",
+    "notas_preparacion": [],
+    "sede_id": null,
+    "sedes_ids": null
+  },
+  {
+    "id": "dd06f967-bfdb-497e-bd97-6c2daeab7c4e",
+    "nombre": "SHOT TEQUILA",
+    "precio_venta": 4.5,
+    "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+    "es_compuesto": false,
+    "descripcion": null,
+    "notas_preparacion": [],
+    "sede_id": null,
+    "sedes_ids": null
+  },
+  {
+    "id": "d9e778b1-45a2-4c1e-be00-0ed39831becb",
+    "nombre": "PANTERA ROSA",
+    "precio_venta": 4.5,
+    "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+    "es_compuesto": true,
+    "descripcion": "Vodka, Leche Condensada, Leche Evaporada, Granadina, Jugo Naranja.",
+    "notas_preparacion": [],
+    "sede_id": null,
+    "sedes_ids": null
+  },
+  {
+    "id": "86d2df0f-2040-4d25-b70b-bdd795a6117f",
+    "nombre": "BUENA VIBRA",
+    "precio_venta": 4.5,
+    "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+    "es_compuesto": true,
+    "descripcion": "Licor de coco, Sumo Limón, Curasao Azul, Jugo Naranja.",
+    "notas_preparacion": [],
+    "sede_id": null,
+    "sedes_ids": null
+  },
+  {
+    "id": "4b59833a-de01-4372-886a-4cc6fde8601a",
+    "nombre": "SANGRIA",
+    "precio_venta": 4,
+    "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+    "es_compuesto": true,
+    "descripcion": "Vino Tinto, Frutas, Refresco.",
+    "notas_preparacion": [],
+    "sede_id": null,
+    "sedes_ids": null
+  }
+]

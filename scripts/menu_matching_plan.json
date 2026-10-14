@@ -1,0 +1,3904 @@
+[
+  {
+    "item": {
+      "nombre": "GRINCH",
+      "precio": 4,
+      "ingredientes_o_descripcion": "Vodka, Licor de coco, Triple Sec, Sumo Limón, Jugo Naranja.",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "COCTELES",
+      "archivo": "WhatsApp Image 2026-10-14 at 1.57.06 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "a5c35ed2-31c5-4a2e-a923-545dff469404",
+      "nombre": "GRINCH",
+      "precio_venta": 4,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Vodka, Licor de coco, Triple Sec, Sumo Limón, Jugo Naranja.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "a5c35ed2-31c5-4a2e-a923-545dff469404",
+      "nombre": "GRINCH",
+      "precio_venta": 4,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Vodka, Licor de coco, Triple Sec, Sumo Limón, Jugo Naranja.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "CUBA LIBRE",
+      "precio": 4,
+      "ingredientes_o_descripcion": "Ron Cacique, Coca Cola, Sumo Limón, Amargo Angostura",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "COCTELES",
+      "archivo": "WhatsApp Image 2026-10-14 at 1.57.06 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "359a5388-620a-4f70-8fbb-1d5944e9b961",
+      "nombre": "CUBA LIBRE",
+      "precio_venta": 4,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Ron Cacique, Coca Cola, Sumo Limón, Amargo Angostura.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "359a5388-620a-4f70-8fbb-1d5944e9b961",
+      "nombre": "CUBA LIBRE",
+      "precio_venta": 4,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Ron Cacique, Coca Cola, Sumo Limón, Amargo Angostura.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "MOJITO CUBANO",
+      "precio": 4,
+      "ingredientes_o_descripcion": "Ron, Sumo Limón, Azucar, Hierba Buena, Refresco Limón.",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "COCTELES",
+      "archivo": "WhatsApp Image 2026-10-14 at 1.57.06 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "96e3bd09-9553-47ae-af3c-a3b7d3e2ac56",
+      "nombre": "MOJITO CUBANO",
+      "precio_venta": 4,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Ron, Sumo Limón, Azucar, Hierba Buena, Refresco Limón.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "96e3bd09-9553-47ae-af3c-a3b7d3e2ac56",
+      "nombre": "MOJITO CUBANO",
+      "precio_venta": 4,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Ron, Sumo Limón, Azucar, Hierba Buena, Refresco Limón.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "LAGUNA AZUL",
+      "precio": 4,
+      "ingredientes_o_descripcion": "Vodka, Triple Sec, Sumo Limón, Azucar, Curasao Azul, Refresco Limón.",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "COCTELES",
+      "archivo": "WhatsApp Image 2026-10-14 at 1.57.06 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "7ecfb955-83c3-4110-b664-0d512bc94589",
+      "nombre": "LAGUNA AZUL",
+      "precio_venta": 4,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Vodka, Triple Sec, Sumo Limón, Azucar, Curasao Azul, Refresco Limón.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "7ecfb955-83c3-4110-b664-0d512bc94589",
+      "nombre": "LAGUNA AZUL",
+      "precio_venta": 4,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Vodka, Triple Sec, Sumo Limón, Azucar, Curasao Azul, Refresco Limón.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "BUSCANDO A NEMO",
+      "precio": 4,
+      "ingredientes_o_descripcion": "Ron, Vodka, Licor de Coco, Tequila, Triple Sec, Sumo Limón, Granadina, Curasao Azul, Jugo Naranja.",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "COCTELES",
+      "archivo": "WhatsApp Image 2026-10-14 at 1.57.06 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "16753bb1-b548-4bbd-903b-6937c37b1402",
+      "nombre": "BUSCANDO A NEMO",
+      "precio_venta": 4,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Ron, Vodka, Licor de Coco, Tequila, Triple Sec, Sumo Limón, Granadina, Curasao Azul, Jugo Naranja.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "16753bb1-b548-4bbd-903b-6937c37b1402",
+      "nombre": "BUSCANDO A NEMO",
+      "precio_venta": 4,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Ron, Vodka, Licor de Coco, Tequila, Triple Sec, Sumo Limón, Granadina, Curasao Azul, Jugo Naranja.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "MICHELADA",
+      "precio": 4,
+      "ingredientes_o_descripcion": "Cerveza, Sumo Limón, Tajin, Picante.",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "COCTELES",
+      "archivo": "WhatsApp Image 2026-10-14 at 1.57.06 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "56008f85-0129-446a-8b28-7dec3fd99087",
+      "nombre": "MICHELADA",
+      "precio_venta": 4,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Cerveza, Sumo Limón, Tajin, Picante.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "56008f85-0129-446a-8b28-7dec3fd99087",
+      "nombre": "MICHELADA",
+      "precio_venta": 4,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Cerveza, Sumo Limón, Tajin, Picante.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "SANGRÍA",
+      "precio": 4,
+      "ingredientes_o_descripcion": "",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "COCTELES",
+      "archivo": "WhatsApp Image 2026-10-14 at 1.57.06 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "4b59833a-de01-4372-886a-4cc6fde8601a",
+      "nombre": "SANGRIA",
+      "precio_venta": 4,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Vino Tinto, Frutas, Refresco.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "4b59833a-de01-4372-886a-4cc6fde8601a",
+      "nombre": "SANGRIA",
+      "precio_venta": 4,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Vino Tinto, Frutas, Refresco.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "BUENA VIBRA",
+      "precio": 4.5,
+      "ingredientes_o_descripcion": "Licor de coco, Sumo Limón, Curasao Azul, Jugo Naranja.",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "COCTELES",
+      "archivo": "WhatsApp Image 2026-10-14 at 1.579 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "86d2df0f-2040-4d25-b70b-bdd795a6117f",
+      "nombre": "BUENA VIBRA",
+      "precio_venta": 4.5,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Licor de coco, Sumo Limón, Curasao Azul, Jugo Naranja.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "86d2df0f-2040-4d25-b70b-bdd795a6117f",
+      "nombre": "BUENA VIBRA",
+      "precio_venta": 4.5,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Licor de coco, Sumo Limón, Curasao Azul, Jugo Naranja.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "COSMOPOLITAN",
+      "precio": 4.5,
+      "ingredientes_o_descripcion": "Vodka, Triple Sec, Sumo limón, Granadina.",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "COCTELES",
+      "archivo": "WhatsApp Image 2026-10-14 at 1.579 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "78e5b4aa-047e-4efc-a419-fdc2387d2491",
+      "nombre": "COSMOPOLITAN",
+      "precio_venta": 4.5,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Vodka, Triple Sec, Sumo limón, Granadina.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "78e5b4aa-047e-4efc-a419-fdc2387d2491",
+      "nombre": "COSMOPOLITAN",
+      "precio_venta": 4.5,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Vodka, Triple Sec, Sumo limón, Granadina.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "PANTERA ROSA",
+      "precio": 4.5,
+      "ingredientes_o_descripcion": "Vodka, Leche Condensada, Leche Evaporada, Granadina, Jugo Naranja.",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "COCTELES",
+      "archivo": "WhatsApp Image 2026-10-14 at 1.579 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "d9e778b1-45a2-4c1e-be00-0ed39831becb",
+      "nombre": "PANTERA ROSA",
+      "precio_venta": 4.5,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Vodka, Leche Condensada, Leche Evaporada, Granadina, Jugo Naranja.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "d9e778b1-45a2-4c1e-be00-0ed39831becb",
+      "nombre": "PANTERA ROSA",
+      "precio_venta": 4.5,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Vodka, Leche Condensada, Leche Evaporada, Granadina, Jugo Naranja.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "TEQUILA SUNRISE",
+      "precio": 4.5,
+      "ingredientes_o_descripcion": "Tequila, Granadina, Sumo Limón, Jugo Naranja.",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "COCTELES",
+      "archivo": "WhatsApp Image 2026-10-14 at 1.579 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "c068305a-b03b-423b-ae07-1580302b9b93",
+      "nombre": "TEQUILA SUNRISE",
+      "precio_venta": 4.5,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Tequila, Granadina, Sumo Limón, Jugo Naranja.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "c068305a-b03b-423b-ae07-1580302b9b93",
+      "nombre": "TEQUILA SUNRISE",
+      "precio_venta": 4.5,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Tequila, Granadina, Sumo Limón, Jugo Naranja.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "TINTO DE VERANO",
+      "precio": 4.5,
+      "ingredientes_o_descripcion": "Ron, Vino, Triple Sec, Granadina, Sumo Limón, Refresco Limón.",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "COCTELES",
+      "archivo": "WhatsApp Image 2026-10-14 at 1.579 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "ce1e0aef-d9c2-48fb-938b-9e0b57ef2cad",
+      "nombre": "TINTO DE VERANO",
+      "precio_venta": 4.5,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Ron, Vino, Triple Sec, Granadina, Sumo Limón, Refresco Limón.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "ce1e0aef-d9c2-48fb-938b-9e0b57ef2cad",
+      "nombre": "TINTO DE VERANO",
+      "precio_venta": 4.5,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Ron, Vino, Triple Sec, Granadina, Sumo Limón, Refresco Limón.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "MARGARITA BLUE",
+      "precio": 4.5,
+      "ingredientes_o_descripcion": "Tequila, Triple Sec, Sumo Limón, Azucar, Curasao Azul",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "COCTELES",
+      "archivo": "WhatsApp Image 2026-10-14 at 1.579 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "2789313a-4446-4d96-8bd7-24b135125a38",
+      "nombre": "MARGARITA BLUE",
+      "precio_venta": 4.5,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Tequila, Triple Sec, Sumo Limón, Azucar, Curasao Azul.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "2789313a-4446-4d96-8bd7-24b135125a38",
+      "nombre": "MARGARITA BLUE",
+      "precio_venta": 4.5,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Tequila, Triple Sec, Sumo Limón, Azucar, Curasao Azul.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "DAIQUIRI FRESA",
+      "precio": 5,
+      "ingredientes_o_descripcion": "Ron, Fresas, Sumo Limón, Azucar.",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "COCTELES",
+      "archivo": "WhatsApp Image 2026-10-14 at 1.579 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "06d90309-337f-4746-9867-5f1fb9a840e3",
+      "nombre": "DAIQUIRI FRESA",
+      "precio_venta": 5,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Ron, Fresas, Sumo Limón, Azucar.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "06d90309-337f-4746-9867-5f1fb9a840e3",
+      "nombre": "DAIQUIRI FRESA",
+      "precio_venta": 5,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Ron, Fresas, Sumo Limón, Azucar.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "VINO",
+      "precio": 4.5,
+      "ingredientes_o_descripcion": null,
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "COCTELES",
+      "archivo": "WhatsApp Image 2026-10-14 at 1.579 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "67996c77-5da7-4296-b963-06299224fa14",
+      "nombre": "VINO",
+      "precio_venta": 3.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "67996c77-5da7-4296-b963-06299224fa14",
+      "nombre": "VINO",
+      "precio_venta": 3.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "SHOT TEQUILA",
+      "precio": 4.5,
+      "ingredientes_o_descripcion": "Tequila Jose Cuervos",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "COCTELES",
+      "archivo": "WhatsApp Image 2026-10-14 at 1.579 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "dd06f967-bfdb-497e-bd97-6c2daeab7c4e",
+      "nombre": "SHOT TEQUILA",
+      "precio_venta": 4.5,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "dd06f967-bfdb-497e-bd97-6c2daeab7c4e",
+      "nombre": "SHOT TEQUILA",
+      "precio_venta": 4.5,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "PIÑA COLADA",
+      "precio": 5,
+      "ingredientes_o_descripcion": "Ron, Piña, Licor Coco, Leche Condensada, Triple Sec",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "COCTELES",
+      "archivo": "WhatsApp Image 2026-10-14 at 1.579 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "9bad41ba-7464-44c0-a8e4-55101bc20753",
+      "nombre": "PIÑA COLADA",
+      "precio_venta": 5,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Ron, Piña, Licor Coco, Leche Condensada, Triple Sec.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "9bad41ba-7464-44c0-a8e4-55101bc20753",
+      "nombre": "PIÑA COLADA",
+      "precio_venta": 5,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": true,
+      "descripcion": "Ron, Piña, Licor Coco, Leche Condensada, Triple Sec.",
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "MALTEADA",
+      "precio": 6.5,
+      "ingredientes_o_descripcion": null,
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "COCTELES",
+      "archivo": "WhatsApp Image 2026-10-14 at 1.579 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "a458fb0c-71c3-4a8d-b1bb-79743e64dd46",
+      "nombre": "MALTEADA",
+      "precio_venta": 5.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "a458fb0c-71c3-4a8d-b1bb-79743e64dd46",
+      "nombre": "MALTEADA",
+      "precio_venta": 5.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "WHISKY 8 AÑOS",
+      "precio": 4,
+      "ingredientes_o_descripcion": "Whisky 8 Años",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "WHISKY",
+      "archivo": "WhatsApp Image 2026-10-14 at 1.579 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "056e8280-a841-4cb5-8fd6-b511d4741fa0",
+      "nombre": "WHISKY 8 AÑOS",
+      "precio_venta": 4,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "056e8280-a841-4cb5-8fd6-b511d4741fa0",
+      "nombre": "WHISKY 8 AÑOS",
+      "precio_venta": 4,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "WHISKY 12 AÑOS",
+      "precio": 5.5,
+      "ingredientes_o_descripcion": "Whisky 12 Años",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "WHISKY",
+      "archivo": "WhatsApp Image 2026-10-14 at 1.579 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "9c7766a3-b2e0-438c-8ac8-99c63a6d4b53",
+      "nombre": "WHISKY 12 AÑOS",
+      "precio_venta": 5.5,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "9c7766a3-b2e0-438c-8ac8-99c63a6d4b53",
+      "nombre": "WHISKY 12 AÑOS",
+      "precio_venta": 5.5,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "BALDE POLAR-ZULIA 10 UDS.",
+      "precio": 10,
+      "ingredientes_o_descripcion": "Balde con 10 unidades de cerveza Polar-Zulia",
+      "es_combo": true,
+      "contenido_combo": "Balde con 10 unidades de cerveza Polar-Zulia",
+      "seccion": "BALDE 10 UDS.",
+      "archivo": "WhatsApp Image 2026-10-14 at 1.579 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "4eda5ef8-18e0-46fa-9ccc-5a78affb711e",
+      "nombre": "BALDE DE CERVEZA ZULIA/POLAR",
+      "precio_venta": 10,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.9,
+    "bestCandidate": {
+      "id": "4eda5ef8-18e0-46fa-9ccc-5a78affb711e",
+      "nombre": "BALDE DE CERVEZA ZULIA/POLAR",
+      "precio_venta": 10,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "BALDE SOLERA 10 UDS.",
+      "precio": 12,
+      "ingredientes_o_descripcion": "Balde con 10 unidades de cerveza Solera",
+      "es_combo": true,
+      "contenido_combo": "Balde con 10 unidades de cerveza Solera",
+      "seccion": "BALDE 10 UDS.",
+      "archivo": "WhatsApp Image 2026-10-14 at 1.579 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.55,
+    "bestCandidate": {
+      "id": "4b24d25d-7d88-4a75-a9f6-1e5138022752",
+      "nombre": "BALDE DE CERVEZA SOLERA",
+      "precio_venta": 12,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "70 MINI PIZZAS",
+      "precio": 14,
+      "ingredientes_o_descripcion": "70 unidades de mini pizzas",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ FESTÍN DE PELUCHE",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.02 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.35,
+    "bestCandidate": {
+      "id": "aaf14f84-7011-47ea-8069-ea439a2c631d",
+      "nombre": "Promo Feria Pizzas",
+      "precio_venta": 22,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "2 F Tradicional + Maíz\n1 Ref 1.5Lt\n1 Brownie"
+      ],
+      "sede_id": "b42d7e13-bfc8-40d8-94d4-61908ff269cd",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "140 MINI PIZZAS",
+      "precio": 28,
+      "ingredientes_o_descripcion": "140 unidades de mini pizzas",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ FESTÍN DE PELUCHE",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.02 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.35,
+    "bestCandidate": {
+      "id": "aaf14f84-7011-47ea-8069-ea439a2c631d",
+      "nombre": "Promo Feria Pizzas",
+      "precio_venta": 22,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "2 F Tradicional + Maíz\n1 Ref 1.5Lt\n1 Brownie"
+      ],
+      "sede_id": "b42d7e13-bfc8-40d8-94d4-61908ff269cd",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "50 TAMALES",
+      "precio": 12,
+      "ingredientes_o_descripcion": "50 unidades de tamales",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ FESTÍN DE PELUCHE",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.02 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "7f78569a-c789-4d53-adab-b8d8141d5305",
+      "nombre": "50 TAMALES",
+      "precio_venta": 12,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "7f78569a-c789-4d53-adab-b8d8141d5305",
+      "nombre": "50 TAMALES",
+      "precio_venta": 12,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "50 MINI EMPANADAS",
+      "precio": 14,
+      "ingredientes_o_descripcion": "50 unidades de mini empanadas",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ FESTÍN DE PELUCHE",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.02 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "11d7d8e9-d900-4bfe-b855-986a5e6111c2",
+      "nombre": "50 MINI EMPANADAS",
+      "precio_venta": 14,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "11d7d8e9-d900-4bfe-b855-986a5e6111c2",
+      "nombre": "50 MINI EMPANADAS",
+      "precio_venta": 14,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "50 MINI TEQUEÑOS",
+      "precio": 11,
+      "ingredientes_o_descripcion": "50 unidades de mini tequeños",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ FESTÍN DE PELUCHE",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.02 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "e49855a7-1830-4021-a603-b96466e9f4ac",
+      "nombre": "50 MINI TEQUEÑOS",
+      "precio_venta": 11,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "e49855a7-1830-4021-a603-b96466e9f4ac",
+      "nombre": "50 MINI TEQUEÑOS",
+      "precio_venta": 11,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "50 MINI PASTELITOS",
+      "precio": 11,
+      "ingredientes_o_descripcion": "50 unidades de mini pastelitos",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ FESTÍN DE PELUCHE",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.02 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "750df479-1f28-4b31-a366-02c157859ae0",
+      "nombre": "50 MINI PASTELITOS",
+      "precio_venta": 11,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "750df479-1f28-4b31-a366-02c157859ae0",
+      "nombre": "50 MINI PASTELITOS",
+      "precio_venta": 11,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "50 SERPENTINAS",
+      "precio": 14,
+      "ingredientes_o_descripcion": "50 unidades de serpentinas",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ FESTÍN DE PELUCHE",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.02 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "7a8ebf26-a361-4a10-ab17-c9b6a9df40a0",
+      "nombre": "50 SERPENTINAS",
+      "precio_venta": 14,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "MAIZ",
+        "QUESO",
+        "TOCINETA"
+      ],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "7a8ebf26-a361-4a10-ab17-c9b6a9df40a0",
+      "nombre": "50 SERPENTINAS",
+      "precio_venta": 14,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "MAIZ",
+        "QUESO",
+        "TOCINETA"
+      ],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "50 MINI AREPAS CON CARNE ESMECHADA",
+      "precio": 14,
+      "ingredientes_o_descripcion": "50 unidades de mini arepas con carne esmechada",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ FESTÍN DE PELUCHE",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.02 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "7d423684-f5b1-4111-9ada-95e31b9b1c79",
+      "nombre": "50 MINI AREPAS",
+      "precio_venta": 14,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.85,
+    "bestCandidate": {
+      "id": "7d423684-f5b1-4111-9ada-95e31b9b1c79",
+      "nombre": "50 MINI AREPAS",
+      "precio_venta": 14,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "50 DEDOS DE SALCHICHA",
+      "precio": 12,
+      "ingredientes_o_descripcion": "50 unidades de dedos de salchicha",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ FESTÍN DE PELUCHE",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.02 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "55586b4c-6893-474d-8c04-8ddf84f30f5d",
+      "nombre": "50 DEDOS DE SALCHICHAS",
+      "precio_venta": 12,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.75,
+    "bestCandidate": {
+      "id": "55586b4c-6893-474d-8c04-8ddf84f30f5d",
+      "nombre": "50 DEDOS DE SALCHICHAS",
+      "precio_venta": 12,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "1KG. BOLITAS DE CARNE + SALSA",
+      "precio": 22,
+      "ingredientes_o_descripcion": "1kg de bolitas de carne más salsa",
+      "es_combo": true,
+      "contenido_combo": "1kg de bolitas de carne + salsa",
+      "seccion": "MENÚ FESTÍN DE PELUCHE",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.02 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "a51ac0dc-56ac-4456-b442-4525aa32b673",
+      "nombre": "1 KG DE BOLITAS DE CARNE + SALSA",
+      "precio_venta": 22,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.75,
+    "bestCandidate": {
+      "id": "a51ac0dc-56ac-4456-b442-4525aa32b673",
+      "nombre": "1 KG DE BOLITAS DE CARNE + SALSA",
+      "precio_venta": 22,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "500GR. BOLITAS DE CARNE",
+      "precio": 12,
+      "ingredientes_o_descripcion": "500 gramos de bolitas de carne",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ FESTÍN DE PELUCHE",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.02 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.4,
+    "bestCandidate": {
+      "id": "c770c93d-8fa5-45a1-8dcc-88ed723c53e1",
+      "nombre": "500 gr de BOLITAS DE CARNE",
+      "precio_venta": 12,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "250GR. ANTIPASTO",
+      "precio": 8,
+      "ingredientes_o_descripcion": "250 gramos de antipasto",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ FESTÍN DE PELUCHE",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.02 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.25,
+    "bestCandidate": {
+      "id": "57916782-ffb0-4cbc-99fd-5de142da59ce",
+      "nombre": "250 gr de ANTIPASTO",
+      "precio_venta": 8,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "1KG. ANTIPASTO",
+      "precio": 30,
+      "ingredientes_o_descripcion": "1 kilogramo de antipasto",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ FESTÍN DE PELUCHE",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.02 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.25,
+    "bestCandidate": {
+      "id": "57916782-ffb0-4cbc-99fd-5de142da59ce",
+      "nombre": "250 gr de ANTIPASTO",
+      "precio_venta": 8,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "2 PAQUETES DE GALLETAS O TOSTADAS + 4 TIPOS DE SALSAS (250GR C/U)",
+      "precio": 30,
+      "ingredientes_o_descripcion": "2 Paquetes de Galletas o Tostadas + 4 tipos de Salsas (250gr C/U). Salsas a escoger: Salsa de Pollo con Maíz, Salsa de Atún, Salsa de Ajoporro, Salsa de Parmesano, Salsa de Tocineta.",
+      "es_combo": true,
+      "contenido_combo": "2 Paquetes de Galletas o Tostadas + 4 tipos de Salsas (250gr C/U). Salsas a escoger: Salsa de Pollo con Maíz, Salsa de Atún, Salsa de Ajoporro, Salsa de Parmesano, Salsa de Tocineta.",
+      "seccion": "MENÚ FESTÍN DE PELUCHE",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.02 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "9b5836d9-f935-451d-af13-45070cc953d8",
+      "nombre": "2 PAQUETES DE GALLETAS O TOSTADAS + 4 TIPOS DE SALSAS (250gr c/u)",
+      "precio_venta": 30,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "2 BURGERS CRISPY ECONOMICAS",
+        "1 PIZZA TRADICIONAL FAMILIAR",
+        "1 REFRESCO 1 L"
+      ],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "9b5836d9-f935-451d-af13-45070cc953d8",
+      "nombre": "2 PAQUETES DE GALLETAS O TOSTADAS + 4 TIPOS DE SALSAS (250gr c/u)",
+      "precio_venta": 30,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "2 BURGERS CRISPY ECONOMICAS",
+        "1 PIZZA TRADICIONAL FAMILIAR",
+        "1 REFRESCO 1 L"
+      ],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "BALDE DE CERVEZAS PAGA 10 LLEVA 12",
+      "precio": 10,
+      "ingredientes_o_descripcion": "Balde de cervezas. Puede ser Polar o Zulia. Paga 10 y lleva 12. Válido hasta el 30 de noviembre.",
+      "es_combo": true,
+      "contenido_combo": "12 cervezas (Polar o Zulia) al precio de 10",
+      "seccion": "PROMO DE FERIA",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.03 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.2928571428571428,
+    "bestCandidate": {
+      "id": "1f36c206-07be-4040-b625-44ad24e3e96f",
+      "nombre": "BALDE CON PIZZA",
+      "precio_venta": 10.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "P TRADICIONAL + 8 CERVEZAS"
+      ],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "PROMO DE FERIA",
+      "precio": 22,
+      "ingredientes_o_descripcion": "2 Pizzas Familiares + adicional de maíz, 1 Refresco 1.5lt, 1 Mini Brownie",
+      "es_combo": true,
+      "contenido_combo": "2 Pizzas Familiares, adicional de maíz, 1 Refresco 1.5lt, 1 Mini Brownie",
+      "seccion": "PROMO DE FERIA",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.04 PM (1).jpeg"
+    },
+    "matchedDb": {
+      "id": "aaf14f84-7011-47ea-8069-ea439a2c631d",
+      "nombre": "Promo Feria Pizzas",
+      "precio_venta": 22,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "2 F Tradicional + Maíz\n1 Ref 1.5Lt\n1 Brownie"
+      ],
+      "sede_id": "b42d7e13-bfc8-40d8-94d4-61908ff269cd",
+      "sedes_ids": null
+    },
+    "score": 1.0666666666666667,
+    "bestCandidate": {
+      "id": "aaf14f84-7011-47ea-8069-ea439a2c631d",
+      "nombre": "Promo Feria Pizzas",
+      "precio_venta": 22,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "2 F Tradicional + Maíz\n1 Ref 1.5Lt\n1 Brownie"
+      ],
+      "sede_id": "b42d7e13-bfc8-40d8-94d4-61908ff269cd",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "PROMO DE FERIA HAMBURGUESA ECONOMICA Y REFRESCO PERSONAL",
+      "precio": 5.5,
+      "ingredientes_o_descripcion": "1 Hamburguesa económica (Carne - Pollo - Lomo de cerdo) + 1 Refresco Personal",
+      "es_combo": true,
+      "contenido_combo": "1 Hamburguesa económica (Carne - Pollo - Lomo de cerdo) y 1 Refresco Personal",
+      "seccion": "PROMO DE FERIA",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.04 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "da276bdf-33ed-4210-a48a-d6d1427c025b",
+      "nombre": "PROMO FERIA HAMBURGUESA",
+      "precio_venta": 5.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    },
+    "score": 0.9,
+    "bestCandidate": {
+      "id": "da276bdf-33ed-4210-a48a-d6d1427c025b",
+      "nombre": "PROMO FERIA HAMBURGUESA",
+      "precio_venta": 5.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": null,
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "COMBO FAMILIAR NAVIDAD",
+      "precio": 54.99,
+      "ingredientes_o_descripcion": "Rinde por 6 personas",
+      "es_combo": true,
+      "contenido_combo": "1 Pasticho 2 kg, 10 Hallacas, 1 Refresco 2 Lt, 1 Mini torta de Navidad",
+      "seccion": "COMBOS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.05 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.4,
+    "bestCandidate": {
+      "id": "feca8acf-b028-4ef4-ac7e-7eb9ad357f2a",
+      "nombre": "COMBO FAMILIAR PASTICHO 2KG",
+      "precio_venta": 35,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "COMBO NAVIDAD 5 HALLACAS",
+      "precio": 10.99,
+      "ingredientes_o_descripcion": "5 Hallacas",
+      "es_combo": true,
+      "contenido_combo": "5 Hallacas",
+      "seccion": "COMBOS NAVIDAD",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.06 PM (1).jpeg"
+    },
+    "matchedDb": {
+      "id": "58292a13-c703-4437-941a-adcfba38fd43",
+      "nombre": "COMBO 5 HALLACAS ",
+      "precio_venta": 11,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.85,
+    "bestCandidate": {
+      "id": "58292a13-c703-4437-941a-adcfba38fd43",
+      "nombre": "COMBO 5 HALLACAS ",
+      "precio_venta": 11,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "HALLACA 1 UNIDAD",
+      "precio": 2.99,
+      "ingredientes_o_descripcion": "Escoge la tuya: Pollo, Mixta (puerco con carne)",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "HALLACAS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.06 PM (2).jpeg"
+    },
+    "matchedDb": {
+      "id": "4134d547-a447-45a0-8d40-0d6ebe05649a",
+      "nombre": "HALLACA 1",
+      "precio_venta": 3,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": [
+        "cee96ed9-216b-45fc-b669-4d170df5ab93"
+      ]
+    },
+    "score": 0.7666666666666666,
+    "bestCandidate": {
+      "id": "4134d547-a447-45a0-8d40-0d6ebe05649a",
+      "nombre": "HALLACA 1",
+      "precio_venta": 3,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": [
+        "cee96ed9-216b-45fc-b669-4d170df5ab93"
+      ]
+    }
+  },
+  {
+    "item": {
+      "nombre": "HALLACAS 2 UNIDADES",
+      "precio": 4.99,
+      "ingredientes_o_descripcion": "Escoge la tuya: Pollo, Mixta (puerco con carne)",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "HALLACAS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.06 PM (2).jpeg"
+    },
+    "matchedDb": {
+      "id": "591aaf13-ccff-410f-8ef8-cf9fcc07b7fe",
+      "nombre": "HALLACAS 2",
+      "precio_venta": 5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": [
+        "cee96ed9-216b-45fc-b669-4d170df5ab93"
+      ]
+    },
+    "score": 0.7666666666666666,
+    "bestCandidate": {
+      "id": "591aaf13-ccff-410f-8ef8-cf9fcc07b7fe",
+      "nombre": "HALLACAS 2",
+      "precio_venta": 5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": [
+        "cee96ed9-216b-45fc-b669-4d170df5ab93"
+      ]
+    }
+  },
+  {
+    "item": {
+      "nombre": "BALDE POLAR-ZULIA",
+      "precio": 10,
+      "ingredientes_o_descripcion": "Balde 10 Uds. Polar-Zulia",
+      "es_combo": true,
+      "contenido_combo": "Balde de 10 unidades de cerveza Polar-Zulia",
+      "seccion": "CÓCTELES Y BEBIDAS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.06 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "4eda5ef8-18e0-46fa-9ccc-5a78affb711e",
+      "nombre": "BALDE DE CERVEZA ZULIA/POLAR",
+      "precio_venta": 10,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1.15,
+    "bestCandidate": {
+      "id": "4eda5ef8-18e0-46fa-9ccc-5a78affb711e",
+      "nombre": "BALDE DE CERVEZA ZULIA/POLAR",
+      "precio_venta": 10,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "BALDE SOLERA",
+      "precio": 12,
+      "ingredientes_o_descripcion": "Balde 10 Uds. Solera",
+      "es_combo": true,
+      "contenido_combo": "Balde de 10 unidades de cerveza Solera",
+      "seccion": "CÓCTELES Y BEBIDAS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.06 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "4b24d25d-7d88-4a75-a9f6-1e5138022752",
+      "nombre": "BALDE DE CERVEZA SOLERA",
+      "precio_venta": 12,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1.0666666666666667,
+    "bestCandidate": {
+      "id": "4b24d25d-7d88-4a75-a9f6-1e5138022752",
+      "nombre": "BALDE DE CERVEZA SOLERA",
+      "precio_venta": 12,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "COMBO NAVIDAD PERSONAL",
+      "precio": 8.99,
+      "ingredientes_o_descripcion": "1 Pasticho personal, Ensalada, 1 Hallaca, Pan al ajillo",
+      "es_combo": true,
+      "contenido_combo": "1 Pasticho personal, Ensalada, 1 Hallaca, Pan al ajillo",
+      "seccion": "COMBOS NAVIDEÑOS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.07 PM (1).jpeg"
+    },
+    "matchedDb": {
+      "id": "b007c8cd-db60-4195-8857-f0776ac0f93a",
+      "nombre": "COMBO NAVIDAD PERSONAL",
+      "precio_venta": 9,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": [
+        "cee96ed9-216b-45fc-b669-4d170df5ab93"
+      ]
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "b007c8cd-db60-4195-8857-f0776ac0f93a",
+      "nombre": "COMBO NAVIDAD PERSONAL",
+      "precio_venta": 9,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": [
+        "cee96ed9-216b-45fc-b669-4d170df5ab93"
+      ]
+    }
+  },
+  {
+    "item": {
+      "nombre": "COMBO DÚO",
+      "precio": 16,
+      "ingredientes_o_descripcion": "1 Pasticho 1 kg, Ensalada, 2 Hallacas",
+      "es_combo": true,
+      "contenido_combo": "1 Pasticho de 1 kg, Ensalada, 2 Hallacas",
+      "seccion": "COMBOS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.07 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "c58e8e29-b4b4-4759-9a4f-21a522b585f0",
+      "nombre": "COMBO DUO",
+      "precio_venta": 24,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "F JYQ + ADICIONAL",
+        "F JYQ + ADICIONAL",
+        "REF 1.5",
+        "SNACK"
+      ],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "c58e8e29-b4b4-4759-9a4f-21a522b585f0",
+      "nombre": "COMBO DUO",
+      "precio_venta": 24,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "F JYQ + ADICIONAL",
+        "F JYQ + ADICIONAL",
+        "REF 1.5",
+        "SNACK"
+      ],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "COMBO BACK TO SCHOOL",
+      "precio": 10,
+      "ingredientes_o_descripcion": "1 Pizza Familiar Tradicional + 1 Refresco de 1Lt",
+      "es_combo": true,
+      "contenido_combo": "1 Pizza Familiar Tradicional + 1 Refresco de 1Lt",
+      "seccion": "COMBOS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.08 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "dc892329-6555-4d03-a17e-6a4099888ef9",
+      "nombre": "BACK TO SCHOOL 1",
+      "precio_venta": 10,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": [
+        "cee96ed9-216b-45fc-b669-4d170df5ab93"
+      ]
+    },
+    "score": 0.85,
+    "bestCandidate": {
+      "id": "dc892329-6555-4d03-a17e-6a4099888ef9",
+      "nombre": "BACK TO SCHOOL 1",
+      "precio_venta": 10,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": [
+        "cee96ed9-216b-45fc-b669-4d170df5ab93"
+      ]
+    }
+  },
+  {
+    "item": {
+      "nombre": "COMBO ECONÓMICO",
+      "precio": 10.99,
+      "ingredientes_o_descripcion": "2 Hamburguesas de 100gr de proteína + Papas + bebida 1 litro",
+      "es_combo": true,
+      "contenido_combo": "2 Hamburguesas de 100gr de proteína + Papas + bebida 1 litro",
+      "seccion": "COMBOS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.10 PM (1).jpeg"
+    },
+    "matchedDb": {
+      "id": "360fd700-d9e3-4f3e-8722-fc438b6e9e83",
+      "nombre": "COMBO ECONOMICO HAMBURGUESAS",
+      "precio_venta": 11,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.9166666666666666,
+    "bestCandidate": {
+      "id": "360fd700-d9e3-4f3e-8722-fc438b6e9e83",
+      "nombre": "COMBO ECONOMICO HAMBURGUESAS",
+      "precio_venta": 11,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "PROMO POLLO ASADO",
+      "precio": 21.99,
+      "ingredientes_o_descripcion": "1 Pollo entero asado + Tostones + Yuca + Ensalada + Queso + Salsa + 1L de Papelón con Limón",
+      "es_combo": true,
+      "contenido_combo": "1 Pollo entero asado, Tostones, Yuca, Ensalada, Queso, Salsa, 1L de Papelón con Limón",
+      "seccion": "PROMO",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.11 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "c3bbd13c-2efd-4655-b5b6-bde32d80c04c",
+      "nombre": "PROMO POLLO ASADO",
+      "precio_venta": 22,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "INCLUYE PAPELON 1LT"
+      ],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "c3bbd13c-2efd-4655-b5b6-bde32d80c04c",
+      "nombre": "PROMO POLLO ASADO",
+      "precio_venta": 22,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "INCLUYE PAPELON 1LT"
+      ],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "ECONÓMICA SENCILLA",
+      "precio": 3.8,
+      "ingredientes_o_descripcion": "100gr de carne, pollo o chuleta, papas, tomate, lechuga y queso de mano.",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ BURGER",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.12 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "8249964a-f88a-4e10-acd1-852f0679d2c9",
+      "nombre": "HAMBURGUESA ECONOMICA SENCILLA",
+      "precio_venta": 3.8,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1.0666666666666667,
+    "bestCandidate": {
+      "id": "8249964a-f88a-4e10-acd1-852f0679d2c9",
+      "nombre": "HAMBURGUESA ECONOMICA SENCILLA",
+      "precio_venta": 3.8,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "CRISPY SENCILLA",
+      "precio": 5.5,
+      "ingredientes_o_descripcion": "100gr de pollo crispy, queso, jamón, papas, tomate, lechuga y queso de mano.",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ BURGER",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.12 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.4833333333333333,
+    "bestCandidate": {
+      "id": "a3228ef8-6506-4b3f-9682-fb83dcf97d72",
+      "nombre": "HAMBURGUESA CRISPY ",
+      "precio_venta": 10,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "ESPECIAL",
+      "precio": 7,
+      "ingredientes_o_descripcion": "200gr de Carne o Chuleta, lechuga, tomate, queso de mano, tocineta, salsa y papas.",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ BURGER",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.12 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.5,
+    "bestCandidate": {
+      "id": "c5f288ec-65dd-424f-bf66-0a4648ddaa3d",
+      "nombre": "LINEA ESPECIAL",
+      "precio_venta": 10.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "POLLO ESPECIAL",
+      "precio": 8.5,
+      "ingredientes_o_descripcion": "250gr de pollo, lechuga, tomate, queso de mano, tocineta, salsa y papas.",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ BURGER",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.12 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "2f8edefe-a4ca-4f1d-81c8-dc10ffa4b0a9",
+      "nombre": "HAMBURGUESA POLLO ESPECIAL",
+      "precio_venta": 8.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1.0666666666666667,
+    "bestCandidate": {
+      "id": "2f8edefe-a4ca-4f1d-81c8-dc10ffa4b0a9",
+      "nombre": "HAMBURGUESA POLLO ESPECIAL",
+      "precio_venta": 8.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "LOMITO ESPECIAL",
+      "precio": 8.5,
+      "ingredientes_o_descripcion": "200gr de lomito, lechuga, tomate, queso de mano, tocineta, salsa y papas.",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ BURGER",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.12 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "7a59ada3-4322-420a-90d8-e3ccc54f5e37",
+      "nombre": "HAMBURGUESA LOMITO ESPECIAL",
+      "precio_venta": 8.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1.0666666666666667,
+    "bestCandidate": {
+      "id": "7a59ada3-4322-420a-90d8-e3ccc54f5e37",
+      "nombre": "HAMBURGUESA LOMITO ESPECIAL",
+      "precio_venta": 8.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "AMERICANA",
+      "precio": 12,
+      "ingredientes_o_descripcion": "Doble carne, lechuga, tomate, queso amarillo, tocineta, salsa, papas, pepinillos y cebolla.",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ BURGER",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.12 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "55ff0513-516d-48c2-9f3c-7d557f3ce4ff",
+      "nombre": "HAMBURGUESA AMERICANA ",
+      "precio_venta": 12,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.9,
+    "bestCandidate": {
+      "id": "55ff0513-516d-48c2-9f3c-7d557f3ce4ff",
+      "nombre": "HAMBURGUESA AMERICANA ",
+      "precio_venta": 12,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "CRISPY ESPECIAL",
+      "precio": 12,
+      "ingredientes_o_descripcion": "Pan whooper, 300gr de pollo crispy, tomate, jamón ahumado, tocineta, papas, queso de mano, repollo, salsa.",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ BURGER",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.12 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "a7102bb2-0961-4c12-8ccb-ce2e4ddc7f87",
+      "nombre": "HAMBURGUESA CRISPY ESPECIAL",
+      "precio_venta": 12,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "1 BROWNIE",
+        "1 FAMILIAR  TRAD CON MAIZ",
+        "1 REF 1.5LT",
+        "2 TINAS"
+      ],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1.0666666666666667,
+    "bestCandidate": {
+      "id": "a7102bb2-0961-4c12-8ccb-ce2e4ddc7f87",
+      "nombre": "HAMBURGUESA CRISPY ESPECIAL",
+      "precio_venta": 12,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "1 BROWNIE",
+        "1 FAMILIAR  TRAD CON MAIZ",
+        "1 REF 1.5LT",
+        "2 TINAS"
+      ],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "MIXTA",
+      "precio": 12,
+      "ingredientes_o_descripcion": "300gr de proteína (a escoger entre Pollo, Chuleta y Lomito), lechuga, tomate, queso de mano, tocineta, salsa y papas.",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ BURGER",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.12 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "6e9b73d3-d840-48d9-92de-637346f47fac",
+      "nombre": "HAMBURGUESA MIXTA ",
+      "precio_venta": 12,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.9,
+    "bestCandidate": {
+      "id": "6e9b73d3-d840-48d9-92de-637346f47fac",
+      "nombre": "HAMBURGUESA MIXTA ",
+      "precio_venta": 12,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "3 PROTEÍNAS",
+      "precio": 12.5,
+      "ingredientes_o_descripcion": "SELECCIONA ENTRE: Lomito, Puerco, Chorizo (2), Pollo. PARRILLAS INCLUYEN: YUCA, ENSALADA CRUDA, QUESO, TOSTONES, SALSA TÁRTARA, SALSA ROJA",
+      "es_combo": true,
+      "contenido_combo": "3 proteínas a elección (Lomito, Puerco, Chorizo (2) o Pollo), yuca, ensalada cruda, queso, tostones, salsa tártara, salsa roja",
+      "seccion": "PARRILLAS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.15 PM (1).jpeg"
+    },
+    "matchedDb": {
+      "id": "b72eab29-2f9f-4172-abce-93487e2e8648",
+      "nombre": "PARRILLA 3 PROTEINAS",
+      "precio_venta": 12.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "LOMITO, CHORIZO Y POLLO",
+        "LOMITO, PUERCO Y CHORIZO",
+        "POLLO, PUERCO Y CHORIZO",
+        "POLLO, PUERCO Y LOMITO"
+      ],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.9166666666666666,
+    "bestCandidate": {
+      "id": "b72eab29-2f9f-4172-abce-93487e2e8648",
+      "nombre": "PARRILLA 3 PROTEINAS",
+      "precio_venta": 12.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "LOMITO, CHORIZO Y POLLO",
+        "LOMITO, PUERCO Y CHORIZO",
+        "POLLO, PUERCO Y CHORIZO",
+        "POLLO, PUERCO Y LOMITO"
+      ],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "AÑADE COMBO",
+      "precio": 2.5,
+      "ingredientes_o_descripcion": "Papa regular + Bebida a cualquier hamburguesa",
+      "es_combo": true,
+      "contenido_combo": "Papa regular + Bebida a cualquier hamburguesa",
+      "seccion": "MENÚ BURGER",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.12 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.4833333333333333,
+    "bestCandidate": {
+      "id": "fc692012-ef3e-4483-9c60-5483a52f3a12",
+      "nombre": "COMBO HAMBURGUESA",
+      "precio_venta": 15,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "2 H CLASICAS",
+        "2 SERV PAPAS 125GR",
+        "REF 1LT"
+      ],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "SERVICIO DE PAPAS 200GR",
+      "precio": 3.5,
+      "ingredientes_o_descripcion": "Servicio de Papas 200gr",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ BURGER",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.12 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "715f9ba4-3db8-4e77-86ce-620d3df52a91",
+      "nombre": "SERVICIO DE PAPA  200GR",
+      "precio_venta": 3.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.75,
+    "bestCandidate": {
+      "id": "715f9ba4-3db8-4e77-86ce-620d3df52a91",
+      "nombre": "SERVICIO DE PAPA  200GR",
+      "precio_venta": 3.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "MAÍZ",
+      "precio": 1,
+      "ingredientes_o_descripcion": "Adicional de maíz",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ BURGER",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.12 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.6,
+    "bestCandidate": {
+      "id": "bdb6e561-0a80-49ed-84e8-c711b25d1e41",
+      "nombre": "ADICIONAL MAIZ",
+      "precio_venta": 2,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "QUESO",
+      "precio": 1,
+      "ingredientes_o_descripcion": "Adicional de queso",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ BURGER",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.12 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "fe19026b-08ea-4b8d-90fe-a16454c12bbf",
+      "nombre": "QUESO AMARILLO",
+      "precio_venta": 1,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.75,
+    "bestCandidate": {
+      "id": "fe19026b-08ea-4b8d-90fe-a16454c12bbf",
+      "nombre": "QUESO AMARILLO",
+      "precio_venta": 1,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "TOCINETA",
+      "precio": 1,
+      "ingredientes_o_descripcion": "Adicional de tocineta",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ BURGER",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.12 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.6,
+    "bestCandidate": {
+      "id": "8e9778c8-2c7d-419b-b5e0-7bf984653133",
+      "nombre": "ADICIONAL TOCINETA",
+      "precio_venta": 2.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "HUEVO",
+      "precio": 0.5,
+      "ingredientes_o_descripcion": "Adicional de huevo",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ BURGER",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.12 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "964c4a56-ad33-4a00-96bf-0c748cd46428",
+      "nombre": "ADICIONAL HUEVO",
+      "precio_venta": 0.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.75,
+    "bestCandidate": {
+      "id": "964c4a56-ad33-4a00-96bf-0c748cd46428",
+      "nombre": "ADICIONAL HUEVO",
+      "precio_venta": 0.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "PERRO CALIENTE",
+      "precio": 1.8,
+      "ingredientes_o_descripcion": "Salchicha salchipollo, papas, ensalada rallada, salsa y queso rallado.",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ BURGER",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.12 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.3333333333333333,
+    "bestCandidate": {
+      "id": "ba2ebeb3-5108-4eeb-9a39-de6cd440fa14",
+      "nombre": "PERRO SENCILLO",
+      "precio_venta": 1.8,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "PERRO FULL",
+      "precio": 3.5,
+      "ingredientes_o_descripcion": "Salchicha salchipollo, papas, ensalada rallada, salsa, huevo, jamón y queso de mano.",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ BURGER",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.12 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "e93857a6-f53b-404c-8d15-4a185bdead0d",
+      "nombre": "PERRO FULL",
+      "precio_venta": 3.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "e93857a6-f53b-404c-8d15-4a185bdead0d",
+      "nombre": "PERRO FULL",
+      "precio_venta": 3.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "PAN CON POLLO SENCILLO",
+      "precio": 4,
+      "ingredientes_o_descripcion": "100gr de pollo, papas, ensalada rallada, salsa y queso rallado en pan de perro.",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ BURGER",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.12 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "d7982b39-bbc1-4160-8d84-7652ddf9f8d0",
+      "nombre": "PAN CON POLLO SENCILLO",
+      "precio_venta": 4,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "d7982b39-bbc1-4160-8d84-7652ddf9f8d0",
+      "nombre": "PAN CON POLLO SENCILLO",
+      "precio_venta": 4,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "PAN CON POLLO ESPECIAL",
+      "precio": 6,
+      "ingredientes_o_descripcion": "100gr de pollo, papas, ensalada rallada, salsa...",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "MENÚ BURGER",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.12 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.6666666666666666,
+    "bestCandidate": {
+      "id": "a53c8235-bd54-4047-90c0-3f9eb70b2cb0",
+      "nombre": "PAN CON POLLO",
+      "precio_venta": 4,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "SOMBRERO CLÁSICO",
+      "precio": 20,
+      "ingredientes_o_descripcion": "(500gr de carne, queso, jamón ahumado, papas ralladas, lechuga, tomate, salsas.)",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "SOMBREROS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.13 PM (1).jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.25,
+    "bestCandidate": {
+      "id": "b1dd31df-683f-44fe-9938-4c82e207dfaf",
+      "nombre": "PATACON CLASICO TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "SOMBRERO MIXTO",
+      "precio": 28,
+      "ingredientes_o_descripcion": "(1Kg de proteína (carne molida y pollo), queso, jamón ahumado, papas ralladas, lechuga, tomate, salsas.)",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "SOMBREROS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.13 PM (1).jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.3333333333333333,
+    "bestCandidate": {
+      "id": "d3a45d53-9145-4b30-bc60-1afbd3056565",
+      "nombre": "PATACON MIXTO ",
+      "precio_venta": 9,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "SOMBRERO 3 PROTEÍNAS",
+      "precio": 32,
+      "ingredientes_o_descripcion": "(1.5Kg de proteína (carne, pollo y chuleta), queso, jamón ahumado, papas ralladas, lechuga, tomate, salsas.)",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "SOMBREROS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.13 PM (1).jpeg"
+    },
+    "matchedDb": {
+      "id": "9b2234e6-1ad1-4c13-b193-5b2232bf8088",
+      "nombre": "SOMBRERO 3 PROTEINAS",
+      "precio_venta": 32,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "9b2234e6-1ad1-4c13-b193-5b2232bf8088",
+      "nombre": "SOMBRERO 3 PROTEINAS",
+      "precio_venta": 32,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "SALCHIPAPA SENCILLA",
+      "precio": 7,
+      "ingredientes_o_descripcion": "(400gr de papas, salchicha, lechuga, salsas y queso rallado)",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "SALCHIPAPAS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.13 PM (1).jpeg"
+    },
+    "matchedDb": {
+      "id": "5f34d139-c2b2-4615-aae8-1b8837c5ac42",
+      "nombre": "SALCHIPAPA SENCILLA ",
+      "precio_venta": 7,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "5f34d139-c2b2-4615-aae8-1b8837c5ac42",
+      "nombre": "SALCHIPAPA SENCILLA ",
+      "precio_venta": 7,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "SALCHIPAPA MIXTA",
+      "precio": 9,
+      "ingredientes_o_descripcion": "(400gr de papas, salchicha, Pollo, Chorizo, lechuga, salsas y queso rallado)",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "SALCHIPAPAS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.13 PM (1).jpeg"
+    },
+    "matchedDb": {
+      "id": "6d692ecc-1e18-41fe-bbbd-6e20fb9073dc",
+      "nombre": "SALCHIPAPA MIXTA ",
+      "precio_venta": 9,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "6d692ecc-1e18-41fe-bbbd-6e20fb9073dc",
+      "nombre": "SALCHIPAPA MIXTA ",
+      "precio_venta": 9,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "ESPECIAL PROTEÍNA",
+      "precio": 11.5,
+      "ingredientes_o_descripcion": "(500gr de papas, salchicha, Pollo, Lomito, Chuleta, lechuga, salsas y queso rallado)",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "SALCHIPAPAS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.13 PM (1).jpeg"
+    },
+    "matchedDb": {
+      "id": "0f71144b-82a0-4ac1-ad95-02069e2a0ae1",
+      "nombre": "SALCHIPAPA ESPECIAL PROTEINA",
+      "precio_venta": 11.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "500GR PAPAS",
+        "SALCHICHA",
+        "POLLO",
+        "LOMITO",
+        "CHULETA"
+      ],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.9166666666666666,
+    "bestCandidate": {
+      "id": "0f71144b-82a0-4ac1-ad95-02069e2a0ae1",
+      "nombre": "SALCHIPAPA ESPECIAL PROTEINA",
+      "precio_venta": 11.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "500GR PAPAS",
+        "SALCHICHA",
+        "POLLO",
+        "LOMITO",
+        "CHULETA"
+      ],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "AREPA SENCILLA",
+      "precio": 6.5,
+      "ingredientes_o_descripcion": "(Ensalada rallada, huevo, carne mechada, queso rallado y salsas)",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "AREPAS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.13 PM (1).jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.3333333333333333,
+    "bestCandidate": {
+      "id": "5f34d139-c2b2-4615-aae8-1b8837c5ac42",
+      "nombre": "SALCHIPAPA SENCILLA ",
+      "precio_venta": 7,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "AREPA MIXTA",
+      "precio": 8.5,
+      "ingredientes_o_descripcion": "Mixta (Ensalada rallada, huevo, Pollo, Lomito, queso rallado y salsas)",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "AREPAS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.13 PM (1).jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.3333333333333333,
+    "bestCandidate": {
+      "id": "8eb192dd-539a-44d6-812e-a2326d64b6c9",
+      "nombre": "AREPITA MIXTA ",
+      "precio_venta": 8.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "AREPA 3 PROTEÍNAS",
+      "precio": 10,
+      "ingredientes_o_descripcion": "(Ensalada rallada, huevo, Carne Mechada, Pollo, Lomito, queso rallado y salsas)",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "AREPAS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.13 PM (1).jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.5,
+    "bestCandidate": {
+      "id": "b72eab29-2f9f-4172-abce-93487e2e8648",
+      "nombre": "PARRILLA 3 PROTEINAS",
+      "precio_venta": 12.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "LOMITO, CHORIZO Y POLLO",
+        "LOMITO, PUERCO Y CHORIZO",
+        "POLLO, PUERCO Y CHORIZO",
+        "POLLO, PUERCO Y LOMITO"
+      ],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "PATACÓN SENCILLO",
+      "precio": 7,
+      "ingredientes_o_descripcion": "(Ensalada rallada, huevo, carne mechada, jamón ahumado, queso rallado y salsas)",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "PATACONES",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.13 PM (1).jpeg"
+    },
+    "matchedDb": {
+      "id": "1bcc05e6-11a4-411a-a280-fffde210a7b3",
+      "nombre": "PATACON SENCILLO",
+      "precio_venta": 7,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "1bcc05e6-11a4-411a-a280-fffde210a7b3",
+      "nombre": "PATACON SENCILLO",
+      "precio_venta": 7,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "PATACÓN MIXTO",
+      "precio": 9,
+      "ingredientes_o_descripcion": "(Ensalada rallada, huevo, Pollo, Lomito, jamón ahumado, queso rallado y salsas)",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "PATACONES",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.13 PM (1).jpeg"
+    },
+    "matchedDb": {
+      "id": "d3a45d53-9145-4b30-bc60-1afbd3056565",
+      "nombre": "PATACON MIXTO ",
+      "precio_venta": 9,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "d3a45d53-9145-4b30-bc60-1afbd3056565",
+      "nombre": "PATACON MIXTO ",
+      "precio_venta": 9,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "PATACÓN 3 PROTEÍNAS",
+      "precio": 11,
+      "ingredientes_o_descripcion": "(Ensalada rallada, huevo, Carne Mechada, Pollo, Lomito, jamón ahumado, queso rallado y salsas)",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "PATACONES",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.13 PM (1).jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.6,
+    "bestCandidate": {
+      "id": "b72eab29-2f9f-4172-abce-93487e2e8648",
+      "nombre": "PARRILLA 3 PROTEINAS",
+      "precio_venta": 12.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "LOMITO, CHORIZO Y POLLO",
+        "LOMITO, PUERCO Y CHORIZO",
+        "POLLO, PUERCO Y CHORIZO",
+        "POLLO, PUERCO Y LOMITO"
+      ],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "COMBO",
+      "precio": 2.5,
+      "ingredientes_o_descripcion": "Papa regular + Bebida a cualquier hamburguesa",
+      "es_combo": true,
+      "contenido_combo": "Papa regular + Bebida",
+      "seccion": "AÑADE COMBO",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.14 PM (1).jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.4833333333333333,
+    "bestCandidate": {
+      "id": "360fd700-d9e3-4f3e-8722-fc438b6e9e83",
+      "nombre": "COMBO ECONOMICO HAMBURGUESAS",
+      "precio_venta": 11,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "1/4 MUSLO",
+      "precio": 6.5,
+      "ingredientes_o_descripcion": "INCLUYE: YUCA, ENSALADA CRUDA, QUESO, TOSTONES",
+      "es_combo": true,
+      "contenido_combo": "1/4 muslo, yuca, ensalada cruda, queso, tostones",
+      "seccion": "POLLO ASADO",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.15 PM (1).jpeg"
+    },
+    "matchedDb": {
+      "id": "bb600500-62b7-4675-bdce-041aae0c9488",
+      "nombre": "1/4 MUSLO ASADO",
+      "precio_venta": 6.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "bb600500-62b7-4675-bdce-041aae0c9488",
+      "nombre": "1/4 MUSLO ASADO",
+      "precio_venta": 6.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "1/4 PECHUGA",
+      "precio": 7.5,
+      "ingredientes_o_descripcion": "INCLUYE: YUCA, ENSALADA CRUDA, QUESO, TOSTONES",
+      "es_combo": true,
+      "contenido_combo": "1/4 pechuga, yuca, ensalada cruda, queso, tostones",
+      "seccion": "POLLO ASADO",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.15 PM (1).jpeg"
+    },
+    "matchedDb": {
+      "id": "7d78a957-5ec8-459e-bf2b-d6243f70fa9b",
+      "nombre": "1/4 PECHUGA ASADA",
+      "precio_venta": 7.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "7d78a957-5ec8-459e-bf2b-d6243f70fa9b",
+      "nombre": "1/4 PECHUGA ASADA",
+      "precio_venta": 7.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "1/2 POLLO",
+      "precio": 11,
+      "ingredientes_o_descripcion": "INCLUYE: YUCA, ENSALADA CRUDA, QUESO, TOSTONES",
+      "es_combo": true,
+      "contenido_combo": "1/2 pollo, yuca, ensalada cruda, queso, tostones",
+      "seccion": "POLLO ASADO",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.15 PM (1).jpeg"
+    },
+    "matchedDb": {
+      "id": "c3e9b566-c429-4246-a484-420e0e256c74",
+      "nombre": "1/2 POLLO ASADO",
+      "precio_venta": 11,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "c3e9b566-c429-4246-a484-420e0e256c74",
+      "nombre": "1/2 POLLO ASADO",
+      "precio_venta": 11,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "1 POLLO",
+      "precio": 20,
+      "ingredientes_o_descripcion": "INCLUYE: YUCA, ENSALADA CRUDA, QUESO, TOSTONES",
+      "es_combo": true,
+      "contenido_combo": "1 pollo, yuca, ensalada cruda, queso, tostones",
+      "seccion": "POLLO ASADO",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.15 PM (1).jpeg"
+    },
+    "matchedDb": {
+      "id": "b9532694-673f-4e80-8a1a-2f0fb79ab4f1",
+      "nombre": "1 POLLO ASADO ENTERO",
+      "precio_venta": 20,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.75,
+    "bestCandidate": {
+      "id": "b9532694-673f-4e80-8a1a-2f0fb79ab4f1",
+      "nombre": "1 POLLO ASADO ENTERO",
+      "precio_venta": 20,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "MEGA PARRILLA FAMILIAR",
+      "precio": 34,
+      "ingredientes_o_descripcion": "Lomito 250gr, Puerco 250gr, Chorizo (2), 1/2 Pollo. INCLUYE: ENSALADA CRUDA, ENSALADA COLESLAW, YUCA, TOSTONES, QUESO, PAPAS RUSTICAS, SALSA",
+      "es_combo": true,
+      "contenido_combo": "Lomito 250gr, Puerco 250gr, Chorizo (2), 1/2 Pollo, ensalada cruda, ensalada coleslaw, yuca, tostones, queso, papas rusticas, salsa",
+      "seccion": "MEGA PARRILLA FAMILIAR",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.15 PM (1).jpeg"
+    },
+    "matchedDb": {
+      "id": "43528b6b-f4a2-4b92-9f59-d6e3fe206758",
+      "nombre": "MEGA PARRILLA FAMILIAR ",
+      "precio_venta": 34,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "43528b6b-f4a2-4b92-9f59-d6e3fe206758",
+      "nombre": "MEGA PARRILLA FAMILIAR ",
+      "precio_venta": 34,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "1 PROTEÍNA",
+      "precio": 7.5,
+      "ingredientes_o_descripcion": "SELECCIONA ENTRE: Lomito, Puerco, Chorizo (2), Muslo. PARRILLAS INCLUYEN: YUCA, ENSALADA CRUDA, QUESO, TOSTONES, SALSA TÁRTARA, SALSA ROJA",
+      "es_combo": true,
+      "contenido_combo": "1 proteína a elección (Lomito, Puerco, Chorizo (2) o Muslo), yuca, ensalada cruda, queso, tostones, salsa tártara, salsa roja",
+      "seccion": "PARRILLAS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.15 PM (1).jpeg"
+    },
+    "matchedDb": {
+      "id": "e50cfde0-88cd-4ff1-9167-4029823b5804",
+      "nombre": "PARRILLA 1 PROTEINA TRAB",
+      "precio_venta": 7.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.75,
+    "bestCandidate": {
+      "id": "e50cfde0-88cd-4ff1-9167-4029823b5804",
+      "nombre": "PARRILLA 1 PROTEINA TRAB",
+      "precio_venta": 7.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "2 PROTEÍNAS",
+      "precio": 9.5,
+      "ingredientes_o_descripcion": "SELECCIONA ENTRE: Lomito, Puerco, Chorizo (2), Pollo. PARRILLAS INCLUYEN: YUCA, ENSALADA CRUDA, QUESO, TOSTONES, SALSA TÁRTARA, SALSA ROJA",
+      "es_combo": true,
+      "contenido_combo": "2 proteínas a elección (Lomito, Puerco, Chorizo (2) o Pollo), yuca, ensalada cruda, queso, tostones, salsa tártara, salsa roja",
+      "seccion": "PARRILLAS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.15 PM (1).jpeg"
+    },
+    "matchedDb": {
+      "id": "c23153f0-eb0f-4a3a-a4ee-c31ea75033dd",
+      "nombre": "PARRILLA 2 PROTEINAS",
+      "precio_venta": 9.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "LOMITO Y CHORIZO",
+        "POLLO Y CHORIZO",
+        "POLLO Y LOMITO",
+        "POLLO Y PUERCO",
+        "PUERCO Y CHORIZO",
+        "PUERCO Y LOMITO"
+      ],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.9166666666666666,
+    "bestCandidate": {
+      "id": "c23153f0-eb0f-4a3a-a4ee-c31ea75033dd",
+      "nombre": "PARRILLA 2 PROTEINAS",
+      "precio_venta": 9.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "LOMITO Y CHORIZO",
+        "POLLO Y CHORIZO",
+        "POLLO Y LOMITO",
+        "POLLO Y PUERCO",
+        "PUERCO Y CHORIZO",
+        "PUERCO Y LOMITO"
+      ],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "2 PASTICHOS PERSONALES + BEBIDA DE 1 LITRO",
+      "precio": 13.99,
+      "ingredientes_o_descripcion": "2 pastichos personales + bebida de 1 litro + adicional de queso amarillo",
+      "es_combo": true,
+      "contenido_combo": "2 pastichos personales, 1 bebida de 1 litro, adicional de queso amarillo",
+      "seccion": "COMBOS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.15 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.2857142857142857,
+    "bestCandidate": {
+      "id": "a3f7f940-be7e-47dd-af10-d7b157362f66",
+      "nombre": "DUO PASTICHOS PERSONALES",
+      "precio_venta": 14,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "PASTICHO PERSONAL",
+      "precio": 6.99,
+      "ingredientes_o_descripcion": "+ PAN\n+ ENSALADA",
+      "es_combo": true,
+      "contenido_combo": "+ PAN\n+ ENSALADA",
+      "seccion": "PASTICHOS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM (1).jpeg"
+    },
+    "matchedDb": {
+      "id": "cc55a603-44da-49b7-9dcc-883f8c9777bf",
+      "nombre": "PASTICHO PERSONAL",
+      "precio_venta": 7,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "cc55a603-44da-49b7-9dcc-883f8c9777bf",
+      "nombre": "PASTICHO PERSONAL",
+      "precio_venta": 7,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "PASTICHO TRADICIONAL 1KG",
+      "precio": 12.99,
+      "ingredientes_o_descripcion": "+ PAN\n+ ENSALADA\nRINDE 2 PERSONAS",
+      "es_combo": true,
+      "contenido_combo": "+ PAN\n+ ENSALADA",
+      "seccion": "PASTICHOS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM (1).jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.4,
+    "bestCandidate": {
+      "id": "16be5d9b-59a6-4514-96a8-942a9db22b5b",
+      "nombre": "PASTICHO 1KG BLACK FRIDAY",
+      "precio_venta": 10,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "PASTICHO TRADICIONAL 2KG",
+      "precio": 29.99,
+      "ingredientes_o_descripcion": "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT\nRINDE 6 PERSONAS",
+      "es_combo": true,
+      "contenido_combo": "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT",
+      "seccion": "PASTICHOS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM (1).jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.4,
+    "bestCandidate": {
+      "id": "feca8acf-b028-4ef4-ac7e-7eb9ad357f2a",
+      "nombre": "COMBO FAMILIAR PASTICHO 2KG",
+      "precio_venta": 35,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "PASTICHO FAMILIAR 3KG",
+      "precio": 38.99,
+      "ingredientes_o_descripcion": "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT\nRINDE 9 PERSONAS",
+      "es_combo": true,
+      "contenido_combo": "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT",
+      "seccion": "PASTICHOS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM (1).jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.4,
+    "bestCandidate": {
+      "id": "feca8acf-b028-4ef4-ac7e-7eb9ad357f2a",
+      "nombre": "COMBO FAMILIAR PASTICHO 2KG",
+      "precio_venta": 35,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "PASTICHO PERSONAL 1/2KG",
+      "precio": 8.99,
+      "ingredientes_o_descripcion": "+ PAN\n+ ENSALADA",
+      "es_combo": true,
+      "contenido_combo": "+ PAN\n+ ENSALADA",
+      "seccion": "PASTICHOS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM (1).jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.5,
+    "bestCandidate": {
+      "id": "cc55a603-44da-49b7-9dcc-883f8c9777bf",
+      "nombre": "PASTICHO PERSONAL",
+      "precio_venta": 7,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "PASTICHO ESPECIAL 1KG",
+      "precio": 14.99,
+      "ingredientes_o_descripcion": "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT\nCHARCUTERO/PRIMAVERA",
+      "es_combo": true,
+      "contenido_combo": "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT\nCHARCUTERO/PRIMAVERA",
+      "seccion": "PASTICHOS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM (1).jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.6,
+    "bestCandidate": {
+      "id": "e5a10758-f6f6-4f21-9529-5c8f74268f0b",
+      "nombre": "PASTICHO PARA 2 ESPECIAL",
+      "precio_venta": 15,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "PASTICHO ESPECIAL 2KG",
+      "precio": 33.99,
+      "ingredientes_o_descripcion": "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT\nCHARCUTERO/PRIMAVERA",
+      "es_combo": true,
+      "contenido_combo": "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT\nCHARCUTERO/PRIMAVERA",
+      "seccion": "PASTICHOS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM (1).jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.4,
+    "bestCandidate": {
+      "id": "feca8acf-b028-4ef4-ac7e-7eb9ad357f2a",
+      "nombre": "COMBO FAMILIAR PASTICHO 2KG",
+      "precio_venta": 35,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "PASTICHO ESPECIAL 3KG",
+      "precio": 44.99,
+      "ingredientes_o_descripcion": "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT\nCHARCUTERO/PRIMAVERA",
+      "es_combo": true,
+      "contenido_combo": "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT\nCHARCUTERO/PRIMAVERA",
+      "seccion": "PASTICHOS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM (1).jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.4,
+    "bestCandidate": {
+      "id": "b77a4aad-769f-4fea-b522-9a6eddae31e6",
+      "nombre": "COMO FAMILIAR PASTICHO 3KG",
+      "precio_venta": 45,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "ECONÓMICA",
+      "precio": 3.5,
+      "ingredientes_o_descripcion": "100GR DE CARNE O POLLO, TOMATE, TOMATE, LECHUGA Y ONESO DE MANO",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "ECONÓMICA",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.3333333333333333,
+    "bestCandidate": {
+      "id": "8249964a-f88a-4e10-acd1-852f0679d2c9",
+      "nombre": "HAMBURGUESA ECONOMICA SENCILLA",
+      "precio_venta": 3.8,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "CLÁSICA",
+      "precio": 6,
+      "ingredientes_o_descripcion": "200GR DE CARNE, LECHUGA TOMATE, QUESO DE MANO, TOCINETA, SALSA Y PAFITAS",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "CLÁSICA",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "9c2e3e7c-c41b-4937-b05a-131c7da9572b",
+      "nombre": "HAMBURGUESA CLASICA",
+      "precio_venta": 6,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.75,
+    "bestCandidate": {
+      "id": "9c2e3e7c-c41b-4937-b05a-131c7da9572b",
+      "nombre": "HAMBURGUESA CLASICA",
+      "precio_venta": 6,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "CLÁSICA (PAPA + BEBIDA)",
+      "precio": 7.5,
+      "ingredientes_o_descripcion": "200GR DE CARNE, LECHUGA TOMATE, QUESO DE MANO, TOCINETA, SALSA Y PAFITAS",
+      "es_combo": true,
+      "contenido_combo": "Incluye papa y bebida",
+      "seccion": "CLÁSICA",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.5,
+    "bestCandidate": {
+      "id": "85bb553a-67a1-4032-89d6-c3b25a18a146",
+      "nombre": "ADICIONAL PAPA CON BEBIDA",
+      "precio_venta": 2.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "POLLO",
+      "precio": 8,
+      "ingredientes_o_descripcion": "200GR DE COLLO LECHUGA TOMATE, QUESO DE MANO, TOCINETA, SALSA Y PAFITAS",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "POLLO",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "d89eb759-0428-48cc-a892-33f84eba222c",
+      "nombre": "HAMBURGUESA DE POLLO",
+      "precio_venta": 8,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.75,
+    "bestCandidate": {
+      "id": "d89eb759-0428-48cc-a892-33f84eba222c",
+      "nombre": "HAMBURGUESA DE POLLO",
+      "precio_venta": 8,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "POLLO (PAPA + BEBIDA)",
+      "precio": 10,
+      "ingredientes_o_descripcion": "200GR DE COLLO LECHUGA TOMATE, QUESO DE MANO, TOCINETA, SALSA Y PAFITAS",
+      "es_combo": true,
+      "contenido_combo": "Incluye papa y bebida",
+      "seccion": "POLLO",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.25,
+    "bestCandidate": {
+      "id": "a4aa5de9-2c87-4426-b1b9-7dab48fce612",
+      "nombre": "TENDERS DE POLLO",
+      "precio_venta": 9,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "LOMITO",
+      "precio": 8,
+      "ingredientes_o_descripcion": "100GR OK LOMITO, LECHUGA TOMATE, QUESOR DE MANO TOCINETA, SALSA Y PAFITAS",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "LOMITO",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "d9fb4495-5c90-4e8f-9f8e-713869b8ef88",
+      "nombre": "HAMBURGUESA DE LOMITO",
+      "precio_venta": 8,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.75,
+    "bestCandidate": {
+      "id": "d9fb4495-5c90-4e8f-9f8e-713869b8ef88",
+      "nombre": "HAMBURGUESA DE LOMITO",
+      "precio_venta": 8,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "LOMITO (PAPA + BEBIDA)",
+      "precio": 10,
+      "ingredientes_o_descripcion": "100GR OK LOMITO, LECHUGA TOMATE, QUESOR DE MANO TOCINETA, SALSA Y PAFITAS",
+      "es_combo": true,
+      "contenido_combo": "Incluye papa y bebida",
+      "seccion": "LOMITO",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.25,
+    "bestCandidate": {
+      "id": "d8cb562c-0236-42d2-897a-1ef3ecece109",
+      "nombre": "PARRILLA DE LOMITO",
+      "precio_venta": 7.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "AMERICANA (PAPA + BEBIDA)",
+      "precio": 12,
+      "ingredientes_o_descripcion": "DORLE CARNE, LECHUGA TOMATE OUROSJ ANAARLO, TOOMFD.BALEA, MAPIAS, POHVALLOS Y CERCELA",
+      "es_combo": true,
+      "contenido_combo": "Incluye papa y bebida",
+      "seccion": "AMERICANA",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.25,
+    "bestCandidate": {
+      "id": "55ff0513-516d-48c2-9f3c-7d557f3ce4ff",
+      "nombre": "HAMBURGUESA AMERICANA ",
+      "precio_venta": 12,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "ZULIANITA",
+      "precio": 9,
+      "ingredientes_o_descripcion": "200GR DE CARNE. LECHUGA TOMATEOUES RALLARO, PLACAFG MADURO, CHORIZO SALSA Y PARITAS",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "ZULIANITA",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "a8b36fd4-3174-4a58-b4c6-6695a19b0977",
+      "nombre": "HAMBURGUESA ZULIANITA ",
+      "precio_venta": 9,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.75,
+    "bestCandidate": {
+      "id": "a8b36fd4-3174-4a58-b4c6-6695a19b0977",
+      "nombre": "HAMBURGUESA ZULIANITA ",
+      "precio_venta": 9,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "CRISPY",
+      "precio": 10,
+      "ingredientes_o_descripcion": "PAR WNOOPER. 5ROGR DE POLLO CRISPY, TOMATE, JAMON ANUNADOF/ERINETA, PAPITAL QUESO OF MANO Y TEEPOLSO + SALSA DE LA CASA O TRADICIONAL",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "CRISPY",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "a3228ef8-6506-4b3f-9682-fb83dcf97d72",
+      "nombre": "HAMBURGUESA CRISPY ",
+      "precio_venta": 10,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.75,
+    "bestCandidate": {
+      "id": "a3228ef8-6506-4b3f-9682-fb83dcf97d72",
+      "nombre": "HAMBURGUESA CRISPY ",
+      "precio_venta": 10,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "CRISPY (PAPA + BEBIDA)",
+      "precio": 12,
+      "ingredientes_o_descripcion": "PAR WNOOPER. 5ROGR DE POLLO CRISPY, TOMATE, JAMON ANUNADOF/ERINETA, PAPITAL QUESO OF MANO Y TEEPOLSO + SALSA DE LA CASA O TRADICIONAL",
+      "es_combo": true,
+      "contenido_combo": "Incluye papa y bebida",
+      "seccion": "CRISPY",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.25,
+    "bestCandidate": {
+      "id": "a3228ef8-6506-4b3f-9682-fb83dcf97d72",
+      "nombre": "HAMBURGUESA CRISPY ",
+      "precio_venta": 10,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "AREPITAS CLÁSICA",
+      "precio": 6.5,
+      "ingredientes_o_descripcion": "ENSALADA BALLADA, HUEVO, CARNE MECHADA, QUESO SALLADO Y SALEAS",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "AREPITAS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.3333333333333333,
+    "bestCandidate": {
+      "id": "d4721d03-a557-4e94-a1f7-d993f97497a6",
+      "nombre": "MARQUESA CLASICA",
+      "precio_venta": 3,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "AREPITAS MIXTA",
+      "precio": 8.5,
+      "ingredientes_o_descripcion": "ENSALADA BALLADA, HUEVO, LOMITO, POLLO, CARNE MECHADA, QUESO RALLADO, Y SALSAS",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "AREPITAS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.3333333333333333,
+    "bestCandidate": {
+      "id": "8eb192dd-539a-44d6-812e-a2326d64b6c9",
+      "nombre": "AREPITA MIXTA ",
+      "precio_venta": 8.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "PATACONES CLÁSICO",
+      "precio": 6.5,
+      "ingredientes_o_descripcion": "ENSALADA BALLADA, HUEVO, CARNE MECHADA, JAMON ANUMADO, QUESO RALLADO Y SALSA TRADICIONAL",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "PATACONES",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.25,
+    "bestCandidate": {
+      "id": "b1dd31df-683f-44fe-9938-4c82e207dfaf",
+      "nombre": "PATACON CLASICO TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "PATACONES MIXTO",
+      "precio": 8.5,
+      "ingredientes_o_descripcion": "ENSALADA BALLADA, HUEVO, LOMITO, POLLO, JAMGN ANUMADO, QUESO RALLADO Y SALSA TRADICIONAL",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "PATACONES",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.3333333333333333,
+    "bestCandidate": {
+      "id": "d3a45d53-9145-4b30-bc60-1afbd3056565",
+      "nombre": "PATACON MIXTO ",
+      "precio_venta": 9,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "SERV. DE PAPAS",
+      "precio": 3.5,
+      "ingredientes_o_descripcion": "Porción de papas fritas",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "SERV. DE PAPAS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.25,
+    "bestCandidate": {
+      "id": "10cf97f0-df71-47a4-b7a1-9f4b9ac878c0",
+      "nombre": "ADICIONAL PAPAS RUSTICAS",
+      "precio_venta": 3,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "PERRO",
+      "precio": 1.5,
+      "ingredientes_o_descripcion": "SALCHICHA SALCHIPOLLOAAMKS ENSALAGA AKLLABALNLEA Y QUESO BALLADO",
+      "es_combo": false,
+      "contenido_combo": null,
+      "seccion": "HOT DOGS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.6,
+    "bestCandidate": {
+      "id": "ba2ebeb3-5108-4eeb-9a39-de6cd440fa14",
+      "nombre": "PERRO SENCILLO",
+      "precio_venta": 1.8,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "COMBO SENCILLO",
+      "precio": 19.5,
+      "ingredientes_o_descripcion": "1 FAMILIAR DE JAMÓN Y QUESO + 2 adicionales de tu preferencia + 1 Pequeña de jamón y queso + Bebida de 1.5lts INCLUYE SU CAJA GRATIS",
+      "es_combo": true,
+      "contenido_combo": "1 FAMILIAR DE JAMÓN Y QUESO, 2 adicionales de tu preferencia, 1 Pequeña de jamón y queso, 1 Bebida de 1.5lts, incluye su caja gratis",
+      "seccion": "COMBOS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.17 PM (1).jpeg"
+    },
+    "matchedDb": {
+      "id": "e4877078-76a6-4abd-a360-1cb215f54aa1",
+      "nombre": "COMBO SENCILLO",
+      "precio_venta": 19.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "e4877078-76a6-4abd-a360-1cb215f54aa1",
+      "nombre": "COMBO SENCILLO",
+      "precio_venta": 19.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "1/4 MUSLO (2 PIEZAS)",
+      "precio": 7,
+      "ingredientes_o_descripcion": "Incluye: Papas rústicas, ensalada coleslaw y salsa",
+      "es_combo": true,
+      "contenido_combo": "1/4 muslo (2 piezas) + papas rústicas, ensalada coleslaw y salsa",
+      "seccion": "MENÚ BROASTER",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.17 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "2d2bbaf8-3644-4755-bdee-7c2f1df526ed",
+      "nombre": "1/4 MUSLO BROASTER ",
+      "precio_venta": 7,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.75,
+    "bestCandidate": {
+      "id": "2d2bbaf8-3644-4755-bdee-7c2f1df526ed",
+      "nombre": "1/4 MUSLO BROASTER ",
+      "precio_venta": 7,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "1/4 PECHUGA (3 PIEZAS)",
+      "precio": 8,
+      "ingredientes_o_descripcion": "Incluye: Papas rústicas, ensalada coleslaw y salsa",
+      "es_combo": true,
+      "contenido_combo": "1/4 pechuga (3 piezas) + papas rústicas, ensalada coleslaw y salsa",
+      "seccion": "MENÚ BROASTER",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.17 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "66329260-2af3-4dfa-b372-c9f1c1eb40e6",
+      "nombre": "1/4 PECHUGA BROASTER",
+      "precio_venta": 8,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.75,
+    "bestCandidate": {
+      "id": "66329260-2af3-4dfa-b372-c9f1c1eb40e6",
+      "nombre": "1/4 PECHUGA BROASTER",
+      "precio_venta": 8,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "1/2 POLLO (6 PIEZAS)",
+      "precio": 14,
+      "ingredientes_o_descripcion": "Incluye: Papas rústicas, ensalada coleslaw y salsa",
+      "es_combo": true,
+      "contenido_combo": "1/2 pollo (6 piezas) + papas rústicas, ensalada coleslaw y salsa",
+      "seccion": "MENÚ BROASTER",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.17 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "a66f2160-e648-4d3d-91b6-bcca4a729688",
+      "nombre": "1/2 POLLO BROASTER",
+      "precio_venta": 14,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.75,
+    "bestCandidate": {
+      "id": "a66f2160-e648-4d3d-91b6-bcca4a729688",
+      "nombre": "1/2 POLLO BROASTER",
+      "precio_venta": 14,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "1 POLLO (12 PIEZAS)",
+      "precio": 26,
+      "ingredientes_o_descripcion": "Incluye: Papas rústicas, ensalada coleslaw y salsa",
+      "es_combo": true,
+      "contenido_combo": "1 pollo (12 piezas) + papas rústicas, ensalada coleslaw y salsa",
+      "seccion": "MENÚ BROASTER",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.17 PM.jpeg"
+    },
+    "matchedDb": null,
+    "score": 0.3333333333333333,
+    "bestCandidate": {
+      "id": "b9532694-673f-4e80-8a1a-2f0fb79ab4f1",
+      "nombre": "1 POLLO ASADO ENTERO",
+      "precio_venta": 20,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "TENDERS DE POLLO (6 PIEZAS)",
+      "precio": 9,
+      "ingredientes_o_descripcion": "Incluye papas rústicas y salsa",
+      "es_combo": true,
+      "contenido_combo": "Tenders de pollo (6 piezas) + papas rústicas y salsa",
+      "seccion": "MENÚ BROASTER",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.17 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "a4aa5de9-2c87-4426-b1b9-7dab48fce612",
+      "nombre": "TENDERS DE POLLO",
+      "precio_venta": 9,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.75,
+    "bestCandidate": {
+      "id": "a4aa5de9-2c87-4426-b1b9-7dab48fce612",
+      "nombre": "TENDERS DE POLLO",
+      "precio_venta": 9,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "NUGGETS DE POLLO (6 PIEZAS)",
+      "precio": 7.5,
+      "ingredientes_o_descripcion": "Incluye papas francesas y salsa",
+      "es_combo": true,
+      "contenido_combo": "Nuggets de pollo (6 piezas) + papas francesas y salsa",
+      "seccion": "MENÚ BROASTER",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.17 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "0d758f82-6f3c-4025-9cd2-6fe637a67788",
+      "nombre": "NUGGETS DE POLLO",
+      "precio_venta": 7.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.75,
+    "bestCandidate": {
+      "id": "0d758f82-6f3c-4025-9cd2-6fe637a67788",
+      "nombre": "NUGGETS DE POLLO",
+      "precio_venta": 7.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "CAJITA FELIZ",
+      "precio": 8,
+      "ingredientes_o_descripcion": "Nuggets o Hamburguesa + papas + juguete + golosina",
+      "es_combo": true,
+      "contenido_combo": "Nuggets o hamburguesa + papas + juguete + golosina",
+      "seccion": "MENÚ BROASTER",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.17 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "5618adb7-90a6-4733-a0e3-7918e04d2f70",
+      "nombre": "CAJITA FELIZ HAMBURGUESA ",
+      "precio_venta": 8,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1.0666666666666667,
+    "bestCandidate": {
+      "id": "5618adb7-90a6-4733-a0e3-7918e04d2f70",
+      "nombre": "CAJITA FELIZ HAMBURGUESA ",
+      "precio_venta": 8,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  },
+  {
+    "item": {
+      "nombre": "COMBO BROASTER 12 PIEZAS",
+      "precio": 25.99,
+      "ingredientes_o_descripcion": "12 Piezas de POLLO BROASTER + Servicio de papas + Bebida 1.5LT + Ensalada",
+      "es_combo": true,
+      "contenido_combo": "12 piezas de pollo broaster, servicio de papas, bebida 1.5LT, ensalada",
+      "seccion": "COMBOS",
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.19 PM.jpeg"
+    },
+    "matchedDb": {
+      "id": "0ed66580-74e1-4ebb-b983-c374e2ecfcd8",
+      "nombre": "COMBO BROASTER 12 PIEZAS",
+      "precio_venta": 26,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 1,
+    "bestCandidate": {
+      "id": "0ed66580-74e1-4ebb-b983-c374e2ecfcd8",
+      "nombre": "COMBO BROASTER 12 PIEZAS",
+      "precio_venta": 26,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    }
+  }
+]

@@ -1,0 +1,1568 @@
+{
+  "WhatsApp Image 2026-10-14 at 1.57.06 PM.jpeg": {
+    "archivo": "WhatsApp Image 2026-10-14 at 1.57.06 PM.jpeg",
+    "categoria_menu": "COCTELES",
+    "productos": [
+      {
+        "nombre": "GRINCH",
+        "precio": 4,
+        "ingredientes_o_descripcion": "Vodka, Licor de coco, Triple Sec, Sumo Limón, Jugo Naranja.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "CUBA LIBRE",
+        "precio": 4,
+        "ingredientes_o_descripcion": "Ron Cacique, Coca Cola, Sumo Limón, Amargo Angostura",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "MOJITO CUBANO",
+        "precio": 4,
+        "ingredientes_o_descripcion": "Ron, Sumo Limón, Azucar, Hierba Buena, Refresco Limón.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "LAGUNA AZUL",
+        "precio": 4,
+        "ingredientes_o_descripcion": "Vodka, Triple Sec, Sumo Limón, Azucar, Curasao Azul, Refresco Limón.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "BUSCANDO A NEMO",
+        "precio": 4,
+        "ingredientes_o_descripcion": "Ron, Vodka, Licor de Coco, Tequila, Triple Sec, Sumo Limón, Granadina, Curasao Azul, Jugo Naranja.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "MICHELADA",
+        "precio": 4,
+        "ingredientes_o_descripcion": "Cerveza, Sumo Limón, Tajin, Picante.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "SANGRÍA",
+        "precio": 4,
+        "ingredientes_o_descripcion": "",
+        "es_combo": false,
+        "contenido_combo": null
+      }
+    ]
+  },
+  "WhatsApp Image 2026-10-14 at 1.579 PM.jpeg": [
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 1.579 PM.jpeg",
+      "categoria_menu": "COCTELES",
+      "productos": [
+        {
+          "nombre": "BUENA VIBRA",
+          "precio": 4.5,
+          "ingredientes_o_descripcion": "Licor de coco, Sumo Limón, Curasao Azul, Jugo Naranja.",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "COSMOPOLITAN",
+          "precio": 4.5,
+          "ingredientes_o_descripcion": "Vodka, Triple Sec, Sumo limón, Granadina.",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "PANTERA ROSA",
+          "precio": 4.5,
+          "ingredientes_o_descripcion": "Vodka, Leche Condensada, Leche Evaporada, Granadina, Jugo Naranja.",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "TEQUILA SUNRISE",
+          "precio": 4.5,
+          "ingredientes_o_descripcion": "Tequila, Granadina, Sumo Limón, Jugo Naranja.",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "TINTO DE VERANO",
+          "precio": 4.5,
+          "ingredientes_o_descripcion": "Ron, Vino, Triple Sec, Granadina, Sumo Limón, Refresco Limón.",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "MARGARITA BLUE",
+          "precio": 4.5,
+          "ingredientes_o_descripcion": "Tequila, Triple Sec, Sumo Limón, Azucar, Curasao Azul",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "DAIQUIRI FRESA",
+          "precio": 5,
+          "ingredientes_o_descripcion": "Ron, Fresas, Sumo Limón, Azucar.",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "VINO",
+          "precio": 4.5,
+          "ingredientes_o_descripcion": null,
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "SHOT TEQUILA",
+          "precio": 4.5,
+          "ingredientes_o_descripcion": "Tequila Jose Cuervos",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "PIÑA COLADA",
+          "precio": 5,
+          "ingredientes_o_descripcion": "Ron, Piña, Licor Coco, Leche Condensada, Triple Sec",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "MALTEADA",
+          "precio": 6.5,
+          "ingredientes_o_descripcion": null,
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 1.579 PM.jpeg",
+      "categoria_menu": "WHISKY",
+      "productos": [
+        {
+          "nombre": "WHISKY 8 AÑOS",
+          "precio": 4,
+          "ingredientes_o_descripcion": "Whisky 8 Años",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "WHISKY 12 AÑOS",
+          "precio": 5.5,
+          "ingredientes_o_descripcion": "Whisky 12 Años",
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 1.579 PM.jpeg",
+      "categoria_menu": "BALDE 10 UDS.",
+      "productos": [
+        {
+          "nombre": "BALDE POLAR-ZULIA 10 UDS.",
+          "precio": 10,
+          "ingredientes_o_descripcion": "Balde con 10 unidades de cerveza Polar-Zulia",
+          "es_combo": true,
+          "contenido_combo": "Balde con 10 unidades de cerveza Polar-Zulia"
+        },
+        {
+          "nombre": "BALDE SOLERA 10 UDS.",
+          "precio": 12,
+          "ingredientes_o_descripcion": "Balde con 10 unidades de cerveza Solera",
+          "es_combo": true,
+          "contenido_combo": "Balde con 10 unidades de cerveza Solera"
+        }
+      ]
+    }
+  ],
+  "WhatsApp Image 2026-10-14 at 2.07.02 PM.jpeg": [
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.02 PM.jpeg",
+      "categoria_menu": "MENÚ FESTÍN DE PELUCHE",
+      "productos": [
+        {
+          "nombre": "70 MINI PIZZAS",
+          "precio": 14,
+          "ingredientes_o_descripcion": "70 unidades de mini pizzas",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "140 MINI PIZZAS",
+          "precio": 28,
+          "ingredientes_o_descripcion": "140 unidades de mini pizzas",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "50 TAMALES",
+          "precio": 12,
+          "ingredientes_o_descripcion": "50 unidades de tamales",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "50 MINI EMPANADAS",
+          "precio": 14,
+          "ingredientes_o_descripcion": "50 unidades de mini empanadas",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "50 MINI TEQUEÑOS",
+          "precio": 11,
+          "ingredientes_o_descripcion": "50 unidades de mini tequeños",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "50 MINI PASTELITOS",
+          "precio": 11,
+          "ingredientes_o_descripcion": "50 unidades de mini pastelitos",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "50 SERPENTINAS",
+          "precio": 14,
+          "ingredientes_o_descripcion": "50 unidades de serpentinas",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "50 MINI AREPAS CON CARNE ESMECHADA",
+          "precio": 14,
+          "ingredientes_o_descripcion": "50 unidades de mini arepas con carne esmechada",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "50 DEDOS DE SALCHICHA",
+          "precio": 12,
+          "ingredientes_o_descripcion": "50 unidades de dedos de salchicha",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "1KG. BOLITAS DE CARNE + SALSA",
+          "precio": 22,
+          "ingredientes_o_descripcion": "1kg de bolitas de carne más salsa",
+          "es_combo": true,
+          "contenido_combo": "1kg de bolitas de carne + salsa"
+        },
+        {
+          "nombre": "500GR. BOLITAS DE CARNE",
+          "precio": 12,
+          "ingredientes_o_descripcion": "500 gramos de bolitas de carne",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "250GR. ANTIPASTO",
+          "precio": 8,
+          "ingredientes_o_descripcion": "250 gramos de antipasto",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "1KG. ANTIPASTO",
+          "precio": 30,
+          "ingredientes_o_descripcion": "1 kilogramo de antipasto",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "2 PAQUETES DE GALLETAS O TOSTADAS + 4 TIPOS DE SALSAS (250GR C/U)",
+          "precio": 30,
+          "ingredientes_o_descripcion": "2 Paquetes de Galletas o Tostadas + 4 tipos de Salsas (250gr C/U). Salsas a escoger: Salsa de Pollo con Maíz, Salsa de Atún, Salsa de Ajoporro, Salsa de Parmesano, Salsa de Tocineta.",
+          "es_combo": true,
+          "contenido_combo": "2 Paquetes de Galletas o Tostadas + 4 tipos de Salsas (250gr C/U). Salsas a escoger: Salsa de Pollo con Maíz, Salsa de Atún, Salsa de Ajoporro, Salsa de Parmesano, Salsa de Tocineta."
+        }
+      ]
+    }
+  ],
+  "WhatsApp Image 2026-10-14 at 2.07.03 PM.jpeg": {
+    "archivo": "WhatsApp Image 2026-10-14 at 2.07.03 PM.jpeg",
+    "categoria_menu": "PROMO DE FERIA",
+    "productos": [
+      {
+        "nombre": "BALDE DE CERVEZAS PAGA 10 LLEVA 12",
+        "precio": 10,
+        "ingredientes_o_descripcion": "Balde de cervezas. Puede ser Polar o Zulia. Paga 10 y lleva 12. Válido hasta el 30 de noviembre.",
+        "es_combo": true,
+        "contenido_combo": "12 cervezas (Polar o Zulia) al precio de 10"
+      }
+    ]
+  },
+  "WhatsApp Image 2026-10-14 at 2.07.04 PM (1).jpeg": {
+    "archivo": "WhatsApp Image 2026-10-14 at 2.07.04 PM (1).jpeg",
+    "categoria_menu": "PROMO DE FERIA",
+    "productos": [
+      {
+        "nombre": "PROMO DE FERIA",
+        "precio": 22,
+        "ingredientes_o_descripcion": "2 Pizzas Familiares + adicional de maíz, 1 Refresco 1.5lt, 1 Mini Brownie",
+        "es_combo": true,
+        "contenido_combo": "2 Pizzas Familiares, adicional de maíz, 1 Refresco 1.5lt, 1 Mini Brownie"
+      }
+    ]
+  },
+  "WhatsApp Image 2026-10-14 at 2.07.04 PM.jpeg": {
+    "archivo": "WhatsApp Image 2026-10-14 at 2.07.04 PM.jpeg",
+    "categoria_menu": "PROMO DE FERIA",
+    "productos": [
+      {
+        "nombre": "PROMO DE FERIA HAMBURGUESA ECONOMICA Y REFRESCO PERSONAL",
+        "precio": 5.5,
+        "ingredientes_o_descripcion": "1 Hamburguesa económica (Carne - Pollo - Lomo de cerdo) + 1 Refresco Personal",
+        "es_combo": true,
+        "contenido_combo": "1 Hamburguesa económica (Carne - Pollo - Lomo de cerdo) y 1 Refresco Personal"
+      }
+    ]
+  },
+  "WhatsApp Image 2026-10-14 at 2.07.05 PM (1).jpeg": {
+    "archivo": "WhatsApp Image 2026-10-14 at 2.07.05 PM (1).jpeg",
+    "categoria_menu": "COCTELES",
+    "productos": [
+      {
+        "nombre": "GRINCH",
+        "precio": 3.5,
+        "ingredientes_o_descripcion": "Vodka, Licor de coco, Triple Sec, Sumo Limón, Jugo Naranja.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "CUBA LIBRE",
+        "precio": 3.5,
+        "ingredientes_o_descripcion": "Ron Cacique, Coca Cola, Sumo Limón, Amargo Angostura",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "MOJITO CUBANO",
+        "precio": 3.5,
+        "ingredientes_o_descripcion": "Ron, Sumo Limón, Azucar, Hierba Buena, Refresco Limón.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "LAGUNA AZUL",
+        "precio": 3.5,
+        "ingredientes_o_descripcion": "Vodka, Triple Sec, Sumo Limón, Azucar, Curasao Azul, Refresco Limón.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "BUSCANDO A NEMO",
+        "precio": 3.5,
+        "ingredientes_o_descripcion": "Ron, Vodka, Licor de Coco, Tequila, Triple Sec, Sumo Limón, Granadina, Curasao Azul, Jugo Naranja.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "MICHELADA",
+        "precio": 3.5,
+        "ingredientes_o_descripcion": "Cerveza, Sumo Limón, Tajin, Picante.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "SANGRÍA",
+        "precio": 3.5,
+        "ingredientes_o_descripcion": null,
+        "es_combo": false,
+        "contenido_combo": null
+      }
+    ]
+  },
+  "WhatsApp Image 2026-10-14 at 2.07.05 PM.jpeg": [
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.05 PM.jpeg",
+      "categoria_menu": "COMBOS",
+      "productos": [
+        {
+          "nombre": "COMBO FAMILIAR NAVIDAD",
+          "precio": 54.99,
+          "ingredientes_o_descripcion": "Rinde por 6 personas",
+          "es_combo": true,
+          "contenido_combo": "1 Pasticho 2 kg, 10 Hallacas, 1 Refresco 2 Lt, 1 Mini torta de Navidad"
+        }
+      ]
+    }
+  ],
+  "WhatsApp Image 2026-10-14 at 2.07.06 PM (1).jpeg": {
+    "archivo": "WhatsApp Image 2026-10-14 at 2.07.06 PM (1).jpeg",
+    "categoria_menu": "COMBOS NAVIDAD",
+    "productos": [
+      {
+        "nombre": "COMBO NAVIDAD 5 HALLACAS",
+        "precio": 10.99,
+        "ingredientes_o_descripcion": "5 Hallacas",
+        "es_combo": true,
+        "contenido_combo": "5 Hallacas"
+      }
+    ]
+  },
+  "WhatsApp Image 2026-10-14 at 2.07.06 PM (2).jpeg": [
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.06 PM (2).jpeg",
+      "categoria_menu": "HALLACAS",
+      "productos": [
+        {
+          "nombre": "HALLACA 1 UNIDAD",
+          "precio": 2.99,
+          "ingredientes_o_descripcion": "Escoge la tuya: Pollo, Mixta (puerco con carne)",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "HALLACAS 2 UNIDADES",
+          "precio": 4.99,
+          "ingredientes_o_descripcion": "Escoge la tuya: Pollo, Mixta (puerco con carne)",
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    }
+  ],
+  "WhatsApp Image 2026-10-14 at 2.07.06 PM.jpeg": {
+    "archivo": "WhatsApp Image 2026-10-14 at 2.07.06 PM.jpeg",
+    "categoria_menu": "CÓCTELES Y BEBIDAS",
+    "productos": [
+      {
+        "nombre": "BUENA VIBRA",
+        "precio": 4,
+        "ingredientes_o_descripcion": "Licor de coco, Sumo Limón, Curasao Azul, Jugo Naranja.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "COSMOPOLITAN",
+        "precio": 4,
+        "ingredientes_o_descripcion": "Vodka, Triple Sec, Sumo limón, Granadina.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "PANTERA ROSA",
+        "precio": 4,
+        "ingredientes_o_descripcion": "Vodka, Leche Condensada, Leche Evaporada, Granadina, Jugo Naranja.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "TEQUILA SUNRISE",
+        "precio": 4,
+        "ingredientes_o_descripcion": "Tequila, Granadina, Sumo Limón, Jugo Naranja.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "TINTO DE VERANO",
+        "precio": 4,
+        "ingredientes_o_descripcion": "Ron, Vino, Triple Sec, Granadina, Sumo Limón, Refresco Limón.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "MARGARITA BLUE",
+        "precio": 4,
+        "ingredientes_o_descripcion": "Tequila, Triple Sec, Sumo Limón, Azucar, Curasao Azul",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "DAIQUIRI FRESA",
+        "precio": 4,
+        "ingredientes_o_descripcion": "Ron, Fresas, Sumo Limón, Azucar.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "VINO",
+        "precio": 4,
+        "ingredientes_o_descripcion": "",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "SHOT TEQUILA",
+        "precio": 4,
+        "ingredientes_o_descripcion": "Tequila Jose Cuervos",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "PIÑA COLADA",
+        "precio": 4.5,
+        "ingredientes_o_descripcion": "Ron, Piña, Licor Coco, Leche Condensada, Triple Sec",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "MALTEADA",
+        "precio": 5.5,
+        "ingredientes_o_descripcion": "",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "WHISKY 8 AÑOS",
+        "precio": 3.5,
+        "ingredientes_o_descripcion": "",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "WHISKY 12 AÑOS",
+        "precio": 5,
+        "ingredientes_o_descripcion": "",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "BALDE POLAR-ZULIA",
+        "precio": 10,
+        "ingredientes_o_descripcion": "Balde 10 Uds. Polar-Zulia",
+        "es_combo": true,
+        "contenido_combo": "Balde de 10 unidades de cerveza Polar-Zulia"
+      },
+      {
+        "nombre": "BALDE SOLERA",
+        "precio": 12,
+        "ingredientes_o_descripcion": "Balde 10 Uds. Solera",
+        "es_combo": true,
+        "contenido_combo": "Balde de 10 unidades de cerveza Solera"
+      }
+    ]
+  },
+  "WhatsApp Image 2026-10-14 at 2.07.07 PM (1).jpeg": {
+    "archivo": "WhatsApp Image 2026-10-14 at 2.07.07 PM (1).jpeg",
+    "categoria_menu": "COMBOS NAVIDEÑOS",
+    "productos": [
+      {
+        "nombre": "COMBO NAVIDAD PERSONAL",
+        "precio": 8.99,
+        "ingredientes_o_descripcion": "1 Pasticho personal, Ensalada, 1 Hallaca, Pan al ajillo",
+        "es_combo": true,
+        "contenido_combo": "1 Pasticho personal, Ensalada, 1 Hallaca, Pan al ajillo"
+      }
+    ]
+  },
+  "WhatsApp Image 2026-10-14 at 2.07.07 PM.jpeg": [
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.07 PM.jpeg",
+      "categoria_menu": "COMBOS",
+      "productos": [
+        {
+          "nombre": "COMBO DÚO",
+          "precio": 16,
+          "ingredientes_o_descripcion": "1 Pasticho 1 kg, Ensalada, 2 Hallacas",
+          "es_combo": true,
+          "contenido_combo": "1 Pasticho de 1 kg, Ensalada, 2 Hallacas"
+        }
+      ]
+    }
+  ],
+  "WhatsApp Image 2026-10-14 at 2.07.08 PM.jpeg": [
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.08 PM.jpeg",
+      "categoria_menu": "COMBOS",
+      "productos": [
+        {
+          "nombre": "COMBO BACK TO SCHOOL",
+          "precio": 10,
+          "ingredientes_o_descripcion": "1 Pizza Familiar Tradicional + 1 Refresco de 1Lt",
+          "es_combo": true,
+          "contenido_combo": "1 Pizza Familiar Tradicional + 1 Refresco de 1Lt"
+        }
+      ]
+    }
+  ],
+  "WhatsApp Image 2026-10-14 at 2.07.10 PM (1).jpeg": [
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.10 PM (1).jpeg",
+      "categoria_menu": "COMBOS",
+      "productos": [
+        {
+          "nombre": "COMBO ECONÓMICO",
+          "precio": 10.99,
+          "ingredientes_o_descripcion": "2 Hamburguesas de 100gr de proteína + Papas + bebida 1 litro",
+          "es_combo": true,
+          "contenido_combo": "2 Hamburguesas de 100gr de proteína + Papas + bebida 1 litro"
+        }
+      ]
+    }
+  ],
+  "WhatsApp Image 2026-10-14 at 2.07.10 PM.jpeg": {
+    "archivo": "WhatsApp Image 2026-10-14 at 2.07.10 PM.jpeg",
+    "categoria_menu": "COMBOS",
+    "productos": [
+      {
+        "nombre": "COMBO BACK TO SCHOOL",
+        "precio": 10,
+        "ingredientes_o_descripcion": "2 Burgers Crispy Economicas + 1 Bebida de 1Lt",
+        "es_combo": true,
+        "contenido_combo": "2 Burgers Crispy Economicas + 1 Bebida de 1Lt"
+      }
+    ]
+  },
+  "WhatsApp Image 2026-10-14 at 2.07.11 PM.jpeg": {
+    "archivo": "WhatsApp Image 2026-10-14 at 2.07.11 PM.jpeg",
+    "categoria_menu": "PROMO",
+    "productos": [
+      {
+        "nombre": "PROMO POLLO ASADO",
+        "precio": 21.99,
+        "ingredientes_o_descripcion": "1 Pollo entero asado + Tostones + Yuca + Ensalada + Queso + Salsa + 1L de Papelón con Limón",
+        "es_combo": true,
+        "contenido_combo": "1 Pollo entero asado, Tostones, Yuca, Ensalada, Queso, Salsa, 1L de Papelón con Limón"
+      }
+    ]
+  },
+  "WhatsApp Image 2026-10-14 at 2.07.12 PM.jpeg": {
+    "archivo": "WhatsApp Image 2026-10-14 at 2.07.12 PM.jpeg",
+    "categoria_menu": "MENÚ BURGER",
+    "productos": [
+      {
+        "nombre": "ECONÓMICA SENCILLA",
+        "precio": 3.8,
+        "ingredientes_o_descripcion": "100gr de carne, pollo o chuleta, papas, tomate, lechuga y queso de mano.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "CRISPY SENCILLA",
+        "precio": 5.5,
+        "ingredientes_o_descripcion": "100gr de pollo crispy, queso, jamón, papas, tomate, lechuga y queso de mano.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "ESPECIAL",
+        "precio": 7,
+        "ingredientes_o_descripcion": "200gr de Carne o Chuleta, lechuga, tomate, queso de mano, tocineta, salsa y papas.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "POLLO ESPECIAL",
+        "precio": 8.5,
+        "ingredientes_o_descripcion": "250gr de pollo, lechuga, tomate, queso de mano, tocineta, salsa y papas.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "LOMITO ESPECIAL",
+        "precio": 8.5,
+        "ingredientes_o_descripcion": "200gr de lomito, lechuga, tomate, queso de mano, tocineta, salsa y papas.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "AMERICANA",
+        "precio": 12,
+        "ingredientes_o_descripcion": "Doble carne, lechuga, tomate, queso amarillo, tocineta, salsa, papas, pepinillos y cebolla.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "CRISPY ESPECIAL",
+        "precio": 12,
+        "ingredientes_o_descripcion": "Pan whooper, 300gr de pollo crispy, tomate, jamón ahumado, tocineta, papas, queso de mano, repollo, salsa.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "MIXTA",
+        "precio": 12,
+        "ingredientes_o_descripcion": "300gr de proteína (a escoger entre Pollo, Chuleta y Lomito), lechuga, tomate, queso de mano, tocineta, salsa y papas.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "3 PROTEÍNAS",
+        "precio": 13,
+        "ingredientes_o_descripcion": "450gr (Mix de Pollo, Lomito y Chuleta), lechuga, tomate, queso de mano, tocineta, salsa y papas.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "AÑADE COMBO",
+        "precio": 2.5,
+        "ingredientes_o_descripcion": "Papa regular + Bebida a cualquier hamburguesa",
+        "es_combo": true,
+        "contenido_combo": "Papa regular + Bebida a cualquier hamburguesa"
+      },
+      {
+        "nombre": "SERVICIO DE PAPAS 200GR",
+        "precio": 3.5,
+        "ingredientes_o_descripcion": "Servicio de Papas 200gr",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "MAÍZ",
+        "precio": 1,
+        "ingredientes_o_descripcion": "Adicional de maíz",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "QUESO",
+        "precio": 1,
+        "ingredientes_o_descripcion": "Adicional de queso",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "TOCINETA",
+        "precio": 1,
+        "ingredientes_o_descripcion": "Adicional de tocineta",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "HUEVO",
+        "precio": 0.5,
+        "ingredientes_o_descripcion": "Adicional de huevo",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "PERRO CALIENTE",
+        "precio": 1.8,
+        "ingredientes_o_descripcion": "Salchicha salchipollo, papas, ensalada rallada, salsa y queso rallado.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "PERRO FULL",
+        "precio": 3.5,
+        "ingredientes_o_descripcion": "Salchicha salchipollo, papas, ensalada rallada, salsa, huevo, jamón y queso de mano.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "PAN CON POLLO SENCILLO",
+        "precio": 4,
+        "ingredientes_o_descripcion": "100gr de pollo, papas, ensalada rallada, salsa y queso rallado en pan de perro.",
+        "es_combo": false,
+        "contenido_combo": null
+      },
+      {
+        "nombre": "PAN CON POLLO ESPECIAL",
+        "precio": 6,
+        "ingredientes_o_descripcion": "100gr de pollo, papas, ensalada rallada, salsa...",
+        "es_combo": false,
+        "contenido_combo": null
+      }
+    ]
+  },
+  "WhatsApp Image 2026-10-14 at 2.07.13 PM (1).jpeg": [
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.13 PM (1).jpeg",
+      "categoria_menu": "SOMBREROS",
+      "productos": [
+        {
+          "nombre": "SOMBRERO CLÁSICO",
+          "precio": 20,
+          "ingredientes_o_descripcion": "(500gr de carne, queso, jamón ahumado, papas ralladas, lechuga, tomate, salsas.)",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "SOMBRERO MIXTO",
+          "precio": 28,
+          "ingredientes_o_descripcion": "(1Kg de proteína (carne molida y pollo), queso, jamón ahumado, papas ralladas, lechuga, tomate, salsas.)",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "SOMBRERO 3 PROTEÍNAS",
+          "precio": 32,
+          "ingredientes_o_descripcion": "(1.5Kg de proteína (carne, pollo y chuleta), queso, jamón ahumado, papas ralladas, lechuga, tomate, salsas.)",
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.13 PM (1).jpeg",
+      "categoria_menu": "SALCHIPAPAS",
+      "productos": [
+        {
+          "nombre": "SALCHIPAPA SENCILLA",
+          "precio": 7,
+          "ingredientes_o_descripcion": "(400gr de papas, salchicha, lechuga, salsas y queso rallado)",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "SALCHIPAPA MIXTA",
+          "precio": 9,
+          "ingredientes_o_descripcion": "(400gr de papas, salchicha, Pollo, Chorizo, lechuga, salsas y queso rallado)",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "ESPECIAL PROTEÍNA",
+          "precio": 11.5,
+          "ingredientes_o_descripcion": "(500gr de papas, salchicha, Pollo, Lomito, Chuleta, lechuga, salsas y queso rallado)",
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.13 PM (1).jpeg",
+      "categoria_menu": "AREPAS",
+      "productos": [
+        {
+          "nombre": "AREPA SENCILLA",
+          "precio": 6.5,
+          "ingredientes_o_descripcion": "(Ensalada rallada, huevo, carne mechada, queso rallado y salsas)",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "AREPA MIXTA",
+          "precio": 8.5,
+          "ingredientes_o_descripcion": "Mixta (Ensalada rallada, huevo, Pollo, Lomito, queso rallado y salsas)",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "AREPA 3 PROTEÍNAS",
+          "precio": 10,
+          "ingredientes_o_descripcion": "(Ensalada rallada, huevo, Carne Mechada, Pollo, Lomito, queso rallado y salsas)",
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.13 PM (1).jpeg",
+      "categoria_menu": "PATACONES",
+      "productos": [
+        {
+          "nombre": "PATACÓN SENCILLO",
+          "precio": 7,
+          "ingredientes_o_descripcion": "(Ensalada rallada, huevo, carne mechada, jamón ahumado, queso rallado y salsas)",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "PATACÓN MIXTO",
+          "precio": 9,
+          "ingredientes_o_descripcion": "(Ensalada rallada, huevo, Pollo, Lomito, jamón ahumado, queso rallado y salsas)",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "PATACÓN 3 PROTEÍNAS",
+          "precio": 11,
+          "ingredientes_o_descripcion": "(Ensalada rallada, huevo, Carne Mechada, Pollo, Lomito, jamón ahumado, queso rallado y salsas)",
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.13 PM (1).jpeg",
+      "categoria_menu": "ADICIONALES",
+      "productos": [
+        {
+          "nombre": "SERVICIO DE PAPAS 200GR",
+          "precio": 3.5,
+          "ingredientes_o_descripcion": "Servicio de papas 200gr",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "MAÍZ",
+          "precio": 1,
+          "ingredientes_o_descripcion": "Maíz",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "QUESO",
+          "precio": 1,
+          "ingredientes_o_descripcion": "Queso",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "TOCINETA",
+          "precio": 1,
+          "ingredientes_o_descripcion": "Tocineta",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "HUEVO",
+          "precio": 0.5,
+          "ingredientes_o_descripcion": "Huevo",
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    }
+  ],
+  "WhatsApp Image 2026-10-14 at 2.07.14 PM (1).jpeg": [
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.14 PM (1).jpeg",
+      "categoria_menu": "MENÚ BURGER",
+      "productos": [
+        {
+          "nombre": "ECONÓMICA SENCILLA",
+          "precio": 3.8,
+          "ingredientes_o_descripcion": "100gr de carne, pollo o chuleta, papas, tomate, lechuga y queso de mano.",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "CRISPY SENCILLA",
+          "precio": 5.5,
+          "ingredientes_o_descripcion": "100gr de pollo crispy, queso, jamón, papas, tomate, lechuga y queso de mano.",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "ESPECIAL",
+          "precio": 7,
+          "ingredientes_o_descripcion": "200gr de Carne o Chuleta, lechuga, tomate, queso de mano, tocineta, salsa y papitas.",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "POLLO ESPECIAL",
+          "precio": 8.5,
+          "ingredientes_o_descripcion": "250gr de pollo, lechuga, tomate, queso de mano, tocineta, salsa y papitas.",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "LOMITO ESPECIAL",
+          "precio": 8.5,
+          "ingredientes_o_descripcion": "200gr de lomito, lechuga, tomate, queso de mano, tocineta, salsa y papitas.",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "AMERICANA",
+          "precio": 12,
+          "ingredientes_o_descripcion": "Doble carne, lechuga, tomate, queso amarillo, tocineta, salsa, papitas, pepinillos y cebolla.",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "CRISPY ESPECIAL",
+          "precio": 12,
+          "ingredientes_o_descripcion": "Pan whooper, 300gr de pollo crispy, tomate, jamón ahumado, tocineta, papitas, queso de mano, repollo, salsa.",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "MIXTA",
+          "precio": 12,
+          "ingredientes_o_descripcion": "300gr de proteína (a escoger entre Pollo, Chuleta y Lomo), lechuga, tomate, queso de mano, tocineta, salsa y papitas.",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "3 PROTEÍNAS",
+          "precio": 13,
+          "ingredientes_o_descripcion": "450gr (Mix de Pollo, Lomito y Chuleta), lechuga, tomate, queso de mano, tocineta, salsa y papitas.",
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.14 PM (1).jpeg",
+      "categoria_menu": "AÑADE COMBO",
+      "productos": [
+        {
+          "nombre": "COMBO",
+          "precio": 2.5,
+          "ingredientes_o_descripcion": "Papa regular + Bebida a cualquier hamburguesa",
+          "es_combo": true,
+          "contenido_combo": "Papa regular + Bebida"
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.14 PM (1).jpeg",
+      "categoria_menu": "ADICIONALES",
+      "productos": [
+        {
+          "nombre": "SERVICIO DE PAPAS 200GR",
+          "precio": 3.5,
+          "ingredientes_o_descripcion": "Servicio de Papas 200gr",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "MAÍZ",
+          "precio": 1,
+          "ingredientes_o_descripcion": "Adicional de maíz",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "QUESO",
+          "precio": 1,
+          "ingredientes_o_descripcion": "Adicional de queso",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "TOCINETA",
+          "precio": 1,
+          "ingredientes_o_descripcion": "Adicional de tocineta",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "HUEVO",
+          "precio": 0.5,
+          "ingredientes_o_descripcion": "Adicional de huevo",
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.14 PM (1).jpeg",
+      "categoria_menu": "HOT DOGS PAN CON POLLO",
+      "productos": [
+        {
+          "nombre": "PERRO CALIENTE",
+          "precio": 1.8,
+          "ingredientes_o_descripcion": "Salchicha salchipollo, papas, ensalada rallada, salsa y queso rallado.",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "PERRO FULL",
+          "precio": 3.5,
+          "ingredientes_o_descripcion": "Salchicha salchipollo, papas, ensalada rallada, salsa, huevo, jamón y queso de mano.",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "PAN CON POLLO SENCILLO",
+          "precio": 4,
+          "ingredientes_o_descripcion": "100gr de pollo, papas, ensalada rallada, salsa y queso rallado en pan de perro.",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "PAN CON POLLO ESPECIAL",
+          "precio": 6,
+          "ingredientes_o_descripcion": "100gr de pollo, papas, ensalada rallada, salsa, huevo, jamón y queso de mano.",
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    }
+  ],
+  "WhatsApp Image 2026-10-14 at 2.07.15 PM (1).jpeg": [
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.15 PM (1).jpeg",
+      "categoria_menu": "POLLO ASADO",
+      "productos": [
+        {
+          "nombre": "1/4 MUSLO",
+          "precio": 6.5,
+          "ingredientes_o_descripcion": "INCLUYE: YUCA, ENSALADA CRUDA, QUESO, TOSTONES",
+          "es_combo": true,
+          "contenido_combo": "1/4 muslo, yuca, ensalada cruda, queso, tostones"
+        },
+        {
+          "nombre": "1/4 PECHUGA",
+          "precio": 7.5,
+          "ingredientes_o_descripcion": "INCLUYE: YUCA, ENSALADA CRUDA, QUESO, TOSTONES",
+          "es_combo": true,
+          "contenido_combo": "1/4 pechuga, yuca, ensalada cruda, queso, tostones"
+        },
+        {
+          "nombre": "1/2 POLLO",
+          "precio": 11,
+          "ingredientes_o_descripcion": "INCLUYE: YUCA, ENSALADA CRUDA, QUESO, TOSTONES",
+          "es_combo": true,
+          "contenido_combo": "1/2 pollo, yuca, ensalada cruda, queso, tostones"
+        },
+        {
+          "nombre": "1 POLLO",
+          "precio": 20,
+          "ingredientes_o_descripcion": "INCLUYE: YUCA, ENSALADA CRUDA, QUESO, TOSTONES",
+          "es_combo": true,
+          "contenido_combo": "1 pollo, yuca, ensalada cruda, queso, tostones"
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.15 PM (1).jpeg",
+      "categoria_menu": "MEGA PARRILLA FAMILIAR",
+      "productos": [
+        {
+          "nombre": "MEGA PARRILLA FAMILIAR",
+          "precio": 34,
+          "ingredientes_o_descripcion": "Lomito 250gr, Puerco 250gr, Chorizo (2), 1/2 Pollo. INCLUYE: ENSALADA CRUDA, ENSALADA COLESLAW, YUCA, TOSTONES, QUESO, PAPAS RUSTICAS, SALSA",
+          "es_combo": true,
+          "contenido_combo": "Lomito 250gr, Puerco 250gr, Chorizo (2), 1/2 Pollo, ensalada cruda, ensalada coleslaw, yuca, tostones, queso, papas rusticas, salsa"
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.15 PM (1).jpeg",
+      "categoria_menu": "PARRILLAS",
+      "productos": [
+        {
+          "nombre": "1 PROTEÍNA",
+          "precio": 7.5,
+          "ingredientes_o_descripcion": "SELECCIONA ENTRE: Lomito, Puerco, Chorizo (2), Muslo. PARRILLAS INCLUYEN: YUCA, ENSALADA CRUDA, QUESO, TOSTONES, SALSA TÁRTARA, SALSA ROJA",
+          "es_combo": true,
+          "contenido_combo": "1 proteína a elección (Lomito, Puerco, Chorizo (2) o Muslo), yuca, ensalada cruda, queso, tostones, salsa tártara, salsa roja"
+        },
+        {
+          "nombre": "2 PROTEÍNAS",
+          "precio": 9.5,
+          "ingredientes_o_descripcion": "SELECCIONA ENTRE: Lomito, Puerco, Chorizo (2), Pollo. PARRILLAS INCLUYEN: YUCA, ENSALADA CRUDA, QUESO, TOSTONES, SALSA TÁRTARA, SALSA ROJA",
+          "es_combo": true,
+          "contenido_combo": "2 proteínas a elección (Lomito, Puerco, Chorizo (2) o Pollo), yuca, ensalada cruda, queso, tostones, salsa tártara, salsa roja"
+        },
+        {
+          "nombre": "3 PROTEÍNAS",
+          "precio": 12.5,
+          "ingredientes_o_descripcion": "SELECCIONA ENTRE: Lomito, Puerco, Chorizo (2), Pollo. PARRILLAS INCLUYEN: YUCA, ENSALADA CRUDA, QUESO, TOSTONES, SALSA TÁRTARA, SALSA ROJA",
+          "es_combo": true,
+          "contenido_combo": "3 proteínas a elección (Lomito, Puerco, Chorizo (2) o Pollo), yuca, ensalada cruda, queso, tostones, salsa tártara, salsa roja"
+        }
+      ]
+    }
+  ],
+  "WhatsApp Image 2026-10-14 at 2.07.15 PM.jpeg": {
+    "archivo": "WhatsApp Image 2026-10-14 at 2.07.15 PM.jpeg",
+    "categoria_menu": "COMBOS",
+    "productos": [
+      {
+        "nombre": "2 PASTICHOS PERSONALES + BEBIDA DE 1 LITRO",
+        "precio": 13.99,
+        "ingredientes_o_descripcion": "2 pastichos personales + bebida de 1 litro + adicional de queso amarillo",
+        "es_combo": true,
+        "contenido_combo": "2 pastichos personales, 1 bebida de 1 litro, adicional de queso amarillo"
+      }
+    ]
+  },
+  "WhatsApp Image 2026-10-14 at 2.07.16 PM (1).jpeg": [
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM (1).jpeg",
+      "categoria_menu": "PASTICHOS",
+      "productos": [
+        {
+          "nombre": "PASTICHO PERSONAL",
+          "precio": 6.99,
+          "ingredientes_o_descripcion": "+ PAN\n+ ENSALADA",
+          "es_combo": true,
+          "contenido_combo": "+ PAN\n+ ENSALADA"
+        },
+        {
+          "nombre": "PASTICHO TRADICIONAL 1KG",
+          "precio": 12.99,
+          "ingredientes_o_descripcion": "+ PAN\n+ ENSALADA\nRINDE 2 PERSONAS",
+          "es_combo": true,
+          "contenido_combo": "+ PAN\n+ ENSALADA"
+        },
+        {
+          "nombre": "PASTICHO TRADICIONAL 2KG",
+          "precio": 29.99,
+          "ingredientes_o_descripcion": "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT\nRINDE 6 PERSONAS",
+          "es_combo": true,
+          "contenido_combo": "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT"
+        },
+        {
+          "nombre": "PASTICHO FAMILIAR 3KG",
+          "precio": 38.99,
+          "ingredientes_o_descripcion": "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT\nRINDE 9 PERSONAS",
+          "es_combo": true,
+          "contenido_combo": "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT"
+        },
+        {
+          "nombre": "PASTICHO PERSONAL 1/2KG",
+          "precio": 8.99,
+          "ingredientes_o_descripcion": "+ PAN\n+ ENSALADA",
+          "es_combo": true,
+          "contenido_combo": "+ PAN\n+ ENSALADA"
+        },
+        {
+          "nombre": "PASTICHO ESPECIAL 1KG",
+          "precio": 14.99,
+          "ingredientes_o_descripcion": "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT\nCHARCUTERO/PRIMAVERA",
+          "es_combo": true,
+          "contenido_combo": "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT\nCHARCUTERO/PRIMAVERA"
+        },
+        {
+          "nombre": "PASTICHO ESPECIAL 2KG",
+          "precio": 33.99,
+          "ingredientes_o_descripcion": "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT\nCHARCUTERO/PRIMAVERA",
+          "es_combo": true,
+          "contenido_combo": "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT\nCHARCUTERO/PRIMAVERA"
+        },
+        {
+          "nombre": "PASTICHO ESPECIAL 3KG",
+          "precio": 44.99,
+          "ingredientes_o_descripcion": "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT\nCHARCUTERO/PRIMAVERA",
+          "es_combo": true,
+          "contenido_combo": "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT\nCHARCUTERO/PRIMAVERA"
+        }
+      ]
+    }
+  ],
+  "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg": [
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg",
+      "categoria_menu": "ECONÓMICA",
+      "productos": [
+        {
+          "nombre": "ECONÓMICA",
+          "precio": 3.5,
+          "ingredientes_o_descripcion": "100GR DE CARNE O POLLO, TOMATE, TOMATE, LECHUGA Y ONESO DE MANO",
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg",
+      "categoria_menu": "CLÁSICA",
+      "productos": [
+        {
+          "nombre": "CLÁSICA",
+          "precio": 6,
+          "ingredientes_o_descripcion": "200GR DE CARNE, LECHUGA TOMATE, QUESO DE MANO, TOCINETA, SALSA Y PAFITAS",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "CLÁSICA (PAPA + BEBIDA)",
+          "precio": 7.5,
+          "ingredientes_o_descripcion": "200GR DE CARNE, LECHUGA TOMATE, QUESO DE MANO, TOCINETA, SALSA Y PAFITAS",
+          "es_combo": true,
+          "contenido_combo": "Incluye papa y bebida"
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg",
+      "categoria_menu": "POLLO",
+      "productos": [
+        {
+          "nombre": "POLLO",
+          "precio": 8,
+          "ingredientes_o_descripcion": "200GR DE COLLO LECHUGA TOMATE, QUESO DE MANO, TOCINETA, SALSA Y PAFITAS",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "POLLO (PAPA + BEBIDA)",
+          "precio": 10,
+          "ingredientes_o_descripcion": "200GR DE COLLO LECHUGA TOMATE, QUESO DE MANO, TOCINETA, SALSA Y PAFITAS",
+          "es_combo": true,
+          "contenido_combo": "Incluye papa y bebida"
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg",
+      "categoria_menu": "LOMITO",
+      "productos": [
+        {
+          "nombre": "LOMITO",
+          "precio": 8,
+          "ingredientes_o_descripcion": "100GR OK LOMITO, LECHUGA TOMATE, QUESOR DE MANO TOCINETA, SALSA Y PAFITAS",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "LOMITO (PAPA + BEBIDA)",
+          "precio": 10,
+          "ingredientes_o_descripcion": "100GR OK LOMITO, LECHUGA TOMATE, QUESOR DE MANO TOCINETA, SALSA Y PAFITAS",
+          "es_combo": true,
+          "contenido_combo": "Incluye papa y bebida"
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg",
+      "categoria_menu": "AMERICANA",
+      "productos": [
+        {
+          "nombre": "AMERICANA",
+          "precio": 10,
+          "ingredientes_o_descripcion": "DORLE CARNE, LECHUGA TOMATE OUROSJ ANAARLO, TOOMFD.BALEA, MAPIAS, POHVALLOS Y CERCELA",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "AMERICANA (PAPA + BEBIDA)",
+          "precio": 12,
+          "ingredientes_o_descripcion": "DORLE CARNE, LECHUGA TOMATE OUROSJ ANAARLO, TOOMFD.BALEA, MAPIAS, POHVALLOS Y CERCELA",
+          "es_combo": true,
+          "contenido_combo": "Incluye papa y bebida"
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg",
+      "categoria_menu": "ZULIANITA",
+      "productos": [
+        {
+          "nombre": "ZULIANITA",
+          "precio": 9,
+          "ingredientes_o_descripcion": "200GR DE CARNE. LECHUGA TOMATEOUES RALLARO, PLACAFG MADURO, CHORIZO SALSA Y PARITAS",
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg",
+      "categoria_menu": "MIXTA",
+      "productos": [
+        {
+          "nombre": "MIXTA",
+          "precio": 10,
+          "ingredientes_o_descripcion": "XTS6D DE PROTEINA POLLO Y LSANTE, LECHUGA, TOMATE QUESO OK MARO, TOCINETA, SALSA Y PARITAS",
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg",
+      "categoria_menu": "CRISPY",
+      "productos": [
+        {
+          "nombre": "CRISPY",
+          "precio": 10,
+          "ingredientes_o_descripcion": "PAR WNOOPER. 5ROGR DE POLLO CRISPY, TOMATE, JAMON ANUNADOF/ERINETA, PAPITAL QUESO OF MANO Y TEEPOLSO + SALSA DE LA CASA O TRADICIONAL",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "CRISPY (PAPA + BEBIDA)",
+          "precio": 12,
+          "ingredientes_o_descripcion": "PAR WNOOPER. 5ROGR DE POLLO CRISPY, TOMATE, JAMON ANUNADOF/ERINETA, PAPITAL QUESO OF MANO Y TEEPOLSO + SALSA DE LA CASA O TRADICIONAL",
+          "es_combo": true,
+          "contenido_combo": "Incluye papa y bebida"
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg",
+      "categoria_menu": "AREPITAS",
+      "productos": [
+        {
+          "nombre": "AREPITAS CLÁSICA",
+          "precio": 6.5,
+          "ingredientes_o_descripcion": "ENSALADA BALLADA, HUEVO, CARNE MECHADA, QUESO SALLADO Y SALEAS",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "AREPITAS MIXTA",
+          "precio": 8.5,
+          "ingredientes_o_descripcion": "ENSALADA BALLADA, HUEVO, LOMITO, POLLO, CARNE MECHADA, QUESO RALLADO, Y SALSAS",
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg",
+      "categoria_menu": "PATACONES",
+      "productos": [
+        {
+          "nombre": "PATACONES CLÁSICO",
+          "precio": 6.5,
+          "ingredientes_o_descripcion": "ENSALADA BALLADA, HUEVO, CARNE MECHADA, JAMON ANUMADO, QUESO RALLADO Y SALSA TRADICIONAL",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "PATACONES MIXTO",
+          "precio": 8.5,
+          "ingredientes_o_descripcion": "ENSALADA BALLADA, HUEVO, LOMITO, POLLO, JAMGN ANUMADO, QUESO RALLADO Y SALSA TRADICIONAL",
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg",
+      "categoria_menu": "SERV. DE PAPAS",
+      "productos": [
+        {
+          "nombre": "SERV. DE PAPAS",
+          "precio": 3.5,
+          "ingredientes_o_descripcion": "Porción de papas fritas",
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg",
+      "categoria_menu": "HOT DOGS",
+      "productos": [
+        {
+          "nombre": "PERRO",
+          "precio": 1.5,
+          "ingredientes_o_descripcion": "SALCHICHA SALCHIPOLLOAAMKS ENSALAGA AKLLABALNLEA Y QUESO BALLADO",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "PERRO FULL",
+          "precio": 3,
+          "ingredientes_o_descripcion": "SALCHRCHA SALCHIPOLLOAMMS ENSALADA RALLADA SALSATHUEYO JAMON Y QUESO DE MAKO",
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.16 PM.jpeg",
+      "categoria_menu": "SALCHIPAPAS",
+      "productos": [
+        {
+          "nombre": "SALCHIPAPA SENCILLA",
+          "precio": 6.5,
+          "ingredientes_o_descripcion": "Salchipapa sencilla",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "SALCHIPAPA MIXTA",
+          "precio": 8.5,
+          "ingredientes_o_descripcion": "Salchipapa mixta",
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    }
+  ],
+  "WhatsApp Image 2026-10-14 at 2.07.17 PM (1).jpeg": {
+    "archivo": "WhatsApp Image 2026-10-14 at 2.07.17 PM (1).jpeg",
+    "categoria_menu": "COMBOS",
+    "productos": [
+      {
+        "nombre": "COMBO SENCILLO",
+        "precio": 19.5,
+        "ingredientes_o_descripcion": "1 FAMILIAR DE JAMÓN Y QUESO + 2 adicionales de tu preferencia + 1 Pequeña de jamón y queso + Bebida de 1.5lts INCLUYE SU CAJA GRATIS",
+        "es_combo": true,
+        "contenido_combo": "1 FAMILIAR DE JAMÓN Y QUESO, 2 adicionales de tu preferencia, 1 Pequeña de jamón y queso, 1 Bebida de 1.5lts, incluye su caja gratis"
+      }
+    ]
+  },
+  "WhatsApp Image 2026-10-14 at 2.07.17 PM.jpeg": {
+    "archivo": "WhatsApp Image 2026-10-14 at 2.07.17 PM.jpeg",
+    "categoria_menu": "MENÚ BROASTER",
+    "productos": [
+      {
+        "nombre": "1/4 MUSLO (2 PIEZAS)",
+        "precio": 7,
+        "ingredientes_o_descripcion": "Incluye: Papas rústicas, ensalada coleslaw y salsa",
+        "es_combo": true,
+        "contenido_combo": "1/4 muslo (2 piezas) + papas rústicas, ensalada coleslaw y salsa"
+      },
+      {
+        "nombre": "1/4 PECHUGA (3 PIEZAS)",
+        "precio": 8,
+        "ingredientes_o_descripcion": "Incluye: Papas rústicas, ensalada coleslaw y salsa",
+        "es_combo": true,
+        "contenido_combo": "1/4 pechuga (3 piezas) + papas rústicas, ensalada coleslaw y salsa"
+      },
+      {
+        "nombre": "1/2 POLLO (6 PIEZAS)",
+        "precio": 14,
+        "ingredientes_o_descripcion": "Incluye: Papas rústicas, ensalada coleslaw y salsa",
+        "es_combo": true,
+        "contenido_combo": "1/2 pollo (6 piezas) + papas rústicas, ensalada coleslaw y salsa"
+      },
+      {
+        "nombre": "1 POLLO (12 PIEZAS)",
+        "precio": 26,
+        "ingredientes_o_descripcion": "Incluye: Papas rústicas, ensalada coleslaw y salsa",
+        "es_combo": true,
+        "contenido_combo": "1 pollo (12 piezas) + papas rústicas, ensalada coleslaw y salsa"
+      },
+      {
+        "nombre": "TENDERS DE POLLO (6 PIEZAS)",
+        "precio": 9,
+        "ingredientes_o_descripcion": "Incluye papas rústicas y salsa",
+        "es_combo": true,
+        "contenido_combo": "Tenders de pollo (6 piezas) + papas rústicas y salsa"
+      },
+      {
+        "nombre": "NUGGETS DE POLLO (6 PIEZAS)",
+        "precio": 7.5,
+        "ingredientes_o_descripcion": "Incluye papas francesas y salsa",
+        "es_combo": true,
+        "contenido_combo": "Nuggets de pollo (6 piezas) + papas francesas y salsa"
+      },
+      {
+        "nombre": "CAJITA FELIZ",
+        "precio": 8,
+        "ingredientes_o_descripcion": "Nuggets o Hamburguesa + papas + juguete + golosina",
+        "es_combo": true,
+        "contenido_combo": "Nuggets o hamburguesa + papas + juguete + golosina"
+      },
+      {
+        "nombre": "SERV. DE PAPAS",
+        "precio": 3.5,
+        "ingredientes_o_descripcion": "Servicio de papas",
+        "es_combo": false,
+        "contenido_combo": null
+      }
+    ]
+  },
+  "WhatsApp Image 2026-10-14 at 2.07.18 PM.jpeg": [
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.18 PM.jpeg",
+      "categoria_menu": "COMBOS",
+      "productos": [
+        {
+          "nombre": "COMBO DUO",
+          "precio": 27.99,
+          "ingredientes_o_descripcion": "2 Pizzas familiares TRADICIONALES + 1 adicional para cada pizza + Bebida 1.5LT + Snack. INCLUYE SU CAJA GRATIS",
+          "es_combo": true,
+          "contenido_combo": "2 Pizzas familiares tradicionales, 1 adicional para cada pizza, 1 bebida de 1.5LT, 1 snack, incluye caja gratis"
+        }
+      ]
+    }
+  ],
+  "WhatsApp Image 2026-10-14 at 2.07.19 PM.jpeg": [
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.07.19 PM.jpeg",
+      "categoria_menu": "COMBOS",
+      "productos": [
+        {
+          "nombre": "COMBO BROASTER 12 PIEZAS",
+          "precio": 25.99,
+          "ingredientes_o_descripcion": "12 Piezas de POLLO BROASTER + Servicio de papas + Bebida 1.5LT + Ensalada",
+          "es_combo": true,
+          "contenido_combo": "12 piezas de pollo broaster, servicio de papas, bebida 1.5LT, ensalada"
+        }
+      ]
+    }
+  ]
+}

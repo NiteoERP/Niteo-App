@@ -121,7 +121,7 @@ const REPORT_CATALOG: ReportGroup[] = [
     color: 'text-purple-400',
     bgColor: 'bg-purple-500/10 border-purple-500/20',
     reports: [
-      { id: 'cuentas_por_cobrar', name: 'Cuentas por Cobrar',      desc: 'Créditos activos y deudas pendientes de cobro',        icon: Receipt },
+      { id: 'cuentas_por_cobrar', name: 'Cuentas por Cobrar', desc: 'Créditos registrados en el período (pagados y pendientes)', icon: Receipt, extraFilters: ['cliente'] },
       { id: 'ventas_clientes',    name: 'Clientes Frecuentes',      desc: 'Ranking de mejores clientes por volumen de compras',   icon: Star },
     ],
   },
@@ -999,6 +999,22 @@ export default function InformesPage() {
                                           ))}
                                         </div>
                                       </div>
+                                    ) : key.toLowerCase() === 'estado' && !isTotalRow && val ? (
+                                      val === 'PAGADO' ? (
+                                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                          PAGADO
+                                        </span>
+                                      ) : val === 'PENDIENTE' ? (
+                                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                                          PENDIENTE
+                                        </span>
+                                      ) : val === 'PARCIAL' ? (
+                                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                          PARCIAL
+                                        </span>
+                                      ) : (
+                                        String(val)
+                                      )
                                     ) : (
                                       isNumber ? val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : (val ?? '-')
                                     )}
@@ -1368,6 +1384,22 @@ function ResultTable({ data }: { data: any[] }) {
                               ))}
                             </div>
                           </div>
+                        ) : key.toLowerCase() === 'estado' && !isTotalRow && val ? (
+                          val === 'PAGADO' ? (
+                            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                              PAGADO
+                            </span>
+                          ) : val === 'PENDIENTE' ? (
+                            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                              PENDIENTE
+                            </span>
+                          ) : val === 'PARCIAL' ? (
+                            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                              PARCIAL
+                            </span>
+                          ) : (
+                            String(val)
+                          )
                         ) : (
                           isNumber ? val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : String(val ?? '')
                         )}

@@ -1,0 +1,332 @@
+[
+  {
+    "id": "d91654d1-5ca5-47f6-aef3-de200152dfd1",
+    "nombre": "Ron 5 Estrella Blanco",
+    "unidad_medida": "Lt"
+  },
+  {
+    "id": "ccd85176-5893-4ba5-9f96-dd991bc09a2f",
+    "nombre": "Hielo",
+    "unidad_medida": "Kg"
+  },
+  {
+    "id": "18dad806-024a-4439-a972-e6fdee820c3b",
+    "nombre": "Limon",
+    "unidad_medida": "Kg"
+  },
+  {
+    "id": "e3564ce2-8280-41b2-989a-b59029d97cde",
+    "nombre": "Pan Serpentina",
+    "unidad_medida": "Und"
+  },
+  {
+    "id": "262410eb-d5e6-4e71-aa59-16377df9f206",
+    "nombre": "LECHE EN POLVO LOS ANDES",
+    "unidad_medida": "Und"
+  },
+  {
+    "id": "a3437345-912e-4600-99c3-8b105727ee94",
+    "nombre": "Lomo Ahumado",
+    "unidad_medida": "Kg"
+  },
+  {
+    "id": "2251c30f-e393-421b-b5f5-edd9d3761df0",
+    "nombre": "Jamon de Pierna Estandar",
+    "unidad_medida": "Kg"
+  },
+  {
+    "id": "b98869dc-66a0-4b21-a521-49d6828c2696",
+    "nombre": "Carne Guisar",
+    "unidad_medida": "Kg"
+  },
+  {
+    "id": "186f3746-6276-45d2-9165-8812862bb109",
+    "nombre": "Lomo de Puerco",
+    "unidad_medida": "Kg"
+  },
+  {
+    "id": "456c20a1-eff4-412d-b702-9005c35c730f",
+    "nombre": "Cesta de Tomate",
+    "unidad_medida": "Cajas"
+  },
+  {
+    "id": "5330c553-ca12-4f47-929e-b80a61cf7bc3",
+    "nombre": "Hierba Buena",
+    "unidad_medida": "Gr"
+  },
+  {
+    "id": "10d96f14-581a-4b3d-87a1-c0eb41f63cfe",
+    "nombre": "Azucar",
+    "unidad_medida": "Kg"
+  },
+  {
+    "id": "55a5edd4-0ab5-42b0-b212-7079c2536a3e",
+    "nombre": "Pan campesino",
+    "unidad_medida": "Und"
+  },
+  {
+    "id": "ef21d7ed-be10-44be-bea0-a19e5c885938",
+    "nombre": "CARNE DE PRIMERA",
+    "unidad_medida": "Und"
+  },
+  {
+    "id": "4c612a5e-7bea-4c57-a664-d570e60611d5",
+    "nombre": "Item",
+    "unidad_medida": "Und"
+  },
+  {
+    "id": "7bbb108e-dd71-4661-be82-d93ff0104f57",
+    "nombre": "Refresco 7up",
+    "unidad_medida": "Lt"
+  },
+  {
+    "id": "6fe7f73e-d4e4-46a0-9db0-d5a058f036ea",
+    "nombre": "CARAMELO MASTICABLE HAPPY YOGURT FLORESTAL",
+    "unidad_medida": "Und"
+  },
+  {
+    "id": "f4cd27e7-957f-42dc-a7bc-cd2083d16623",
+    "nombre": "Tocineta Ahumada",
+    "unidad_medida": "Kg"
+  },
+  {
+    "id": "61cd50bb-660a-4b8e-ab72-17539e36e103",
+    "nombre": "harian de trigo",
+    "unidad_medida": "Kg"
+  },
+  {
+    "id": "080f63d8-7879-469d-ab73-ee51fda2bbad",
+    "nombre": "masa",
+    "unidad_medida": "Kg"
+  },
+  {
+    "id": "1fee3b6b-adba-411a-8bc2-a4b306290f08",
+    "nombre": "Pierna Estandar Drago",
+    "unidad_medida": "Kg"
+  },
+  {
+    "id": "48c550e8-2e25-4d59-b3a2-99cc496d597e",
+    "nombre": "Pepperoni",
+    "unidad_medida": "Kg"
+  },
+  {
+    "id": "12481703-ad64-47f9-8758-d8aa9ef0c6bd",
+    "nombre": "Queso Pasteurizado",
+    "unidad_medida": "Kg"
+  },
+  {
+    "id": "be85677a-18fa-4a17-955c-14fed839c626",
+    "nombre": "Queso Mozarella",
+    "unidad_medida": "Kg"
+  },
+  {
+    "id": "47515ea4-cc8e-476f-9345-fd1ead069c1b",
+    "nombre": "Cerveza Polar Negra",
+    "unidad_medida": "Und"
+  },
+  {
+    "id": "117c19b4-1ace-417e-9c1c-d1f7567f20b3",
+    "nombre": "CHORIZO CERDO TIPO B",
+    "unidad_medida": "Kg"
+  },
+  {
+    "id": "6b241405-9719-49c5-a709-210e451dd1fc",
+    "nombre": "Harina de trigo",
+    "unidad_medida": "Kg"
+  },
+  {
+    "id": "cad2e44b-6078-46da-bc39-e5f6dc5961ae",
+    "nombre": "MAIZ INDUSTRIAL GARDEN",
+    "unidad_medida": "Und"
+  },
+  {
+    "id": "6c48f462-bf51-44e9-a73d-26f8a128b7da",
+    "nombre": "Champiñon Laminado",
+    "unidad_medida": "Und"
+  },
+  {
+    "id": "fb9b301a-ea17-453e-949e-742fe6aea449",
+    "nombre": "Pasta de Tomate",
+    "unidad_medida": "Und"
+  },
+  {
+    "id": "da8ff46c-1509-4e13-974b-c6b9fd047307",
+    "nombre": "Cerveza Solera Verdd",
+    "unidad_medida": "Und"
+  },
+  {
+    "id": "ea74d00a-22ee-4e4a-8abf-46f8f66bf2f6",
+    "nombre": "Refresco Pepsi 1.5L",
+    "unidad_medida": "Und"
+  },
+  {
+    "id": "b83c2507-0e61-4899-958c-e32f0835c78f",
+    "nombre": "Cerveza Polar Blanca",
+    "unidad_medida": "Und"
+  },
+  {
+    "id": "26990f59-8090-4197-96a7-7d49bb57a20f",
+    "nombre": "Refresco 1.5L Golden",
+    "unidad_medida": "Und"
+  },
+  {
+    "id": "bbae5540-cc0b-4760-baf7-c55bd9fba0bc",
+    "nombre": "Papelon Grande",
+    "unidad_medida": "Und"
+  },
+  {
+    "id": "bbaaf5d0-ca22-47a9-9023-fc8c591a2580",
+    "nombre": "Papelon Pequeño",
+    "unidad_medida": "Und"
+  },
+  {
+    "id": "bd30ca90-e258-4939-b1e9-4fe6b46b1d4b",
+    "nombre": "Marquesa Oreo",
+    "unidad_medida": "Und"
+  },
+  {
+    "id": "930219fd-e7c3-4c23-82e1-0d3b2e89d720",
+    "nombre": "Marquesa Galak",
+    "unidad_medida": "Und"
+  },
+  {
+    "id": "ee9acc11-1ff5-4e2e-9c64-c2ced4f303a9",
+    "nombre": "Galletas",
+    "unidad_medida": "Und"
+  },
+  {
+    "id": "8475a18d-ae68-4c00-bdd1-2fe1189b4ab6",
+    "nombre": "Gelatina",
+    "unidad_medida": "Und"
+  },
+  {
+    "id": "b1104066-6827-4a4b-bc64-2150c4bbc247",
+    "nombre": "COCA-COLA",
+    "unidad_medida": "Lt"
+  },
+  {
+    "id": "eed72d54-9f55-4dda-ae62-d8399da680b4",
+    "nombre": "BOLSA C/ASA",
+    "unidad_medida": "Und"
+  },
+  {
+    "id": "2b123c26-9f96-49aa-8462-de9764f713ee",
+    "nombre": "PRIDE CUID/MUEBLES LIMON",
+    "unidad_medida": "Und"
+  },
+  {
+    "id": "044902e4-cd89-42f5-9b25-94fa7296f529",
+    "nombre": "PAN RALLADO",
+    "unidad_medida": "Kg"
+  },
+  {
+    "id": "09a2b8da-4819-4579-bc9f-7a3b030262c2",
+    "nombre": "TEQUENO PEQ",
+    "unidad_medida": "Und"
+  },
+  {
+    "id": "85a35e94-5fc1-416b-9314-f4ff7f9634f5",
+    "nombre": "PANO CHINO",
+    "unidad_medida": "Und"
+  },
+  {
+    "id": "fbda2f89-33d7-4e41-b191-b5b8fdd7bbe9",
+    "nombre": "HARAGAN PLASTICO",
+    "unidad_medida": "Und"
+  },
+  {
+    "id": "2ff92810-62eb-493c-a35a-e23f92d79de5",
+    "nombre": "Mayonesa Mavesa",
+    "unidad_medida": "Kg"
+  },
+  {
+    "id": "ed24d1fa-28b3-4a63-94bd-126b252a2032",
+    "nombre": "Vodka",
+    "unidad_medida": "Lt"
+  },
+  {
+    "id": "6b02a3f7-fa6f-4bae-9e07-41bcb869fc42",
+    "nombre": "Licor de Coco",
+    "unidad_medida": "Lt"
+  },
+  {
+    "id": "a1fcf3e7-4294-4ab9-870d-dd5e56932648",
+    "nombre": "Triple Sec",
+    "unidad_medida": "Lt"
+  },
+  {
+    "id": "9cc92a6a-0d9c-48e7-b9b3-62ac5c319c67",
+    "nombre": "Sumo Limón",
+    "unidad_medida": "Lt"
+  },
+  {
+    "id": "a1e57cd3-4ddd-4620-b058-d51688fc0607",
+    "nombre": "Jugo Naranja",
+    "unidad_medida": "Lt"
+  },
+  {
+    "id": "99631283-4745-48a6-b2f1-e3d94f7d716f",
+    "nombre": "Ron Cacique",
+    "unidad_medida": "Lt"
+  },
+  {
+    "id": "83b951c1-5ac9-4a20-b61e-e5d7dd006ee3",
+    "nombre": "Amargo Angostura",
+    "unidad_medida": "Und"
+  },
+  {
+    "id": "67c4e622-ed8e-48d6-9ece-7a67ddf1569c",
+    "nombre": "Curasao Azul",
+    "unidad_medida": "Lt"
+  },
+  {
+    "id": "d740afd4-6944-4d1f-b183-3fffa1911f8e",
+    "nombre": "Tequila",
+    "unidad_medida": "Lt"
+  },
+  {
+    "id": "02334c0e-ee1a-43cc-bcb2-f5cd35b0c674",
+    "nombre": "Granadina",
+    "unidad_medida": "Lt"
+  },
+  {
+    "id": "ec07e169-5155-482c-bdda-c132f426ce09",
+    "nombre": "Tajin",
+    "unidad_medida": "Gr"
+  },
+  {
+    "id": "191421c8-4286-4b30-9ad0-3913e98caf8e",
+    "nombre": "Picante",
+    "unidad_medida": "Und"
+  },
+  {
+    "id": "e40cde91-4064-40cb-91e8-1481ded76197",
+    "nombre": "Vino Tinto",
+    "unidad_medida": "Lt"
+  },
+  {
+    "id": "88fc6b29-edda-4000-a0a2-81c2c3494cfc",
+    "nombre": "Frutas",
+    "unidad_medida": "Kg"
+  },
+  {
+    "id": "006ee180-2c1e-4b05-93de-4ff5199c5ec7",
+    "nombre": "Leche Condensada",
+    "unidad_medida": "Kg"
+  },
+  {
+    "id": "c715f675-0225-4a9a-b826-28651823d65b",
+    "nombre": "Leche Evaporada",
+    "unidad_medida": "Kg"
+  },
+  {
+    "id": "d93c67e7-32ff-4347-8155-b47d732f27a3",
+    "nombre": "Fresas",
+    "unidad_medida": "Kg"
+  },
+  {
+    "id": "9b9404dc-1f0b-4300-b679-dc14a04b7357",
+    "nombre": "Piña",
+    "unidad_medida": "Kg"
+  }
+]
