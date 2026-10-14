@@ -1,0 +1,1044 @@
+[
+  {
+    "newProd": {
+      "id": "d438b50f-7be0-4a26-9524-77d4ac2b0b89",
+      "nombre": "140 MINI PIZZAS",
+      "precio_venta": 28,
+      "descripcion": "140 unidades de mini pizzas",
+      "notas_preparacion": [],
+      "es_compuesto": true,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:50.67676+00:00"
+    },
+    "origProd": {
+      "id": "aaf14f84-7011-47ea-8069-ea439a2c631d",
+      "nombre": "Promo Feria Pizzas",
+      "precio_venta": 22,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "2 F Tradicional + Maíz\n1 Ref 1.5Lt\n1 Brownie"
+      ],
+      "sede_id": "b42d7e13-bfc8-40d8-94d4-61908ff269cd",
+      "sedes_ids": null
+    },
+    "score": 0.2
+  },
+  {
+    "newProd": {
+      "id": "b19eaaac-d4a2-454b-8e48-419bae7e3fa3",
+      "nombre": "1KG. ANTIPASTO",
+      "precio_venta": 30,
+      "descripcion": "1 kilogramo de antipasto",
+      "notas_preparacion": [],
+      "es_compuesto": true,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:51.09122+00:00"
+    },
+    "origProd": {
+      "id": "a8375599-9f9b-47a1-8aed-ad3b99aa5dd3",
+      "nombre": "SERVICIO ENSALADA 1KG",
+      "precio_venta": 12,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.25
+  },
+  {
+    "newProd": {
+      "id": "07b0ad2a-e4f5-49e3-acb0-538ff2d11175",
+      "nombre": "COMBO FAMILIAR NAVIDAD",
+      "precio_venta": 54.99,
+      "descripcion": "1 Pasticho 2 kg, 10 Hallacas, 1 Refresco 2 Lt, 1 Mini torta de Navidad",
+      "notas_preparacion": [
+        "1 Pasticho 2 kg, 10 Hallacas, 1 Refresco 2 Lt, 1 Mini torta de Navidad"
+      ],
+      "es_compuesto": false,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:51.459738+00:00"
+    },
+    "origProd": {
+      "id": "09799b4e-cf10-4bc4-af92-59e33b877940",
+      "nombre": "COMBO NAVIDAD ",
+      "precio_venta": 11,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": [
+        "cee96ed9-216b-45fc-b669-4d170df5ab93"
+      ]
+    },
+    "score": 0.6666666666666666
+  },
+  {
+    "newProd": {
+      "id": "799c0942-79e8-4b0b-9d8f-8fd5b8b08620",
+      "nombre": "ESPECIAL",
+      "precio_venta": 7,
+      "descripcion": "200gr de Carne o Chuleta, lechuga, tomate, queso de mano, tocineta, salsa y papas.",
+      "notas_preparacion": [],
+      "es_compuesto": true,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:51.887039+00:00"
+    },
+    "origProd": {
+      "id": "c5f288ec-65dd-424f-bf66-0a4648ddaa3d",
+      "nombre": "LINEA ESPECIAL",
+      "precio_venta": 10.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.5
+  },
+  {
+    "newProd": {
+      "id": "803aa603-6f7e-4e1c-a0fe-8f36d5a5d68b",
+      "nombre": "MAÍZ",
+      "precio_venta": 1,
+      "descripcion": "Adicional de maíz",
+      "notas_preparacion": [],
+      "es_compuesto": true,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:52.244128+00:00"
+    },
+    "origProd": {
+      "id": "bdb6e561-0a80-49ed-84e8-c711b25d1e41",
+      "nombre": "ADICIONAL MAIZ",
+      "precio_venta": 2,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.5
+  },
+  {
+    "newProd": {
+      "id": "af4804d7-ee3d-4641-8c56-8481430a9233",
+      "nombre": "PERRO CALIENTE",
+      "precio_venta": 1.8,
+      "descripcion": "Salchicha salchipollo, papas, ensalada rallada, salsa y queso rallado.",
+      "notas_preparacion": [],
+      "es_compuesto": true,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:52.614765+00:00"
+    },
+    "origProd": {
+      "id": "ba2ebeb3-5108-4eeb-9a39-de6cd440fa14",
+      "nombre": "PERRO SENCILLO",
+      "precio_venta": 1.8,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.3333333333333333
+  },
+  {
+    "newProd": {
+      "id": "3758df98-ffc5-4adb-9954-cbafe5f65970",
+      "nombre": "SOMBRERO CLÁSICO",
+      "precio_venta": 20,
+      "descripcion": "(500gr de carne, queso, jamón ahumado, papas ralladas, lechuga, tomate, salsas.)",
+      "notas_preparacion": [],
+      "es_compuesto": true,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:53.035429+00:00"
+    },
+    "origProd": {
+      "id": "b1dd31df-683f-44fe-9938-4c82e207dfaf",
+      "nombre": "PATACON CLASICO TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.25
+  },
+  {
+    "newProd": {
+      "id": "6814986a-a036-479c-9545-18fe0455c544",
+      "nombre": "AREPA SENCILLA",
+      "precio_venta": 6.5,
+      "descripcion": "(Ensalada rallada, huevo, carne mechada, queso rallado y salsas)",
+      "notas_preparacion": [],
+      "es_compuesto": true,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:53.411741+00:00"
+    },
+    "origProd": {
+      "id": "5f34d139-c2b2-4615-aae8-1b8837c5ac42",
+      "nombre": "SALCHIPAPA SENCILLA ",
+      "precio_venta": 7,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.3333333333333333
+  },
+  {
+    "newProd": {
+      "id": "58ef55a5-8bb5-4cfb-8e0f-1097809da520",
+      "nombre": "AREPA MIXTA",
+      "precio_venta": 8.5,
+      "descripcion": "Mixta (Ensalada rallada, huevo, Pollo, Lomito, queso rallado y salsas)",
+      "notas_preparacion": [],
+      "es_compuesto": true,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:53.609357+00:00"
+    },
+    "origProd": {
+      "id": "8eb192dd-539a-44d6-812e-a2326d64b6c9",
+      "nombre": "AREPITA MIXTA ",
+      "precio_venta": 8.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.3333333333333333
+  },
+  {
+    "newProd": {
+      "id": "32fbd3d8-1775-4a30-99aa-7c25859dd59c",
+      "nombre": "AREPA 3 PROTEÍNAS",
+      "precio_venta": 10,
+      "descripcion": "(Ensalada rallada, huevo, Carne Mechada, Pollo, Lomito, queso rallado y salsas)",
+      "notas_preparacion": [],
+      "es_compuesto": true,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:53.78691+00:00"
+    },
+    "origProd": {
+      "id": "b72eab29-2f9f-4172-abce-93487e2e8648",
+      "nombre": "PARRILLA 3 PROTEINAS",
+      "precio_venta": 12.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "LOMITO, CHORIZO Y POLLO",
+        "LOMITO, PUERCO Y CHORIZO",
+        "POLLO, PUERCO Y CHORIZO",
+        "POLLO, PUERCO Y LOMITO"
+      ],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.5
+  },
+  {
+    "newProd": {
+      "id": "0f66189d-0ea8-4459-8aca-9126da673c98",
+      "nombre": "COMBO",
+      "precio_venta": 2.5,
+      "descripcion": "Papa regular + Bebida",
+      "notas_preparacion": [
+        "Papa regular + Bebida"
+      ],
+      "es_compuesto": false,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:54.230358+00:00"
+    },
+    "origProd": {
+      "id": "09799b4e-cf10-4bc4-af92-59e33b877940",
+      "nombre": "COMBO NAVIDAD ",
+      "precio_venta": 11,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": [
+        "cee96ed9-216b-45fc-b669-4d170df5ab93"
+      ]
+    },
+    "score": 0.5
+  },
+  {
+    "newProd": {
+      "id": "cd3e4ef3-897a-4e7a-a1c5-bb5e3361e98e",
+      "nombre": "2 PASTICHOS PERSONALES + BEBIDA DE 1 LITRO",
+      "precio_venta": 13.99,
+      "descripcion": "2 pastichos personales, 1 bebida de 1 litro, adicional de queso amarillo",
+      "notas_preparacion": [
+        "2 pastichos personales, 1 bebida de 1 litro, adicional de queso amarillo"
+      ],
+      "es_compuesto": false,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "updated_at": "2026-10-14T18:17:54.428867+00:00"
+    },
+    "origProd": {
+      "id": "a3f7f940-be7e-47dd-af10-d7b157362f66",
+      "nombre": "DUO PASTICHOS PERSONALES",
+      "precio_venta": 14,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.25
+  },
+  {
+    "newProd": {
+      "id": "555c5fd9-5e4e-4ab5-8638-ad3851f43fe4",
+      "nombre": "PASTICHO ESPECIAL 2KG",
+      "precio_venta": 33.99,
+      "descripcion": "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT\nCHARCUTERO/PRIMAVERA",
+      "notas_preparacion": [
+        "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT\nCHARCUTERO/PRIMAVERA"
+      ],
+      "es_compuesto": false,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:55.665368+00:00"
+    },
+    "origProd": {
+      "id": "e5a10758-f6f6-4f21-9529-5c8f74268f0b",
+      "nombre": "PASTICHO PARA 2 ESPECIAL",
+      "precio_venta": 15,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.4
+  },
+  {
+    "newProd": {
+      "id": "eb54a988-87a6-4e0e-a55c-29ab58de950e",
+      "nombre": "PASTICHO ESPECIAL 3KG",
+      "precio_venta": 44.99,
+      "descripcion": "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT\nCHARCUTERO/PRIMAVERA",
+      "notas_preparacion": [
+        "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT\nCHARCUTERO/PRIMAVERA"
+      ],
+      "es_compuesto": false,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:55.854682+00:00"
+    },
+    "origProd": {
+      "id": "e5a10758-f6f6-4f21-9529-5c8f74268f0b",
+      "nombre": "PASTICHO PARA 2 ESPECIAL",
+      "precio_venta": 15,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.4
+  },
+  {
+    "newProd": {
+      "id": "bb14d2f3-ea9c-4017-84e2-ac7129f7ffe3",
+      "nombre": "CLÁSICA (PAPA + BEBIDA)",
+      "precio_venta": 7.5,
+      "descripcion": "Incluye papa y bebida",
+      "notas_preparacion": [
+        "Incluye papa y bebida"
+      ],
+      "es_compuesto": false,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "updated_at": "2026-10-14T18:17:56.555949+00:00"
+    },
+    "origProd": {
+      "id": "85bb553a-67a1-4032-89d6-c3b25a18a146",
+      "nombre": "ADICIONAL PAPA CON BEBIDA",
+      "precio_venta": 2.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.4
+  },
+  {
+    "newProd": {
+      "id": "79013c0a-1854-46e4-b1b3-fbb5d43d8aa2",
+      "nombre": "LOMITO (PAPA + BEBIDA)",
+      "precio_venta": 10,
+      "descripcion": "Incluye papa y bebida",
+      "notas_preparacion": [
+        "Incluye papa y bebida"
+      ],
+      "es_compuesto": false,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "updated_at": "2026-10-14T18:17:56.934083+00:00"
+    },
+    "origProd": {
+      "id": "85bb553a-67a1-4032-89d6-c3b25a18a146",
+      "nombre": "ADICIONAL PAPA CON BEBIDA",
+      "precio_venta": 2.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.4
+  },
+  {
+    "newProd": {
+      "id": "aa233eb3-f8f7-4aaf-b24f-7d01d79897aa",
+      "nombre": "CRISPY (PAPA + BEBIDA)",
+      "precio_venta": 12,
+      "descripcion": "Incluye papa y bebida",
+      "notas_preparacion": [
+        "Incluye papa y bebida"
+      ],
+      "es_compuesto": false,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "updated_at": "2026-10-14T18:17:57.332363+00:00"
+    },
+    "origProd": {
+      "id": "85bb553a-67a1-4032-89d6-c3b25a18a146",
+      "nombre": "ADICIONAL PAPA CON BEBIDA",
+      "precio_venta": 2.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.4
+  },
+  {
+    "newProd": {
+      "id": "fa499c9c-ee6b-4fbc-b9cb-2d6234fc17cf",
+      "nombre": "AREPITAS MIXTA",
+      "precio_venta": 8.5,
+      "descripcion": "ENSALADA BALLADA, HUEVO, LOMITO, POLLO, CARNE MECHADA, QUESO RALLADO, Y SALSAS",
+      "notas_preparacion": [],
+      "es_compuesto": true,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:57.683928+00:00"
+    },
+    "origProd": {
+      "id": "8eb192dd-539a-44d6-812e-a2326d64b6c9",
+      "nombre": "AREPITA MIXTA ",
+      "precio_venta": 8.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.3333333333333333
+  },
+  {
+    "newProd": {
+      "id": "55a08a68-bb39-438e-b43c-500f3a638f7b",
+      "nombre": "PASTICHO TRADICIONAL 2KG",
+      "precio_venta": 29.99,
+      "descripcion": "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT",
+      "notas_preparacion": [
+        "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT"
+      ],
+      "es_compuesto": false,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:54.821+00:00"
+    },
+    "origProd": {
+      "id": "feca8acf-b028-4ef4-ac7e-7eb9ad357f2a",
+      "nombre": "COMBO FAMILIAR PASTICHO 2KG",
+      "precio_venta": 35,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.4
+  },
+  {
+    "newProd": {
+      "id": "326e2c69-dd0f-4cc2-b42a-aaf889e03004",
+      "nombre": "PASTICHO FAMILIAR 3KG",
+      "precio_venta": 38.99,
+      "descripcion": "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT",
+      "notas_preparacion": [
+        "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT"
+      ],
+      "es_compuesto": false,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:55.009598+00:00"
+    },
+    "origProd": {
+      "id": "b77a4aad-769f-4fea-b522-9a6eddae31e6",
+      "nombre": "COMO FAMILIAR PASTICHO 3KG",
+      "precio_venta": 45,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.75
+  },
+  {
+    "newProd": {
+      "id": "ad16db62-6545-47b2-8574-3139cf6fb265",
+      "nombre": "PASTICHO PERSONAL 1/2KG",
+      "precio_venta": 8.99,
+      "descripcion": "+ PAN\n+ ENSALADA",
+      "notas_preparacion": [
+        "+ PAN\n+ ENSALADA"
+      ],
+      "es_compuesto": false,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:55.234772+00:00"
+    },
+    "origProd": {
+      "id": "cc55a603-44da-49b7-9dcc-883f8c9777bf",
+      "nombre": "PASTICHO PERSONAL",
+      "precio_venta": 7,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.5
+  },
+  {
+    "newProd": {
+      "id": "c0be5dbd-1384-4c63-923e-c3e87850397a",
+      "nombre": "PASTICHO ESPECIAL 1KG",
+      "precio_venta": 14.99,
+      "descripcion": "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT\nCHARCUTERO/PRIMAVERA",
+      "notas_preparacion": [
+        "+ PAN\n+ MINI POSTRE\n+ BEBIDA 1.5LT\nCHARCUTERO/PRIMAVERA"
+      ],
+      "es_compuesto": false,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:55.448441+00:00"
+    },
+    "origProd": {
+      "id": "e5a10758-f6f6-4f21-9529-5c8f74268f0b",
+      "nombre": "PASTICHO PARA 2 ESPECIAL",
+      "precio_venta": 15,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.4
+  },
+  {
+    "newProd": {
+      "id": "6f78afd0-7be2-4c2d-88ce-a83a5db410d1",
+      "nombre": "70 MINI PIZZAS",
+      "precio_venta": 14,
+      "descripcion": "70 unidades de mini pizzas",
+      "notas_preparacion": [],
+      "es_compuesto": true,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:50.471756+00:00"
+    },
+    "origProd": {
+      "id": "aaf14f84-7011-47ea-8069-ea439a2c631d",
+      "nombre": "Promo Feria Pizzas",
+      "precio_venta": 22,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "2 F Tradicional + Maíz\n1 Ref 1.5Lt\n1 Brownie"
+      ],
+      "sede_id": "b42d7e13-bfc8-40d8-94d4-61908ff269cd",
+      "sedes_ids": null
+    },
+    "score": 0.2
+  },
+  {
+    "newProd": {
+      "id": "70a49221-0087-4b9a-bf78-0f0e4f6fbbfa",
+      "nombre": "250GR. ANTIPASTO",
+      "precio_venta": 8,
+      "descripcion": "250 gramos de antipasto",
+      "notas_preparacion": [],
+      "es_compuesto": true,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:50.904096+00:00"
+    },
+    "origProd": {
+      "id": "9e528c76-02b9-4dcf-ba8b-f4c25cd27973",
+      "nombre": "SERVICIO ENSELADA 250GR",
+      "precio_venta": 3,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.25
+  },
+  {
+    "newProd": {
+      "id": "67a9a1c1-d71c-49b7-a222-50b3b2a6c3ef",
+      "nombre": "BALDE DE CERVEZAS PAGA 10 LLEVA 12",
+      "precio_venta": 10,
+      "descripcion": "12 cervezas (Polar o Zulia) al precio de 10",
+      "notas_preparacion": [
+        "12 cervezas (Polar o Zulia) al precio de 10"
+      ],
+      "es_compuesto": false,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "updated_at": "2026-10-14T18:17:51.275784+00:00"
+    },
+    "origProd": {
+      "id": "8888e42f-be14-4ef0-ba00-492cbb99ba76",
+      "nombre": "PROMO DE FERIA CERVEZAS",
+      "precio_venta": 10,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": [
+        "cee96ed9-216b-45fc-b669-4d170df5ab93"
+      ]
+    },
+    "score": 0.2222222222222222
+  },
+  {
+    "newProd": {
+      "id": "57d7371b-a69f-40be-9e56-9bbacc60a9ad",
+      "nombre": "CRISPY SENCILLA",
+      "precio_venta": 5.5,
+      "descripcion": "100gr de pollo crispy, queso, jamón, papas, tomate, lechuga y queso de mano.",
+      "notas_preparacion": [],
+      "es_compuesto": true,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:51.639975+00:00"
+    },
+    "origProd": {
+      "id": "a3228ef8-6506-4b3f-9682-fb83dcf97d72",
+      "nombre": "HAMBURGUESA CRISPY ",
+      "precio_venta": 10,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.3333333333333333
+  },
+  {
+    "newProd": {
+      "id": "6c24a16d-e271-4e2f-a4f1-2938b346a597",
+      "nombre": "AÑADE COMBO",
+      "precio_venta": 2.5,
+      "descripcion": "Papa regular + Bebida a cualquier hamburguesa",
+      "notas_preparacion": [
+        "Papa regular + Bebida a cualquier hamburguesa"
+      ],
+      "es_compuesto": false,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:52.056135+00:00"
+    },
+    "origProd": {
+      "id": "09799b4e-cf10-4bc4-af92-59e33b877940",
+      "nombre": "COMBO NAVIDAD ",
+      "precio_venta": 11,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": [
+        "cee96ed9-216b-45fc-b669-4d170df5ab93"
+      ]
+    },
+    "score": 0.3333333333333333
+  },
+  {
+    "newProd": {
+      "id": "0b067d00-01b2-4183-a234-89f2ce5d2578",
+      "nombre": "TOCINETA",
+      "precio_venta": 1,
+      "descripcion": "Adicional de tocineta",
+      "notas_preparacion": [],
+      "es_compuesto": true,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:52.431295+00:00"
+    },
+    "origProd": {
+      "id": "8e9778c8-2c7d-419b-b5e0-7bf984653133",
+      "nombre": "ADICIONAL TOCINETA",
+      "precio_venta": 2.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.5
+  },
+  {
+    "newProd": {
+      "id": "5c60438f-166d-477b-86e2-7ad61096b02a",
+      "nombre": "PAN CON POLLO ESPECIAL",
+      "precio_venta": 6,
+      "descripcion": "100gr de pollo, papas, ensalada rallada, salsa...",
+      "notas_preparacion": [],
+      "es_compuesto": true,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:52.849227+00:00"
+    },
+    "origProd": {
+      "id": "a53c8235-bd54-4047-90c0-3f9eb70b2cb0",
+      "nombre": "PAN CON POLLO",
+      "precio_venta": 4,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.75
+  },
+  {
+    "newProd": {
+      "id": "196adadd-6782-41cd-8c38-ab0c57851489",
+      "nombre": "SOMBRERO MIXTO",
+      "precio_venta": 28,
+      "descripcion": "(1Kg de proteína (carne molida y pollo), queso, jamón ahumado, papas ralladas, lechuga, tomate, salsas.)",
+      "notas_preparacion": [],
+      "es_compuesto": true,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:53.223479+00:00"
+    },
+    "origProd": {
+      "id": "d3a45d53-9145-4b30-bc60-1afbd3056565",
+      "nombre": "PATACON MIXTO ",
+      "precio_venta": 9,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.3333333333333333
+  },
+  {
+    "newProd": {
+      "id": "7dc66df6-6c5c-4027-893f-c0e252dcb774",
+      "nombre": "PATACÓN 3 PROTEÍNAS",
+      "precio_venta": 11,
+      "descripcion": "(Ensalada rallada, huevo, Carne Mechada, Pollo, Lomito, jamón ahumado, queso rallado y salsas)",
+      "notas_preparacion": [],
+      "es_compuesto": true,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:53.967051+00:00"
+    },
+    "origProd": {
+      "id": "b72eab29-2f9f-4172-abce-93487e2e8648",
+      "nombre": "PARRILLA 3 PROTEINAS",
+      "precio_venta": 12.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [
+        "LOMITO, CHORIZO Y POLLO",
+        "LOMITO, PUERCO Y CHORIZO",
+        "POLLO, PUERCO Y CHORIZO",
+        "POLLO, PUERCO Y LOMITO"
+      ],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.5
+  },
+  {
+    "newProd": {
+      "id": "3333acbf-54a7-48ab-853a-5d3af6fe10fb",
+      "nombre": "PASTICHO TRADICIONAL 1KG",
+      "precio_venta": 12.99,
+      "descripcion": "+ PAN\n+ ENSALADA",
+      "notas_preparacion": [
+        "+ PAN\n+ ENSALADA"
+      ],
+      "es_compuesto": false,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:54.631329+00:00"
+    },
+    "origProd": {
+      "id": "16be5d9b-59a6-4514-96a8-942a9db22b5b",
+      "nombre": "PASTICHO 1KG BLACK FRIDAY",
+      "precio_venta": 10,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.4
+  },
+  {
+    "newProd": {
+      "id": "4d0ff7f7-0567-4a76-9078-c9e224330fe1",
+      "nombre": "ECONÓMICA",
+      "precio_venta": 3.5,
+      "descripcion": "100GR DE CARNE O POLLO, TOMATE, TOMATE, LECHUGA Y ONESO DE MANO",
+      "notas_preparacion": [],
+      "es_compuesto": true,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:56.356612+00:00"
+    },
+    "origProd": {
+      "id": "8249964a-f88a-4e10-acd1-852f0679d2c9",
+      "nombre": "HAMBURGUESA ECONOMICA SENCILLA",
+      "precio_venta": 3.8,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.3333333333333333
+  },
+  {
+    "newProd": {
+      "id": "0e528b5d-d8e5-4c40-92d8-31acaa07afb7",
+      "nombre": "POLLO (PAPA + BEBIDA)",
+      "precio_venta": 10,
+      "descripcion": "Incluye papa y bebida",
+      "notas_preparacion": [
+        "Incluye papa y bebida"
+      ],
+      "es_compuesto": false,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "updated_at": "2026-10-14T18:17:56.742697+00:00"
+    },
+    "origProd": {
+      "id": "85bb553a-67a1-4032-89d6-c3b25a18a146",
+      "nombre": "ADICIONAL PAPA CON BEBIDA",
+      "precio_venta": 2.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.4
+  },
+  {
+    "newProd": {
+      "id": "1872d6b2-0778-45d4-a0ac-646628bd87c4",
+      "nombre": "AMERICANA (PAPA + BEBIDA)",
+      "precio_venta": 12,
+      "descripcion": "Incluye papa y bebida",
+      "notas_preparacion": [
+        "Incluye papa y bebida"
+      ],
+      "es_compuesto": false,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "updated_at": "2026-10-14T18:17:57.157343+00:00"
+    },
+    "origProd": {
+      "id": "85bb553a-67a1-4032-89d6-c3b25a18a146",
+      "nombre": "ADICIONAL PAPA CON BEBIDA",
+      "precio_venta": 2.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.4
+  },
+  {
+    "newProd": {
+      "id": "91d12a87-b061-483e-b59e-3eca1600a2a1",
+      "nombre": "AREPITAS CLÁSICA",
+      "precio_venta": 6.5,
+      "descripcion": "ENSALADA BALLADA, HUEVO, CARNE MECHADA, QUESO SALLADO Y SALEAS",
+      "notas_preparacion": [],
+      "es_compuesto": true,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:57.50827+00:00"
+    },
+    "origProd": {
+      "id": "d4721d03-a557-4e94-a1f7-d993f97497a6",
+      "nombre": "MARQUESA CLASICA",
+      "precio_venta": 3,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.3333333333333333
+  },
+  {
+    "newProd": {
+      "id": "c663e2d3-4bfb-4ded-9780-2b37b65355c4",
+      "nombre": "PATACONES CLÁSICO",
+      "precio_venta": 6.5,
+      "descripcion": "ENSALADA BALLADA, HUEVO, CARNE MECHADA, JAMON ANUMADO, QUESO RALLADO Y SALSA TRADICIONAL",
+      "notas_preparacion": [],
+      "es_compuesto": true,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:57.8513+00:00"
+    },
+    "origProd": {
+      "id": "b1dd31df-683f-44fe-9938-4c82e207dfaf",
+      "nombre": "PATACON CLASICO TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.25
+  },
+  {
+    "newProd": {
+      "id": "872163ca-3251-43d8-9bb4-d0f5f5deb110",
+      "nombre": "SERV. DE PAPAS",
+      "precio_venta": 3.5,
+      "descripcion": "Porción de papas fritas",
+      "notas_preparacion": [],
+      "es_compuesto": true,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:58.201397+00:00"
+    },
+    "origProd": {
+      "id": "b082bd02-e926-405a-a7bc-a748d1464abf",
+      "nombre": "PARRILLA DE PUERCO",
+      "precio_venta": 7.5,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.2
+  },
+  {
+    "newProd": {
+      "id": "1529c69a-b96b-4d8c-b650-eddfe813bd61",
+      "nombre": "1 POLLO (12 PIEZAS)",
+      "precio_venta": 26,
+      "descripcion": "1 pollo (12 piezas) + papas rústicas, ensalada coleslaw y salsa",
+      "notas_preparacion": [
+        "1 pollo (12 piezas) + papas rústicas, ensalada coleslaw y salsa"
+      ],
+      "es_compuesto": false,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:58.574619+00:00"
+    },
+    "origProd": {
+      "id": "b9532694-673f-4e80-8a1a-2f0fb79ab4f1",
+      "nombre": "1 POLLO ASADO ENTERO",
+      "precio_venta": 20,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.3333333333333333
+  },
+  {
+    "newProd": {
+      "id": "e00e7a82-e3b6-4d23-84e5-f740e0e314f0",
+      "nombre": "PATACONES MIXTO",
+      "precio_venta": 8.5,
+      "descripcion": "ENSALADA BALLADA, HUEVO, LOMITO, POLLO, JAMGN ANUMADO, QUESO RALLADO Y SALSA TRADICIONAL",
+      "notas_preparacion": [],
+      "es_compuesto": true,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:58.021489+00:00"
+    },
+    "origProd": {
+      "id": "d3a45d53-9145-4b30-bc60-1afbd3056565",
+      "nombre": "PATACON MIXTO ",
+      "precio_venta": 9,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.3333333333333333
+  },
+  {
+    "newProd": {
+      "id": "c57df475-6b90-45b0-b547-48e98c581d6f",
+      "nombre": "PERRO",
+      "precio_venta": 1.5,
+      "descripcion": "SALCHICHA SALCHIPOLLOAAMKS ENSALAGA AKLLABALNLEA Y QUESO BALLADO",
+      "notas_preparacion": [],
+      "es_compuesto": true,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "updated_at": "2026-10-14T18:17:58.381665+00:00"
+    },
+    "origProd": {
+      "id": "ba2ebeb3-5108-4eeb-9a39-de6cd440fa14",
+      "nombre": "PERRO SENCILLO",
+      "precio_venta": 1.8,
+      "categoria_id": null,
+      "es_compuesto": false,
+      "descripcion": null,
+      "notas_preparacion": [],
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "sedes_ids": null
+    },
+    "score": 0.5
+  }
+]
