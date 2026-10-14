@@ -1520,6 +1520,132 @@ async function toolProponerReceta(
   };
 }
 
+/**
+ * 14. Proponer y configurar un combo / promoción
+ */
+async function toolProponerCombo(
+  ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
+  args: {
+    nombre_combo: string;
+    items: Array<{
+      nombre_producto: string;
+      cantidad: number;
+    }>;
+    precio_combo?: number;
+    descripcion?: string;
+  }
+) {
+  const { supabase, empresaId } = ctx;
+
+  const { data: todosProductos, error: prodErr } = await supabase
+    .from('productos')
+    .select('id, nombre, precio_venta, costo, categoria_id, estado_activo')
+    .eq('empresa_id', empresaId)
+    .neq('archivado', true);
+
+  if (prodErr) return { exito: false, error: `Error consultando productos: ${prodErr.message}` };
+  if (!todosProductos || todosProductos.length === 0) {
+    return { exito: false, error: 'No se encontraron productos en el catálogo para armar el combo.' };
+  }
+
+  const itemsResueltos: any[] = [];
+  const noEncontrados: string[] = [];
+  let sumaPreciosLista = 0;
+  let totalUnidades = 0;
+
+  for (const item of (args.items || [])) {
+    const busqueda = normalizarTexto(item.nombre_producto);
+    const cant = Number(item.cantidad) || 1;
+
+    let prod = todosProductos.find(p => normalizarTexto(p.nombre) === busqueda);
+    if (!prod) {
+      prod = todosProductos.find(p => {
+        const nom = normalizarTexto(p.nombre);
+        return nom.includes(busqueda) || busqueda.includes(nom);
+      });
+    }
+    if (!prod) {
+      const palabras = busqueda.split(/\s+/).filter(w => w.length >= 2);
+      prod = todosProductos.find(p => {
+        const nom = normalizarTexto(p.nombre);
+        return palabras.every(w => {
+          if (w === 'ref' || w === 'refres') return nom.includes('refres') || nom.includes('soda') || nom.includes('bebida') || nom.includes('pepsi') || nom.includes('coca');
+          if (w.startsWith('2l') || w === '2lt') return nom.includes('2l') || nom.includes('2 l') || nom.includes('2lt') || nom.includes('2 litros');
+          return nom.includes(w) || esCoincidenciaAproximada(nom, w, 2);
+        });
+      });
+    }
+    if (!prod) {
+      prod = todosProductos.find(p => esCoincidenciaAproximada(p.nombre, item.nombre_producto, 2));
+    }
+
+    if (prod) {
+      const precioUnit = Number(prod.precio_venta || 0);
+      const subtotal = Math.round(cant * precioUnit * 100) / 100;
+      sumaPreciosLista += subtotal;
+      totalUnidades += cant;
+
+      itemsResueltos.push({
+        producto_id: prod.id,
+        nombre: prod.nombre,
+        cantidad: cant,
+        precio_unitario: precioUnit,
+        subtotal
+      });
+    } else {
+      noEncontrados.push(item.nombre_producto);
+    }
+  }
+
+  if (itemsResueltos.length === 0) {
+    return {
+      exito: false,
+      error: `No pude encontrar los productos indicados en tu catálogo (${noEncontrados.join(', ')}). Verifica que existan en el Catálogo de Productos.`
+    };
+  }
+
+  let precioFinalCombo = typeof args.precio_combo === 'number' && args.precio_combo > 0
+    ? args.precio_combo
+    : Math.round(sumaPreciosLista * 100) / 100;
+
+  const ahorro = Math.max(0, Math.round((sumaPreciosLista - precioFinalCombo) * 100) / 100);
+  const ahorroPct = sumaPreciosLista > 0 && ahorro > 0
+    ? Math.round((ahorro / sumaPreciosLista) * 100)
+    : 0;
+
+  const gruposConfig = itemsResueltos.map(it => ({
+    titulo: `${it.cantidad}x ${it.nombre}`,
+    cantidad: it.cantidad,
+    filtro_tipo: 'PRODUCTOS' as const,
+    productos_permitidos: [it.producto_id],
+    permitir_repetidos: true
+  }));
+
+  const configSeleccion = {
+    cantidad_total: totalUnidades,
+    cobrar_cantidad: totalUnidades,
+    grupos: gruposConfig
+  };
+
+  const descripcionGenerada = args.descripcion || 
+    itemsResueltos.map(it => `${it.cantidad}x ${it.nombre}`).join(' + ');
+
+  return {
+    exito: true,
+    nombre: args.nombre_combo,
+    descripcion: descripcionGenerada,
+    tipo: 'COMBO_GRUPOS',
+    regla_precio: 'PRECIO_FIJO',
+    precio_fijo: precioFinalCombo,
+    precio_lista_total: sumaPreciosLista,
+    ahorro_usd: ahorro,
+    ahorro_porcentaje: ahorroPct,
+    items: itemsResueltos,
+    config_seleccion: configSeleccion,
+    productos_no_encontrados: noEncontrados
+  };
+}
+
 // ==========================================
 // DECLARACIONES DE HERRAMIENTAS PARA GEMINI
 // ==========================================
@@ -1807,6 +1933,46 @@ const copilotTools: { functionDeclarations: FunctionDeclaration[] } = {
         },
         required: ['nombre_producto', 'ingredientes']
       }
+    },
+    {
+      name: 'proponer_combo',
+      description: 'Prepara y propone la creación de un nuevo Combo o Promoción especial en el catálogo (ej: "Combo Fiesta con 2 pizzas familiares tradicionales, 1 con maíz y un refresco 2L por $25"). Busca los productos en el catálogo, calcula precios de lista y prepara la confirmación para guardarlo y activarlo en ventas.',
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          nombre_combo: {
+            type: SchemaType.STRING,
+            description: 'Nombre del combo o promoción (ej: "Combo Fiesta", "Combo Familiar", "Dúo Clásico").'
+          },
+          items: {
+            type: SchemaType.ARRAY,
+            items: {
+              type: SchemaType.OBJECT,
+              properties: {
+                nombre_producto: {
+                  type: SchemaType.STRING,
+                  description: 'Nombre o descripción del producto incluido en el combo (ej: "pizza familiar tradicional", "pizza con maiz", "refresco 2lt").'
+                },
+                cantidad: {
+                  type: SchemaType.NUMBER,
+                  description: 'Cantidad de unidades de este producto en el combo (ej: 2, 1).'
+                }
+              },
+              required: ['nombre_producto', 'cantidad']
+            },
+            description: 'Lista de productos que componen el combo con sus cantidades.'
+          },
+          precio_combo: {
+            type: SchemaType.NUMBER,
+            description: 'Opcional. Precio de venta fijo del combo en USD (ej: 25). Si el usuario no especificó precio, se calcula a partir de la suma de precios de lista.'
+          },
+          descripcion: {
+            type: SchemaType.STRING,
+            description: 'Opcional. Breve descripción de lo que incluye el combo.'
+          }
+        },
+        required: ['nombre_combo', 'items']
+      }
     }
   ]
 };
@@ -1818,7 +1984,7 @@ const copilotTools: { functionDeclarations: FunctionDeclaration[] } = {
 export interface CopilotRespuesta {
   texto: string;
   accionPropuesta?: {
-    tipo: 'desactivar_combos' | 'fusionar_insumos' | 'ejecutar_despacho' | 'ejecutar_venta_costo' | 'guardar_receta' | 'agrupar_similares';
+    tipo: 'desactivar_combos' | 'fusionar_insumos' | 'ejecutar_despacho' | 'ejecutar_venta_costo' | 'guardar_receta' | 'agrupar_similares' | 'crear_combo';
     titulo: string;
     items?: any[];
     detalles?: any;
@@ -1882,7 +2048,11 @@ REGLAS DE OPERACIÓN:
    - Para consultar los ingredientes, escandallo de costos y márgenes de un producto del catálogo, llama a "consultar_receta".
    - Si el usuario te pide armar, crear o actualizar una receta (o te lista qué ingredientes lleva un plato, ej. "La pizza margarita lleva 250g de masa, 150g de mozzarella y 80g de salsa"), llama inmediatamente a "proponer_receta" para vincular los insumos del almacén y preparar la tarjeta interactiva de guardado.
    - Si el usuario te pide ideas o sugerencias de recetas para su negocio, asesóralo gastronómicamente con entusiasmo y propón recetas prácticas usando los insumos que tenga.
-5. Para acciones que modifican datos (desactivar combos, fusionar marcas, despachos entre sedes, ventas al costo o guardar recetas):
+5. CREACIÓN Y GESTIÓN DE COMBOS Y PROMOCIONES:
+   - Si el usuario te pide crear o armar un combo o promoción (ej: "hazme el combo fiesta que lleva 2 pizzas familiares tradicionales, 1 con maiz y un ref 2lt"), llama inmediatamente a "proponer_combo".
+   - Extrae los productos indicados y sus cantidades.
+   - Si el usuario no especificó el precio, la herramienta sumará los precios de lista individuales de los productos. En tu respuesta, presenta el desglose claro y sugiere un precio atractivo o indícale que puede confirmarlo para que quede disponible en el punto de venta.
+6. Para acciones que modifican datos (desactivar combos, fusionar marcas, despachos entre sedes, ventas al costo, guardar recetas o crear combos):
    - NUNCA afirmes haber ejecutado la mutación en la base de datos de inmediato.
    - Llama a la herramienta "proponer_*" correspondiente.
    - Describe la propuesta amablemente con los números exactos e invita al usuario a confirmar mediante el botón en pantalla.
@@ -2044,6 +2214,32 @@ REGLAS DE OPERACIÓN:
                 }
                 break;
               }
+              case 'proponer_combo': {
+                toolResult = await toolProponerCombo(ctx, call.args as any);
+                if (toolResult.exito && toolResult.items && toolResult.items.length > 0) {
+                  accionPropuesta = {
+                    tipo: 'crear_combo',
+                    titulo: `Crear Combo: "${toolResult.nombre}" ($${toolResult.precio_fijo} USD)`,
+                    items: toolResult.items.map((it: any) => ({
+                      id: it.producto_id,
+                      nombre: `${it.cantidad}x ${it.nombre} ($${it.subtotal} USD)`
+                    })),
+                    detalles: {
+                      nombre: toolResult.nombre,
+                      descripcion: toolResult.descripcion,
+                      tipo: toolResult.tipo,
+                      regla_precio: toolResult.regla_precio,
+                      precio_fijo: toolResult.precio_fijo,
+                      precio_lista_total: toolResult.precio_lista_total,
+                      ahorro_usd: toolResult.ahorro_usd,
+                      ahorro_pct: toolResult.ahorro_porcentaje,
+                      config_seleccion: toolResult.config_seleccion,
+                      items: toolResult.items
+                    }
+                  };
+                }
+                break;
+              }
               default:
                 toolResult = { error: `Herramienta desconocida: ${call.name}` };
             }
@@ -2093,7 +2289,7 @@ export async function ejecutarAccionCopilot({
   payload,
   activeSedeId
 }: {
-  accion: 'desactivar_combos' | 'fusionar_insumos' | 'agrupar_similares' | 'ejecutar_despacho' | 'ejecutar_venta_costo' | 'guardar_receta';
+  accion: 'desactivar_combos' | 'fusionar_insumos' | 'agrupar_similares' | 'ejecutar_despacho' | 'ejecutar_venta_costo' | 'guardar_receta' | 'crear_combo';
   payload: any;
   activeSedeId?: string;
 }): Promise<{ success: boolean; mensaje: string; error?: string }> {
@@ -2230,6 +2426,32 @@ export async function ejecutarAccionCopilot({
 
         revalidatePath('/dashboard/inventario');
         return { success: true, mensaje: `Venta al Costo para ${beneficiario} procesada exitosamente con salida de almacén.` };
+      }
+
+      case 'crear_combo': {
+        const { nombre, descripcion, tipo, regla_precio, precio_fijo, config_seleccion } = payload;
+        if (!nombre) {
+          return { success: false, mensaje: 'El nombre del combo es obligatorio.' };
+        }
+        const { guardarPromocion } = await import('@/actions/promociones-actions');
+        const res = await guardarPromocion({
+          nombre,
+          descripcion: descripcion || 'Combo especial',
+          tipo: tipo || 'COMBO_GRUPOS',
+          regla_precio: regla_precio || 'PRECIO_FIJO',
+          precio_fijo: Number(precio_fijo) || 0,
+          config_seleccion: config_seleccion || { cantidad_total: 1, grupos: [] },
+          estado_activo: true
+        });
+
+        if (!res.success) {
+          return { success: false, mensaje: res.error || 'Error al guardar el combo.' };
+        }
+
+        revalidatePath('/dashboard/promociones');
+        revalidatePath('/dashboard/catalogo');
+        revalidatePath('/dashboard/terminal');
+        return { success: true, mensaje: `¡El combo "${nombre}" fue creado y activado exitosamente en el catálogo y punto de venta!` };
       }
 
       default:

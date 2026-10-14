@@ -17,7 +17,8 @@ import {
   Tag,
   Receipt,
   ArrowRightLeft,
-  Utensils
+  Utensils,
+  Layers
 } from 'lucide-react';
 import { enviarMensajeCopilot, ejecutarAccionCopilot, CopilotRespuesta } from '@/actions/copilot-actions';
 
@@ -31,6 +32,7 @@ interface MensajeChat {
 }
 
 const SUGERENCIAS_RAPIDAS = [
+  { label: '🎉 Crear Combo Fiesta', prompt: 'Hazme el combo fiesta que lleva 2 pizzas familiares tradicionales, 1 con maiz y un ref 2lt' },
   { label: '🍳 Receta y escandallo', prompt: 'Dime la receta de la Pizza Margarita y cuánto cuesta prepararla.' },
   { label: '📝 Crear / Armar receta', prompt: 'Quiero armar la receta para la Pizza Margarita: 250g de masa de pizza, 120g de queso mozzarella y 60g de salsa de tomate.' },
   { label: '💵 Tasa de hoy', prompt: '¿Cuál es la tasa oficial de hoy?' },
@@ -185,6 +187,15 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
           items: accion.detalles?.items,
           costoTotal: accion.detalles?.costoTotal,
           modo: accion.detalles?.modo
+        };
+      } else if (accion.tipo === 'crear_combo') {
+        payload = {
+          nombre: accion.detalles?.nombre,
+          descripcion: accion.detalles?.descripcion,
+          tipo: accion.detalles?.tipo,
+          regla_precio: accion.detalles?.regla_precio,
+          precio_fijo: accion.detalles?.precio_fijo,
+          config_seleccion: accion.detalles?.config_seleccion
         };
       }
 
