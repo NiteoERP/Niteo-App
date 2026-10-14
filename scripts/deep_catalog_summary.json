@@ -1,0 +1,1162 @@
+{
+  "zeroSales": [
+    {
+      "id": "c2d8897f-c1ef-44bf-aba3-94f1d5029f4f",
+      "nombre": "Promo Cócteles 2x1",
+      "precio_venta": 4,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "aaf14f84-7011-47ea-8069-ea439a2c631d",
+      "nombre": "Promo Feria Pizzas",
+      "precio_venta": 22,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "00a9f4ba-15f6-4d00-89b2-a4b4ccc94ac0",
+      "nombre": "Promo Balde Feria ",
+      "precio_venta": 10,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "da276bdf-33ed-4210-a48a-d6d1427c025b",
+      "nombre": "PROMO FERIA HAMBURGUESA",
+      "precio_venta": 5.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "09799b4e-cf10-4bc4-af92-59e33b877940",
+      "nombre": "COMBO NAVIDAD ",
+      "precio_venta": 11,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "8888e42f-be14-4ef0-ba00-492cbb99ba76",
+      "nombre": "PROMO DE FERIA CERVEZAS",
+      "precio_venta": 10,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "cd5f5868-0117-4558-9fc6-94fff14996bb",
+      "nombre": "PROMO FERIA PIZZAS FAMILIARES",
+      "precio_venta": 22,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "824ba814-60dd-478e-9449-bf2271c41c0f",
+      "nombre": "PARRILLA 2 PROTEINAS TRAB",
+      "precio_venta": 8.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "4670a15d-9e1c-4a98-bce8-4f7031fa7af0",
+      "nombre": "HAMBURGUESA DE LOMITO TRAB",
+      "precio_venta": 8,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "6f05c4df-0901-4cbb-9f47-9bbab8e54cec",
+      "nombre": "PATACON MIXTO TRAB",
+      "precio_venta": 8.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "029ad60e-f257-4df7-aa72-b0decd72e1e1",
+      "nombre": "PIZZA CHARCUTERA PEQUEÑA TRAB",
+      "precio_venta": 7.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "4bf9d357-ae12-427a-9447-0b2f4366363b",
+      "nombre": "PIZZA ZULIANITA PEQUEÑA TRAB",
+      "precio_venta": 7.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "193b94d4-5cc0-4bac-abfc-e9d10553ba24",
+      "nombre": "PIZZA LA PELUCHE PEQUEÑA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "9d25b155-f631-4e8f-85f1-bb8bde9108bf",
+      "nombre": "PIZZA ESPECIAL PEQUEÑA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "c0409319-907d-4931-bda9-d40e41175314",
+      "nombre": "PIZZA 4 ESTACIONES PEQUEÑA TRAB",
+      "precio_venta": 7.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "1506eb74-512e-4131-b397-4698920293c0",
+      "nombre": "PIZZA AMERICANA PEQUEÑA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "d90390b5-5d45-4ba2-8345-a6c765230329",
+      "nombre": "PIZZA CORN CHICKEN PEQUEÑA TRAB ",
+      "precio_venta": 7.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "413dfb0a-6ef3-4bab-a4f1-d2fab1348b64",
+      "nombre": "PIZZA BBQ PEQUEÑA TRAB",
+      "precio_venta": 8.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "0509eee5-16e0-417b-9717-a95c630e2f54",
+      "nombre": "PERRO FULL TRAB",
+      "precio_venta": 3,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "ef946bea-dabf-43bb-aeda-534e8cb02cbf",
+      "nombre": "PIZZA NAPOLITANA PEQUEÑA TRAB",
+      "precio_venta": 4.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "a2d9bd1f-a630-45a4-ad73-2babb98c5abd",
+      "nombre": "ADICIONAL CEBOLLA CARAMELIZADA",
+      "precio_venta": 2,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "6a1436f3-06d5-4f4a-8d70-0b3624565c9e",
+      "nombre": "PIZZA HAWAIANA PEQUEÑA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "3c893202-922a-4a19-8b7d-9102a187c03a",
+      "nombre": "PIZZA JUAN PICANTE PEQUEÑA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "71c59c1c-955a-4237-ad52-a4fc975bfe2e",
+      "nombre": "PIZZA LA CAPRESA PEQUEÑA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "58d7bc4a-e8a6-431e-806b-25b6ced3ba55",
+      "nombre": "PIZZA SUPREMA PEQUEÑA TRAB",
+      "precio_venta": 7.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "ee6db689-a8a4-4675-93cf-62324b6b7aa2",
+      "nombre": "HAMBURGUESA ZULIANITA TRAB",
+      "precio_venta": 9,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "1163cb72-bd30-4588-bbcc-4ac571d97ba2",
+      "nombre": "PIZZA VEGETARIANA PEQUEÑA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "73bb464a-09ff-42ea-908a-d4c6c3ff08a8",
+      "nombre": "HAMBURGUESA CRISPY TRAB",
+      "precio_venta": 10,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 0
+    }
+  ],
+  "lowSales": [
+    {
+      "id": "4134d547-a447-45a0-8d40-0d6ebe05649a",
+      "nombre": "HALLACA 1",
+      "precio_venta": 2.99,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 1
+    },
+    {
+      "id": "dc892329-6555-4d03-a17e-6a4099888ef9",
+      "nombre": "BACK TO SCHOOL 1",
+      "precio_venta": 10,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 4
+    },
+    {
+      "id": "64a3368d-afc8-4d44-b708-988b002e4e6f",
+      "nombre": "QUESO P/ HAMBURGUESA",
+      "precio_venta": 1,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 2
+    },
+    {
+      "id": "b40529c4-7de9-4e1b-ad6a-5d24cbd23c92",
+      "nombre": "SHOT DE RON",
+      "precio_venta": 2,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 4
+    },
+    {
+      "id": "5a9c2638-1158-4cc2-96a5-7fae82dde1ad",
+      "nombre": "HALLACAS 2$ ",
+      "precio_venta": 2,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 3
+    },
+    {
+      "id": "3e243128-c0d0-49c3-9c81-3f190f09211b",
+      "nombre": "CAJA DE CERVEZA SOLERA",
+      "precio_venta": 28,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 1
+    },
+    {
+      "id": "e6e9f33a-0691-4123-a34d-2af95eaff805",
+      "nombre": "ADICIONAL DE PIEZA",
+      "precio_venta": 4,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 4
+    },
+    {
+      "id": "5819966a-9249-4ce4-ad1d-fed9e01db74c",
+      "nombre": "COMBO CELEBRA 160",
+      "precio_venta": 160,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 2
+    },
+    {
+      "id": "abb262d5-2ad5-4856-b1c9-d2ee7e7f798b",
+      "nombre": "COMBO CELEBRA 130",
+      "precio_venta": 130,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 1
+    },
+    {
+      "id": "9fb02f9a-a03d-4a2f-8d03-6d7eb6cbfdb9",
+      "nombre": "AREPITA MIXTO TRAB",
+      "precio_venta": 8.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 1
+    },
+    {
+      "id": "b9859e5c-4201-4102-9756-5f5ee85136f5",
+      "nombre": "1/4 MUSLO BROASTER TRAB",
+      "precio_venta": 7,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 4
+    },
+    {
+      "id": "c67f6ec9-04db-4fd3-9861-cbcd56c019fd",
+      "nombre": "PIZZA CAPRICHOSA PEQUEÑA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 3
+    },
+    {
+      "id": "57916782-ffb0-4cbc-99fd-5de142da59ce",
+      "nombre": "250 gr de ANTIPASTO",
+      "precio_venta": 8,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 2
+    },
+    {
+      "id": "643dd110-b83a-40bb-a19d-07aa748741b8",
+      "nombre": "1 kg DE ANTIPASTO",
+      "precio_venta": 30,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 2
+    },
+    {
+      "id": "0b270937-768a-43c3-98de-f980b16cc1d0",
+      "nombre": "COMPARTIR FAMILIAR",
+      "precio_venta": 83,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 2
+    },
+    {
+      "id": "180bc334-5566-4743-8673-278cd3264ec6",
+      "nombre": "SALCHIPAPA SENCILLA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 3
+    },
+    {
+      "id": "ad20e64f-3ee2-4836-9fed-d026b9578c71",
+      "nombre": "SALCHIPAPA MIXTA TRAB",
+      "precio_venta": 8.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 3
+    },
+    {
+      "id": "8898e036-80f3-450f-b1ca-202044808892",
+      "nombre": "PIZZA PRIMAVERA PEQUEÑA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 3
+    },
+    {
+      "id": "14f40175-73ba-4652-bac6-4a2051fe5487",
+      "nombre": "SERVILLETAS Y CARAMELOS",
+      "precio_venta": 0.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 4
+    },
+    {
+      "id": "9f52591c-f8ba-45a1-8a87-9d70d3d46d77",
+      "nombre": "DORITO GRANDE",
+      "precio_venta": 0,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 4
+    },
+    {
+      "id": "f30567c2-0e97-4187-b3e6-305cf14546a3",
+      "nombre": "PAQUETE DE 85$",
+      "precio_venta": 85,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 2
+    },
+    {
+      "id": "9614a12a-c5c2-491a-9f6e-45a740f67dfa",
+      "nombre": "ADICIONAL PECORINO",
+      "precio_venta": 2,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 1
+    },
+    {
+      "id": "da7f9705-942d-40fc-8ea4-e95b841c9251",
+      "nombre": "ADICIONAL DE LOMITO",
+      "precio_venta": 2.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 1
+    },
+    {
+      "id": "3d0cbc79-4d83-4cef-942d-e3b9b08355f1",
+      "nombre": "COMBO PARA 2",
+      "precio_venta": 14,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 2
+    },
+    {
+      "id": "87a69e30-287d-4650-9a71-4572b23cb6e0",
+      "nombre": "COMBO PIZZA TRADICIONAL ",
+      "precio_venta": 25,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 1
+    },
+    {
+      "id": "2f8edefe-a4ca-4f1d-81c8-dc10ffa4b0a9",
+      "nombre": "HAMBURGUESA POLLO ESPECIAL",
+      "precio_venta": 8.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 5
+    },
+    {
+      "id": "6eb4145d-eda3-422d-929f-9467986e7b56",
+      "nombre": "COMBO PADRE 2KG",
+      "precio_venta": 35,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 5
+    },
+    {
+      "id": "f768c2d9-1811-4f13-a222-49d72385b1ec",
+      "nombre": "SANGRIA GRANDE",
+      "precio_venta": 8.5,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "estado_activo": true,
+      "ventas": 4
+    },
+    {
+      "id": "61721abd-6ad6-4a90-b464-0d3f1afe91b9",
+      "nombre": "PIZZA TRADICIONAL CUPON",
+      "precio_venta": 6,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 2
+    },
+    {
+      "id": "675fba5d-0c2d-48be-ba18-cb88e32f44a6",
+      "nombre": "COMBO MARQUESA",
+      "precio_venta": 14,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 3
+    },
+    {
+      "id": "7c502aa9-a55d-4fc0-a832-d4b62a6f381a",
+      "nombre": "PASTICHO 1 KG COMBO",
+      "precio_venta": 14,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 5
+    },
+    {
+      "id": "06ec1d98-507f-4b27-b6d6-51ef034af7dd",
+      "nombre": "COMBO HUESITO AMERICAN",
+      "precio_venta": 17,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 2
+    },
+    {
+      "id": "06e8a9de-a8ee-4ee2-82ce-4a1ee479afcd",
+      "nombre": "LATA SANGRIA MOJITO",
+      "precio_venta": 3.5,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "estado_activo": true,
+      "ventas": 4
+    },
+    {
+      "id": "8eb6d35d-be2f-4a59-bd1d-7e883b7cd1d3",
+      "nombre": "PERROS BLACK FRIDAY",
+      "precio_venta": 10,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 3
+    },
+    {
+      "id": "16be5d9b-59a6-4514-96a8-942a9db22b5b",
+      "nombre": "PASTICHO 1KG BLACK FRIDAY",
+      "precio_venta": 10,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 3
+    },
+    {
+      "id": "3968c4ac-3fad-42f7-b91f-d07ac9a0e578",
+      "nombre": "COMBO HAWAINA ",
+      "precio_venta": 15,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 2
+    },
+    {
+      "id": "324aeebe-08a2-4f02-a0da-4dd673f939d7",
+      "nombre": "ADICIONAL QUESO HAMBURGUESA",
+      "precio_venta": 1,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 2
+    },
+    {
+      "id": "1d45ebd6-0a06-460b-98d7-6c8eb82cd06c",
+      "nombre": "HAMBURGUESA CLASICA TRAB",
+      "precio_venta": 6,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 3
+    },
+    {
+      "id": "63ef170d-a8d6-4456-a5dd-986e18ebdd1b",
+      "nombre": "1/4 MUSLO ASADO TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 2
+    },
+    {
+      "id": "bc44bd18-73b2-4e30-83fb-3bf1483cbaed",
+      "nombre": "1/4 PECHUGA ASADO TRAB",
+      "precio_venta": 7.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 5
+    },
+    {
+      "id": "892edaec-5826-4f26-8609-43a7550f166c",
+      "nombre": "1/4 PECHUGA BROASTER TRAB",
+      "precio_venta": 8,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 2
+    },
+    {
+      "id": "63aab0c9-8fbd-4aff-a2e0-0207437dd1af",
+      "nombre": "COMBO MEGA FAMILIAR",
+      "precio_venta": 60,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 1
+    },
+    {
+      "id": "8fa03628-88df-4e26-b61c-fa01f0a0b245",
+      "nombre": "FAMILIAR BBQ COMBO",
+      "precio_venta": 22,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 3
+    },
+    {
+      "id": "e50cfde0-88cd-4ff1-9167-4029823b5804",
+      "nombre": "PARRILLA 1 PROTEINA TRAB",
+      "precio_venta": 7.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 5
+    },
+    {
+      "id": "b1dd31df-683f-44fe-9938-4c82e207dfaf",
+      "nombre": "PATACON CLASICO TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 2
+    },
+    {
+      "id": "a3a57b5d-c22c-4e37-b223-049e7d224dbc",
+      "nombre": "PASTICHO PERSONAL TRAB",
+      "precio_venta": 7,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 4
+    },
+    {
+      "id": "6199b0a8-309f-4a67-9551-92319702502f",
+      "nombre": "PIZZA TRADICIONAL PEQUEÑA TRAB",
+      "precio_venta": 5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 1
+    },
+    {
+      "id": "750df479-1f28-4b31-a366-02c157859ae0",
+      "nombre": "50 MINI PASTELITOS",
+      "precio_venta": 11,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 5
+    },
+    {
+      "id": "7a8ebf26-a361-4a10-ab17-c9b6a9df40a0",
+      "nombre": "50 SERPENTINAS",
+      "precio_venta": 14,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 2
+    },
+    {
+      "id": "7d423684-f5b1-4111-9ada-95e31b9b1c79",
+      "nombre": "50 MINI AREPAS",
+      "precio_venta": 14,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 1
+    },
+    {
+      "id": "55586b4c-6893-474d-8c04-8ddf84f30f5d",
+      "nombre": "50 DEDOS DE SALCHICHAS",
+      "precio_venta": 12,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 4
+    },
+    {
+      "id": "9b2234e6-1ad1-4c13-b193-5b2232bf8088",
+      "nombre": "SOMBRERO 3 PROTEINAS",
+      "precio_venta": 32,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 1
+    },
+    {
+      "id": "5aeab622-9364-4a76-a846-2d6cecaeea5e",
+      "nombre": "COMBO PERSONAL PASTICHO",
+      "precio_venta": 9,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 4
+    },
+    {
+      "id": "cf5fee75-bdb5-48fe-8d15-2fe3613e35f0",
+      "nombre": "ADICIONAL PARA HAMBURGUESA TOCINETA",
+      "precio_venta": 1,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 1
+    },
+    {
+      "id": "9d09e6a8-30f2-40b6-a6b1-84205aced80f",
+      "nombre": "AGUA NEVADA 1.5L",
+      "precio_venta": 1.8,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 1
+    },
+    {
+      "id": "e49855a7-1830-4021-a603-b96466e9f4ac",
+      "nombre": "50 MINI TEQUEÑOS",
+      "precio_venta": 11,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 5
+    },
+    {
+      "id": "f02a856a-61c1-49ca-9305-3505fa3ad1a7",
+      "nombre": "COMBO FIESTA INFANTIL",
+      "precio_venta": 70,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 2
+    },
+    {
+      "id": "d7982b39-bbc1-4160-8d84-7652ddf9f8d0",
+      "nombre": "PAN CON POLLO SENCILLO",
+      "precio_venta": 4,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 1
+    },
+    {
+      "id": "7a59ada3-4322-420a-90d8-e3ccc54f5e37",
+      "nombre": "HAMBURGUESA LOMITO ESPECIAL",
+      "precio_venta": 8.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 4
+    },
+    {
+      "id": "022be307-fa84-4403-9abe-87db57d7263f",
+      "nombre": "COMBO IMPERDIBLE 2",
+      "precio_venta": 32,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 4
+    },
+    {
+      "id": "04fdaed6-9196-4cd6-b29b-1d221019406e",
+      "nombre": "BROWNIE RELLENOS",
+      "precio_venta": 5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 3
+    },
+    {
+      "id": "d2a53fd4-5fad-4940-ad81-b87262e90199",
+      "nombre": "MAIZ P/ HAMBURGUESA",
+      "precio_venta": 1,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 1
+    }
+  ],
+  "trabDishes": [
+    {
+      "id": "824ba814-60dd-478e-9449-bf2271c41c0f",
+      "nombre": "PARRILLA 2 PROTEINAS TRAB",
+      "precio_venta": 8.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "e1083f52-9b41-4c79-b574-6ac39bef28d9",
+      "nombre": "HAMBURGUESA DE POLLO TRAB",
+      "precio_venta": 8,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 8
+    },
+    {
+      "id": "4670a15d-9e1c-4a98-bce8-4f7031fa7af0",
+      "nombre": "HAMBURGUESA DE LOMITO TRAB",
+      "precio_venta": 8,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "a43f1373-7c55-46ff-a451-977a9f3cfb12",
+      "nombre": "AREPITA CLASICA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 9
+    },
+    {
+      "id": "6f05c4df-0901-4cbb-9f47-9bbab8e54cec",
+      "nombre": "PATACON MIXTO TRAB",
+      "precio_venta": 8.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "9fb02f9a-a03d-4a2f-8d03-6d7eb6cbfdb9",
+      "nombre": "AREPITA MIXTO TRAB",
+      "precio_venta": 8.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 1
+    },
+    {
+      "id": "b9859e5c-4201-4102-9756-5f5ee85136f5",
+      "nombre": "1/4 MUSLO BROASTER TRAB",
+      "precio_venta": 7,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 4
+    },
+    {
+      "id": "029ad60e-f257-4df7-aa72-b0decd72e1e1",
+      "nombre": "PIZZA CHARCUTERA PEQUEÑA TRAB",
+      "precio_venta": 7.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "4bf9d357-ae12-427a-9447-0b2f4366363b",
+      "nombre": "PIZZA ZULIANITA PEQUEÑA TRAB",
+      "precio_venta": 7.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "c67f6ec9-04db-4fd3-9861-cbcd56c019fd",
+      "nombre": "PIZZA CAPRICHOSA PEQUEÑA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 3
+    },
+    {
+      "id": "b2ad5c2b-9633-45d8-ae49-f9008862f039",
+      "nombre": "PERRO POLACO TRAB",
+      "precio_venta": 3,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 10
+    },
+    {
+      "id": "193b94d4-5cc0-4bac-abfc-e9d10553ba24",
+      "nombre": "PIZZA LA PELUCHE PEQUEÑA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "9d25b155-f631-4e8f-85f1-bb8bde9108bf",
+      "nombre": "PIZZA ESPECIAL PEQUEÑA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "c0409319-907d-4931-bda9-d40e41175314",
+      "nombre": "PIZZA 4 ESTACIONES PEQUEÑA TRAB",
+      "precio_venta": 7.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "1506eb74-512e-4131-b397-4698920293c0",
+      "nombre": "PIZZA AMERICANA PEQUEÑA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "de0bb20d-3ff3-400a-b598-d01593b700ea",
+      "nombre": "HAMBURGUESA ECONOMICA TRAB",
+      "precio_venta": 3.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 74
+    },
+    {
+      "id": "180bc334-5566-4743-8673-278cd3264ec6",
+      "nombre": "SALCHIPAPA SENCILLA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 3
+    },
+    {
+      "id": "ad20e64f-3ee2-4836-9fed-d026b9578c71",
+      "nombre": "SALCHIPAPA MIXTA TRAB",
+      "precio_venta": 8.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 3
+    },
+    {
+      "id": "23ef8c0b-20a4-4c1a-9e8f-b057542f1340",
+      "nombre": "PERRO SENCILLO TRAB",
+      "precio_venta": 1.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 49
+    },
+    {
+      "id": "8898e036-80f3-450f-b1ca-202044808892",
+      "nombre": "PIZZA PRIMAVERA PEQUEÑA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 3
+    },
+    {
+      "id": "d90390b5-5d45-4ba2-8345-a6c765230329",
+      "nombre": "PIZZA CORN CHICKEN PEQUEÑA TRAB ",
+      "precio_venta": 7.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "413dfb0a-6ef3-4bab-a4f1-d2fab1348b64",
+      "nombre": "PIZZA BBQ PEQUEÑA TRAB",
+      "precio_venta": 8.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "1d45ebd6-0a06-460b-98d7-6c8eb82cd06c",
+      "nombre": "HAMBURGUESA CLASICA TRAB",
+      "precio_venta": 6,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 3
+    },
+    {
+      "id": "63ef170d-a8d6-4456-a5dd-986e18ebdd1b",
+      "nombre": "1/4 MUSLO ASADO TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 2
+    },
+    {
+      "id": "bc44bd18-73b2-4e30-83fb-3bf1483cbaed",
+      "nombre": "1/4 PECHUGA ASADO TRAB",
+      "precio_venta": 7.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 5
+    },
+    {
+      "id": "892edaec-5826-4f26-8609-43a7550f166c",
+      "nombre": "1/4 PECHUGA BROASTER TRAB",
+      "precio_venta": 8,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 2
+    },
+    {
+      "id": "0509eee5-16e0-417b-9717-a95c630e2f54",
+      "nombre": "PERRO FULL TRAB",
+      "precio_venta": 3,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "e50cfde0-88cd-4ff1-9167-4029823b5804",
+      "nombre": "PARRILLA 1 PROTEINA TRAB",
+      "precio_venta": 7.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 5
+    },
+    {
+      "id": "b1dd31df-683f-44fe-9938-4c82e207dfaf",
+      "nombre": "PATACON CLASICO TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 2
+    },
+    {
+      "id": "a3a57b5d-c22c-4e37-b223-049e7d224dbc",
+      "nombre": "PASTICHO PERSONAL TRAB",
+      "precio_venta": 7,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 4
+    },
+    {
+      "id": "ef946bea-dabf-43bb-aeda-534e8cb02cbf",
+      "nombre": "PIZZA NAPOLITANA PEQUEÑA TRAB",
+      "precio_venta": 4.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "6199b0a8-309f-4a67-9551-92319702502f",
+      "nombre": "PIZZA TRADICIONAL PEQUEÑA TRAB",
+      "precio_venta": 5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 1
+    },
+    {
+      "id": "6a1436f3-06d5-4f4a-8d70-0b3624565c9e",
+      "nombre": "PIZZA HAWAIANA PEQUEÑA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "3c893202-922a-4a19-8b7d-9102a187c03a",
+      "nombre": "PIZZA JUAN PICANTE PEQUEÑA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "71c59c1c-955a-4237-ad52-a4fc975bfe2e",
+      "nombre": "PIZZA LA CAPRESA PEQUEÑA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "58d7bc4a-e8a6-431e-806b-25b6ced3ba55",
+      "nombre": "PIZZA SUPREMA PEQUEÑA TRAB",
+      "precio_venta": 7.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "ee6db689-a8a4-4675-93cf-62324b6b7aa2",
+      "nombre": "HAMBURGUESA ZULIANITA TRAB",
+      "precio_venta": 9,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "1163cb72-bd30-4588-bbcc-4ac571d97ba2",
+      "nombre": "PIZZA VEGETARIANA PEQUEÑA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 0
+    },
+    {
+      "id": "73bb464a-09ff-42ea-908a-d4c6c3ff08a8",
+      "nombre": "HAMBURGUESA CRISPY TRAB",
+      "precio_venta": 10,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 0
+    }
+  ],
+  "oldPromos": [
+    {
+      "id": "94469f62-2c75-4ecd-a7db-7a04c5211ff4",
+      "nombre": "PAQUETE DE CUMPLEAÑOS 100$",
+      "precio_venta": 100,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 8
+    },
+    {
+      "id": "d7f518f1-1d4c-47e7-adbc-2d47d952e9a9",
+      "nombre": "COMBO OHANA",
+      "precio_venta": 19,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 130
+    },
+    {
+      "id": "5819966a-9249-4ce4-ad1d-fed9e01db74c",
+      "nombre": "COMBO CELEBRA 160",
+      "precio_venta": 160,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 2
+    },
+    {
+      "id": "abb262d5-2ad5-4856-b1c9-d2ee7e7f798b",
+      "nombre": "COMBO CELEBRA 130",
+      "precio_venta": 130,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 1
+    },
+    {
+      "id": "612ccb08-e30e-49c1-aee6-8be46db18736",
+      "nombre": "DIPLOMA COMBO",
+      "precio_venta": 7.99,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 6
+    },
+    {
+      "id": "68b59fa7-e109-4566-a3d8-3980fea64211",
+      "nombre": "COMBO 4 PIZZAS SEMANA SANTA 40$",
+      "precio_venta": 40,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 10
+    },
+    {
+      "id": "623a972d-3336-4533-a368-a5cfd641e79e",
+      "nombre": "PROMO SEMANA SANTA 8",
+      "precio_venta": 8,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 102
+    },
+    {
+      "id": "61721abd-6ad6-4a90-b464-0d3f1afe91b9",
+      "nombre": "PIZZA TRADICIONAL CUPON",
+      "precio_venta": 6,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "ventas": 2
+    },
+    {
+      "id": "d80fc13b-851c-4e29-959e-54bfea6f3cef",
+      "nombre": "COMBO HAMBUR BLACK FRIDAY",
+      "precio_venta": 10,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 10
+    },
+    {
+      "id": "4b2e3261-8b31-4b41-99c4-9abaa20759a3",
+      "nombre": "FAMILIAR BLACK FRIDAY",
+      "precio_venta": 7,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 97
+    },
+    {
+      "id": "8eb6d35d-be2f-4a59-bd1d-7e883b7cd1d3",
+      "nombre": "PERROS BLACK FRIDAY",
+      "precio_venta": 10,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 3
+    },
+    {
+      "id": "e10a463d-ca8d-4df6-8092-e8787d5d54a7",
+      "nombre": "HAMBURGUESA BLACK FRIDAY",
+      "precio_venta": 10,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 11
+    },
+    {
+      "id": "16be5d9b-59a6-4514-96a8-942a9db22b5b",
+      "nombre": "PASTICHO 1KG BLACK FRIDAY",
+      "precio_venta": 10,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 3
+    },
+    {
+      "id": "017bee9e-4085-4e23-958b-15e9ab37cf7f",
+      "nombre": "PROMO SEMANA SANTA 15",
+      "precio_venta": 15,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 63
+    },
+    {
+      "id": "0247818b-a636-4644-8b1e-c22d725b906c",
+      "nombre": "PAQUETE CUMPLEAÑOS 55$ ",
+      "precio_venta": 55,
+      "categoria_id": null,
+      "estado_activo": true,
+      "ventas": 15
+    }
+  ]
+}

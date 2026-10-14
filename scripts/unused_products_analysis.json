@@ -1,0 +1,659 @@
+{
+  "totalProds": 437,
+  "zeroSalesCount": 32,
+  "withSalesCount": 405,
+  "zeroGroups": {
+    "Promociones y Combos Antiguos / Descontinuados": [
+      {
+        "id": "c2d8897f-c1ef-44bf-aba3-94f1d5029f4f",
+        "nombre": "Promo Cócteles 2x1",
+        "precio_venta": 4,
+        "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+        "estado_activo": true,
+        "sede_id": null,
+        "updated_at": "2026-10-14T17:49:40.777201+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "aaf14f84-7011-47ea-8069-ea439a2c631d",
+        "nombre": "Promo Feria Pizzas",
+        "precio_venta": 22,
+        "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+        "estado_activo": true,
+        "sede_id": null,
+        "updated_at": "2026-10-14T18:17:40.213971+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "00a9f4ba-15f6-4d00-89b2-a4b4ccc94ac0",
+        "nombre": "Promo Balde Feria ",
+        "precio_venta": 10,
+        "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+        "estado_activo": true,
+        "sede_id": null,
+        "updated_at": "2026-10-14T18:41:02.187044+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "da276bdf-33ed-4210-a48a-d6d1427c025b",
+        "nombre": "PROMO FERIA HAMBURGUESA",
+        "precio_venta": 5.5,
+        "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+        "estado_activo": true,
+        "sede_id": null,
+        "updated_at": "2026-10-14T18:17:40.404067+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "09799b4e-cf10-4bc4-af92-59e33b877940",
+        "nombre": "COMBO NAVIDAD ",
+        "precio_venta": 11,
+        "categoria_id": null,
+        "estado_activo": true,
+        "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+        "updated_at": "2026-10-14T15:43:31.840917+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "8888e42f-be14-4ef0-ba00-492cbb99ba76",
+        "nombre": "PROMO DE FERIA CERVEZAS",
+        "precio_venta": 10,
+        "categoria_id": null,
+        "estado_activo": true,
+        "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+        "updated_at": "2026-10-14T15:43:31.840917+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "cd5f5868-0117-4558-9fc6-94fff14996bb",
+        "nombre": "PROMO FERIA PIZZAS FAMILIARES",
+        "precio_venta": 22,
+        "categoria_id": null,
+        "estado_activo": true,
+        "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+        "updated_at": "2026-10-14T15:43:31.840917+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "abb262d5-2ad5-4856-b1c9-d2ee7e7f798b",
+        "nombre": "COMBO CELEBRA 130",
+        "precio_venta": 130,
+        "categoria_id": null,
+        "estado_activo": true,
+        "sede_id": "b42d7e13-bfc8-40d8-94d4-61908ff269cd",
+        "updated_at": "2026-10-14T15:36:08.722972+00:00",
+        "totalSold": 0
+      }
+    ],
+    "Variantes de Pizzas Sin Ventas": [
+      {
+        "id": "029ad60e-f257-4df7-aa72-b0decd72e1e1",
+        "nombre": "PIZZA CHARCUTERA PEQUEÑA TRAB",
+        "precio_venta": 7.5,
+        "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+        "estado_activo": true,
+        "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+        "updated_at": "2026-10-14T15:43:32.239844+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "4bf9d357-ae12-427a-9447-0b2f4366363b",
+        "nombre": "PIZZA ZULIANITA PEQUEÑA TRAB",
+        "precio_venta": 7.5,
+        "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+        "estado_activo": true,
+        "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+        "updated_at": "2026-10-14T15:43:32.239844+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "193b94d4-5cc0-4bac-abfc-e9d10553ba24",
+        "nombre": "PIZZA LA PELUCHE PEQUEÑA TRAB",
+        "precio_venta": 6.5,
+        "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+        "estado_activo": true,
+        "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+        "updated_at": "2026-10-14T15:43:32.239844+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "9d25b155-f631-4e8f-85f1-bb8bde9108bf",
+        "nombre": "PIZZA ESPECIAL PEQUEÑA TRAB",
+        "precio_venta": 6.5,
+        "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+        "estado_activo": true,
+        "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+        "updated_at": "2026-10-14T15:43:32.239844+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "c0409319-907d-4931-bda9-d40e41175314",
+        "nombre": "PIZZA 4 ESTACIONES PEQUEÑA TRAB",
+        "precio_venta": 7.5,
+        "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+        "estado_activo": true,
+        "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+        "updated_at": "2026-10-14T15:43:32.239844+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "1506eb74-512e-4131-b397-4698920293c0",
+        "nombre": "PIZZA AMERICANA PEQUEÑA TRAB",
+        "precio_venta": 6.5,
+        "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+        "estado_activo": true,
+        "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+        "updated_at": "2026-10-14T15:43:32.239844+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "d90390b5-5d45-4ba2-8345-a6c765230329",
+        "nombre": "PIZZA CORN CHICKEN PEQUEÑA TRAB ",
+        "precio_venta": 7.5,
+        "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+        "estado_activo": true,
+        "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+        "updated_at": "2026-10-14T15:43:32.239844+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "413dfb0a-6ef3-4bab-a4f1-d2fab1348b64",
+        "nombre": "PIZZA BBQ PEQUEÑA TRAB",
+        "precio_venta": 8.5,
+        "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+        "estado_activo": true,
+        "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+        "updated_at": "2026-10-14T15:43:32.239844+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "ef946bea-dabf-43bb-aeda-534e8cb02cbf",
+        "nombre": "PIZZA NAPOLITANA PEQUEÑA TRAB",
+        "precio_venta": 4.5,
+        "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+        "estado_activo": true,
+        "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+        "updated_at": "2026-10-14T15:43:32.239844+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "6199b0a8-309f-4a67-9551-92319702502f",
+        "nombre": "PIZZA TRADICIONAL PEQUEÑA TRAB",
+        "precio_venta": 5,
+        "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+        "estado_activo": true,
+        "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+        "updated_at": "2026-10-14T15:43:32.239844+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "6a1436f3-06d5-4f4a-8d70-0b3624565c9e",
+        "nombre": "PIZZA HAWAIANA PEQUEÑA TRAB",
+        "precio_venta": 6.5,
+        "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+        "estado_activo": true,
+        "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+        "updated_at": "2026-10-14T15:43:32.239844+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "3c893202-922a-4a19-8b7d-9102a187c03a",
+        "nombre": "PIZZA JUAN PICANTE PEQUEÑA TRAB",
+        "precio_venta": 6.5,
+        "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+        "estado_activo": true,
+        "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+        "updated_at": "2026-10-14T15:43:32.239844+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "71c59c1c-955a-4237-ad52-a4fc975bfe2e",
+        "nombre": "PIZZA LA CAPRESA PEQUEÑA TRAB",
+        "precio_venta": 6.5,
+        "categoria_id": null,
+        "estado_activo": true,
+        "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+        "updated_at": "2026-10-14T15:43:32.239844+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "58d7bc4a-e8a6-431e-806b-25b6ced3ba55",
+        "nombre": "PIZZA SUPREMA PEQUEÑA TRAB",
+        "precio_venta": 7.5,
+        "categoria_id": null,
+        "estado_activo": true,
+        "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+        "updated_at": "2026-10-14T15:43:32.239844+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "1163cb72-bd30-4588-bbcc-4ac571d97ba2",
+        "nombre": "PIZZA VEGETARIANA PEQUEÑA TRAB",
+        "precio_venta": 6.5,
+        "categoria_id": null,
+        "estado_activo": true,
+        "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+        "updated_at": "2026-10-14T15:43:32.239844+00:00",
+        "totalSold": 0
+      }
+    ],
+    "Bebidas / Licores Sin Ventas": [],
+    "Adicionales y Contornos Sin Ventas": [
+      {
+        "id": "a2d9bd1f-a630-45a4-ad73-2babb98c5abd",
+        "nombre": "ADICIONAL CEBOLLA CARAMELIZADA",
+        "precio_venta": 2,
+        "categoria_id": null,
+        "estado_activo": true,
+        "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+        "updated_at": "2026-10-14T15:43:32.239844+00:00",
+        "totalSold": 0
+      }
+    ],
+    "Almuerzos o Platos de Trabajador Sin Ventas": [
+      {
+        "id": "824ba814-60dd-478e-9449-bf2271c41c0f",
+        "nombre": "PARRILLA 2 PROTEINAS TRAB",
+        "precio_venta": 8.5,
+        "categoria_id": null,
+        "estado_activo": true,
+        "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+        "updated_at": "2026-10-14T15:43:32.239844+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "4670a15d-9e1c-4a98-bce8-4f7031fa7af0",
+        "nombre": "HAMBURGUESA DE LOMITO TRAB",
+        "precio_venta": 8,
+        "categoria_id": null,
+        "estado_activo": true,
+        "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+        "updated_at": "2026-10-14T15:43:32.239844+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "6f05c4df-0901-4cbb-9f47-9bbab8e54cec",
+        "nombre": "PATACON MIXTO TRAB",
+        "precio_venta": 8.5,
+        "categoria_id": null,
+        "estado_activo": true,
+        "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+        "updated_at": "2026-10-14T15:43:32.239844+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "9fb02f9a-a03d-4a2f-8d03-6d7eb6cbfdb9",
+        "nombre": "AREPITA MIXTO TRAB",
+        "precio_venta": 8.5,
+        "categoria_id": null,
+        "estado_activo": true,
+        "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+        "updated_at": "2026-10-14T15:43:32.239844+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "180bc334-5566-4743-8673-278cd3264ec6",
+        "nombre": "SALCHIPAPA SENCILLA TRAB",
+        "precio_venta": 6.5,
+        "categoria_id": null,
+        "estado_activo": true,
+        "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+        "updated_at": "2026-10-14T15:43:32.239844+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "0509eee5-16e0-417b-9717-a95c630e2f54",
+        "nombre": "PERRO FULL TRAB",
+        "precio_venta": 3,
+        "categoria_id": null,
+        "estado_activo": true,
+        "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+        "updated_at": "2026-10-14T15:43:32.239844+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "ee6db689-a8a4-4675-93cf-62324b6b7aa2",
+        "nombre": "HAMBURGUESA ZULIANITA TRAB",
+        "precio_venta": 9,
+        "categoria_id": null,
+        "estado_activo": true,
+        "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+        "updated_at": "2026-10-14T15:43:32.239844+00:00",
+        "totalSold": 0
+      },
+      {
+        "id": "73bb464a-09ff-42ea-908a-d4c6c3ff08a8",
+        "nombre": "HAMBURGUESA CRISPY TRAB",
+        "precio_venta": 10,
+        "categoria_id": null,
+        "estado_activo": true,
+        "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+        "updated_at": "2026-10-14T15:43:32.239844+00:00",
+        "totalSold": 0
+      }
+    ],
+    "Otros Platos Sin Ventas": []
+  },
+  "zeroSalesList": [
+    {
+      "id": "c2d8897f-c1ef-44bf-aba3-94f1d5029f4f",
+      "nombre": "Promo Cócteles 2x1",
+      "precio_venta": 4,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "estado_activo": true,
+      "sede_id": null,
+      "updated_at": "2026-10-14T17:49:40.777201+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "aaf14f84-7011-47ea-8069-ea439a2c631d",
+      "nombre": "Promo Feria Pizzas",
+      "precio_venta": 22,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "sede_id": null,
+      "updated_at": "2026-10-14T18:17:40.213971+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "00a9f4ba-15f6-4d00-89b2-a4b4ccc94ac0",
+      "nombre": "Promo Balde Feria ",
+      "precio_venta": 10,
+      "categoria_id": "7fb8514f-4c08-4913-8b4d-d826e3087f38",
+      "estado_activo": true,
+      "sede_id": null,
+      "updated_at": "2026-10-14T18:41:02.187044+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "da276bdf-33ed-4210-a48a-d6d1427c025b",
+      "nombre": "PROMO FERIA HAMBURGUESA",
+      "precio_venta": 5.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "sede_id": null,
+      "updated_at": "2026-10-14T18:17:40.404067+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "09799b4e-cf10-4bc4-af92-59e33b877940",
+      "nombre": "COMBO NAVIDAD ",
+      "precio_venta": 11,
+      "categoria_id": null,
+      "estado_activo": true,
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "updated_at": "2026-10-14T15:43:31.840917+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "8888e42f-be14-4ef0-ba00-492cbb99ba76",
+      "nombre": "PROMO DE FERIA CERVEZAS",
+      "precio_venta": 10,
+      "categoria_id": null,
+      "estado_activo": true,
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "updated_at": "2026-10-14T15:43:31.840917+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "cd5f5868-0117-4558-9fc6-94fff14996bb",
+      "nombre": "PROMO FERIA PIZZAS FAMILIARES",
+      "precio_venta": 22,
+      "categoria_id": null,
+      "estado_activo": true,
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "updated_at": "2026-10-14T15:43:31.840917+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "824ba814-60dd-478e-9449-bf2271c41c0f",
+      "nombre": "PARRILLA 2 PROTEINAS TRAB",
+      "precio_venta": 8.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "updated_at": "2026-10-14T15:43:32.239844+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "abb262d5-2ad5-4856-b1c9-d2ee7e7f798b",
+      "nombre": "COMBO CELEBRA 130",
+      "precio_venta": 130,
+      "categoria_id": null,
+      "estado_activo": true,
+      "sede_id": "b42d7e13-bfc8-40d8-94d4-61908ff269cd",
+      "updated_at": "2026-10-14T15:36:08.722972+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "4670a15d-9e1c-4a98-bce8-4f7031fa7af0",
+      "nombre": "HAMBURGUESA DE LOMITO TRAB",
+      "precio_venta": 8,
+      "categoria_id": null,
+      "estado_activo": true,
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "updated_at": "2026-10-14T15:43:32.239844+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "6f05c4df-0901-4cbb-9f47-9bbab8e54cec",
+      "nombre": "PATACON MIXTO TRAB",
+      "precio_venta": 8.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "updated_at": "2026-10-14T15:43:32.239844+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "9fb02f9a-a03d-4a2f-8d03-6d7eb6cbfdb9",
+      "nombre": "AREPITA MIXTO TRAB",
+      "precio_venta": 8.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "updated_at": "2026-10-14T15:43:32.239844+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "029ad60e-f257-4df7-aa72-b0decd72e1e1",
+      "nombre": "PIZZA CHARCUTERA PEQUEÑA TRAB",
+      "precio_venta": 7.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "updated_at": "2026-10-14T15:43:32.239844+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "4bf9d357-ae12-427a-9447-0b2f4366363b",
+      "nombre": "PIZZA ZULIANITA PEQUEÑA TRAB",
+      "precio_venta": 7.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "updated_at": "2026-10-14T15:43:32.239844+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "193b94d4-5cc0-4bac-abfc-e9d10553ba24",
+      "nombre": "PIZZA LA PELUCHE PEQUEÑA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "updated_at": "2026-10-14T15:43:32.239844+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "9d25b155-f631-4e8f-85f1-bb8bde9108bf",
+      "nombre": "PIZZA ESPECIAL PEQUEÑA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "updated_at": "2026-10-14T15:43:32.239844+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "c0409319-907d-4931-bda9-d40e41175314",
+      "nombre": "PIZZA 4 ESTACIONES PEQUEÑA TRAB",
+      "precio_venta": 7.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "updated_at": "2026-10-14T15:43:32.239844+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "1506eb74-512e-4131-b397-4698920293c0",
+      "nombre": "PIZZA AMERICANA PEQUEÑA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "updated_at": "2026-10-14T15:43:32.239844+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "180bc334-5566-4743-8673-278cd3264ec6",
+      "nombre": "SALCHIPAPA SENCILLA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "updated_at": "2026-10-14T15:43:32.239844+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "d90390b5-5d45-4ba2-8345-a6c765230329",
+      "nombre": "PIZZA CORN CHICKEN PEQUEÑA TRAB ",
+      "precio_venta": 7.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "updated_at": "2026-10-14T15:43:32.239844+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "413dfb0a-6ef3-4bab-a4f1-d2fab1348b64",
+      "nombre": "PIZZA BBQ PEQUEÑA TRAB",
+      "precio_venta": 8.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "updated_at": "2026-10-14T15:43:32.239844+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "0509eee5-16e0-417b-9717-a95c630e2f54",
+      "nombre": "PERRO FULL TRAB",
+      "precio_venta": 3,
+      "categoria_id": null,
+      "estado_activo": true,
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "updated_at": "2026-10-14T15:43:32.239844+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "ef946bea-dabf-43bb-aeda-534e8cb02cbf",
+      "nombre": "PIZZA NAPOLITANA PEQUEÑA TRAB",
+      "precio_venta": 4.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "updated_at": "2026-10-14T15:43:32.239844+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "a2d9bd1f-a630-45a4-ad73-2babb98c5abd",
+      "nombre": "ADICIONAL CEBOLLA CARAMELIZADA",
+      "precio_venta": 2,
+      "categoria_id": null,
+      "estado_activo": true,
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "updated_at": "2026-10-14T15:43:32.239844+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "6199b0a8-309f-4a67-9551-92319702502f",
+      "nombre": "PIZZA TRADICIONAL PEQUEÑA TRAB",
+      "precio_venta": 5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "updated_at": "2026-10-14T15:43:32.239844+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "6a1436f3-06d5-4f4a-8d70-0b3624565c9e",
+      "nombre": "PIZZA HAWAIANA PEQUEÑA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "updated_at": "2026-10-14T15:43:32.239844+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "3c893202-922a-4a19-8b7d-9102a187c03a",
+      "nombre": "PIZZA JUAN PICANTE PEQUEÑA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": "7709a718-c1e4-4590-8c21-027c74e95668",
+      "estado_activo": true,
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "updated_at": "2026-10-14T15:43:32.239844+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "71c59c1c-955a-4237-ad52-a4fc975bfe2e",
+      "nombre": "PIZZA LA CAPRESA PEQUEÑA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "updated_at": "2026-10-14T15:43:32.239844+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "58d7bc4a-e8a6-431e-806b-25b6ced3ba55",
+      "nombre": "PIZZA SUPREMA PEQUEÑA TRAB",
+      "precio_venta": 7.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "updated_at": "2026-10-14T15:43:32.239844+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "ee6db689-a8a4-4675-93cf-62324b6b7aa2",
+      "nombre": "HAMBURGUESA ZULIANITA TRAB",
+      "precio_venta": 9,
+      "categoria_id": null,
+      "estado_activo": true,
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "updated_at": "2026-10-14T15:43:32.239844+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "1163cb72-bd30-4588-bbcc-4ac571d97ba2",
+      "nombre": "PIZZA VEGETARIANA PEQUEÑA TRAB",
+      "precio_venta": 6.5,
+      "categoria_id": null,
+      "estado_activo": true,
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "updated_at": "2026-10-14T15:43:32.239844+00:00",
+      "totalSold": 0
+    },
+    {
+      "id": "73bb464a-09ff-42ea-908a-d4c6c3ff08a8",
+      "nombre": "HAMBURGUESA CRISPY TRAB",
+      "precio_venta": 10,
+      "categoria_id": null,
+      "estado_activo": true,
+      "sede_id": "cee96ed9-216b-45fc-b669-4d170df5ab93",
+      "updated_at": "2026-10-14T15:43:32.239844+00:00",
+      "totalSold": 0
+    }
+  ]
+}

@@ -1,0 +1,677 @@
+{
+  "WhatsApp Image 2026-10-14 at 2.38.36 PM.jpeg": [
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.38.36 PM.jpeg",
+      "categoria_menu": "PIZZAS",
+      "productos": [
+        {
+          "nombre": "NAPOLITANA FAMILIAR",
+          "precio": 10,
+          "ingredientes_o_descripcion": "Salsa, abundante queso",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "NAPOLITANA MEDIANA",
+          "precio": 6.5,
+          "ingredientes_o_descripcion": "Salsa, abundante queso",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "NAPOLITANA PEQUEÑA",
+          "precio": 5,
+          "ingredientes_o_descripcion": "Salsa, abundante queso",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "TRADICIONAL FAMILIAR",
+          "precio": 11,
+          "ingredientes_o_descripcion": "Queso abundante, Jamón",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "TRADICIONAL MEDIANA",
+          "precio": 8,
+          "ingredientes_o_descripcion": "Queso abundante, Jamón",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "TRADICIONAL PEQUEÑA",
+          "precio": 5.5,
+          "ingredientes_o_descripcion": "Queso abundante, Jamón",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "PRIMAVERA FAMILIAR",
+          "precio": 15,
+          "ingredientes_o_descripcion": "Queso, Jamón, Tocineta, Maíz",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "PRIMAVERA MEDIANA",
+          "precio": 9.5,
+          "ingredientes_o_descripcion": "Queso, Jamón, Tocineta, Maíz",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "PRIMAVERA PEQUEÑA",
+          "precio": 7,
+          "ingredientes_o_descripcion": "Queso, Jamón, Tocineta, Maíz",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "AMERICANA FAMILIAR",
+          "precio": 15,
+          "ingredientes_o_descripcion": "Queso abundante, Pepperoni",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "AMERICANA MEDIANA",
+          "precio": 9.5,
+          "ingredientes_o_descripcion": "Queso abundante, Pepperoni",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "AMERICANA PEQUEÑA",
+          "precio": 7,
+          "ingredientes_o_descripcion": "Queso abundante, Pepperoni",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "JUAN PICANTE FAMILIAR",
+          "precio": 15,
+          "ingredientes_o_descripcion": "Queso, Jamón, Pepperoni Jalapeño, Salsa Picante",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "JUAN PICANTE MEDIANA",
+          "precio": 9.5,
+          "ingredientes_o_descripcion": "Queso, Jamón, Pepperoni Jalapeño, Salsa Picante",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "JUAN PICANTE PEQUEÑA",
+          "precio": 7,
+          "ingredientes_o_descripcion": "Queso, Jamón, Pepperoni Jalapeño, Salsa Picante",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "HAWAIANA FAMILIAR",
+          "precio": 15,
+          "ingredientes_o_descripcion": "Queso, Jamón, Tocineta Piña, Maíz",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "HAWAIANA MEDIANA",
+          "precio": 9.5,
+          "ingredientes_o_descripcion": "Queso, Jamón, Tocineta Piña, Maíz",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "HAWAIANA PEQUEÑA",
+          "precio": 7,
+          "ingredientes_o_descripcion": "Queso, Jamón, Tocineta Piña, Maíz",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "ZULIANITA FAMILIAR",
+          "precio": 16,
+          "ingredientes_o_descripcion": "Queso, Jamón, Tocineta, Maíz Plátano, Pimentón, Chorizo",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "ZULIANITA MEDIANA",
+          "precio": 10.5,
+          "ingredientes_o_descripcion": "Queso, Jamón, Tocineta, Maíz Plátano, Pimentón, Chorizo",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "ZULIANITA PEQUEÑA",
+          "precio": 8,
+          "ingredientes_o_descripcion": "Queso, Jamón, Tocineta, Maíz Plátano, Pimentón, Chorizo",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "CAPRICHOSA FAMILIAR",
+          "precio": 15,
+          "ingredientes_o_descripcion": "Queso, Jamón, Pepperoni, Maíz Pimentón, Aceitunas negras",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "CAPRICHOSA MEDIANA",
+          "precio": 9.5,
+          "ingredientes_o_descripcion": "Queso, Jamón, Pepperoni, Maíz Pimentón, Aceitunas negras",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "CAPRICHOSA PEQUEÑA",
+          "precio": 7,
+          "ingredientes_o_descripcion": "Queso, Jamón, Pepperoni, Maíz Pimentón, Aceitunas negras",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "VEGETARIANA FAMILIAR",
+          "precio": 15,
+          "ingredientes_o_descripcion": "Queso, Pimentón, Cebolla, Maíz Aceitunas, Tomate rostizado Tomate, Champiñones",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "VEGETARIANA MEDIANA",
+          "precio": 9.5,
+          "ingredientes_o_descripcion": "Queso, Pimentón, Cebolla, Maíz Aceitunas, Tomate rostizado Tomate, Champiñones",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "VEGETARIANA PEQUEÑA",
+          "precio": 7,
+          "ingredientes_o_descripcion": "Queso, Pimentón, Cebolla, Maíz Aceitunas, Tomate rostizado Tomate, Champiñones",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "LA PELUCHE FAMILIAR",
+          "precio": 15,
+          "ingredientes_o_descripcion": "Queso, Pepperoni, Tomate Maíz, Pimentón",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "LA PELUCHE MEDIANA",
+          "precio": 9.5,
+          "ingredientes_o_descripcion": "Queso, Pepperoni, Tomate Maíz, Pimentón",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "LA PELUCHE PEQUEÑA",
+          "precio": 7,
+          "ingredientes_o_descripcion": "Queso, Pepperoni, Tomate Maíz, Pimentón",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "ESPECIAL FAMILIAR",
+          "precio": 15,
+          "ingredientes_o_descripcion": "Queso, Jamón, Tocineta Maíz, Pimentón, Champiñones",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "ESPECIAL MEDIANA",
+          "precio": 9.5,
+          "ingredientes_o_descripcion": "Queso, Jamón, Tocineta Maíz, Pimentón, Champiñones",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "ESPECIAL PEQUEÑA",
+          "precio": 7,
+          "ingredientes_o_descripcion": "Queso, Jamón, Tocineta Maíz, Pimentón, Champiñones",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "CHARCUTERA FAMILIAR",
+          "precio": 17,
+          "ingredientes_o_descripcion": "Pepperoni, Tocineta, Jamón, Queso amarillo, Mozzarella",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "CHARCUTERA MEDIANA",
+          "precio": 11.5,
+          "ingredientes_o_descripcion": "Pepperoni, Tocineta, Jamón, Queso amarillo, Mozzarella",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "CHARCUTERA PEQUEÑA",
+          "precio": 8,
+          "ingredientes_o_descripcion": "Pepperoni, Tocineta, Jamón, Queso amarillo, Mozzarella",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "4 ESTACIONES FAMILIAR",
+          "precio": 16,
+          "ingredientes_o_descripcion": "Pimentón, Pepperoni Maíz, Tocineta",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "4 ESTACIONES MEDIANA",
+          "precio": 10.5,
+          "ingredientes_o_descripcion": "Pimentón, Pepperoni Maíz, Tocineta",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "4 ESTACIONES PEQUEÑA",
+          "precio": 8,
+          "ingredientes_o_descripcion": "Pimentón, Pepperoni Maíz, Tocineta",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "LA CAPRESA FAMILIAR",
+          "precio": 15,
+          "ingredientes_o_descripcion": "Queso, Jamón, Aceite de oliva Tomate pecorino, Albahaca",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "LA CAPRESA MEDIANA",
+          "precio": 9.5,
+          "ingredientes_o_descripcion": "Queso, Jamón, Aceite de oliva Tomate pecorino, Albahaca",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "LA CAPRESA PEQUEÑA",
+          "precio": 7,
+          "ingredientes_o_descripcion": "Queso, Jamón, Aceite de oliva Tomate pecorino, Albahaca",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "SUPREMA FAMILIAR",
+          "precio": 17,
+          "ingredientes_o_descripcion": "Queso, Jamón, Pollo, Chorizo Carne, Tocineta, Pimentón, Cebolla",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "SUPREMA MEDIANA",
+          "precio": 11.5,
+          "ingredientes_o_descripcion": "Queso, Jamón, Pollo, Chorizo Carne, Tocineta, Pimentón, Cebolla",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "SUPREMA PEQUEÑA",
+          "precio": 8,
+          "ingredientes_o_descripcion": "Queso, Jamón, Pollo, Chorizo Carne, Tocineta, Pimentón, Cebolla",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "CORN CHICKEN FAMILIAR",
+          "precio": 17,
+          "ingredientes_o_descripcion": "Queso, Jamón, Tocineta Maíz dulce, Pollo al grill",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "CORN CHICKEN MEDIANA",
+          "precio": 11.5,
+          "ingredientes_o_descripcion": "Queso, Jamón, Tocineta Maíz dulce, Pollo al grill",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "CORN CHICKEN PEQUEÑA",
+          "precio": 8,
+          "ingredientes_o_descripcion": "Queso, Jamón, Tocineta Maíz dulce, Pollo al grill",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "B.B.Q FAMILIAR",
+          "precio": 17.5,
+          "ingredientes_o_descripcion": "Queso, Jamón, Chuleta ahumada Jalapeño, Tocineta, Salsa BBQ Cebolla caramelizada",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "B.B.Q MEDIANA",
+          "precio": 12.5,
+          "ingredientes_o_descripcion": "Queso, Jamón, Chuleta ahumada Jalapeño, Tocineta, Salsa BBQ Cebolla caramelizada",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "B.B.Q PEQUEÑA",
+          "precio": 9,
+          "ingredientes_o_descripcion": "Queso, Jamón, Chuleta ahumada Jalapeño, Tocineta, Salsa BBQ Cebolla caramelizada",
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    }
+  ],
+  "WhatsApp Image 2026-10-14 at 2.45.30 PM.jpeg": [
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.45.30 PM.jpeg",
+      "categoria_menu": "SOMBREROS",
+      "productos": [
+        {
+          "nombre": "SOMBRERO CLÁSICO",
+          "precio": 20,
+          "ingredientes_o_descripcion": "500gr de carne, queso, jamón ahumado, papas ralladas, lechuga, tomate, salsas.",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "SOMBRERO MIXTO",
+          "precio": 28,
+          "ingredientes_o_descripcion": "1Kg de proteína (carne molida y pollo), queso, jamón ahumado, papas ralladas, lechuga, tomate, salsas.",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "SOMBRERO 3 PROTEÍNAS",
+          "precio": 32,
+          "ingredientes_o_descripcion": "1.5Kg de proteína (carne, pollo y chuleta), queso, jamón ahumado, papas ralladas, lechuga, tomate, salsas.",
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.45.30 PM.jpeg",
+      "categoria_menu": "AREPAS",
+      "productos": [
+        {
+          "nombre": "AREPA SENCILLA",
+          "precio": 6.5,
+          "ingredientes_o_descripcion": "Ensalada rallada, huevo, carne mechada, queso rallado y salsas",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "AREPA MIXTA",
+          "precio": 8.5,
+          "ingredientes_o_descripcion": "Mixta (Ensalada rallada, huevo, Pollo, Lomito, queso rallado y salsas)",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "AREPA 3 PROTEÍNAS",
+          "precio": 10,
+          "ingredientes_o_descripcion": "Ensalada rallada, huevo, Carne Mechada, Pollo, Lomito, queso rallado y salsas",
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.45.30 PM.jpeg",
+      "categoria_menu": "SALCHIPAPAS",
+      "productos": [
+        {
+          "nombre": "SALCHIPAPA SENCILLA",
+          "precio": 7,
+          "ingredientes_o_descripcion": "400gr de papas, salchicha, lechuga, salsas y queso rallado",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "SALCHIPAPA MIXTA",
+          "precio": 9,
+          "ingredientes_o_descripcion": "400gr de papas, salchicha, Pollo, Chorizo, lechuga, salsas y queso rallado",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "ESPECIAL PROTEÍNA",
+          "precio": 11.5,
+          "ingredientes_o_descripcion": "500gr de papas, salchicha, Pollo, Lomito, Chuleta, lechuga, salsas y queso rallado",
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.45.30 PM.jpeg",
+      "categoria_menu": "PATACONES",
+      "productos": [
+        {
+          "nombre": "PATACÓN SENCILLO",
+          "precio": 7,
+          "ingredientes_o_descripcion": "Ensalada rallada, huevo, carne mechada, jamón ahumado, queso rallado y salsas",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "PATACÓN MIXTO",
+          "precio": 9,
+          "ingredientes_o_descripcion": "Ensalada rallada, huevo, Pollo, Lomito, jamón ahumado, queso rallado y salsas",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "PATACÓN 3 PROTEÍNAS",
+          "precio": 11,
+          "ingredientes_o_descripcion": "Ensalada rallada, huevo, Carne Mechada, Pollo, Lomito, jamón ahumado, queso rallado y salsas",
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.45.30 PM.jpeg",
+      "categoria_menu": "ADICIONALES",
+      "productos": [
+        {
+          "nombre": "SERVICIO DE PAPAS 200GR",
+          "precio": 3.5,
+          "ingredientes_o_descripcion": "Servicio de papas 200gr",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "MAÍZ",
+          "precio": 1,
+          "ingredientes_o_descripcion": "Maíz",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "QUESO",
+          "precio": 1,
+          "ingredientes_o_descripcion": "Queso",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "TOCINETA",
+          "precio": 1,
+          "ingredientes_o_descripcion": "Tocineta",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "HUEVO",
+          "precio": 0.5,
+          "ingredientes_o_descripcion": "Huevo",
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    }
+  ],
+  "WhatsApp Image 2026-10-14 at 2.45.30 PM (1).jpeg": [
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.45.30 PM (1).jpeg",
+      "categoria_menu": "COMBO",
+      "productos": [
+        {
+          "nombre": "AÑADE COMBO",
+          "precio": 2.5,
+          "ingredientes_o_descripcion": "Papa regular + Bebida a cualquier hamburguesa",
+          "es_combo": true,
+          "contenido_combo": "Papa regular + Bebida a cualquier hamburguesa"
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.45.30 PM (1).jpeg",
+      "categoria_menu": "MENÚ BURGER",
+      "productos": [
+        {
+          "nombre": "ECONÓMICA SENCILLA",
+          "precio": 3.8,
+          "ingredientes_o_descripcion": "(100gr de carne, pollo o chuleta, papitas, tomate, lechuga y queso de mano.)",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "CRISPY SENCILLA",
+          "precio": 5.5,
+          "ingredientes_o_descripcion": "(100gr de pollo crispy, queso, jamón, papitas, tomate, lechuga y queso de mano.)",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "ESPECIAL",
+          "precio": 7,
+          "ingredientes_o_descripcion": "(200gr de Carne o Chuleta, lechuga, tomate, queso de mano, tocineta, salsa y papitas.)",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "POLLO ESPECIAL",
+          "precio": 8.5,
+          "ingredientes_o_descripcion": "(250gr de pollo, lechuga, tomate, queso de mano, tocineta, salsa y papitas.)",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "LOMITO ESPECIAL",
+          "precio": 8.5,
+          "ingredientes_o_descripcion": "(200gr de lomito, lechuga, tomate, queso de mano, tocineta, salsa y papitas.)",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "AMERICANA",
+          "precio": 12,
+          "ingredientes_o_descripcion": "(Doble carne, lechuga, tomate, queso amarillo, tocineta, salsa, papitas, pepinillos y cebolla.)",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "CRISPY ESPECIAL",
+          "precio": 12,
+          "ingredientes_o_descripcion": "(Pan whooper, 300gr de pollo crispy, tomate, jamón ahumado, tocineta, papitas, queso de mano, repollo, salsa.)",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "MIXTA",
+          "precio": 12,
+          "ingredientes_o_descripcion": "(300gr de proteína (a escoger entre Pollo, Chuleta y Lomito), lechuga, tomate, queso de mano, tocineta, salsa y papitas.)",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "3 PROTEÍNAS",
+          "precio": 15,
+          "ingredientes_o_descripcion": "(450gr (Mix de Pollo, Lomito y Chuleta), lechuga, tomate, queso de mano, tocineta, salsa y papitas.)",
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.45.30 PM (1).jpeg",
+      "categoria_menu": "ADICIONALES",
+      "productos": [
+        {
+          "nombre": "SERVICIO DE PAPAS 200GR",
+          "precio": 3.5,
+          "ingredientes_o_descripcion": "Servicio de Papas 200gr",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "MAÍZ",
+          "precio": 1,
+          "ingredientes_o_descripcion": "Maíz",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "QUESO",
+          "precio": 1,
+          "ingredientes_o_descripcion": "Queso",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "TOCINETA",
+          "precio": 1,
+          "ingredientes_o_descripcion": "Tocineta",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "HUEVO",
+          "precio": 0.5,
+          "ingredientes_o_descripcion": "Huevo",
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    },
+    {
+      "archivo": "WhatsApp Image 2026-10-14 at 2.45.30 PM (1).jpeg",
+      "categoria_menu": "HOT DOGS PAN CON POLLO",
+      "productos": [
+        {
+          "nombre": "PERRO CALIENTE",
+          "precio": 1.8,
+          "ingredientes_o_descripcion": "(Salchicha salchipollo, papas, ensalada rallada, salsa y queso rallado.)",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "PERRO FULL",
+          "precio": 3.5,
+          "ingredientes_o_descripcion": "(Salchicha salchipollo, papas, ensalada rallada, salsa, huevo, jamón y queso de mano.)",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "PAN CON POLLO SENCILLO",
+          "precio": 4,
+          "ingredientes_o_descripcion": "(100gr de pollo, papas, ensalada rallada, salsa y queso rallado en pan de perro.)",
+          "es_combo": false,
+          "contenido_combo": null
+        },
+        {
+          "nombre": "PAN CON POLLO ESPECIAL",
+          "precio": 6,
+          "ingredientes_o_descripcion": "(100gr de pollo, papas, ensalada rallada, salsa, huevo, jamón y queso de mano.)",
+          "es_combo": false,
+          "contenido_combo": null
+        }
+      ]
+    }
+  ]
+}
