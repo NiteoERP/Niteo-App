@@ -395,12 +395,12 @@ export default function CatalogoClient({
               <select
                 value={filterTipo}
                 onChange={(e) => setFilterTipo(e.target.value as any)}
-                className="bg-neutral-900 border border-neutral-800 text-sm text-amber-300 font-medium rounded-lg px-3 py-2 focus:border-indigo-500 outline-none transition-colors flex-1 sm:flex-none sm:w-[135px] truncate"
+                className="bg-neutral-900 border border-neutral-800 text-sm text-neutral-300 font-medium rounded-lg px-3 py-2 focus:border-indigo-500 outline-none transition-colors flex-1 sm:flex-none sm:w-[150px] truncate"
               >
-                <option value="todos">Todos los tipos</option>
-                <option value="REVENTA">Reventa</option>
-                <option value="ELABORADO">Elaborado</option>
-                <option value="SERVICIO">Servicio (Sin stock)</option>
+                <option value="todos">Cualquier tipo</option>
+                <option value="REVENTA">Solo Reventa</option>
+                <option value="ELABORADO">Solo Elaborados</option>
+                <option value="SERVICIO">Solo Servicios</option>
               </select>
             )}
             <select
