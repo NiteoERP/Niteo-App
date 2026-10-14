@@ -33,6 +33,16 @@ export interface ComandaPayload {
   items: ItemComanda[];
 }
 
+async function obtenerEmpresaIdMesero(supabase: any, user: any): Promise<string | null> {
+  if (user?.app_metadata?.empresa_id) return user.app_metadata.empresa_id;
+  const { data: perfil } = await supabase
+    .from('perfiles')
+    .select('empresa_id')
+    .eq('id', user.id)
+    .maybeSingle();
+  return perfil?.empresa_id || null;
+}
+
 export async function obtenerTasaMesa(sedeId: string): Promise<number> {
   try {
     const supabase = await createClient();
@@ -82,7 +92,7 @@ export async function buscarTerminalPorCodigo(codigo: string): Promise<TerminalI
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const empresaId = user.app_metadata?.empresa_id;
+  const empresaId = await obtenerEmpresaIdMesero(supabase, user);
   if (!empresaId) return null;
 
   const codigoNorm = codigo.trim().toUpperCase();
@@ -120,15 +130,26 @@ export async function obtenerCatalogoMesa(sedeId: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const empresaId = user.app_metadata?.empresa_id;
+  const empresaId = await obtenerEmpresaIdMesero(supabase, user);
+  if (!empresaId) return [];
 
-  const { data: productos } = await supabase
+  let query = supabase
     .from('productos')
     .select('id, id_pos, nombre, precio_venta, sede_id, notas_preparacion, categorias(nombre)')
     .eq('empresa_id', empresaId)
-    .or(`sede_id.eq.${sedeId},sede_id.is.null`)
     .eq('estado_activo', true)
-    .order('nombre').limit(3000);
+    .or('archivado.is.null,archivado.eq.false');
+
+  if (sedeId) {
+    query = query.or(`sede_id.eq.${sedeId},sede_id.is.null`);
+  }
+
+  const { data: productos, error } = await query.order('nombre').limit(3000);
+
+  if (error) {
+    console.error('Error en obtenerCatalogoMesa:', error);
+    return [];
+  }
 
   return productos || [];
 }
@@ -138,7 +159,9 @@ export async function enviarComanda(payload: ComandaPayload): Promise<{ success:
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'No autenticado' };
 
-  const empresaId = user.app_metadata?.empresa_id;
+  const empresaId = await obtenerEmpresaIdMesero(supabase, user);
+  if (!empresaId) return { success: false, error: 'Empresa no encontrada' };
+
   const meseroNombre = user.user_metadata?.nombre_completo ||
     user.user_metadata?.full_name ||
     user.email ||
@@ -249,13 +272,14 @@ export async function enviarComanda(payload: ComandaPayload): Promise<{ success:
       estado: 'pendiente',
     })
     .select('id')
-    .single();
+    .maybeSingle();
 
-  if (error) return { success: false, error: error.message };
+  if (error || !data) return { success: false, error: error?.message || 'Error al guardar comanda' };
   return { success: true, id: data.id };
 }
 
 export async function obtenerMesasAbiertas(sedeId: string) {
+  if (!sedeId) return [];
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
@@ -362,15 +386,6 @@ export interface ClienteSugeridoMesa {
   telefono: string;
 }
 
-async function obtenerEmpresaIdMesero(supabase: any, user: any): Promise<string | null> {
-  if (user?.app_metadata?.empresa_id) return user.app_metadata.empresa_id;
-  const { data: perfil } = await supabase
-    .from('perfiles')
-    .select('empresa_id')
-    .eq('id', user.id)
-    .maybeSingle();
-  return perfil?.empresa_id || null;
-}
 
 export async function buscarClientesMesa(query: string): Promise<ClienteSugeridoMesa[]> {
   const supabase = await createClient();

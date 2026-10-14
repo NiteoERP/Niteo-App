@@ -26,8 +26,17 @@ export default function MesasHub({ meseroNombre, meseroId, metodosPago }: MesasH
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) setTerminal(JSON.parse(saved));
-    } catch {}
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object' && parsed.terminalCode && parsed.sedeId) {
+          setTerminal(parsed);
+        } else {
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      }
+    } catch {
+      localStorage.removeItem(STORAGE_KEY);
+    }
     setLoaded(true);
   }, []);
 

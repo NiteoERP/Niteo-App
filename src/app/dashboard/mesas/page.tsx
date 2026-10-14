@@ -11,12 +11,12 @@ export default async function MesasPage() {
     .from('perfiles')
     .select('permisos, nombre_completo, rol, empresa_id, rubro')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
-  const permisos: string[] = perfil?.permisos || [];
+  const permisos: string[] = Array.isArray(perfil?.permisos) ? perfil.permisos : [];
   const rol = perfil?.rol || user.app_metadata?.user_role || 'CAJERO';
 
-  const tieneAcceso = permisos.includes('mesas') || rol === 'MESERO' || rol === 'MASTER' || rol === 'SUPERADMIN';
+  const tieneAcceso = permisos.includes('mesas') || rol === 'MESERO' || rol === 'GERENTE' || rol === 'MASTER' || rol === 'SUPERADMIN';
   if (!tieneAcceso) redirect('/dashboard');
 
   const meseroNombre = perfil?.nombre_completo ||
@@ -27,27 +27,16 @@ export default async function MesasPage() {
   const empresaId = (user.app_metadata?.empresa_id || perfil?.empresa_id) as string | undefined;
   let metodosPago: string[] = ['Efectivo USD', 'Efectivo Bs', 'Pago Móvil', 'Punto de Venta', 'Zelle'];
   if (empresaId) {
-    const { data: sub } = await supabase
-      .from('suscripciones_empresas')
-      .select('modulos_activos')
-      .eq('empresa_id', empresaId)
-      .maybeSingle();
-
-    if (sub?.modulos_activos && sub.modulos_activos.length > 0) {
-      if (sub.modulos_activos.includes('ninguno') || sub.modulos_activos.includes('none') || !sub.modulos_activos.includes('mesas')) {
-        redirect('/dashboard');
-      }
+    try {
+      const { data: emp } = await supabase
+        .from('empresas')
+        .select('metodos_pago')
+        .eq('id', empresaId)
+        .maybeSingle();
+      if (emp?.metodos_pago?.length) metodosPago = emp.metodos_pago;
+    } catch (e) {
+      console.warn('Error cargando metodos_pago en MesasPage:', e);
     }
-
-    const { data: emp } = await supabase
-      .from('empresas')
-      .select('metodos_pago, rubro')
-      .eq('id', empresaId)
-      .single();
-    if (emp?.rubro && emp.rubro !== 'restaurante') {
-      redirect('/dashboard');
-    }
-    if (emp?.metodos_pago?.length) metodosPago = emp.metodos_pago;
   }
 
   return (

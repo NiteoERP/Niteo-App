@@ -20,12 +20,12 @@ export default async function DashboardLayout({
   }
 
   const { data: dbProfile } = await supabase
-    .from('perfiles').select('permisos, empresa_id, rol, sede_id, rubro').eq('id', user.id).single();
+    .from('perfiles').select('permisos, empresa_id, rol, sede_id, rubro').eq('id', user.id).maybeSingle();
 
-  const permisos = dbProfile?.permisos || [];
+  const permisos = Array.isArray(dbProfile?.permisos) ? dbProfile.permisos : [];
 
   const empresa_id = user.app_metadata?.empresa_id || dbProfile?.empresa_id;
-  const userRole   = user.app_metadata?.user_role || dbProfile?.rol || 'CAJERO';
+  const userRole   = dbProfile?.rol || user.app_metadata?.user_role || 'CAJERO';
   const userName   = user.user_metadata?.full_name || user.email;
 
   let licencia = null;
@@ -53,7 +53,7 @@ export default async function DashboardLayout({
         .from('empresas')
         .select('nombre_comercial, moneda, simbolo_moneda, zona_horaria, metodos_pago, rubro')
         .eq('id', empresa_id)
-        .single();
+        .maybeSingle();
       if (emp) empresaData = emp;
     } catch (err) {
       console.error('Error cargando empresaData:', err);

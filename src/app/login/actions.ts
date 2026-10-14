@@ -44,9 +44,11 @@ export async function login(prevState: any, formData: FormData) {
     redirect('/admin')
   }
 
+  const permisos = Array.isArray(perfil?.permisos) ? perfil.permisos : [];
+  const tieneOtrosPermisos = permisos.some(p => p !== 'mesas' && p !== 'ver_todas_compras');
   const esSoloMesero =
-    perfil?.rol === 'MESERO' ||
-    (Array.isArray(perfil?.permisos) && perfil.permisos.length === 1 && perfil.permisos[0] === 'mesas');
+    (perfil?.rol === 'MESERO' && !tieneOtrosPermisos) ||
+    (permisos.length === 1 && permisos[0] === 'mesas' && perfil?.rol !== 'GERENTE' && perfil?.rol !== 'MASTER' && perfil?.rol !== 'SUPERADMIN');
 
   if (esSoloMesero) {
     revalidatePath('/dashboard/mesas')

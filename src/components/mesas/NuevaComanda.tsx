@@ -216,12 +216,13 @@ export default function NuevaComanda({
       obtenerCatalogoMesa(terminal.sedeId),
       obtenerTasaMesa(terminal.sedeId),
     ]);
-    setProductos(prods);
+    const safeProds = Array.isArray(prods) ? prods : [];
+    setProductos(safeProds);
     if (tasaActual && tasaActual > 0) {
       setTasaEfectiva(tasaActual);
     }
     const cats = ['Todos', ...Array.from(new Set(
-      prods.map((p: any) => p.categorias?.nombre as string || 'Sin categoría')
+      safeProds.map((p: any) => p.categorias?.nombre as string || 'Sin categoría')
     ))];
     setCategorias(cats);
     setLoading(false);

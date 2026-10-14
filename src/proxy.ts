@@ -73,28 +73,25 @@ export async function proxy(request: NextRequest) {
       return supabaseResponse;
     }
 
-    // 4. LEER PERFIL DIRECTAMENTE DEL JWT (Cero latencia para claims presentes)
+    // 4. LEER PERFIL DIRECTAMENTE DEL JWT Y BASE DE DATOS
     try {
       let empresa_id = user.app_metadata?.empresa_id;
       let rol = user.app_metadata?.user_role as string | undefined;
-      // permisos no están en el JWT — se leen de DB una sola vez junto con rol
       let permisos: string[] = user.app_metadata?.permisos ?? [];
 
-      if (!empresa_id) {
-        // F16: Una sola query a perfiles que lee empresa_id + rol + permisos
-        // (antes había 2 queries separadas: L71 y L126)
+      // Si falta empresa_id, rol o permisos, consultar perfiles para tener datos frescos
+      if (!empresa_id || !rol || permisos.length === 0) {
         const { data: pDb } = await supabase
           .from('perfiles')
           .select('empresa_id, rol, permisos')
           .eq('id', user.id)
           .maybeSingle();
-        if (pDb?.empresa_id) {
-          empresa_id = pDb.empresa_id;
-          rol        = rol || pDb.rol;
-          permisos   = pDb.permisos ?? [];
-        } else {
-          // Si no hay empresa_id, al menos capturamos el rol para el check de SUPERADMIN
-          rol = rol || pDb?.rol;
+        if (pDb) {
+          empresa_id = empresa_id || pDb.empresa_id;
+          rol        = pDb.rol || rol;
+          if (Array.isArray(pDb.permisos) && pDb.permisos.length > 0) {
+            permisos = pDb.permisos;
+          }
         }
       }
 
@@ -183,6 +180,7 @@ export async function proxy(request: NextRequest) {
               '/dashboard/ventas',
               '/dashboard/terminal',
               '/dashboard/caja',
+              '/dashboard/mesas',
               '/dashboard/billing',
             ];
             const esPOS   = rutasPOS.some(r => request.nextUrl.pathname.startsWith(r));
@@ -203,15 +201,20 @@ export async function proxy(request: NextRequest) {
         );
 
         // La jerarquía exige MASTER o GERENTE
-        if (isTryingToAccessAdminRoute && (profile.rol === 'CAJERO' || profile.rol === 'COMPRADOR')) {
+        if (isTryingToAccessAdminRoute && (profile.rol === 'CAJERO' || profile.rol === 'COMPRADOR' || profile.rol === 'MESERO')) {
           const url = request.nextUrl.clone();
           url.pathname = '/dashboard';
           return NextResponse.redirect(url);
         }
 
-        // BLOQUEO ESTRICTO PARA MESEROS
-        // Si es mesero, SOLO puede estar en /dashboard/mesas
-        if (profile.rol === 'MESERO') {
+        // BLOQUEO ESTRICTO SOLO PARA MESEROS PUROS
+        // Si el usuario es MESERO y NO tiene otros módulos asignados, se le mantiene en /dashboard/mesas
+        const permisosActivos = profile.permisos || [];
+        const tieneOtrosPermisos = permisosActivos.some(p => p !== 'mesas' && p !== 'ver_todas_compras');
+        const esMeseroPuro = (profile.rol === 'MESERO' && !tieneOtrosPermisos) ||
+                             (permisosActivos.length === 1 && permisosActivos[0] === 'mesas' && profile.rol !== 'GERENTE' && profile.rol !== 'MASTER' && profile.rol !== 'SUPERADMIN');
+
+        if (esMeseroPuro) {
           if (request.nextUrl.pathname !== '/dashboard/mesas' && !request.nextUrl.pathname.startsWith('/dashboard/mesas/')) {
             const url = request.nextUrl.clone();
             url.pathname = '/dashboard/mesas';
@@ -219,27 +222,32 @@ export async function proxy(request: NextRequest) {
           }
         }
 
-        // 7. Redireccionar desde /dashboard a la página por defecto del rol
-        // F16: Ya no hace una segunda query — usa `permisos` leído en el paso 4
+        // 7. Redireccionar desde /dashboard a la página por defecto del rol SOLO si tiene un solo módulo
         if (request.nextUrl.pathname === '/dashboard' && profile.rol !== 'MASTER' && profile.rol !== 'SUPERADMIN') {
-          const effectiveRole = profile.rol;
-          if (effectiveRole !== 'MASTER' && effectiveRole !== 'SUPERADMIN') {
-            if (!profile.permisos.includes('dashboard')) {
+          if (!profile.permisos.includes('dashboard')) {
+            // Si el usuario solo tiene 1 módulo asignado, lo llevamos directo a ese módulo.
+            // Si tiene múltiples módulos asignados, le permitimos ver el "Panel de Operaciones" en /dashboard.
+            const modulosOperativos = profile.permisos.filter(p => p !== 'ver_todas_compras');
+            if (modulosOperativos.length === 1) {
               const url = request.nextUrl.clone();
-              if (profile.permisos.includes('pos'))                                    url.pathname = '/dashboard/ventas';
-              else if (profile.permisos.includes('caja') || profile.permisos.includes('finanzas')) url.pathname = '/dashboard/caja';
-              else if (profile.permisos.includes('inventario'))                        url.pathname = '/dashboard/inventario';
-              else if (profile.permisos.includes('compras'))                           url.pathname = '/dashboard/compras';
-              else if (profile.permisos.includes('reportes'))                          url.pathname = '/dashboard/informes';
-              else if (profile.permisos.includes('clientes'))                          url.pathname = '/dashboard/clientes';
-              else if (profile.permisos.includes('creditos'))                          url.pathname = '/dashboard/creditos';
-              else if (profile.permisos.includes('equipo') || profile.permisos.includes('usuarios')) url.pathname = '/dashboard/equipo';
-              else if (profile.permisos.includes('mesas'))                             url.pathname = '/dashboard/mesas';
-              else                                                                      url.pathname = '/dashboard';
+              const unico = modulosOperativos[0];
+              if (unico === 'pos')                                    url.pathname = '/dashboard/ventas';
+              else if (unico === 'caja' || unico === 'finanzas')      url.pathname = '/dashboard/caja';
+              else if (unico === 'inventario')                        url.pathname = '/dashboard/inventario';
+              else if (unico === 'compras')                           url.pathname = '/dashboard/compras';
+              else if (unico === 'reportes')                          url.pathname = '/dashboard/informes';
+              else if (unico === 'clientes')                          url.pathname = '/dashboard/clientes';
+              else if (unico === 'creditos')                          url.pathname = '/dashboard/creditos';
+              else if (unico === 'equipo' || unico === 'usuarios')    url.pathname = '/dashboard/equipo';
+              else if (unico === 'mesas')                             url.pathname = '/dashboard/mesas';
 
               if (url.pathname !== '/dashboard') {
                 return NextResponse.redirect(url);
               }
+            } else if (modulosOperativos.length === 0 && profile.rol === 'MESERO') {
+              const url = request.nextUrl.clone();
+              url.pathname = '/dashboard/mesas';
+              return NextResponse.redirect(url);
             }
           }
         }

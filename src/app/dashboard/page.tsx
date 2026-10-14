@@ -72,7 +72,7 @@ export default function DashboardPage() {
       { id: 'clientes', name: 'Directorio de Clientes', desc: 'Gestión de clientes y contactos.', icon: Store, href: '/dashboard/clientes' },
       { id: 'creditos', name: 'Créditos & Cobranzas', desc: 'Cuentas por cobrar y abonos.', icon: Receipt, href: '/dashboard/creditos' },
       { id: 'equipo', altId: 'usuarios', name: 'Equipo de Trabajo', desc: 'Gestión de colaboradores y accesos.', icon: Store, href: '/dashboard/equipo' },
-    ].filter(m => permisos.includes(m.id) || (m.altId && permisos.includes(m.altId)) || (m.id === 'mesas' && userRole === 'MESERO'));
+    ].filter(m => permisos.includes(m.id) || (m.altId && permisos.includes(m.altId)) || (m.id === 'mesas' && (userRole === 'MESERO' || userRole === 'GERENTE')));
 
     return (
       <div className="p-4 sm:p-8 max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">

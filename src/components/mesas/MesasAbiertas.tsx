@@ -73,6 +73,10 @@ export default function MesasAbiertas({ terminal, meseroNombre, metodosPago, onM
     if (showRefresh) setRefreshing(true);
     try {
       const data = await obtenerMesasAbiertas(terminal.sedeId);
+      if (!Array.isArray(data)) {
+        setMesas([]);
+        return;
+      }
       // Agrupar por mesa_identificador — quedar con la comanda más reciente de cada mesa
       const porMesa: Record<string, any> = {};
       for (const cmd of data) {

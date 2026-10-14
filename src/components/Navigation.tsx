@@ -65,9 +65,7 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
     if (userRole === 'MESERO' && permisos.length === 0) return p === 'mesas';
     if (userRole === 'REPARTIDOR' && permisos.length === 0) return p === 'delivery';
     if (p === 'mesas') {
-      if (userRole === 'MASTER') return false;
-      if (rubro && rubro !== 'restaurante') return false;
-      if (userRole === 'SUPERADMIN' || userRole === 'MESERO') return true;
+      if (userRole === 'SUPERADMIN' || userRole === 'MESERO' || userRole === 'MASTER' || userRole === 'GERENTE') return true;
       return permisos.includes('mesas');
     }
     if (userRole === 'MESERO') return permisos.includes(p);
@@ -185,20 +183,36 @@ export function SidebarNav({ permisos, userRole, modulosActivos = [], planSuscri
       : "flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-neutral-400 hover:bg-white/5 hover:text-white transition-all text-[15px] font-medium";
   };
 
+  const permisosActivos = permisos || [];
+  const tieneOtrosPermisos = permisosActivos.some(p => p !== 'mesas' && p !== 'ver_todas_compras');
+  const esSoloMesero = (userRole === 'MESERO' && !tieneOtrosPermisos) ||
+                       (permisosActivos.length === 1 && permisosActivos[0] === 'mesas' && userRole !== 'GERENTE' && userRole !== 'MASTER' && userRole !== 'SUPERADMIN');
+
   return (
     <nav className="flex-1 px-3.5 py-4 space-y-1.5 overflow-y-auto custom-scrollbar select-none">
-      {userRole !== 'MESERO' && (
-        <>
-          {/* 1. Inicio */}
-          <Link href="/dashboard" className={getSingleLinkClass('/dashboard', true)}>
-            <LayoutDashboard size={21} />
-            <span>Inicio</span>
-          </Link>
+      {/* 1. Inicio */}
+      {!esSoloMesero && (
+        <Link href="/dashboard" className={getSingleLinkClass('/dashboard', true)}>
+          <LayoutDashboard size={21} />
+          <span>Inicio</span>
+        </Link>
+      )}
 
-          <div className="pt-2 pb-1">
-            <div className="h-[1px] bg-neutral-800/60 mx-1" />
-          </div>
-        </>
+      {/* Acceso Directo Destacado a Módulo Mesero */}
+      {hasPerm('mesas') && (
+        <Link href="/dashboard/mesas" className={getSingleLinkClass('/dashboard/mesas')}>
+          <UtensilsCrossed size={21} className="text-amber-400" />
+          <span className="flex-1">Módulo Mesero</span>
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            Salón
+          </span>
+        </Link>
+      )}
+
+      {(!esSoloMesero || hasPerm('mesas')) && (
+        <div className="pt-2 pb-1">
+          <div className="h-[1px] bg-neutral-800/60 mx-1" />
+        </div>
       )}
 
       {/* 2. Módulos Desplegables Agrupados */}
@@ -320,6 +334,11 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
   const [menuOpen, setMenuOpen] = useState(false);
   const [ventasMenuOpen, setVentasMenuOpen] = useState(false);
 
+  const permisosActivos = permisos || [];
+  const tieneOtrosPermisos = permisosActivos.some(p => p !== 'mesas' && p !== 'ver_todas_compras');
+  const esSoloMesero = (userRole === 'MESERO' && !tieneOtrosPermisos) ||
+                       (permisosActivos.length === 1 && permisosActivos[0] === 'mesas' && userRole !== 'GERENTE' && userRole !== 'MASTER' && userRole !== 'SUPERADMIN');
+
   useEffect(() => {
     setMenuOpen(false);
     setVentasMenuOpen(false);
@@ -337,9 +356,7 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
     if (userRole === 'MESERO' && permisos.length === 0) return p === 'mesas';
     if (userRole === 'REPARTIDOR' && permisos.length === 0) return p === 'delivery';
     if (p === 'mesas') {
-      if (userRole === 'MASTER') return false;
-      if (rubro && rubro !== 'restaurante') return false;
-      if (userRole === 'SUPERADMIN' || userRole === 'MESERO') return true;
+      if (userRole === 'SUPERADMIN' || userRole === 'MESERO' || userRole === 'MASTER' || userRole === 'GERENTE') return true;
       return permisos.includes('mesas');
     }
     if (userRole === 'MESERO') return permisos.includes(p);
@@ -686,7 +703,7 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
                       h-[calc(4rem+env(safe-area-inset-bottom))]
                       pb-[env(safe-area-inset-bottom)]">
 
-        {userRole !== 'MESERO' && (() => {
+        {!esSoloMesero && (() => {
           const { link, isActive } = navItem('/dashboard', true);
           return (
             <Link 
