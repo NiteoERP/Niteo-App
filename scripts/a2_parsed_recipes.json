@@ -1,0 +1,1936 @@
+[
+  {
+    "prodCode": "00000184",
+    "prodName": "HAMBURGUESA CRISPY CON PAPITAS",
+    "ingredientes": [
+      {
+        "partCode": "00000014",
+        "partName": "TOMATE",
+        "cantidad": 0.04
+      },
+      {
+        "partCode": "00000176",
+        "partName": "QUESO DE MANO",
+        "cantidad": 0.1
+      },
+      {
+        "partCode": "00000004",
+        "partName": "TOCINETA",
+        "cantidad": 0.06
+      },
+      {
+        "partCode": "00000159",
+        "partName": "PAPAS FRITAS",
+        "cantidad": 2
+      },
+      {
+        "partCode": "00000186",
+        "partName": "PAPITAS",
+        "cantidad": 0.06
+      },
+      {
+        "partCode": "00000187",
+        "partName": "PAN WHOOPER",
+        "cantidad": 2
+      },
+      {
+        "partCode": "00000195",
+        "partName": "JAMON AHUMADO",
+        "cantidad": 0.04
+      },
+      {
+        "partCode": "00000213",
+        "partName": "FILET DE POLLO",
+        "cantidad": 0.4
+      }
+    ]
+  },
+  {
+    "prodCode": "00000270",
+    "prodName": "CAJITA FELIZ HAMBURGUESA",
+    "ingredientes": [
+      {
+        "partCode": "00000266",
+        "partName": "CAJA PARA CAJITA FELIZ",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000159",
+        "partName": "PAPAS FRITAS",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000268",
+        "partName": "JUGUETE PARA CAJITA FELIZ",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000267",
+        "partName": "JUGO PACK",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000177",
+        "partName": "PAN DE HAMBURGUESA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000212",
+        "partName": "CARNE PARA HAMBURGUESAS",
+        "cantidad": 0.1
+      },
+      {
+        "partCode": "00000017",
+        "partName": "QUESO AMARILLO",
+        "cantidad": 0.04
+      }
+    ]
+  },
+  {
+    "prodCode": "00000085",
+    "prodName": "PIZZA SUPREMA FAMILIAR",
+    "ingredientes": [
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.4
+      },
+      {
+        "partCode": "00000002",
+        "partName": "JAMON",
+        "cantidad": 0.06
+      },
+      {
+        "partCode": "00000020",
+        "partName": "POLLO",
+        "cantidad": 0.1
+      },
+      {
+        "partCode": "00000011",
+        "partName": "CHORIZO",
+        "cantidad": 0.1
+      },
+      {
+        "partCode": "00000021",
+        "partName": "CARNE",
+        "cantidad": 0.1
+      },
+      {
+        "partCode": "00000004",
+        "partName": "TOCINETA",
+        "cantidad": 0.04
+      },
+      {
+        "partCode": "00000010",
+        "partName": "PIMENTON",
+        "cantidad": 0.08
+      },
+      {
+        "partCode": "00000013",
+        "partName": "CEBOLLA",
+        "cantidad": 0.08
+      }
+    ]
+  },
+  {
+    "prodCode": "00000201",
+    "prodName": "PATACON MIXTO POLLO Y LOMITO",
+    "ingredientes": [
+      {
+        "partCode": "00000196",
+        "partName": "HUEVO",
+        "cantidad": 2
+      },
+      {
+        "partCode": "00000195",
+        "partName": "JAMON AHUMADO",
+        "cantidad": 0.06
+      },
+      {
+        "partCode": "00000229",
+        "partName": "ENSALADA RALLADA",
+        "cantidad": 0.2
+      },
+      {
+        "partCode": "00000228",
+        "partName": "LOMITO",
+        "cantidad": 0.3
+      },
+      {
+        "partCode": "00000213",
+        "partName": "FILET DE POLLO",
+        "cantidad": 0.3
+      },
+      {
+        "partCode": "00000230",
+        "partName": "PLATANO PARA PATACON",
+        "cantidad": 4
+      }
+    ]
+  },
+  {
+    "prodCode": "00000193",
+    "prodName": "PERRO SENCILLO",
+    "ingredientes": [
+      {
+        "partCode": "00000190",
+        "partName": "PAN DE PERRO CALIENTE",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000191",
+        "partName": "SALCHICHA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000186",
+        "partName": "PAPITAS",
+        "cantidad": 0.03
+      },
+      {
+        "partCode": "00000229",
+        "partName": "ENSALADA RALLADA",
+        "cantidad": 0.05
+      }
+    ]
+  },
+  {
+    "prodCode": "00000047",
+    "prodName": "PIZZA PRIMAVERA PEQUEÑA",
+    "ingredientes": [
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.22
+      },
+      {
+        "partCode": "00000005",
+        "partName": "MAIZ",
+        "cantidad": 0.05
+      },
+      {
+        "partCode": "00000004",
+        "partName": "TOCINETA",
+        "cantidad": 0.03
+      },
+      {
+        "partCode": "00000002",
+        "partName": "JAMON",
+        "cantidad": 0.04
+      }
+    ]
+  },
+  {
+    "prodCode": "00000179",
+    "prodName": "HAMBURGUESA DE POLLO",
+    "ingredientes": [
+      {
+        "partCode": "00000014",
+        "partName": "TOMATE",
+        "cantidad": 0.06
+      },
+      {
+        "partCode": "00000176",
+        "partName": "QUESO DE MANO",
+        "cantidad": 0.15000000000000002
+      },
+      {
+        "partCode": "00000004",
+        "partName": "TOCINETA",
+        "cantidad": 0.09
+      },
+      {
+        "partCode": "00000185",
+        "partName": "LECHUGA",
+        "cantidad": 0.03
+      },
+      {
+        "partCode": "00000186",
+        "partName": "PAPITAS",
+        "cantidad": 0.09
+      },
+      {
+        "partCode": "00000213",
+        "partName": "FILET DE POLLO",
+        "cantidad": 0.44999999999999996
+      },
+      {
+        "partCode": "00000187",
+        "partName": "PAN WHOOPER",
+        "cantidad": 3
+      }
+    ]
+  },
+  {
+    "prodCode": "00000181",
+    "prodName": "HAMBURGUESA DE LOMITO",
+    "ingredientes": [
+      {
+        "partCode": "00000021",
+        "partName": "CARNE",
+        "cantidad": 0.15
+      },
+      {
+        "partCode": "00000176",
+        "partName": "QUESO DE MANO",
+        "cantidad": 0.05
+      },
+      {
+        "partCode": "00000014",
+        "partName": "TOMATE",
+        "cantidad": 0.02
+      },
+      {
+        "partCode": "00000004",
+        "partName": "TOCINETA",
+        "cantidad": 0.03
+      },
+      {
+        "partCode": "00000185",
+        "partName": "LECHUGA",
+        "cantidad": 0.01
+      },
+      {
+        "partCode": "00000186",
+        "partName": "PAPITAS",
+        "cantidad": 0.03
+      },
+      {
+        "partCode": "00000187",
+        "partName": "PAN WHOOPER",
+        "cantidad": 1
+      }
+    ]
+  },
+  {
+    "prodCode": "00000045",
+    "prodName": "PIZZA TRADICIONAL MEDIANA",
+    "ingredientes": [
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.24
+      },
+      {
+        "partCode": "00000002",
+        "partName": "JAMON",
+        "cantidad": 0.09
+      }
+    ]
+  },
+  {
+    "prodCode": "00000200",
+    "prodName": "PATACON CLASICO",
+    "ingredientes": [
+      {
+        "partCode": "00000196",
+        "partName": "HUEVO",
+        "cantidad": 2
+      },
+      {
+        "partCode": "00000195",
+        "partName": "JAMON AHUMADO",
+        "cantidad": 0.06
+      },
+      {
+        "partCode": "00000227",
+        "partName": "CARNE MECHADA",
+        "cantidad": 0.3
+      },
+      {
+        "partCode": "00000229",
+        "partName": "ENSALADA RALLADA",
+        "cantidad": 0.2
+      },
+      {
+        "partCode": "00000230",
+        "partName": "PLATANO PARA PATACON",
+        "cantidad": 4
+      },
+      {
+        "partCode": "00000018",
+        "partName": "QUESO PASTEURIZADO",
+        "cantidad": 0.16
+      }
+    ]
+  },
+  {
+    "prodCode": "00000198",
+    "prodName": "AREPITA CLASICA",
+    "ingredientes": [
+      {
+        "partCode": "00000197",
+        "partName": "AREPA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000196",
+        "partName": "HUEVO",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000227",
+        "partName": "CARNE MECHADA",
+        "cantidad": 0.15
+      },
+      {
+        "partCode": "00000229",
+        "partName": "ENSALADA RALLADA",
+        "cantidad": 0.1
+      },
+      {
+        "partCode": "00000018",
+        "partName": "QUESO PASTEURIZADO",
+        "cantidad": 0.08
+      },
+      {
+        "partCode": "00000002",
+        "partName": "JAMON",
+        "cantidad": 0.02
+      }
+    ]
+  },
+  {
+    "prodCode": "00000044",
+    "prodName": "PIZZA TRADICIONAL PEQUEÑA",
+    "ingredientes": [
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.22
+      },
+      {
+        "partCode": "00000002",
+        "partName": "JAMON",
+        "cantidad": 0.06
+      }
+    ]
+  },
+  {
+    "prodCode": "00000073",
+    "prodName": "PIZZA ESPECIAL FAMILIAR",
+    "ingredientes": [
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.4
+      },
+      {
+        "partCode": "00000002",
+        "partName": "JAMON",
+        "cantidad": 0.06
+      },
+      {
+        "partCode": "00000004",
+        "partName": "TOCINETA",
+        "cantidad": 0.04
+      },
+      {
+        "partCode": "00000005",
+        "partName": "MAIZ",
+        "cantidad": 0.07
+      },
+      {
+        "partCode": "00000016",
+        "partName": "CHAMPIÑONES",
+        "cantidad": 0.07
+      }
+    ]
+  },
+  {
+    "prodCode": "00000130",
+    "prodName": "EXTRA PEPPERONI FAMILIAR",
+    "ingredientes": [
+      {
+        "partCode": "00000007",
+        "partName": "PEPPERONI",
+        "cantidad": 1
+      }
+    ]
+  },
+  {
+    "prodCode": "00000253",
+    "prodName": "COMBO SENCILLO",
+    "ingredientes": [
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 2
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 2
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.62
+      },
+      {
+        "partCode": "00000002",
+        "partName": "JAMON",
+        "cantidad": 0.12
+      },
+      {
+        "partCode": "00000037",
+        "partName": "REFRESCO 1.5L",
+        "cantidad": 1
+      }
+    ]
+  },
+  {
+    "prodCode": "00000127",
+    "prodName": "BORDE DE QUESO FAMILIAR",
+    "ingredientes": [
+      {
+        "partCode": "00000018",
+        "partName": "QUESO PASTEURIZADO",
+        "cantidad": 1
+      }
+    ]
+  },
+  {
+    "prodCode": "00000049",
+    "prodName": "PIZZA PRIMAVERA FAMILIAR",
+    "ingredientes": [
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.4
+      },
+      {
+        "partCode": "00000002",
+        "partName": "JAMON",
+        "cantidad": 0.07
+      },
+      {
+        "partCode": "00000005",
+        "partName": "MAIZ",
+        "cantidad": 0.1
+      },
+      {
+        "partCode": "00000004",
+        "partName": "TOCINETA",
+        "cantidad": 0.04
+      }
+    ]
+  },
+  {
+    "prodCode": "00000205",
+    "prodName": "HAMBURGUESA CRISPY",
+    "ingredientes": [
+      {
+        "partCode": "00000187",
+        "partName": "PAN WHOOPER",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000014",
+        "partName": "TOMATE",
+        "cantidad": 0.02
+      },
+      {
+        "partCode": "00000195",
+        "partName": "JAMON AHUMADO",
+        "cantidad": 0.02
+      },
+      {
+        "partCode": "00000004",
+        "partName": "TOCINETA",
+        "cantidad": 0.03
+      },
+      {
+        "partCode": "00000186",
+        "partName": "PAPITAS",
+        "cantidad": 0.03
+      },
+      {
+        "partCode": "00000176",
+        "partName": "QUESO DE MANO",
+        "cantidad": 0.05
+      },
+      {
+        "partCode": "00000213",
+        "partName": "FILET DE POLLO",
+        "cantidad": 0.2
+      }
+    ]
+  },
+  {
+    "prodCode": "00000077",
+    "prodName": "PIZZA 4 ESTACIONES PEQUEÑA",
+    "ingredientes": [
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.22
+      },
+      {
+        "partCode": "00000010",
+        "partName": "PIMENTON",
+        "cantidad": 0.05
+      },
+      {
+        "partCode": "00000007",
+        "partName": "PEPPERONI",
+        "cantidad": 0.03
+      },
+      {
+        "partCode": "00000005",
+        "partName": "MAIZ",
+        "cantidad": 0.03
+      },
+      {
+        "partCode": "00000004",
+        "partName": "TOCINETA",
+        "cantidad": 0.03
+      }
+    ]
+  },
+  {
+    "prodCode": "00000074",
+    "prodName": "PIZZA CHARCUTERA PEQUEÑA",
+    "ingredientes": [
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.22
+      },
+      {
+        "partCode": "00000002",
+        "partName": "JAMON",
+        "cantidad": 0.04
+      },
+      {
+        "partCode": "00000007",
+        "partName": "PEPPERONI",
+        "cantidad": 0.03
+      },
+      {
+        "partCode": "00000004",
+        "partName": "TOCINETA",
+        "cantidad": 0.03
+      },
+      {
+        "partCode": "00000017",
+        "partName": "QUESO AMARILLO",
+        "cantidad": 0.04
+      }
+    ]
+  },
+  {
+    "prodCode": "00000042",
+    "prodName": "PIZZA NAPOLITANA MEDIANA",
+    "ingredientes": [
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.24
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 1
+      }
+    ]
+  },
+  {
+    "prodCode": "00000180",
+    "prodName": "HAMBURGUESA ZULIANITA",
+    "ingredientes": [
+      {
+        "partCode": "00000009",
+        "partName": "PLATANO",
+        "cantidad": 0.05
+      },
+      {
+        "partCode": "00000011",
+        "partName": "CHORIZO",
+        "cantidad": 0.05
+      },
+      {
+        "partCode": "00000014",
+        "partName": "TOMATE",
+        "cantidad": 0.02
+      },
+      {
+        "partCode": "00000018",
+        "partName": "QUESO PASTEURIZADO",
+        "cantidad": 0.02
+      },
+      {
+        "partCode": "00000186",
+        "partName": "PAPITAS",
+        "cantidad": 0.03
+      },
+      {
+        "partCode": "00000212",
+        "partName": "CARNE PARA HAMBURGUESAS",
+        "cantidad": 0.25
+      },
+      {
+        "partCode": "00000187",
+        "partName": "PAN WHOOPER",
+        "cantidad": 1
+      }
+    ]
+  },
+  {
+    "prodCode": "00000076",
+    "prodName": "PIZZA CHARCUTERA FAMILIAR",
+    "ingredientes": [
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.4
+      },
+      {
+        "partCode": "00000017",
+        "partName": "QUESO AMARILLO",
+        "cantidad": 0.08
+      },
+      {
+        "partCode": "00000004",
+        "partName": "TOCINETA",
+        "cantidad": 0.04
+      },
+      {
+        "partCode": "00000007",
+        "partName": "PEPPERONI",
+        "cantidad": 0.04
+      },
+      {
+        "partCode": "00000002",
+        "partName": "JAMON",
+        "cantidad": 0.06
+      }
+    ]
+  },
+  {
+    "prodCode": "00000203",
+    "prodName": "COMBO NUGGETS SIN BEBIDA",
+    "ingredientes": [
+      {
+        "partCode": "00000202",
+        "partName": "NUGGETS",
+        "cantidad": 6
+      },
+      {
+        "partCode": "00000159",
+        "partName": "PAPAS FRITAS",
+        "cantidad": 1
+      }
+    ]
+  },
+  {
+    "prodCode": "00000070",
+    "prodName": "PIZZA LA PELUCHE FAMILIAR",
+    "ingredientes": [
+      {
+        "partCode": "00000005",
+        "partName": "MAIZ",
+        "cantidad": 0.07
+      },
+      {
+        "partCode": "00000007",
+        "partName": "PEPPERONI",
+        "cantidad": 0.04
+      },
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.4
+      },
+      {
+        "partCode": "00000014",
+        "partName": "TOMATE",
+        "cantidad": 0.07
+      },
+      {
+        "partCode": "00000010",
+        "partName": "PIMENTON",
+        "cantidad": 0.09
+      }
+    ]
+  },
+  {
+    "prodCode": "00000055",
+    "prodName": "PIZZA JUAN PICANTE FAMILIAR",
+    "ingredientes": [
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.4
+      },
+      {
+        "partCode": "00000007",
+        "partName": "PEPPERONI",
+        "cantidad": 0.05
+      },
+      {
+        "partCode": "00000006",
+        "partName": "JALAPEÑO",
+        "cantidad": 0.1
+      },
+      {
+        "partCode": "00000002",
+        "partName": "JAMON",
+        "cantidad": 0.06
+      }
+    ]
+  },
+  {
+    "prodCode": "00000094",
+    "prodName": "EXTRA TOCINETA FAMILIAR",
+    "ingredientes": [
+      {
+        "partCode": "00000004",
+        "partName": "TOCINETA",
+        "cantidad": 0.08
+      }
+    ]
+  },
+  {
+    "prodCode": "00000269",
+    "prodName": "CAJITA FELIZ NUGGETS",
+    "ingredientes": [
+      {
+        "partCode": "00000266",
+        "partName": "CAJA PARA CAJITA FELIZ",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000202",
+        "partName": "NUGGETS",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000159",
+        "partName": "PAPAS FRITAS",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000268",
+        "partName": "JUGUETE PARA CAJITA FELIZ",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000267",
+        "partName": "JUGO PACK",
+        "cantidad": 1
+      }
+    ]
+  },
+  {
+    "prodCode": "00000072",
+    "prodName": "PIZZA ESPECIAL MEDIANA",
+    "ingredientes": [
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.24
+      },
+      {
+        "partCode": "00000002",
+        "partName": "JAMON",
+        "cantidad": 0.04
+      },
+      {
+        "partCode": "00000004",
+        "partName": "TOCINETA",
+        "cantidad": 0.03
+      },
+      {
+        "partCode": "00000005",
+        "partName": "MAIZ",
+        "cantidad": 0.04
+      },
+      {
+        "partCode": "00000016",
+        "partName": "CHAMPIÑONES",
+        "cantidad": 0.06
+      }
+    ]
+  },
+  {
+    "prodCode": "00000048",
+    "prodName": "PIZZA PRIMAVERA MEDIANA",
+    "ingredientes": [
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.24
+      },
+      {
+        "partCode": "00000002",
+        "partName": "JAMON",
+        "cantidad": 0.04
+      },
+      {
+        "partCode": "00000004",
+        "partName": "TOCINETA",
+        "cantidad": 0.03
+      },
+      {
+        "partCode": "00000005",
+        "partName": "MAIZ",
+        "cantidad": 0.04
+      }
+    ]
+  },
+  {
+    "prodCode": "00000118",
+    "prodName": "EXTRA PIMENTON FAMILIAR",
+    "ingredientes": [
+      {
+        "partCode": "00000010",
+        "partName": "PIMENTON",
+        "cantidad": 2
+      }
+    ]
+  },
+  {
+    "prodCode": "00000139",
+    "prodName": "EXTRA MAIZ FAMILIAR",
+    "ingredientes": [
+      {
+        "partCode": "00000005",
+        "partName": "MAIZ",
+        "cantidad": 1
+      }
+    ]
+  },
+  {
+    "prodCode": "00000252",
+    "prodName": "COMBO FAMILY",
+    "ingredientes": [
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 2
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 2
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.64
+      },
+      {
+        "partCode": "00000002",
+        "partName": "JAMON",
+        "cantidad": 0.14
+      },
+      {
+        "partCode": "00000010",
+        "partName": "PIMENTON",
+        "cantidad": 0.04
+      },
+      {
+        "partCode": "00000037",
+        "partName": "REFRESCO 1.5L",
+        "cantidad": 1
+      }
+    ]
+  },
+  {
+    "prodCode": "00000060",
+    "prodName": "PIZZA ZULIANITA MEDIANA",
+    "ingredientes": [
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.24
+      },
+      {
+        "partCode": "00000002",
+        "partName": "JAMON",
+        "cantidad": 0.04
+      },
+      {
+        "partCode": "00000009",
+        "partName": "PLATANO",
+        "cantidad": 0.15
+      },
+      {
+        "partCode": "00000011",
+        "partName": "CHORIZO",
+        "cantidad": 0.07
+      },
+      {
+        "partCode": "00000010",
+        "partName": "PIMENTON",
+        "cantidad": 0.07
+      },
+      {
+        "partCode": "00000005",
+        "partName": "MAIZ",
+        "cantidad": 0.04
+      },
+      {
+        "partCode": "00000004",
+        "partName": "TOCINETA",
+        "cantidad": 0.04
+      }
+    ]
+  },
+  {
+    "prodCode": "00000046",
+    "prodName": "PIZZA TRADICIONAL FAMILIAR",
+    "ingredientes": [
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.4
+      },
+      {
+        "partCode": "00000002",
+        "partName": "JAMON",
+        "cantidad": 0.1
+      }
+    ]
+  },
+  {
+    "prodCode": "00000226",
+    "prodName": "PASTICHO DE 3 KG CHARCUTERO",
+    "ingredientes": [
+      {
+        "partCode": "00000218",
+        "partName": "BANDEJA 3KG",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000161",
+        "partName": "PAN PORCION",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000219",
+        "partName": "CARNE PARA PASTICHO",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.3
+      },
+      {
+        "partCode": "00000220",
+        "partName": "LAMINAS DE PASTICHO",
+        "cantidad": 15
+      },
+      {
+        "partCode": "00000002",
+        "partName": "JAMON",
+        "cantidad": 0.12
+      },
+      {
+        "partCode": "00000221",
+        "partName": "SALSA BECHAMEL",
+        "cantidad": 0.24
+      },
+      {
+        "partCode": "00000004",
+        "partName": "TOCINETA",
+        "cantidad": 0.08
+      },
+      {
+        "partCode": "00000007",
+        "partName": "PEPPERONI",
+        "cantidad": 0.08
+      },
+      {
+        "partCode": "00000038",
+        "partName": "0",
+        "cantidad": 1
+      }
+    ]
+  },
+  {
+    "prodCode": "00000164",
+    "prodName": "PASTICHO DE 1/2 KG TRADICIONAL",
+    "ingredientes": [
+      {
+        "partCode": "00000161",
+        "partName": "PAN PORCION",
+        "cantidad": 2
+      },
+      {
+        "partCode": "00000160",
+        "partName": "ENSALADA RUSA",
+        "cantidad": 0.25
+      },
+      {
+        "partCode": "00000035",
+        "partName": "0",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000216",
+        "partName": "BANDEJA 1/2 KG",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000219",
+        "partName": "CARNE PARA PASTICHO",
+        "cantidad": 0.26
+      },
+      {
+        "partCode": "00000221",
+        "partName": "SALSA BECHAMEL",
+        "cantidad": 0.05
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.06
+      },
+      {
+        "partCode": "00000002",
+        "partName": "JAMON",
+        "cantidad": 0.02
+      },
+      {
+        "partCode": "00000220",
+        "partName": "LAMINAS DE PASTICHO",
+        "cantidad": 3
+      }
+    ]
+  },
+  {
+    "prodCode": "00000170",
+    "prodName": "PASTICHO DE 3 KG TRADICIONAL",
+    "ingredientes": [
+      {
+        "partCode": "00000161",
+        "partName": "PAN PORCION",
+        "cantidad": 12
+      },
+      {
+        "partCode": "00000038",
+        "partName": "0",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000218",
+        "partName": "BANDEJA 3KG",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000220",
+        "partName": "LAMINAS DE PASTICHO",
+        "cantidad": 15
+      },
+      {
+        "partCode": "00000219",
+        "partName": "CARNE PARA PASTICHO",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.3
+      },
+      {
+        "partCode": "00000002",
+        "partName": "JAMON",
+        "cantidad": 0.12
+      },
+      {
+        "partCode": "00000221",
+        "partName": "SALSA BECHAMEL",
+        "cantidad": 0.24
+      }
+    ]
+  },
+  {
+    "prodCode": "00000225",
+    "prodName": "PASTICHO DE 2 KG CHARCUTERO",
+    "ingredientes": [
+      {
+        "partCode": "00000217",
+        "partName": "BANDEJA 2KG",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000161",
+        "partName": "PAN PORCION",
+        "cantidad": 8
+      },
+      {
+        "partCode": "00000038",
+        "partName": "0",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000219",
+        "partName": "CARNE PARA PASTICHO",
+        "cantidad": 0.7
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.2
+      },
+      {
+        "partCode": "00000002",
+        "partName": "JAMON",
+        "cantidad": 0.08
+      },
+      {
+        "partCode": "00000221",
+        "partName": "SALSA BECHAMEL",
+        "cantidad": 0.16
+      },
+      {
+        "partCode": "00000220",
+        "partName": "LAMINAS DE PASTICHO",
+        "cantidad": 10
+      },
+      {
+        "partCode": "00000007",
+        "partName": "PEPPERONI",
+        "cantidad": 0.06
+      },
+      {
+        "partCode": "00000004",
+        "partName": "TOCINETA",
+        "cantidad": 0.06
+      }
+    ]
+  },
+  {
+    "prodCode": "00000168",
+    "prodName": "PASTICHO DE 2 KG TRADICIONAL",
+    "ingredientes": [
+      {
+        "partCode": "00000161",
+        "partName": "PAN PORCION",
+        "cantidad": 8
+      },
+      {
+        "partCode": "00000038",
+        "partName": "0",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000217",
+        "partName": "BANDEJA 2KG",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000219",
+        "partName": "CARNE PARA PASTICHO",
+        "cantidad": 0.7
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.2
+      },
+      {
+        "partCode": "00000002",
+        "partName": "JAMON",
+        "cantidad": 0.08
+      },
+      {
+        "partCode": "00000221",
+        "partName": "SALSA BECHAMEL",
+        "cantidad": 0.16
+      },
+      {
+        "partCode": "00000220",
+        "partName": "LAMINAS DE PASTICHO",
+        "cantidad": 10
+      }
+    ]
+  },
+  {
+    "prodCode": "00000071",
+    "prodName": "PIZZA ESPECIAL PEQUEÑA",
+    "ingredientes": [
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.22
+      },
+      {
+        "partCode": "00000002",
+        "partName": "JAMON",
+        "cantidad": 0.04
+      },
+      {
+        "partCode": "00000004",
+        "partName": "TOCINETA",
+        "cantidad": 0.03
+      },
+      {
+        "partCode": "00000005",
+        "partName": "MAIZ",
+        "cantidad": 0.04
+      },
+      {
+        "partCode": "00000016",
+        "partName": "CHAMPIÑONES",
+        "cantidad": 0.04
+      }
+    ]
+  },
+  {
+    "prodCode": "00000166",
+    "prodName": "PASTICHO DE 1 KG TRADICIONAL",
+    "ingredientes": [
+      {
+        "partCode": "00000161",
+        "partName": "PAN PORCION",
+        "cantidad": 4
+      },
+      {
+        "partCode": "00000160",
+        "partName": "ENSALADA RUSA",
+        "cantidad": 0.3
+      },
+      {
+        "partCode": "00000038",
+        "partName": "0",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000215",
+        "partName": "BANDEJA 1KG",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000219",
+        "partName": "CARNE PARA PASTICHO",
+        "cantidad": 0.4
+      },
+      {
+        "partCode": "00000221",
+        "partName": "SALSA BECHAMEL",
+        "cantidad": 0.08
+      },
+      {
+        "partCode": "00000002",
+        "partName": "JAMON",
+        "cantidad": 0.04
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.1
+      },
+      {
+        "partCode": "00000220",
+        "partName": "LAMINAS DE PASTICHO",
+        "cantidad": 5
+      }
+    ]
+  },
+  {
+    "prodCode": "00000079",
+    "prodName": "PIZZA 4 ESTACIONES FAMILIAR",
+    "ingredientes": [
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.4
+      },
+      {
+        "partCode": "00000007",
+        "partName": "PEPPERONI",
+        "cantidad": 0.04
+      },
+      {
+        "partCode": "00000004",
+        "partName": "TOCINETA",
+        "cantidad": 0.04
+      },
+      {
+        "partCode": "00000005",
+        "partName": "MAIZ",
+        "cantidad": 0.07
+      },
+      {
+        "partCode": "00000010",
+        "partName": "PIMENTON",
+        "cantidad": 0.08
+      }
+    ]
+  },
+  {
+    "prodCode": "00000058",
+    "prodName": "PIZZA HAWAIANA FAMILIAR",
+    "ingredientes": [
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.4
+      },
+      {
+        "partCode": "00000002",
+        "partName": "JAMON",
+        "cantidad": 0.06
+      },
+      {
+        "partCode": "00000004",
+        "partName": "TOCINETA",
+        "cantidad": 0.04
+      },
+      {
+        "partCode": "00000005",
+        "partName": "MAIZ",
+        "cantidad": 0.1
+      },
+      {
+        "partCode": "00000008",
+        "partName": "PIÑA",
+        "cantidad": 0.3
+      }
+    ]
+  },
+  {
+    "prodCode": "00000263",
+    "prodName": "PIZZA BBQ FAMILIAR",
+    "ingredientes": [
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000262",
+        "partName": "SALSA BBQ",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000022",
+        "partName": "CHULETA AHUMADA",
+        "cantidad": 0.23
+      },
+      {
+        "partCode": "00000006",
+        "partName": "JALAPEÑO",
+        "cantidad": 0.03
+      },
+      {
+        "partCode": "00000004",
+        "partName": "TOCINETA",
+        "cantidad": 0.04
+      },
+      {
+        "partCode": "00000013",
+        "partName": "CEBOLLA",
+        "cantidad": 0.08
+      },
+      {
+        "partCode": "00000002",
+        "partName": "JAMON",
+        "cantidad": 0.06
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.4
+      }
+    ]
+  },
+  {
+    "prodCode": "00000051",
+    "prodName": "PIZZA AMERICANA MEDIANA",
+    "ingredientes": [
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.24
+      },
+      {
+        "partCode": "00000007",
+        "partName": "PEPPERONI",
+        "cantidad": 0.06
+      }
+    ]
+  },
+  {
+    "prodCode": "00000043",
+    "prodName": "PIZZA NAPOLITANA FAMILIAR",
+    "ingredientes": [
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.4
+      }
+    ]
+  },
+  {
+    "prodCode": "00000199",
+    "prodName": "AREPITA MIXTA POLLO Y LOMITO",
+    "ingredientes": [
+      {
+        "partCode": "00000197",
+        "partName": "AREPA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000196",
+        "partName": "HUEVO",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000229",
+        "partName": "ENSALADA RALLADA",
+        "cantidad": 0.1
+      },
+      {
+        "partCode": "00000228",
+        "partName": "LOMITO",
+        "cantidad": 0.15
+      },
+      {
+        "partCode": "00000213",
+        "partName": "FILET DE POLLO",
+        "cantidad": 0.15
+      }
+    ]
+  },
+  {
+    "prodCode": "00000194",
+    "prodName": "PERRO FULL",
+    "ingredientes": [
+      {
+        "partCode": "00000190",
+        "partName": "PAN DE PERRO CALIENTE",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000191",
+        "partName": "SALCHICHA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000186",
+        "partName": "PAPITAS",
+        "cantidad": 0.03
+      },
+      {
+        "partCode": "00000176",
+        "partName": "QUESO DE MANO",
+        "cantidad": 0.05
+      },
+      {
+        "partCode": "00000195",
+        "partName": "JAMON AHUMADO",
+        "cantidad": 0.03
+      },
+      {
+        "partCode": "00000229",
+        "partName": "ENSALADA RALLADA",
+        "cantidad": 0.05
+      },
+      {
+        "partCode": "00000196",
+        "partName": "HUEVO",
+        "cantidad": 1
+      }
+    ]
+  },
+  {
+    "prodCode": "00000178",
+    "prodName": "HAMBURGUESA CLASICA",
+    "ingredientes": [
+      {
+        "partCode": "00000014",
+        "partName": "TOMATE",
+        "cantidad": 0.04
+      },
+      {
+        "partCode": "00000176",
+        "partName": "QUESO DE MANO",
+        "cantidad": 0.04
+      },
+      {
+        "partCode": "00000004",
+        "partName": "TOCINETA",
+        "cantidad": 0.06
+      },
+      {
+        "partCode": "00000185",
+        "partName": "LECHUGA",
+        "cantidad": 0.02
+      },
+      {
+        "partCode": "00000187",
+        "partName": "PAN WHOOPER",
+        "cantidad": 2
+      },
+      {
+        "partCode": "00000212",
+        "partName": "CARNE PARA HAMBURGUESAS",
+        "cantidad": 0.3
+      },
+      {
+        "partCode": "00000186",
+        "partName": "PAPITAS",
+        "cantidad": 0.06
+      }
+    ]
+  },
+  {
+    "prodCode": "00000052",
+    "prodName": "PIZZA AMERICANA FAMILIAR",
+    "ingredientes": [
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.4
+      },
+      {
+        "partCode": "00000007",
+        "partName": "PEPPERONI",
+        "cantidad": 0.1
+      }
+    ]
+  },
+  {
+    "prodCode": "00000032",
+    "prodName": "PIZZA NAPOLITANA PEQUEÑA",
+    "ingredientes": [
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.22
+      }
+    ]
+  },
+  {
+    "prodCode": "00000061",
+    "prodName": "PIZZA ZULIANITA FAMILIAR",
+    "ingredientes": [
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.4
+      },
+      {
+        "partCode": "00000002",
+        "partName": "JAMON",
+        "cantidad": 0.06
+      },
+      {
+        "partCode": "00000009",
+        "partName": "PLATANO",
+        "cantidad": 0.28
+      },
+      {
+        "partCode": "00000011",
+        "partName": "CHORIZO",
+        "cantidad": 0.13
+      },
+      {
+        "partCode": "00000005",
+        "partName": "MAIZ",
+        "cantidad": 0.07
+      },
+      {
+        "partCode": "00000004",
+        "partName": "TOCINETA",
+        "cantidad": 0.04
+      },
+      {
+        "partCode": "00000010",
+        "partName": "PIMENTON",
+        "cantidad": 0.08
+      }
+    ]
+  },
+  {
+    "prodCode": "00000065",
+    "prodName": "PIZZA VEGETARIANA PEQUEÑA",
+    "ingredientes": [
+      {
+        "partCode": "00000015",
+        "partName": "MASA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000003",
+        "partName": "SALSA",
+        "cantidad": 1
+      },
+      {
+        "partCode": "00000001",
+        "partName": "QUESO MOZARELLA",
+        "cantidad": 0.22
+      },
+      {
+        "partCode": "00000010",
+        "partName": "PIMENTON",
+        "cantidad": 0.05
+      },
+      {
+        "partCode": "00000013",
+        "partName": "CEBOLLA",
+        "cantidad": 0.04
+      },
+      {
+        "partCode": "00000014",
+        "partName": "TOMATE",
+        "cantidad": 0.04
+      },
+      {
+        "partCode": "00000005",
+        "partName": "MAIZ",
+        "cantidad": 0.03
+      },
+      {
+        "partCode": "00000012",
+        "partName": "ACEITUNAS NEGRAS",
+        "cantidad": 0.04
+      }
+    ]
+  }
+]
