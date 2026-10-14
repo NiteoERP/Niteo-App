@@ -124,8 +124,29 @@ export async function createProducto(data: any) {
 
 export async function deleteProducto(id: string) {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autorizado' };
+
   const { error } = await supabase.from('productos').delete().eq('id', id);
-  if (error) return { success: false, error: error.message };
+  if (error) {
+    if (error.code === '23503' || error.message.includes('foreign key constraint')) {
+      const { error: updateError } = await supabase
+        .from('productos')
+        .update({ estado_activo: false })
+        .eq('id', id);
+
+      if (updateError) return { success: false, error: updateError.message };
+
+      revalidatePath('/dashboard/catalogo');
+      return { 
+        success: true, 
+        archived: true, 
+        message: 'El producto posee historial de ventas previo. Ha sido archivado y desactivado del catálogo y del POS para proteger la integridad contable.' 
+      };
+    }
+    return { success: false, error: error.message };
+  }
+
   revalidatePath('/dashboard/catalogo');
   return { success: true };
 }
@@ -377,13 +398,46 @@ export async function bulkUpdateProductos(ids: string[], updates: any) {
 export async function bulkDeleteProductos(ids: string[]) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: 'No autorizado' };
+  if (!user) return { success: false, error: 'No autorizado' };
 
-  const { error } = await supabase.from('productos').delete().in('id', ids);
-  if (error) return { error: error.message };
+  if (!ids || ids.length === 0) {
+    return { success: true, deletedCount: 0, archivedCount: 0 };
+  }
+
+  let deletedCount = 0;
+  let archivedCount = 0;
+
+  for (const id of ids) {
+    const { error } = await supabase.from('productos').delete().eq('id', id);
+    if (error) {
+      if (error.code === '23503' || error.message.includes('foreign key constraint')) {
+        const { error: updateError } = await supabase
+          .from('productos')
+          .update({ estado_activo: false })
+          .eq('id', id);
+
+        if (!updateError) {
+          archivedCount++;
+        } else {
+          return { success: false, error: updateError.message };
+        }
+      } else {
+        return { success: false, error: error.message };
+      }
+    } else {
+      deletedCount++;
+    }
+  }
 
   revalidatePath('/dashboard/catalogo');
-  return { success: true };
+  return {
+    success: true,
+    deletedCount,
+    archivedCount,
+    message: archivedCount > 0
+      ? `${deletedCount} productos eliminados definitivamente y ${archivedCount} archivados/desactivados para preservar tu historial de ventas y reportes contables.`
+      : `${deletedCount} productos eliminados exitosamente.`
+  };
 }
 
 

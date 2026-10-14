@@ -39,12 +39,17 @@ export default function CatalogoClient({
   const [copied, setCopied] = useState(false);
   const [catalogoActivo, setCatalogoActivo] = useState(empresa?.catalogo_activo ?? false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [filterEstado, setFilterEstado] = useState<'activos' | 'inactivos' | 'todos'>('activos');
   const stateTimeouts = useRef<Record<string, NodeJS.Timeout>>({});
   const typeTimeouts = useRef<Record<string, NodeJS.Timeout>>({});
   const [optimisticStates, setOptimisticStates] = useState<Record<string, boolean>>({});
   const [optimisticTypes, setOptimisticTypes] = useState<Record<string, 'ELABORADO' | 'REVENTA' | 'SERVICIO'>>({});
 
   const filtered = productos.filter(p => {
+    const isActivo = optimisticStates[p.id] !== undefined ? optimisticStates[p.id] : (p.estado_activo !== false);
+    if (filterEstado === 'activos' && !isActivo) return false;
+    if (filterEstado === 'inactivos' && isActivo) return false;
+
     const matchesSearch = (p.nombre?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
       (p.codigo_barras?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
       (p.descripcion?.toLowerCase() || '').includes(searchTerm.toLowerCase());
@@ -99,12 +104,16 @@ export default function CatalogoClient({
   };
 
   const handleBulkDelete = async () => {
-    if (!confirm(`¿Eliminar ${selectedIds.length} productos seleccionados?`)) return;
+    if (!confirm(`¿Eliminar o dar de baja ${selectedIds.length} productos seleccionados?\n\nNota: Los productos con ventas históricas registradas serán archivados y desactivados automáticamente para proteger tus reportes contables.`)) return;
     startTransition(async () => {
       const { bulkDeleteProductos } = await import('@/actions/catalogo-actions');
       const res = await bulkDeleteProductos(selectedIds);
-      if (res.error) alert(res.error);
-      else setSelectedIds([]);
+      if (!res.success && res.error) {
+        alert(res.error);
+      } else {
+        setSelectedIds([]);
+        if (res.message) alert(res.message);
+      }
     });
   };
 
@@ -133,9 +142,14 @@ export default function CatalogoClient({
   };
 
   const handleDelete = (id: string) => {
-    if (!confirm('¿Seguro que deseas eliminar este producto?')) return;
+    if (!confirm('¿Seguro que deseas eliminar este producto?\n\nNota: Si tiene ventas históricas asociadas, se archivará y desactivará para proteger tus reportes contables.')) return;
     startTransition(async () => {
-      await deleteProducto(id);
+      const res = await deleteProducto(id);
+      if (!res.success && res.error) {
+        alert(res.error);
+      } else if (res.message) {
+        alert(res.message);
+      }
     });
   };
 
@@ -247,7 +261,16 @@ export default function CatalogoClient({
             />
           </div>
 
-          <div className="flex items-center gap-2 flex-1 sm:flex-none">
+          <div className="flex items-center gap-2 flex-1 sm:flex-none flex-wrap">
+            <select
+              value={filterEstado}
+              onChange={(e) => setFilterEstado(e.target.value as any)}
+              className="bg-neutral-900 border border-neutral-800 text-sm text-emerald-400 font-medium rounded-lg px-3 py-2 focus:border-indigo-500 outline-none transition-colors flex-1 sm:flex-none sm:w-[130px] truncate"
+            >
+              <option value="activos">Solo Activos</option>
+              <option value="inactivos">Inactivos / Archivados</option>
+              <option value="todos">Todos los productos</option>
+            </select>
             <select
               value={selectedSede}
               onChange={(e) => setSelectedSede(e.target.value)}
