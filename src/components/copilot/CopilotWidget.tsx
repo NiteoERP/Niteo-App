@@ -77,6 +77,131 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
     }
   }, [mensajes, abierto, minimizado]);
 
+  // Estado de posición flotante arrastrable
+  const [posicion, setPosicion] = useState<{ x: number; y: number } | null>(null);
+  const [arrastrando, setArrastrando] = useState(false);
+  const dragInfoRef = useRef<{
+    startX: number;
+    startY: number;
+    initX: number;
+    initY: number;
+    moved: boolean;
+  }>({
+    startX: 0,
+    startY: 0,
+    initX: 0,
+    initY: 0,
+    moved: false
+  });
+
+  // Cargar posición guardada o colocar por defecto sobre la barra inferior
+  useEffect(() => {
+    const calcularPosicionInicial = () => {
+      const isMobile = window.innerWidth < 640;
+      const defaultX = window.innerWidth - (isMobile ? 60 : 72);
+      // En móvil, 135px de margen inferior para no tapar la barra de navegación de 5 botones
+      const defaultY = window.innerHeight - (isMobile ? 135 : 95);
+
+      try {
+        const guardada = localStorage.getItem('niteo_copilot_pos');
+        if (guardada) {
+          const parsed = JSON.parse(guardada);
+          if (typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+            const clampX = Math.min(Math.max(parsed.x, 8), window.innerWidth - 56);
+            const clampY = Math.min(Math.max(parsed.y, 60), window.innerHeight - 80);
+            return { x: clampX, y: clampY };
+          }
+        }
+      } catch {}
+
+      return { x: defaultX, y: defaultY };
+    };
+
+    setPosicion(calcularPosicionInicial());
+
+    const handleResize = () => {
+      setPosicion(prev => {
+        if (!prev) return null;
+        const clampX = Math.min(Math.max(prev.x, 8), window.innerWidth - 56);
+        const clampY = Math.min(Math.max(prev.y, 60), window.innerHeight - 80);
+        return { x: clampX, y: clampY };
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const iniciarArrastre = (clientX: number, clientY: number) => {
+    if (!posicion) return;
+    dragInfoRef.current = {
+      startX: clientX,
+      startY: clientY,
+      initX: posicion.x,
+      initY: posicion.y,
+      moved: false
+    };
+    setArrastrando(true);
+  };
+
+  const moverArrastre = (clientX: number, clientY: number) => {
+    if (!dragInfoRef.current) return;
+    const deltaX = clientX - dragInfoRef.current.startX;
+    const deltaY = clientY - dragInfoRef.current.startY;
+
+    if (Math.hypot(deltaX, deltaY) > 5) {
+      dragInfoRef.current.moved = true;
+    }
+
+    const newX = Math.min(Math.max(dragInfoRef.current.initX + deltaX, 8), window.innerWidth - 56);
+    const newY = Math.min(Math.max(dragInfoRef.current.initY + deltaY, 60), window.innerHeight - 80);
+
+    setPosicion({ x: newX, y: newY });
+  };
+
+  const finalizarArrastre = () => {
+    setArrastrando(false);
+    if (!dragInfoRef.current.moved) {
+      // Toque simple sin arrastre -> Desplegar Copilot
+      setAbierto(true);
+      return;
+    }
+
+    // Si se arrastró, imantar suavemente hacia el lateral más cercano (izquierdo o derecho)
+    setPosicion(prev => {
+      if (!prev) return null;
+      const isMobile = window.innerWidth < 640;
+      const margin = isMobile ? 12 : 20;
+      const snapX = prev.x < window.innerWidth / 2 ? margin : window.innerWidth - (isMobile ? 58 : 68);
+      const finalPos = { x: snapX, y: prev.y };
+      try {
+        localStorage.setItem('niteo_copilot_pos', JSON.stringify(finalPos));
+      } catch {}
+      return finalPos;
+    });
+  };
+
+  // Eventos globales de mouse para arrastre fluido en desktop
+  useEffect(() => {
+    if (!arrastrando) return;
+
+    const onMouseMove = (e: MouseEvent) => {
+      moverArrastre(e.clientX, e.clientY);
+    };
+
+    const onMouseUp = () => {
+      finalizarArrastre();
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [arrastrando]);
+
   // Ajuste dinámico de altura del textarea para evitar recortes de texto y scrollbars molestos
   useEffect(() => {
     if (textareaRef.current) {
@@ -246,31 +371,71 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
 
   return (
     <>
-      {/* Botón flotante siempre visible en dashboard */}
-      <div className="fixed bottom-6 right-6 z-50">
-        {!abierto && (
-          <button
-            onClick={() => setAbierto(true)}
-            className="group relative flex items-center gap-2.5 px-4 py-3 bg-gradient-to-r from-purple-600 via-indigo-600 to-indigo-700 hover:from-purple-500 hover:to-indigo-600 text-white rounded-full shadow-2xl shadow-indigo-500/30 transition-all duration-300 hover:scale-105 active:scale-95 border border-indigo-400/30"
-            aria-label="Abrir Niteo Copilot"
-          >
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-            </span>
-            <Sparkles className="w-5 h-5 text-purple-200 animate-pulse" />
-            <span className="font-semibold text-sm tracking-wide pr-1">Niteo Copilot</span>
-          </button>
-        )}
-      </div>
+      {/* Botón flotante estilo "Punto / Orb" Arrastrable */}
+      {!abierto && (
+        <div
+          style={{
+            position: 'fixed',
+            left: posicion ? `${posicion.x}px` : 'auto',
+            top: posicion ? `${posicion.y}px` : 'auto',
+            right: posicion ? 'auto' : '1rem',
+            bottom: posicion ? 'auto' : '8.5rem',
+            zIndex: 50,
+            touchAction: 'none'
+          }}
+          className="select-none"
+        >
+          <div className="relative group">
+            {/* Resplandor suave de radar */}
+            <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-indigo-500 opacity-60 blur-sm group-hover:opacity-100 transition duration-300 animate-pulse" />
+
+            <button
+              onMouseDown={e => {
+                if (e.button === 0) {
+                  iniciarArrastre(e.clientX, e.clientY);
+                }
+              }}
+              onTouchStart={e => {
+                const touch = e.touches[0];
+                iniciarArrastre(touch.clientX, touch.clientY);
+              }}
+              onTouchMove={e => {
+                const touch = e.touches[0];
+                moverArrastre(touch.clientX, touch.clientY);
+              }}
+              onTouchEnd={() => {
+                finalizarArrastre();
+              }}
+              className={`relative flex items-center justify-center w-12 h-12 sm:w-13 sm:h-13 rounded-full bg-gradient-to-tr from-purple-700 via-indigo-600 to-indigo-500 text-white shadow-2xl shadow-indigo-500/40 border border-white/20 transition-transform duration-150 active:scale-95 cursor-grab touch-none ${
+                arrastrando ? 'cursor-grabbing scale-110 shadow-indigo-500/70' : 'hover:scale-105'
+              }`}
+              aria-label="Abrir Niteo Copilot"
+              title="Toca para abrir • Arrastra para mover por la pantalla"
+            >
+              {/* Radar status dot */}
+              <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400 ring-2 ring-neutral-950"></span>
+              </span>
+
+              <Sparkles className="w-5 h-5 text-white drop-shadow-md" />
+            </button>
+
+            {/* Tooltip sutil en desktop al pasar el mouse */}
+            <div className="hidden sm:group-hover:block absolute right-full top-1/2 -translate-y-1/2 mr-3 px-2.5 py-1 bg-neutral-900/95 border border-neutral-700 text-[11px] font-medium text-neutral-200 rounded-lg whitespace-nowrap shadow-xl pointer-events-none backdrop-blur-md">
+              Niteo Copilot <span className="text-neutral-500 text-[10px]">(Arrastra para mover)</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Ventana de Chat flotante */}
       {abierto && (
         <div
-          className={`fixed bottom-6 right-6 z-50 flex flex-col bg-neutral-900/95 backdrop-blur-xl border border-neutral-800/90 rounded-2xl sm:rounded-3xl shadow-[0_25px_70px_-15px_rgba(0,0,0,0.9),0_0_40px_rgba(99,102,241,0.18)] overflow-hidden transition-all duration-300 ${
+          className={`fixed z-50 flex flex-col bg-neutral-900/95 backdrop-blur-xl border border-neutral-800/90 rounded-2xl sm:rounded-3xl shadow-[0_25px_70px_-15px_rgba(0,0,0,0.9),0_0_40px_rgba(99,102,241,0.18)] overflow-hidden transition-all duration-300 ${
             minimizado 
-              ? 'w-80 h-16' 
-              : 'w-[94vw] sm:w-[500px] h-[670px] max-h-[88vh]'
+              ? 'w-72 sm:w-80 h-16 bottom-4 right-4 sm:bottom-6 sm:right-6' 
+              : 'inset-x-2 bottom-2 top-14 sm:inset-x-auto sm:top-auto sm:bottom-6 sm:right-6 sm:w-[500px] sm:h-[670px] sm:max-h-[88vh]'
           }`}
         >
           {/* Subtle Top Glowing Line */}
