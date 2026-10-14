@@ -354,10 +354,38 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
                             {m.accionPropuesta.tipo === 'desactivar_combos' && <AlertTriangle size={15} />}
                             {m.accionPropuesta.tipo === 'agrupar_similares' && <ArrowRightLeft size={15} />}
                             {m.accionPropuesta.tipo === 'guardar_receta' && <Utensils size={15} />}
+                            {m.accionPropuesta.tipo === 'crear_combo' && <Layers size={15} />}
                             <span>{m.accionPropuesta.titulo}</span>
                           </div>
 
                           {/* Vista previa según el tipo de acción */}
+                          {m.accionPropuesta.tipo === 'crear_combo' && (
+                            <div className="text-[11px] space-y-1.5 text-neutral-300">
+                              <p>Combo: <strong className="text-white">{m.accionPropuesta.detalles?.nombre}</strong></p>
+                              <div className="max-h-28 overflow-y-auto space-y-1 pt-1">
+                                {m.accionPropuesta.detalles?.items?.map((it: any, idx: number) => (
+                                  <div key={idx} className="flex justify-between items-center border-t border-neutral-800/80 pt-0.5">
+                                    <span className="truncate pr-2">{it.cantidad}x {it.nombre}</span>
+                                    <span className="font-mono text-indigo-300 shrink-0 font-medium">
+                                      ${Number(it.subtotal).toFixed(2)}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="flex justify-between items-center pt-1 border-t border-neutral-800 text-[11px]">
+                                <div>
+                                  <span>Precio Combo: <strong className="text-emerald-400 font-mono text-xs">${m.accionPropuesta.detalles?.precio_fijo} USD</strong></span>
+                                  {m.accionPropuesta.detalles?.ahorro_usd > 0 && (
+                                    <span className="ml-1.5 text-neutral-400 text-[10px]">(Ahorro ${m.accionPropuesta.detalles?.ahorro_usd} / {m.accionPropuesta.detalles?.ahorro_pct}%)</span>
+                                  )}
+                                </div>
+                                {m.accionPropuesta.detalles?.precio_lista_total > 0 && (
+                                  <span className="text-neutral-400 text-[10px] line-through">${m.accionPropuesta.detalles?.precio_lista_total}</span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
                           {m.accionPropuesta.tipo === 'guardar_receta' && (
                             <div className="text-[11px] space-y-1.5 text-neutral-300">
                               <p>Producto: <strong className="text-white">{m.accionPropuesta.detalles?.productoNombre}</strong></p>
@@ -449,7 +477,11 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
                               ) : (
                                 <>
                                   <CheckCircle2 size={13} />
-                                  <span>{m.accionPropuesta.tipo === 'guardar_receta' ? 'Guardar Receta en Catálogo' : 'Confirmar y Ejecutar'}</span>
+                                  <span>
+                                    {m.accionPropuesta.tipo === 'guardar_receta' ? 'Guardar Receta en Catálogo' :
+                                     m.accionPropuesta.tipo === 'crear_combo' ? 'Confirmar y Crear Combo' :
+                                     'Confirmar y Ejecutar'}
+                                  </span>
                                 </>
                               )}
                             </button>
