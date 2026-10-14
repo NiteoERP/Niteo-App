@@ -1646,6 +1646,106 @@ async function toolProponerCombo(
   };
 }
 
+/**
+ * 15. Proponer y configurar la actualización de precio de un combo, promoción o producto existente
+ */
+async function toolProponerActualizarPrecio(
+  ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
+  args: {
+    nombre_combo_o_producto: string;
+    nuevo_precio: number;
+    nuevo_nombre?: string;
+  }
+) {
+  const { supabase, empresaId } = ctx;
+  const busqueda = normalizarTexto(args.nombre_combo_o_producto);
+  const nuevoPrecio = Number(args.nuevo_precio);
+
+  if (isNaN(nuevoPrecio) || nuevoPrecio < 0) {
+    return { exito: false, error: 'El nuevo precio debe ser un número positivo válido.' };
+  }
+
+  // 1. Buscar en promociones_combos
+  const { data: promos } = await supabase
+    .from('promociones_combos')
+    .select('id, nombre, precio_fijo, producto_id, tipo, regla_precio')
+    .eq('empresa_id', empresaId);
+
+  // 2. Buscar en productos
+  const { data: prods } = await supabase
+    .from('productos')
+    .select('id, nombre, precio_venta, costo, es_compuesto')
+    .eq('empresa_id', empresaId)
+    .neq('archivado', true);
+
+  const todasPromos = promos || [];
+  const todosProds = prods || [];
+
+  // Match en promociones
+  let promo = todasPromos.find(p => normalizarTexto(p.nombre) === busqueda);
+  if (!promo) {
+    promo = todasPromos.find(p => {
+      const n = normalizarTexto(p.nombre);
+      return n.includes(busqueda) || busqueda.includes(n);
+    });
+  }
+  if (!promo) {
+    promo = todasPromos.find(p => esCoincidenciaAproximada(p.nombre, args.nombre_combo_o_producto, 2));
+  }
+
+  // Match en productos
+  let prod = todosProds.find(p => normalizarTexto(p.nombre) === busqueda);
+  if (!prod && promo?.producto_id) {
+    prod = todosProds.find(p => p.id === promo.producto_id);
+  }
+  if (!prod) {
+    prod = todosProds.find(p => {
+      const n = normalizarTexto(p.nombre);
+      return n.includes(busqueda) || busqueda.includes(n);
+    });
+  }
+  if (!prod) {
+    prod = todosProds.find(p => esCoincidenciaAproximada(p.nombre, args.nombre_combo_o_producto, 2));
+  }
+
+  if (!promo && !prod) {
+    const sugerencias = [
+      ...todasPromos.map(p => p.nombre),
+      ...todosProds.map(p => p.nombre)
+    ]
+      .filter(nom => esCoincidenciaAproximada(nom, args.nombre_combo_o_producto, 4))
+      .slice(0, 5);
+
+    return {
+      exito: false,
+      error: `No encontré ningún combo o producto con el nombre "${args.nombre_combo_o_producto}".`,
+      sugerencias: sugerencias.length > 0 ? sugerencias : todasPromos.slice(0, 5).map(p => p.nombre)
+    };
+  }
+
+  const nombreOriginal = prod?.nombre || promo?.nombre || args.nombre_combo_o_producto;
+  const precioAnterior = Number(prod?.precio_venta ?? promo?.precio_fijo ?? 0);
+
+  // Si el nombre original tiene un precio embebido (ej: "PROMO 2 PASTICHOS PERSONALES CON BEBIDA $8"),
+  // actualizar inteligentemente el nombre para que refleje el nuevo precio si no se especificó nuevo_nombre
+  let nuevoNombre = args.nuevo_nombre?.trim();
+  if (!nuevoNombre && nombreOriginal.includes('$')) {
+    nuevoNombre = nombreOriginal.replace(/\$\s*\d+(\.\d+)?/g, `$${nuevoPrecio}`).trim();
+  }
+
+  return {
+    exito: true,
+    es_promocion: !!promo,
+    combo_id: promo?.id || null,
+    producto_id: prod?.id || promo?.producto_id || null,
+    nombre_actual: nombreOriginal,
+    nuevo_nombre: nuevoNombre || nombreOriginal,
+    precio_anterior: precioAnterior,
+    nuevo_precio: nuevoPrecio,
+    diferencia_usd: Math.round((nuevoPrecio - precioAnterior) * 100) / 100
+  };
+}
+
 // ==========================================
 // DECLARACIONES DE HERRAMIENTAS PARA GEMINI
 // ==========================================
@@ -1973,6 +2073,28 @@ const copilotTools: { functionDeclarations: FunctionDeclaration[] } = {
         },
         required: ['nombre_combo', 'items']
       }
+    },
+    {
+      name: 'proponer_actualizar_precio',
+      description: 'Propone actualizar el precio de venta de una promoción, combo o producto ya existente en el catálogo (ej: cambiar el precio de "Promo 2 Pastichos" o "Combo Fiesta" de $8 a $14 USD). Busca el registro existente por nombre, verifica el precio actual y genera la tarjeta interactiva con botón para que el usuario confirme el cambio de precio.',
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          nombre_combo_o_producto: {
+            type: SchemaType.STRING,
+            description: 'Nombre o parte del nombre del combo, promoción o producto existente cuyo precio se desea modificar.'
+          },
+          nuevo_precio: {
+            type: SchemaType.NUMBER,
+            description: 'Nuevo precio de venta en USD (ej: 14).'
+          },
+          nuevo_nombre: {
+            type: SchemaType.STRING,
+            description: 'Opcional. Si el nombre anterior contenía el precio (ej: "PROMO 2 PASTICHOS $8"), nuevo nombre sugerido (ej: "PROMO 2 PASTICHOS $14" o "PROMO 2 PASTICHOS").'
+          }
+        },
+        required: ['nombre_combo_o_producto', 'nuevo_precio']
+      }
     }
   ]
 };
@@ -1984,7 +2106,7 @@ const copilotTools: { functionDeclarations: FunctionDeclaration[] } = {
 export interface CopilotRespuesta {
   texto: string;
   accionPropuesta?: {
-    tipo: 'desactivar_combos' | 'fusionar_insumos' | 'ejecutar_despacho' | 'ejecutar_venta_costo' | 'guardar_receta' | 'agrupar_similares' | 'crear_combo';
+    tipo: 'desactivar_combos' | 'fusionar_insumos' | 'ejecutar_despacho' | 'ejecutar_venta_costo' | 'guardar_receta' | 'agrupar_similares' | 'crear_combo' | 'actualizar_precio_combo';
     titulo: string;
     items?: any[];
     detalles?: any;
@@ -2052,7 +2174,12 @@ REGLAS DE OPERACIÓN:
    - Si el usuario te pide crear o armar un combo o promoción (ej: "hazme el combo fiesta que lleva 2 pizzas familiares tradicionales, 1 con maiz y un ref 2lt"), llama inmediatamente a "proponer_combo".
    - Extrae los productos indicados y sus cantidades.
    - Si el usuario no especificó el precio, la herramienta sumará los precios de lista individuales de los productos. En tu respuesta, presenta el desglose claro y sugiere un precio atractivo o indícale que puede confirmarlo para que quede disponible en el punto de venta.
-6. Para acciones que modifican datos (desactivar combos, fusionar marcas, despachos entre sedes, ventas al costo, guardar recetas o crear combos):
+6. ACTUALIZACIÓN DE PRECIOS DE COMBOS, PROMOCIONES O PRODUCTOS EXISTENTES:
+   - Si el usuario te pide cambiar, actualizar o modificar el precio de un combo, promoción o producto ya existente (ej: "actualiza el precio de la promo de pastichos a 14", "cambia el precio del combo a $14", "pon la promo a 14", "vale 14 actualizalo"):
+   - NUNCA intentes crear un combo nuevo ni uses "proponer_combo".
+   - Llama INMEDIATAMENTE a "proponer_actualizar_precio" indicando el nombre y el nuevo precio.
+   - En tu respuesta, menciona amablemente el precio anterior y el nuevo precio, e indica al usuario que confirme la actualización con el botón en pantalla.
+7. Para acciones que modifican datos (desactivar combos, fusionar marcas, despachos entre sedes, ventas al costo, guardar recetas, crear combos o actualizar precios):
    - NUNCA afirmes haber ejecutado la mutación en la base de datos de inmediato.
    - Llama a la herramienta "proponer_*" correspondiente.
    - Describe la propuesta amablemente con los números exactos e invita al usuario a confirmar mediante el botón en pantalla.
@@ -2274,6 +2401,25 @@ REGLAS DE OPERACIÓN:
                   }
                   break;
                 }
+                case 'proponer_actualizar_precio': {
+                  toolResult = await toolProponerActualizarPrecio(ctx, call.args || {});
+                  if (toolResult?.exito) {
+                    accionPropuesta = {
+                      tipo: 'actualizar_precio_combo',
+                      titulo: `Actualizar Precio: ${toolResult.nombre_actual} ($${toolResult.precio_anterior} ➔ $${toolResult.nuevo_precio} USD)`,
+                      detalles: {
+                        comboId: toolResult.combo_id,
+                        productoId: toolResult.producto_id,
+                        nombreActual: toolResult.nombre_actual,
+                        nuevoNombre: toolResult.nuevo_nombre,
+                        precioAnterior: toolResult.precio_anterior,
+                        nuevoPrecio: toolResult.nuevo_precio,
+                        diferenciaUsd: toolResult.diferencia_usd
+                      }
+                    };
+                  }
+                  break;
+                }
                 default:
                   toolResult = { error: `Herramienta desconocida: ${call.name}` };
               }
@@ -2350,7 +2496,7 @@ export async function ejecutarAccionCopilot({
   payload,
   activeSedeId
 }: {
-  accion: 'desactivar_combos' | 'fusionar_insumos' | 'agrupar_similares' | 'ejecutar_despacho' | 'ejecutar_venta_costo' | 'guardar_receta' | 'crear_combo';
+  accion: 'desactivar_combos' | 'fusionar_insumos' | 'agrupar_similares' | 'ejecutar_despacho' | 'ejecutar_venta_costo' | 'guardar_receta' | 'crear_combo' | 'actualizar_precio_combo';
   payload: any;
   activeSedeId?: string;
 }): Promise<{ success: boolean; mensaje: string; error?: string }> {
@@ -2513,6 +2659,49 @@ export async function ejecutarAccionCopilot({
         revalidatePath('/dashboard/catalogo');
         revalidatePath('/dashboard/terminal');
         return { success: true, mensaje: `¡El combo "${nombre}" fue creado y activado exitosamente en el catálogo y punto de venta!` };
+      }
+
+      case 'actualizar_precio_combo': {
+        const { comboId, productoId, nuevoPrecio, nuevoNombre, nombreActual } = payload;
+        const { supabase, empresaId } = ctx;
+        const precio = Number(nuevoPrecio);
+
+        if (isNaN(precio) || precio < 0) {
+          return { success: false, mensaje: 'El nuevo precio debe ser un número válido.' };
+        }
+
+        // 1. Si está vinculado a promociones_combos
+        if (comboId) {
+          const updatePayload: any = { precio_fijo: precio };
+          if (nuevoNombre) updatePayload.nombre = nuevoNombre;
+          await supabase
+            .from('promociones_combos')
+            .update(updatePayload)
+            .eq('id', comboId)
+            .eq('empresa_id', empresaId);
+        }
+
+        // 2. Si está vinculado a productos
+        if (productoId) {
+          const updateProdPayload: any = { precio_venta: precio };
+          if (nuevoNombre) updateProdPayload.nombre = nuevoNombre;
+          await supabase
+            .from('productos')
+            .update(updateProdPayload)
+            .eq('id', productoId)
+            .eq('empresa_id', empresaId);
+        }
+
+        revalidatePath('/dashboard/promociones');
+        revalidatePath('/dashboard/catalogo');
+        revalidatePath('/dashboard/terminal');
+        revalidatePath('/dashboard/pos');
+
+        const nomFinal = nuevoNombre || nombreActual || 'Combo';
+        return {
+          success: true,
+          mensaje: `¡Precio de "${nomFinal}" actualizado correctamente a $${precio.toFixed(2)} USD en catálogo y punto de venta!`
+        };
       }
 
       default:

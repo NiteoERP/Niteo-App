@@ -47,9 +47,105 @@ const SUGERENCIAS_RAPIDAS = [
   { label: '📦 Combos inactivos (6 meses)', prompt: 'Revisa todos los combos que no se han utilizado en los últimos 6 meses para evaluar desactivarlos.' },
 ];
 
+/**
+ * Renderizador de formato Markdown ligero para el chat de Copilot
+ * Convierte **negrita**, *cursiva*, `código`, > citas y - viñetas en elementos HTML limpios
+ */
+function FormattedMessage({ text }: { text: string }) {
+  const lines = text.split('\n');
+  const elements: React.ReactNode[] = [];
+  let currentList: React.ReactNode[] = [];
+
+  const parseInline = (str: string): React.ReactNode[] => {
+    const parts: React.ReactNode[] = [];
+    // Captura negrita **...**, código `...` y cursiva *...*
+    const regex = /(\*\*.*?\*\*|`.*?`|\*.*?\*)/g;
+    const tokens = str.split(regex);
+
+    tokens.forEach((token, i) => {
+      if (token.startsWith('**') && token.endsWith('**') && token.length >= 4) {
+        parts.push(
+          <strong key={i} className="font-bold text-white">
+            {token.slice(2, -2)}
+          </strong>
+        );
+      } else if (token.startsWith('`') && token.endsWith('`') && token.length >= 2) {
+        parts.push(
+          <code key={i} className="px-1.5 py-0.5 rounded bg-neutral-900 border border-neutral-700/60 text-amber-300 font-mono text-[11px]">
+            {token.slice(1, -1)}
+          </code>
+        );
+      } else if (token.startsWith('*') && token.endsWith('*') && token.length >= 2) {
+        parts.push(
+          <em key={i} className="italic text-neutral-300">
+            {token.slice(1, -1)}
+          </em>
+        );
+      } else if (token) {
+        parts.push(token);
+      }
+    });
+
+    return parts;
+  };
+
+  lines.forEach((line, lineIdx) => {
+    const trimmed = line.trim();
+
+    if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+      const content = trimmed.slice(2);
+      currentList.push(
+        <li key={`li-${lineIdx}`} className="flex items-start gap-1.5 my-0.5">
+          <span className="text-indigo-400 font-bold shrink-0 mt-0.5">•</span>
+          <span>{parseInline(content)}</span>
+        </li>
+      );
+      return;
+    }
+
+    if (currentList.length > 0) {
+      elements.push(
+        <ul key={`ul-${lineIdx}`} className="my-1 pl-1 space-y-0.5">
+          {currentList}
+        </ul>
+      );
+      currentList = [];
+    }
+
+    if (trimmed.startsWith('> ')) {
+      elements.push(
+        <div key={`quote-${lineIdx}`} className="border-l-2 border-indigo-500/80 pl-2.5 my-1.5 text-neutral-300 italic bg-indigo-950/20 py-1 rounded-r-lg">
+          {parseInline(trimmed.slice(2))}
+        </div>
+      );
+      return;
+    }
+
+    if (!trimmed) {
+      elements.push(<div key={`empty-${lineIdx}`} className="h-1.5" />);
+      return;
+    }
+
+    elements.push(
+      <p key={`p-${lineIdx}`} className="my-0.5 leading-relaxed">
+        {parseInline(line)}
+      </p>
+    );
+  });
+
+  if (currentList.length > 0) {
+    elements.push(
+      <ul key="ul-final" className="my-1 pl-1 space-y-0.5">
+        {currentList}
+      </ul>
+    );
+  }
+
+  return <div className="space-y-0.5">{elements}</div>;
+}
+
 export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string }) {
   const [abierto, setAbierto] = useState(false);
-  const [minimizado, setMinimizado] = useState(false);
   const [inputTexto, setInputTexto] = useState('');
   const [cargando, setCargando] = useState(false);
   const [ejecutandoAccion, setEjecutandoAccion] = useState<string | null>(null);
@@ -58,7 +154,7 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
     {
       id: 'init-1',
       rol: 'copilot',
-      texto: '¡Hola! Soy **Niteo Copilot**, tu asistente inteligente con conexión directa a ventas, inventario, tasas cambiarias, auditoría y catálogo.\n\nPuedes consultarme la tasa oficial de cualquier fecha, el balance de ventas/cenas y compras en USD y Bs, cobros en Pago Móvil por sede, o solicitarme traslados entre sedes, fusiones de marcas y ventas al costo.',
+      texto: '¡Hola! Soy **Niteo Copilot**, tu asistente inteligente con conexión directa a ventas, inventario, tasas cambiarias, auditoría y catálogo.\n\nPuedes consultarme la tasa oficial de cualquier fecha, el balance de ventas/cenas y compras en USD y Bs, cobros en Pago Móvil por sede, o solicitarme traslados entre sedes, fusiones de marcas, actualizar precios y ventas al costo.',
       creadoEn: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -71,11 +167,11 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
   };
 
   useEffect(() => {
-    if (abierto && !minimizado) {
+    if (abierto) {
       scrollToBottom();
       textareaRef.current?.focus();
     }
-  }, [mensajes, abierto, minimizado]);
+  }, [mensajes, abierto]);
 
   // Estado de posición flotante arrastrable
   const [posicion, setPosicion] = useState<{ x: number; y: number } | null>(null);
@@ -332,6 +428,14 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
           precio_fijo: accion.detalles?.precio_fijo,
           config_seleccion: accion.detalles?.config_seleccion
         };
+      } else if (accion.tipo === 'actualizar_precio_combo') {
+        payload = {
+          comboId: accion.detalles?.comboId,
+          productoId: accion.detalles?.productoId,
+          nombreActual: accion.detalles?.nombreActual,
+          nuevoNombre: accion.detalles?.nuevoNombre,
+          nuevoPrecio: accion.detalles?.nuevoPrecio
+        };
       }
 
       const res = await ejecutarAccionCopilot({
@@ -432,11 +536,7 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
       {/* Ventana de Chat flotante */}
       {abierto && (
         <div
-          className={`fixed z-50 flex flex-col bg-neutral-900/95 backdrop-blur-xl border border-neutral-800/90 rounded-2xl sm:rounded-3xl shadow-[0_25px_70px_-15px_rgba(0,0,0,0.9),0_0_40px_rgba(99,102,241,0.18)] overflow-hidden transition-all duration-300 ${
-            minimizado 
-              ? 'w-72 sm:w-80 h-16 bottom-4 right-4 sm:bottom-6 sm:right-6' 
-              : 'inset-x-2 bottom-2 top-14 sm:inset-x-auto sm:top-auto sm:bottom-6 sm:right-6 sm:w-[500px] sm:h-[670px] sm:max-h-[88vh]'
-          }`}
+          className="fixed z-50 flex flex-col bg-neutral-900/95 backdrop-blur-xl border border-neutral-800/90 rounded-2xl sm:rounded-3xl shadow-[0_25px_70px_-15px_rgba(0,0,0,0.9),0_0_40px_rgba(99,102,241,0.18)] overflow-hidden transition-all duration-300 inset-x-2 bottom-2 top-14 sm:inset-x-auto sm:top-auto sm:bottom-6 sm:right-6 sm:w-[500px] sm:h-[670px] sm:max-h-[88vh]"
         >
           {/* Subtle Top Glowing Line */}
           <div className="h-[2px] w-full bg-gradient-to-r from-purple-500 via-indigo-500 to-indigo-600" />
@@ -468,15 +568,15 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
                 <RotateCcw size={15} />
               </button>
               <button
-                onClick={() => setMinimizado(!minimizado)}
+                onClick={() => setAbierto(false)}
                 className="p-1.5 hover:text-neutral-200 hover:bg-neutral-800/80 rounded-xl transition"
-                title={minimizado ? 'Maximizar' : 'Minimizar'}
+                title="Minimizar a punto flotante"
               >
-                {minimizado ? <Maximize2 size={16} /> : <Minimize2 size={16} />}
+                <Minimize2 size={16} />
               </button>
               <button
                 onClick={() => setAbierto(false)}
-                className="p-1.5 hover:text-neutral-200 hover:bg-neutral-800/80 rounded-xl transition"
+                className="p-1.5 hover:text-rose-400 hover:bg-neutral-800/80 rounded-xl transition"
                 title="Cerrar"
               >
                 <X size={16} />
@@ -484,58 +584,57 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
             </div>
           </div>
 
-          {!minimizado && (
-            <>
-              {/* Sugerencias rápidas (chips) */}
-              <div className="px-3 py-2 bg-neutral-950/70 border-b border-neutral-800/50 overflow-x-auto scrollbar-none flex items-center gap-1.5">
-                {SUGERENCIAS_RAPIDAS.map((sug, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handleEnviar(sug.prompt)}
-                    disabled={cargando}
-                    className="flex-shrink-0 text-[11px] bg-neutral-900/90 hover:bg-indigo-950/60 hover:text-indigo-200 hover:border-indigo-500/50 text-neutral-300 border border-neutral-800 px-3 py-1.5 rounded-full transition-all duration-200 whitespace-nowrap active:scale-95 disabled:opacity-50 shadow-sm"
+          {/* Sugerencias rápidas (chips) */}
+          <div className="px-3 py-2 bg-neutral-950/70 border-b border-neutral-800/50 overflow-x-auto scrollbar-none flex items-center gap-1.5">
+            {SUGERENCIAS_RAPIDAS.map((sug, i) => (
+              <button
+                key={i}
+                onClick={() => handleEnviar(sug.prompt)}
+                disabled={cargando}
+                className="flex-shrink-0 text-[11px] bg-neutral-900/90 hover:bg-indigo-950/60 hover:text-indigo-200 hover:border-indigo-500/50 text-neutral-300 border border-neutral-800 px-3 py-1.5 rounded-full transition-all duration-200 whitespace-nowrap active:scale-95 disabled:opacity-50 shadow-sm"
+              >
+                {sug.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Mensajes del Chat */}
+          <div className="flex-1 p-4 overflow-y-auto space-y-4 text-sm text-neutral-200">
+            {mensajes.map(m => {
+              const esUsuario = m.rol === 'usuario';
+              return (
+                <div
+                  key={m.id}
+                  className={`flex flex-col ${esUsuario ? 'items-end' : 'items-start'}`}
+                >
+                  <div className="flex items-center gap-1.5 mb-1 px-1">
+                    <span className="text-[10px] text-neutral-500">{m.creadoEn}</span>
+                  </div>
+
+                  <div
+                    className={`max-w-[90%] rounded-2xl px-4 py-2.5 text-xs sm:text-sm leading-relaxed break-words ${
+                      esUsuario
+                        ? 'bg-gradient-to-r from-indigo-600 via-indigo-600 to-purple-600 text-white rounded-br-sm shadow-md shadow-indigo-950/40 border border-indigo-400/20'
+                        : 'bg-neutral-800/90 backdrop-blur-sm text-neutral-100 border border-neutral-700/60 rounded-bl-sm shadow-sm'
+                    }`}
                   >
-                    {sug.label}
-                  </button>
-                ))}
-              </div>
+                    <FormattedMessage text={m.texto} />
+                  </div>
 
-              {/* Mensajes del Chat */}
-              <div className="flex-1 p-4 overflow-y-auto space-y-4 text-sm text-neutral-200">
-                {mensajes.map(m => {
-                  const esUsuario = m.rol === 'usuario';
-                  return (
-                    <div
-                      key={m.id}
-                      className={`flex flex-col ${esUsuario ? 'items-end' : 'items-start'}`}
-                    >
-                      <div className="flex items-center gap-1.5 mb-1 px-1">
-                        <span className="text-[10px] text-neutral-500">{m.creadoEn}</span>
+                  {/* Tarjeta de Acción Interactiva con Confirmación Humana */}
+                  {m.accionPropuesta && !m.accionEjecutada && (
+                    <div className="mt-3 max-w-[95%] p-4 bg-gradient-to-b from-neutral-950/95 to-neutral-900/95 border border-amber-500/40 rounded-2xl space-y-3 shadow-xl shadow-black/60 backdrop-blur-md">
+                      <div className="flex items-center gap-2 text-amber-400 font-semibold text-xs">
+                        {m.accionPropuesta.tipo === 'ejecutar_despacho' && <Truck size={15} />}
+                        {m.accionPropuesta.tipo === 'fusionar_insumos' && <Combine size={15} />}
+                        {m.accionPropuesta.tipo === 'ejecutar_venta_costo' && <Receipt size={15} />}
+                        {m.accionPropuesta.tipo === 'desactivar_combos' && <AlertTriangle size={15} />}
+                        {m.accionPropuesta.tipo === 'agrupar_similares' && <ArrowRightLeft size={15} />}
+                        {m.accionPropuesta.tipo === 'guardar_receta' && <Utensils size={15} />}
+                        {m.accionPropuesta.tipo === 'crear_combo' && <Layers size={15} />}
+                        {m.accionPropuesta.tipo === 'actualizar_precio_combo' && <Tag size={15} />}
+                        <span>{m.accionPropuesta.titulo}</span>
                       </div>
-
-                      <div
-                        className={`max-w-[90%] rounded-2xl px-4 py-2.5 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap break-words ${
-                          esUsuario
-                            ? 'bg-gradient-to-r from-indigo-600 via-indigo-600 to-purple-600 text-white rounded-br-sm shadow-md shadow-indigo-950/40 border border-indigo-400/20'
-                            : 'bg-neutral-800/90 backdrop-blur-sm text-neutral-100 border border-neutral-700/60 rounded-bl-sm shadow-sm'
-                        }`}
-                      >
-                        {m.texto}
-                      </div>
-
-                      {/* Tarjeta de Acción Interactiva con Confirmación Humana */}
-                      {m.accionPropuesta && !m.accionEjecutada && (
-                        <div className="mt-3 max-w-[95%] p-4 bg-gradient-to-b from-neutral-950/95 to-neutral-900/95 border border-amber-500/40 rounded-2xl space-y-3 shadow-xl shadow-black/60 backdrop-blur-md">
-                          <div className="flex items-center gap-2 text-amber-400 font-semibold text-xs">
-                            {m.accionPropuesta.tipo === 'ejecutar_despacho' && <Truck size={15} />}
-                            {m.accionPropuesta.tipo === 'fusionar_insumos' && <Combine size={15} />}
-                            {m.accionPropuesta.tipo === 'ejecutar_venta_costo' && <Receipt size={15} />}
-                            {m.accionPropuesta.tipo === 'desactivar_combos' && <AlertTriangle size={15} />}
-                            {m.accionPropuesta.tipo === 'agrupar_similares' && <ArrowRightLeft size={15} />}
-                            {m.accionPropuesta.tipo === 'guardar_receta' && <Utensils size={15} />}
-                            {m.accionPropuesta.tipo === 'crear_combo' && <Layers size={15} />}
-                            <span>{m.accionPropuesta.titulo}</span>
-                          </div>
 
                           {/* Vista previa según el tipo de acción */}
                           {m.accionPropuesta.tipo === 'crear_combo' && (
@@ -642,6 +741,26 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
                             </div>
                           )}
 
+                          {m.accionPropuesta.tipo === 'actualizar_precio_combo' && (
+                            <div className="text-[11px] space-y-2 text-neutral-300">
+                              <p>Producto / Promoción: <strong className="text-white font-semibold">{m.accionPropuesta.detalles?.nombreActual}</strong></p>
+                              {m.accionPropuesta.detalles?.nuevoNombre && m.accionPropuesta.detalles?.nuevoNombre !== m.accionPropuesta.detalles?.nombreActual && (
+                                <p className="text-[10px] text-indigo-300">Nuevo nombre: <strong className="text-white">{m.accionPropuesta.detalles?.nuevoNombre}</strong></p>
+                              )}
+                              <div className="flex items-center gap-4 p-2.5 bg-neutral-900/90 rounded-xl border border-neutral-800">
+                                <div>
+                                  <span className="block text-[10px] text-neutral-400 uppercase tracking-wider">Precio Actual</span>
+                                  <span className="text-xs line-through text-neutral-400 font-mono font-medium">${Number(m.accionPropuesta.detalles?.precioAnterior || 0).toFixed(2)} USD</span>
+                                </div>
+                                <ArrowRightLeft size={14} className="text-indigo-400 shrink-0" />
+                                <div>
+                                  <span className="block text-[10px] text-emerald-400 font-medium uppercase tracking-wider">Nuevo Precio</span>
+                                  <span className="text-sm font-bold text-emerald-400 font-mono">${Number(m.accionPropuesta.detalles?.nuevoPrecio || 0).toFixed(2)} USD</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
                           <div className="pt-2 flex items-center gap-2">
                             <button
                               onClick={() => handleEjecutarAccion(m.id, m.accionPropuesta)}
@@ -659,6 +778,7 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
                                   <span>
                                     {m.accionPropuesta.tipo === 'guardar_receta' ? 'Guardar Receta en Catálogo' :
                                      m.accionPropuesta.tipo === 'crear_combo' ? 'Confirmar y Crear Combo' :
+                                     m.accionPropuesta.tipo === 'actualizar_precio_combo' ? 'Confirmar y Actualizar Precio' :
                                      'Confirmar y Ejecutar'}
                                   </span>
                                 </>
@@ -717,8 +837,6 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
                   </span>
                 </div>
               </div>
-            </>
-          )}
         </div>
       )}
     </>
