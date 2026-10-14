@@ -1,0 +1,1689 @@
+'use server';
+
+import { GoogleGenerativeAI, SchemaType, FunctionDeclaration } from '@google/generative-ai';
+import { createClient } from '@/utils/supabase/server';
+import { cookies } from 'next/headers';
+import { revalidatePath } from 'next/cache';
+import { DEFAULT_TIMEZONE, getTimezoneOffsetString } from '@/utils/date-utils';
+import { getTasaBcvForDateAction } from '@/actions/config-actions';
+import { mergeInsumos } from '@/app/dashboard/inventario/actions';
+import { procesarDespachoEnServidor } from '@/actions/despachos-actions';
+import { registrarVentaAlCostoMulti } from '@/actions/ventas-costo-actions';
+
+/**
+ * Contexto de autenticación seguro multi-tenant con validación de privilegios
+ */
+async function getCopilotAuthContext(requestedSedeId?: string) {
+  const supabase = await createClient();
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (authErr || !user) throw new Error('No autorizado');
+
+  const { data: perfil, error: perfErr } = await supabase
+    .from('perfiles')
+    .select('empresa_id, sede_id, rol, nombre_completo, permisos, permiso_venta_costo')
+    .eq('id', user.id)
+    .single();
+
+  if (perfErr || !perfil || !perfil.empresa_id) {
+    throw new Error('Perfil de usuario o empresa no encontrada');
+  }
+
+  // VALIDACIÓN DE PRIVILEGIOS: Solo MASTER, SUPERADMIN o usuarios con permiso explícito "copilot_ia"
+  const isMaster = user.app_metadata?.user_role === 'MASTER' || perfil.rol === 'MASTER' || perfil.rol === 'SUPERADMIN';
+  const hasCopilotPermission = isMaster || (Array.isArray(perfil.permisos) && perfil.permisos.includes('copilot_ia'));
+
+  if (!hasCopilotPermission) {
+    throw new Error('ACCESO_DENEGADO: Tu cuenta no tiene habilitado el módulo de Niteo Copilot. Debe ser asignado por el usuario Master en Gestión de Equipo.');
+  }
+
+  const cookieStore = await cookies();
+  const activeSedeCookie = cookieStore.get('active_sede')?.value;
+
+  let idSede = requestedSedeId || (perfil.sede_id && perfil.sede_id !== 'ALL' ? perfil.sede_id : undefined);
+  if (perfil.rol === 'MASTER' && activeSedeCookie && activeSedeCookie !== 'ALL' && !requestedSedeId) {
+    idSede = activeSedeCookie;
+  }
+
+  // Obtener info básica de la empresa
+  const { data: empresa } = await supabase
+    .from('empresas')
+    .select('nombre_comercial, moneda, simbolo_moneda, rubro, tipo_tasa, tasa_manual')
+    .eq('id', perfil.empresa_id)
+    .single();
+
+  // Obtener sedes de la empresa
+  const { data: sedes } = await supabase
+    .from('sedes')
+    .select('id, nombre_sede')
+    .eq('empresa_id', perfil.empresa_id);
+
+  return {
+    supabase,
+    user,
+    empresaId: perfil.empresa_id,
+    sedeId: idSede,
+    rol: perfil.rol,
+    permisos: perfil.permisos || [],
+    permisoVentaCosto: isMaster || perfil.permiso_venta_costo === true,
+    userName: perfil.nombre_completo || user.email || 'Usuario',
+    empresa: empresa || { nombre_comercial: 'Mi Negocio', moneda: 'USD', simbolo_moneda: '$' },
+    sedes: sedes || []
+  };
+}
+
+/**
+ * Calcula rangos de fecha seguros en formato ISO
+ */
+function calcularRangoFechas(periodo: string): { inicio: string; fin: string; descripcion: string } {
+  const now = new Date();
+  let inicio = new Date();
+  const fin = new Date();
+
+  // Si el string es una fecha YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(periodo)) {
+    const tzOffset = getTimezoneOffsetString(DEFAULT_TIMEZONE);
+    return {
+      inicio: `${periodo}T00:00:00${tzOffset}`,
+      fin: `${periodo}T23:59:59.999${tzOffset}`,
+      descripcion: `Fecha ${periodo}`
+    };
+  }
+
+  switch (periodo) {
+    case 'hoy': {
+      inicio.setHours(0, 0, 0, 0);
+      fin.setHours(23, 59, 59, 999);
+      return { inicio: inicio.toISOString(), fin: fin.toISOString(), descripcion: 'Hoy' };
+    }
+    case 'ayer': {
+      inicio.setDate(inicio.getDate() - 1);
+      inicio.setHours(0, 0, 0, 0);
+      const finAyer = new Date(inicio);
+      finAyer.setHours(23, 59, 59, 999);
+      return { inicio: inicio.toISOString(), fin: finAyer.toISOString(), descripcion: 'Ayer' };
+    }
+    case 'esta_semana': {
+      const day = now.getDay();
+      const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+      inicio.setDate(diff);
+      inicio.setHours(0, 0, 0, 0);
+      return { inicio: inicio.toISOString(), fin: fin.toISOString(), descripcion: 'Esta semana' };
+    }
+    case 'este_mes': {
+      inicio = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      return { inicio: inicio.toISOString(), fin: fin.toISOString(), descripcion: 'Este mes' };
+    }
+    case 'ultimos_30_dias': {
+      inicio.setDate(inicio.getDate() - 30);
+      return { inicio: inicio.toISOString(), fin: fin.toISOString(), descripcion: 'Últimos 30 días' };
+    }
+    case 'ultimos_6_meses': {
+      inicio.setMonth(inicio.getMonth() - 6);
+      return { inicio: inicio.toISOString(), fin: fin.toISOString(), descripcion: 'Últimos 6 meses' };
+    }
+    case 'año_actual': {
+      inicio = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+      return { inicio: inicio.toISOString(), fin: fin.toISOString(), descripcion: 'Año actual' };
+    }
+    default: {
+      inicio.setDate(inicio.getDate() - 7);
+      return { inicio: inicio.toISOString(), fin: fin.toISOString(), descripcion: 'Últimos 7 días' };
+    }
+  }
+}
+
+/**
+ * Normaliza cadenas removiendo acentos, caracteres especiales y pasando a minúsculas
+ */
+function normalizarTexto(txt?: string | null): string {
+  if (!txt) return '';
+  return txt
+    .toLowerCase()
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+/**
+ * Calcula la distancia de Levenshtein entre dos cadenas para tolerancia a errores ortográficos
+ */
+function levenshteinDistance(a: string, b: string): number {
+  const an = a ? a.length : 0;
+  const bn = b ? b.length : 0;
+  if (an === 0) return bn;
+  if (bn === 0) return an;
+  const matrix: number[][] = [];
+  for (let i = 0; i <= bn; i++) {
+    matrix[i] = [i];
+  }
+  for (let j = 0; j <= an; j++) {
+    matrix[0][j] = j;
+  }
+  for (let i = 1; i <= bn; i++) {
+    for (let j = 1; j <= an; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+  return matrix[bn][an];
+}
+
+/**
+ * Determina si dos textos coinciden de manera aproximada tolerando errores ortográficos y typos
+ * (ej: "mozarela" matchea "mozzarella", "pisa" matchea "pizza", "harinapan" matchea "harina pan")
+ */
+function esCoincidenciaAproximada(textoReal?: string | null, textoBuscado?: string | null): boolean {
+  const t1 = normalizarTexto(textoReal);
+  const t2 = normalizarTexto(textoBuscado);
+  if (!t1 || !t2) return false;
+  if (t1.includes(t2) || t2.includes(t1)) return true;
+
+  const palabras1 = t1.split(/[\s,.-]+/);
+  const palabras2 = t2.split(/[\s,.-]+/);
+
+  for (const p2 of palabras2) {
+    if (p2.length < 3) continue;
+    let coincidioPalabra = false;
+    for (const p1 of palabras1) {
+      if (p1.length < 3) continue;
+      if (p1.includes(p2) || p2.includes(p1)) {
+        coincidioPalabra = true;
+        break;
+      }
+      const dist = levenshteinDistance(p1, p2);
+      const maxPermitida = p2.length <= 4 ? 1 : p2.length <= 7 ? 2 : 3;
+      if (dist <= maxPermitida) {
+        coincidioPalabra = true;
+        break;
+      }
+    }
+    if (coincidioPalabra) return true;
+  }
+
+  if (Math.abs(t1.length - t2.length) <= 3) {
+    const globalDist = levenshteinDistance(t1, t2);
+    if (globalDist <= 2) return true;
+  }
+
+  return false;
+}
+
+/**
+ * Resuelve de forma inteligente el nombre o número de una sede con tolerancia a typos:
+ * - "sede 1", "sucursal 1", "1", "primera" -> sedes[0]
+ * - "sede 2", "sucursal 2", "2", "segunda" -> sedes[1]
+ * - "sede principal", "matriz", "central" -> busca sede con ese nombre o primera sede
+ * - búsqueda por coincidencia parcial y difusa de texto
+ */
+function resolverSede(
+  termino?: string | null,
+  sedes?: { id: string; nombre_sede: string }[]
+): { id: string; nombre_sede: string } | null {
+  if (!termino || !sedes || sedes.length === 0) return null;
+
+  const cleanTerm = normalizarTexto(termino);
+
+  if (cleanTerm === '1' || cleanTerm.includes('primera') || cleanTerm === 'sede 1' || cleanTerm === 'sucursal 1' || cleanTerm === 'sde 1' || cleanTerm === 'sed 1') {
+    return sedes[0] || null;
+  }
+  if (cleanTerm === '2' || cleanTerm.includes('segunda') || cleanTerm === 'sede 2' || cleanTerm === 'sucursal 2' || cleanTerm === 'sde 2' || cleanTerm === 'sed 2') {
+    return sedes[1] || null;
+  }
+  if (cleanTerm === '3' || cleanTerm.includes('tercera') || cleanTerm === 'sede 3' || cleanTerm === 'sucursal 3') {
+    return sedes[2] || null;
+  }
+
+  const matchNum = cleanTerm.match(/(?:sede|sucursal|caja|tienda|pos|sde|sed)?\s*(\d+)/i);
+  if (matchNum && matchNum[1]) {
+    const idx = parseInt(matchNum[1], 10) - 1;
+    if (idx >= 0 && idx < sedes.length) {
+      return sedes[idx];
+    }
+  }
+
+  if (cleanTerm.includes('principal') || cleanTerm.includes('matriz') || cleanTerm.includes('central') || cleanTerm.includes('principa') || cleanTerm.includes('pricipal')) {
+    const principal = sedes.find(s => {
+      const sNorm = normalizarTexto(s.nombre_sede);
+      return sNorm.includes('principal') || sNorm.includes('central') || sNorm.includes('matriz');
+    });
+    if (principal) return principal;
+    return sedes[0];
+  }
+
+  const directa = sedes.find(s => esCoincidenciaAproximada(s.nombre_sede, cleanTerm));
+
+  return directa || null;
+}
+
+// ==========================================
+// HERRAMIENTAS EJECUTABLES (TOOLS IMPLEMENTATION)
+// ==========================================
+
+/**
+ * 1. Consulta la tasa cambiaria de un día específico (o de hoy)
+ */
+async function toolConsultarTasaCambio(
+  ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
+  args: { fecha?: string }
+) {
+  const targetDate = args.fecha || new Date().toISOString().substring(0, 10);
+  const tasaData = await getTasaBcvForDateAction(targetDate);
+  return {
+    fecha_consultada: targetDate,
+    tasa: tasaData.tasa,
+    fecha_efectiva_bcv: tasaData.fecha,
+    moneda_referencia: tasaData.moneda,
+    tipo: tasaData.tipoTasa,
+    mensaje: `La tasa para la fecha ${targetDate} fue de ${tasaData.tasa.toFixed(2)} Bs/${tasaData.moneda}.`
+  };
+}
+
+/**
+ * 2. Consulta ventas (cenas/turno y total) y compras del día tanto en USD como en VES
+ */
+async function toolConsultarBalanceDia(
+  ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
+  args: { fecha: string; turno?: 'todo_el_dia' | 'cenas_nocturno' | 'almuerzo'; sede_nombre?: string }
+) {
+  const { supabase, empresaId, sedeId, sedes } = ctx;
+  const fechaStr = args.fecha || new Date().toISOString().substring(0, 10);
+  const tzOffset = getTimezoneOffsetString(DEFAULT_TIMEZONE);
+  const inicioDia = `${fechaStr}T00:00:00${tzOffset}`;
+  const finDia = `${fechaStr}T23:59:59.999${tzOffset}`;
+
+  let targetSedeId = sedeId;
+  let sedeIdentificada = 'General / Todas las sedes';
+  if (args.sede_nombre) {
+    const sFound = resolverSede(args.sede_nombre, sedes);
+    if (sFound) {
+      targetSedeId = sFound.id;
+      sedeIdentificada = sFound.nombre_sede;
+    }
+  }
+
+  // Obtener tasa del día
+  const tasaInfo = await getTasaBcvForDateAction(fechaStr);
+  const tasa = tasaInfo.tasa || 1;
+
+  // Consultar Ventas Facturas
+  let queryVentas = supabase
+    .from('ventas_facturas')
+    .select('id, total, fecha_venta, numero_documento')
+    .eq('empresa_id', empresaId)
+    .gte('fecha_venta', inicioDia)
+    .lte('fecha_venta', finDia)
+    .neq('numero_documento', 'TEST');
+
+  if (targetSedeId) {
+    queryVentas = queryVentas.eq('sede_id', targetSedeId);
+  }
+
+  const { data: facturas, error: vErr } = await queryVentas;
+  if (vErr) return { error: `Error consultando ventas: ${vErr.message}` };
+
+  let totalVentasUsd = 0;
+  let totalCenasUsd = 0; // Ventas a partir de las 18:00 (6:00 PM)
+  let countFacturas = 0;
+  let countCenas = 0;
+
+  for (const fac of facturas || []) {
+    const monto = Number(fac.total || 0);
+    totalVentasUsd += monto;
+    countFacturas++;
+
+    // Verificar si es turno noche / cena
+    const fDate = new Date(fac.fecha_venta);
+    const hour = fDate.getHours();
+    if (hour >= 18 || hour <= 4) {
+      totalCenasUsd += monto;
+      countCenas++;
+    }
+  }
+
+  // Consultar Compras
+  let queryCompras = supabase
+    .from('compras_puntuales')
+    .select('id, monto_divisas, monto_bs, proveedor, detalles')
+    .eq('id_empresa', empresaId)
+    .gte('fecha_registro', inicioDia)
+    .lte('fecha_registro', finDia);
+
+  if (targetSedeId) {
+    queryCompras = queryCompras.eq('id_sede', targetSedeId);
+  }
+
+  const { data: compras, error: cErr } = await queryCompras;
+  if (cErr) return { error: `Error consultando compras: ${cErr.message}` };
+
+  let totalComprasUsd = 0;
+  let totalComprasBs = 0;
+
+  for (const comp of compras || []) {
+    totalComprasUsd += Number(comp.monto_divisas || 0);
+    totalComprasBs += Number(comp.monto_bs || (Number(comp.monto_divisas || 0) * tasa));
+  }
+
+  const totalVentasBs = totalVentasUsd * tasa;
+  const totalCenasBs = totalCenasUsd * tasa;
+
+  return {
+    fecha: fechaStr,
+    sede_consultada: sedeIdentificada,
+    tasa_bcv_aplicada: tasa,
+    moneda_tasa: tasaInfo.moneda,
+    ventas: {
+      total_ventas_usd: Number(totalVentasUsd.toFixed(2)),
+      total_ventas_bs: Number(totalVentasBs.toFixed(2)),
+      total_facturas: countFacturas,
+      turno_cenas_nocturno: {
+        total_usd: Number(totalCenasUsd.toFixed(2)),
+        total_bs: Number(totalCenasBs.toFixed(2)),
+        cantidad_pedidos: countCenas
+      }
+    },
+    compras: {
+      total_compras_usd: Number(totalComprasUsd.toFixed(2)),
+      total_compras_bs: Number(totalComprasBs.toFixed(2)),
+      total_compras_registradas: (compras || []).length
+    },
+    balance_neto: {
+      balance_usd: Number((totalVentasUsd - totalComprasUsd).toFixed(2)),
+      balance_bs: Number((totalVentasBs - totalComprasBs).toFixed(2))
+    }
+  };
+}
+
+/**
+ * 3. Consulta ventas por método de pago (ej. Pago Móvil) desglosadas por cada sede
+ */
+async function toolConsultarVentasPorMetodoPago(
+  ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
+  args: {
+    metodo_pago: string;
+    periodo_o_fecha?: string;
+    sede_nombre?: string;
+  }
+) {
+  const { supabase, empresaId, sedes } = ctx;
+  const { inicio, fin, descripcion } = calcularRangoFechas(args.periodo_o_fecha || 'hoy');
+  const metodoBuscado = (args.metodo_pago || 'pago_movil').toLowerCase().replace(/[_\s-]/g, '');
+
+  let query = supabase
+    .from('ventas_facturas')
+    .select(`
+      id,
+      sede_id,
+      total,
+      fecha_venta,
+      ventas_pagos (
+        tipo_pago,
+        monto
+      )
+    `)
+    .eq('empresa_id', empresaId)
+    .gte('fecha_venta', inicio)
+    .lte('fecha_venta', fin)
+    .neq('numero_documento', 'TEST');
+
+  if (args.sede_nombre) {
+    const sFound = resolverSede(args.sede_nombre, sedes);
+    if (sFound) {
+      query = query.eq('sede_id', sFound.id);
+    }
+  }
+
+  const { data: facturas, error } = await query;
+
+  if (error) return { error: `Error consultando ventas por método de pago: ${error.message}` };
+
+  const tasaHoy = (await getTasaBcvForDateAction(new Date().toISOString().substring(0, 10))).tasa || 1;
+
+  // Mapa de nombres de sede con alias amigable (Sede 1: ..., Sede 2: ...)
+  const sedeNombres: Record<string, string> = {};
+  sedes.forEach((s, idx) => {
+    sedeNombres[s.id] = `Sede ${idx + 1} (${s.nombre_sede})`;
+  });
+
+  const desglosadoPorSede: Record<string, {
+    sede_id: string;
+    nombre_sede: string;
+    total_usd: number;
+    total_bs: number;
+    transacciones: number;
+  }> = {};
+
+  let totalGeneralUsd = 0;
+  let totalTransacciones = 0;
+
+  for (const fac of facturas || []) {
+    const sId = fac.sede_id || 'sin_sede';
+    const sNombre = sedeNombres[sId] || 'Sede Principal / Sin Asignar';
+
+    if (!desglosadoPorSede[sId]) {
+      desglosadoPorSede[sId] = {
+        sede_id: sId,
+        nombre_sede: sNombre,
+        total_usd: 0,
+        total_bs: 0,
+        transacciones: 0
+      };
+    }
+
+    const pagos = (fac as any).ventas_pagos || [];
+    for (const p of pagos) {
+      const pClean = (p.tipo_pago || '').toLowerCase().replace(/[_\s-]/g, '');
+      if (pClean.includes(metodoBuscado) || metodoBuscado.includes(pClean)) {
+        const monto = Number(p.monto || 0);
+        desglosadoPorSede[sId].total_usd += monto;
+        desglosadoPorSede[sId].total_bs += monto * tasaHoy;
+        desglosadoPorSede[sId].transacciones += 1;
+
+        totalGeneralUsd += monto;
+        totalTransacciones += 1;
+      }
+    }
+  }
+
+  return {
+    metodo_pago_consultado: args.metodo_pago,
+    periodo: descripcion,
+    tasa_referencia_bcv: tasaHoy,
+    total_general_usd: Number(totalGeneralUsd.toFixed(2)),
+    total_general_bs: Number((totalGeneralUsd * tasaHoy).toFixed(2)),
+    total_transacciones: totalTransacciones,
+    desglose_por_sedes: Object.values(desglosadoPorSede).map(s => ({
+      ...s,
+      total_usd: Number(s.total_usd.toFixed(2)),
+      total_bs: Number(s.total_bs.toFixed(2))
+    }))
+  };
+}
+
+/**
+ * 4. Propone la fusión de marcas de insumos en inventario y colocación como palabras clave
+ */
+async function toolProponerFusionMarcas(
+  ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
+  args: {
+    insumo_principal_nombre: string;
+    insumos_a_fusionar_nombres: string[];
+  }
+) {
+  const { supabase, empresaId } = ctx;
+
+  // 1. Buscar insumo principal
+  const { data: masters } = await supabase
+    .from('inventario_insumos')
+    .select('id, nombre, unidad_medida, cantidad_actual, palabras_clave')
+    .eq('empresa_id', empresaId)
+    .ilike('nombre', `%${args.insumo_principal_nombre.trim()}%`)
+    .limit(5);
+
+  if (!masters || masters.length === 0) {
+    return {
+      exito: false,
+      mensaje: `No se encontró el insumo principal "${args.insumo_principal_nombre}" en el inventario.`
+    };
+  }
+
+  const masterInsumo = masters[0];
+
+  // 2. Buscar insumos a absorber
+  const slaveInsumos: any[] = [];
+  for (const nombre of args.insumos_a_fusionar_nombres) {
+    const { data: slaves } = await supabase
+      .from('inventario_insumos')
+      .select('id, nombre, unidad_medida, cantidad_actual, palabras_clave')
+      .eq('empresa_id', empresaId)
+      .neq('id', masterInsumo.id)
+      .ilike('nombre', `%${nombre.trim()}%`);
+
+    if (slaves && slaves.length > 0) {
+      for (const s of slaves) {
+        if (!slaveInsumos.some(existing => existing.id === s.id)) {
+          slaveInsumos.push(s);
+        }
+      }
+    }
+  }
+
+  if (slaveInsumos.length === 0) {
+    return {
+      exito: false,
+      mensaje: 'No se encontraron insumos secundarios coincidentes para absorber en la fusión.'
+    };
+  }
+
+  // Preparar palabras clave resultantes
+  const keywordsActuales = Array.isArray(masterInsumo.palabras_clave) ? masterInsumo.palabras_clave : [];
+  const nuevasKeywords = new Set<string>(keywordsActuales);
+
+  let stockSuma = masterInsumo.cantidad_actual || 0;
+  slaveInsumos.forEach(s => {
+    stockSuma += s.cantidad_actual || 0;
+    nuevasKeywords.add(s.nombre);
+    if (Array.isArray(s.palabras_clave)) {
+      s.palabras_clave.forEach((k: string) => nuevasKeywords.add(k));
+    }
+  });
+
+  return {
+    exito: true,
+    insumo_principal: {
+      id: masterInsumo.id,
+      nombre: masterInsumo.nombre,
+      stock_actual: masterInsumo.cantidad_actual,
+      unidad_medida: masterInsumo.unidad_medida
+    },
+    insumos_a_absorber: slaveInsumos.map(s => ({
+      id: s.id,
+      nombre: s.nombre,
+      stock: s.cantidad_actual
+    })),
+    stock_total_resultante: Number(stockSuma.toFixed(2)),
+    palabras_clave_resultantes: Array.from(nuevasKeywords).slice(0, 20),
+    requiere_confirmacion: true,
+    mensaje: `Se propone fusionar ${slaveInsumos.length} insumos en "${masterInsumo.nombre}". Sus marcas se agregarán como palabras clave y el stock total será ${stockSuma.toFixed(2)} ${masterInsumo.unidad_medida}. ¿Deseas confirmar la fusión?`
+  };
+}
+
+/**
+ * 5. Propone un despacho / traslado de inventario entre sedes
+ */
+async function toolProponerDespachoSedes(
+  ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
+  args: {
+    sede_origen_nombre: string;
+    sede_destino_nombre: string;
+    items: { nombre_insumo: string; cantidad: number }[];
+    notas?: string;
+  }
+) {
+  const { supabase, empresaId, sedes } = ctx;
+
+  // Buscar sedes de forma inteligente (admite "sede 1", "sede principal", nombres exactos o parciales)
+  const origen = resolverSede(args.sede_origen_nombre, sedes);
+  const destino = resolverSede(args.sede_destino_nombre, sedes);
+
+  if (!origen) return { exito: false, mensaje: `No se encontró la sede de origen "${args.sede_origen_nombre}".` };
+  if (!destino) return { exito: false, mensaje: `No se encontró la sede de destino "${args.sede_destino_nombre}".` };
+  if (origen.id === destino.id) return { exito: false, mensaje: 'La sede de origen y destino no pueden ser la misma.' };
+
+  const itemsPreparados: any[] = [];
+  const erroresStock: string[] = [];
+
+  for (const it of args.items) {
+    const { data: insumos } = await supabase
+      .from('inventario_insumos')
+      .select('id, nombre, unidad_medida, cantidad_actual, costo_promedio')
+      .eq('empresa_id', empresaId)
+      .or(`sede_id.eq.${origen.id},sede_id.is.null`)
+      .ilike('nombre', `%${it.nombre_insumo.trim()}%`)
+      .limit(1);
+
+    if (!insumos || insumos.length === 0) {
+      erroresStock.push(`Insumo no encontrado en origen: ${it.nombre_insumo}`);
+      continue;
+    }
+
+    const ins = insumos[0];
+    if (ins.cantidad_actual < it.cantidad) {
+      erroresStock.push(`Stock insuficiente para "${ins.nombre}": disponible ${ins.cantidad_actual} ${ins.unidad_medida}, solicitado ${it.cantidad}`);
+      continue;
+    }
+
+    itemsPreparados.push({
+      insumo_id: ins.id,
+      nombre: ins.nombre,
+      unidad_medida: ins.unidad_medida,
+      cantidad: it.cantidad,
+      costo_promedio: ins.costo_promedio,
+      stock_disponible_origen: ins.cantidad_actual
+    });
+  }
+
+  if (erroresStock.length > 0) {
+    return {
+      exito: false,
+      errores: erroresStock,
+      mensaje: `No se puede procesar el despacho por los siguientes motivos:\n${erroresStock.join('\n')}`
+    };
+  }
+
+  return {
+    exito: true,
+    origen: { id: origen.id, nombre: origen.nombre_sede },
+    destino: { id: destino.id, nombre: destino.nombre_sede },
+    items: itemsPreparados,
+    notas: args.notas || 'Despacho gestionado mediante Niteo Copilot',
+    requiere_confirmacion: true,
+    mensaje: `Se propone despachar ${itemsPreparados.length} ítems de "${origen.nombre_sede}" hacia "${destino.nombre_sede}". ¿Deseas confirmar la emisión del despacho?`
+  };
+}
+
+/**
+ * 6. Propone una venta al costo para un beneficiario
+ */
+async function toolProponerVentaAlCosto(
+  ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
+  args: {
+    beneficiario: string;
+    items: { nombre_insumo: string; cantidad: number }[];
+    notas?: string;
+  }
+) {
+  const { supabase, empresaId, sedeId, permisoVentaCosto } = ctx;
+
+  if (!permisoVentaCosto) {
+    return {
+      exito: false,
+      mensaje: 'Acceso Denegado: No tienes el privilegio "Venta al Costo" habilitado en tu perfil.'
+    };
+  }
+
+  if (!args.beneficiario || args.beneficiario.trim() === '') {
+    return { exito: false, mensaje: 'Debes indicar el nombre del beneficiario de la venta al costo.' };
+  }
+
+  const itemsProcesados: any[] = [];
+  let costoTotalUSD = 0;
+  const errores: string[] = [];
+
+  for (const it of args.items) {
+    let query = supabase
+      .from('inventario_insumos')
+      .select('id, nombre, unidad_medida, cantidad_actual, costo_promedio')
+      .eq('empresa_id', empresaId)
+      .ilike('nombre', `%${it.nombre_insumo.trim()}%`);
+
+    if (sedeId) {
+      query = query.or(`sede_id.eq.${sedeId},sede_id.is.null`);
+    }
+
+    const { data: insumos } = await query.limit(1);
+
+    if (!insumos || insumos.length === 0) {
+      errores.push(`Insumo no encontrado: ${it.nombre_insumo}`);
+      continue;
+    }
+
+    const ins = insumos[0];
+    if (ins.cantidad_actual < it.cantidad) {
+      errores.push(`Stock insuficiente para "${ins.nombre}": disponible ${ins.cantidad_actual}, solicitado ${it.cantidad}`);
+      continue;
+    }
+
+    const costoItem = (ins.costo_promedio || 0) * it.cantidad;
+    costoTotalUSD += costoItem;
+
+    itemsProcesados.push({
+      insumoId: ins.id,
+      nombre: ins.nombre,
+      unidad_medida: ins.unidad_medida,
+      cantidad: it.cantidad,
+      costo_unitario: ins.costo_promedio,
+      costo_subtotal: Number(costoItem.toFixed(2))
+    });
+  }
+
+  if (errores.length > 0) {
+    return { exito: false, errores, mensaje: errores.join('\n') };
+  }
+
+  const tasaHoy = (await getTasaBcvForDateAction(new Date().toISOString().substring(0, 10))).tasa || 1;
+
+  return {
+    exito: true,
+    beneficiario: args.beneficiario,
+    items: itemsProcesados,
+    costo_total_usd: Number(costoTotalUSD.toFixed(2)),
+    costo_total_bs: Number((costoTotalUSD * tasaHoy).toFixed(2)),
+    tasa_bcv: tasaHoy,
+    notas: args.notas || 'Venta al costo procesada vía Niteo Copilot',
+    requiere_confirmacion: true,
+    mensaje: `Se propone registrar Venta al Costo para ${args.beneficiario} por un total de $${costoTotalUSD.toFixed(2)} USD (${(costoTotalUSD * tasaHoy).toFixed(2)} Bs). ¿Deseas confirmar la operación?`
+  };
+}
+
+/**
+ * 7. Consulta métricas y ranking de ventas (ya implementada)
+ */
+async function toolConsultarVentas(
+  ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
+  args: {
+    periodo?: string;
+    filtro_producto?: string;
+    limite?: number;
+    ordenar_por?: 'mas_vendidos' | 'menos_vendidos';
+    sede_nombre?: string;
+  }
+) {
+  const { supabase, empresaId, sedeId, sedes } = ctx;
+  const { inicio, fin, descripcion } = calcularRangoFechas(args.periodo || 'esta_semana');
+  const limite = Math.min(Math.max(args.limite || 10, 1), 50);
+
+  let targetSedeId = sedeId;
+  let sedeIdentificada = 'General / Todas las sedes';
+  if (args.sede_nombre) {
+    const sFound = resolverSede(args.sede_nombre, sedes);
+    if (sFound) {
+      targetSedeId = sFound.id;
+      sedeIdentificada = sFound.nombre_sede;
+    }
+  }
+
+  let query = supabase
+    .from('ventas_facturas')
+    .select(`
+      id,
+      numero_documento,
+      fecha_venta,
+      total,
+      descuento,
+      ventas_detalles (
+        id,
+        producto_id,
+        cantidad,
+        precio_unitario,
+        total,
+        promo_id,
+        productos (
+          id,
+          nombre,
+          codigo_barras
+        )
+      )
+    `)
+    .eq('empresa_id', empresaId)
+    .gte('fecha_venta', inicio)
+    .lte('fecha_venta', fin)
+    .neq('numero_documento', 'TEST');
+
+  if (targetSedeId) {
+    query = query.eq('sede_id', targetSedeId);
+  }
+
+  const { data: facturas, error } = await query;
+  if (error) return { error: `Error consultando ventas: ${error.message}` };
+
+  const agrupadoPorProducto: Record<string, {
+    producto_id: string;
+    nombre: string;
+    codigo_barras: string;
+    cantidad_vendida: number;
+    total_usd: number;
+  }> = {};
+
+  let totalRecaudado = 0;
+  let totalFacturas = (facturas || []).length;
+  let totalUnidades = 0;
+
+  for (const fac of facturas || []) {
+    totalRecaudado += Number(fac.total || 0);
+    const detalles = (fac as any).ventas_detalles || [];
+
+    for (const det of detalles) {
+      const prod = det.productos;
+      const prodId = det.producto_id || 'desconocido';
+      const prodNombre = prod?.nombre || 'Producto no identificado';
+      const prodCodigo = prod?.codigo_barras || '';
+
+      if (args.filtro_producto && args.filtro_producto.trim().length > 0) {
+        if (!esCoincidenciaAproximada(prodNombre, args.filtro_producto)) continue;
+      }
+
+      const cant = Number(det.cantidad || 0);
+      const subtotal = Number(det.total || 0);
+
+      totalUnidades += cant;
+
+      if (!agrupadoPorProducto[prodId]) {
+        agrupadoPorProducto[prodId] = {
+          producto_id: prodId,
+          nombre: prodNombre,
+          codigo_barras: prodCodigo,
+          cantidad_vendida: 0,
+          total_usd: 0
+        };
+      }
+
+      agrupadoPorProducto[prodId].cantidad_vendida += cant;
+      agrupadoPorProducto[prodId].total_usd += subtotal;
+    }
+  }
+
+  const listaProductos = Object.values(agrupadoPorProducto);
+  if (args.ordenar_por === 'menos_vendidos') {
+    listaProductos.sort((a, b) => a.cantidad_vendida - b.cantidad_vendida);
+  } else {
+    listaProductos.sort((a, b) => b.cantidad_vendida - a.cantidad_vendida);
+  }
+
+  const topProductos = listaProductos.slice(0, limite).map(p => ({
+    ...p,
+    cantidad_vendida: Number(p.cantidad_vendida.toFixed(2)),
+    total_usd: Number(p.total_usd.toFixed(2))
+  }));
+
+  return {
+    periodo: descripcion,
+    sede_consultada: sedeIdentificada,
+    filtro_producto: args.filtro_producto || null,
+    total_facturas_emitidas: totalFacturas,
+    total_ventas_usd: Number(totalRecaudado.toFixed(2)),
+    total_unidades_coincidentes: Number(totalUnidades.toFixed(2)),
+    productos: topProductos
+  };
+}
+
+/**
+ * 8. Consulta consumo de materia prima e insumos (ya implementada)
+ */
+async function toolConsultarConsumoInsumo(
+  ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
+  args: { nombre_insumo: string; periodo?: string }
+) {
+  const { supabase, empresaId, sedeId } = ctx;
+  const { inicio, fin, descripcion } = calcularRangoFechas(args.periodo || 'este_mes');
+
+  let queryInsumos = supabase
+    .from('inventario_insumos')
+    .select('id, nombre, unidad_medida, cantidad_actual, costo_promedio, palabras_clave, sede_id')
+    .eq('empresa_id', empresaId)
+    .ilike('nombre', `%${args.nombre_insumo.trim()}%`);
+
+  if (sedeId) {
+    queryInsumos = queryInsumos.or(`sede_id.eq.${sedeId},sede_id.is.null`);
+  }
+
+  const { data: insumos, error: insErr } = await queryInsumos;
+  if (insErr) return { error: `Error buscando insumo: ${insErr.message}` };
+
+  let listaInsumos = insumos && insumos.length > 0 ? insumos : [];
+
+  if (listaInsumos.length === 0) {
+    const { data: insumosAlt } = await supabase
+      .from('inventario_insumos')
+      .select('id, nombre, unidad_medida, cantidad_actual, costo_promedio, palabras_clave, sede_id')
+      .eq('empresa_id', empresaId)
+      .limit(100);
+
+    const term = args.nombre_insumo;
+    listaInsumos = (insumosAlt || []).filter(i => 
+      esCoincidenciaAproximada(i.nombre, term) ||
+      (Array.isArray(i.palabras_clave) && i.palabras_clave.some((p: string) => esCoincidenciaAproximada(p, term)))
+    );
+
+    if (listaInsumos.length === 0) {
+      return {
+        encontrado: false,
+        mensaje: `No se encontró ningún insumo que coincida con "${args.nombre_insumo}" en el inventario.`
+      };
+    }
+  }
+
+  const resultados = [];
+
+  for (const ins of listaInsumos) {
+    const { data: movs } = await supabase
+      .from('movimientos_inventario')
+      .select('cantidad, motivo, tipo_movimiento')
+      .eq('empresa_id', empresaId)
+      .eq('insumo_id', ins.id)
+      .eq('tipo_movimiento', 'SALIDA')
+      .gte('fecha_movimiento', inicio)
+      .lte('fecha_movimiento', fin);
+
+    let totalSalidasReales = 0;
+    (movs || []).forEach(m => { totalSalidasReales += Number(m.cantidad || 0); });
+
+    const { data: recetas } = await supabase
+      .from('recetas')
+      .select('producto_id, cantidad_necesaria, productos(nombre)')
+      .eq('empresa_id', empresaId)
+      .eq('insumo_id', ins.id);
+
+    let consumoTeorico = 0;
+    const productosAfectados: string[] = [];
+
+    if (recetas && recetas.length > 0) {
+      const prodIds = recetas.map(r => r.producto_id).filter(Boolean);
+      recetas.forEach(r => {
+        const pName = (r as any).productos?.nombre;
+        if (pName && !productosAfectados.includes(pName)) {
+          productosAfectados.push(pName);
+        }
+      });
+
+      let vQuery = supabase
+        .from('ventas_facturas')
+        .select(`
+          id,
+          ventas_detalles (
+            producto_id,
+            cantidad
+          )
+        `)
+        .eq('empresa_id', empresaId)
+        .gte('fecha_venta', inicio)
+        .lte('fecha_venta', fin);
+
+      if (sedeId) vQuery = vQuery.eq('sede_id', sedeId);
+
+      const { data: facturasProd } = await vQuery;
+
+      const cantidadPorProducto: Record<string, number> = {};
+      for (const f of facturasProd || []) {
+        const dets = (f as any).ventas_detalles || [];
+        for (const d of dets) {
+          if (prodIds.includes(d.producto_id)) {
+            cantidadPorProducto[d.producto_id] = (cantidadPorProducto[d.producto_id] || 0) + Number(d.cantidad || 0);
+          }
+        }
+      }
+
+      for (const rec of recetas) {
+        const vendidos = cantidadPorProducto[rec.producto_id] || 0;
+        consumoTeorico += vendidos * Number(rec.cantidad_necesaria || 0);
+      }
+    }
+
+    resultados.push({
+      insumo_id: ins.id,
+      nombre: ins.nombre,
+      unidad_medida: ins.unidad_medida,
+      stock_actual: Number(ins.cantidad_actual || 0),
+      consumo_real_registrado: Number(totalSalidasReales.toFixed(2)),
+      consumo_teorico_por_recetas: Number(consumoTeorico.toFixed(2)),
+      productos_en_receta: productosAfectados
+    });
+  }
+
+  return {
+    periodo: descripcion,
+    termino_busqueda: args.nombre_insumo,
+    insumos_encontrados: resultados
+  };
+}
+
+/**
+ * 9. Auditoría de compras sospechosas (ya implementada)
+ */
+async function toolAuditarComprasSospechosas(
+  ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
+  args: { dias_atras?: number; margen_tolerancia_usd?: number }
+) {
+  const { supabase, empresaId, sedeId } = ctx;
+  const dias = Math.min(Math.max(args.dias_atras || 30, 1), 180);
+  const margen = typeof args.margen_tolerancia_usd === 'number' ? Math.abs(args.margen_tolerancia_usd) : 0.05;
+
+  const fechaLimite = new Date();
+  fechaLimite.setDate(fechaLimite.getDate() - dias);
+
+  let query = supabase
+    .from('compras_puntuales')
+    .select('id, fecha_registro, proveedor, monto_divisas, monto_bs, tasa_cambio, detalles')
+    .eq('id_empresa', empresaId)
+    .gte('fecha_registro', fechaLimite.toISOString())
+    .order('fecha_registro', { ascending: false });
+
+  if (sedeId) query = query.eq('id_sede', sedeId);
+
+  const { data: compras, error } = await query;
+  if (error) return { error: `Error consultando compras: ${error.message}` };
+
+  if (!compras || compras.length < 2) {
+    return {
+      compras_analizadas: (compras || []).length,
+      sospechosas: [],
+      mensaje: 'No se encontraron suficientes compras en el periodo para detectar duplicados.'
+    };
+  }
+
+  const porDia: Record<string, typeof compras> = {};
+  for (const c of compras) {
+    const diaKey = (c.fecha_registro || '').substring(0, 10);
+    if (!diaKey) continue;
+    if (!porDia[diaKey]) porDia[diaKey] = [];
+    porDia[diaKey].push(c);
+  }
+
+  const casosSospechosos: any[] = [];
+
+  for (const [dia, lista] of Object.entries(porDia)) {
+    if (lista.length < 2) continue;
+
+    for (let i = 0; i < lista.length; i++) {
+      for (let j = i + 1; j < lista.length; j++) {
+        const c1 = lista[i];
+        const c2 = lista[j];
+        const monto1 = Number(c1.monto_divisas || 0);
+        const monto2 = Number(c2.monto_divisas || 0);
+        const difMonto = Math.abs(monto1 - monto2);
+
+        if (difMonto <= margen) {
+          const mismoProveedor = (c1.proveedor || '').toLowerCase().trim() === (c2.proveedor || '').toLowerCase().trim();
+          casosSospechosos.push({
+            fecha: dia,
+            mismo_proveedor: mismoProveedor,
+            diferencia_usd: Number(difMonto.toFixed(2)),
+            compra_a: { id: c1.id, proveedor: c1.proveedor, monto_usd: monto1, detalles: c1.detalles },
+            compra_b: { id: c2.id, proveedor: c2.proveedor, monto_usd: monto2, detalles: c2.detalles }
+          });
+        }
+      }
+    }
+  }
+
+  return {
+    compras_analizadas: compras.length,
+    total_alertas_duplicados: casosSospechosos.length,
+    alertas: casosSospechosos.slice(0, 15)
+  };
+}
+
+/**
+ * 10. Busca combos inactivos
+ */
+async function toolBuscarCombosInactivos(
+  ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
+  args: { meses_inactividad?: number }
+) {
+  const { supabase, empresaId } = ctx;
+  const meses = Math.min(Math.max(args.meses_inactividad || 6, 1), 24);
+
+  const fechaLimite = new Date();
+  fechaLimite.setMonth(fechaLimite.getMonth() - meses);
+
+  const { data: combos, error: promoErr } = await supabase
+    .from('promociones_combos')
+    .select('id, nombre, tipo, estado_activo, creado_en')
+    .eq('empresa_id', empresaId)
+    .eq('estado_activo', true);
+
+  if (promoErr) return { error: `Error consultando promociones: ${promoErr.message}` };
+  if (!combos || combos.length === 0) {
+    return {
+      total_activos: 0,
+      combos_inactivos: [],
+      mensaje: 'No hay promociones o combos activos actualmente en el catálogo.'
+    };
+  }
+
+  const { data: facturas } = await supabase
+    .from('ventas_facturas')
+    .select(`id, ventas_detalles ( promo_id )`)
+    .eq('empresa_id', empresaId)
+    .gte('fecha_venta', fechaLimite.toISOString());
+
+  const combosVendidos = new Set<string>();
+  for (const fac of facturas || []) {
+    const dets = (fac as any).ventas_detalles || [];
+    for (const d of dets) {
+      if (d.promo_id) combosVendidos.add(d.promo_id);
+    }
+  }
+
+  const inactivos = combos.filter(c => !combosVendidos.has(c.id)).map(c => ({
+    id: c.id,
+    nombre: c.nombre,
+    tipo: c.tipo,
+    creado_en: c.creado_en
+  }));
+
+  return {
+    meses_evaluados: meses,
+    total_combos_activos: combos.length,
+    total_inactivos_sin_ventas: inactivos.length,
+    combos_inactivos: inactivos
+  };
+}
+
+// ==========================================
+// DECLARACIONES DE HERRAMIENTAS PARA GEMINI
+// ==========================================
+
+const copilotTools: { functionDeclarations: FunctionDeclaration[] } = {
+  functionDeclarations: [
+    {
+      name: 'consultar_tasa_cambio',
+      description: 'Consulta la tasa oficial de cambio (BCV o manual) de un día en específico en formato YYYY-MM-DD o del día de hoy.',
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          fecha: {
+            type: SchemaType.STRING,
+            description: 'Fecha en formato YYYY-MM-DD para consultar la tasa (ej: "2026-10-14"). Si no se envía, toma hoy.',
+          }
+        }
+      }
+    },
+    {
+      name: 'consultar_balance_dia',
+      description: 'Consulta las ventas (incluyendo el turno de cenas/nocturno) y compras de un día específico, expresadas tanto en Dólares (USD) como en Bolívares (VES) convertidas a la tasa oficial de ese día.',
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          fecha: {
+            type: SchemaType.STRING,
+            description: 'Fecha en formato YYYY-MM-DD (ej: "2026-10-14").',
+          },
+          turno: {
+            type: SchemaType.STRING,
+            description: 'Filtro de turno: "todo_el_dia", "cenas_nocturno" o "almuerzo".',
+          },
+          sede_nombre: {
+            type: SchemaType.STRING,
+            description: 'Opcional. Nombre o número de la sede a consultar (ej: "sede 1", "sede 2", "sede principal", "sede norte"). Dejar vacío para consultar todas o la sede activa.',
+          }
+        },
+        required: ['fecha']
+      }
+    },
+    {
+      name: 'consultar_ventas_por_metodo_pago',
+      description: 'Consulta el total de ventas cobradas con un método de pago en específico (como Pago Móvil, Punto de Venta, Efectivo USD, Zelle) desglosadas por cada una de las sedes del negocio en un día o periodo.',
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          metodo_pago: {
+            type: SchemaType.STRING,
+            description: 'Nombre del método de pago a consultar (ej: "pago_movil", "efectivo_usd", "punto_de_venta", "zelle").',
+          },
+          periodo_o_fecha: {
+            type: SchemaType.STRING,
+            description: 'Fecha (YYYY-MM-DD) o periodo: "hoy", "ayer", "esta_semana", "este_mes".',
+          },
+          sede_nombre: {
+            type: SchemaType.STRING,
+            description: 'Opcional. Nombre o número de sede específica a consultar (ej: "sede 1", "sede principal"). Dejar vacío para ver el desglose comparativo de todas las sedes.',
+          }
+        },
+        required: ['metodo_pago']
+      }
+    },
+    {
+      name: 'proponer_fusion_marcas',
+      description: 'Prepara y propone la fusión de marcas de insumos en el inventario. El insumo principal conserva el registro y los nombres de las marcas secundarias se agregan a sus palabras clave (alias), sumando sus existencias. Requiere confirmación.',
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          insumo_principal_nombre: {
+            type: SchemaType.STRING,
+            description: 'Nombre del insumo principal que permanecerá en el catálogo (ej: "Harina de Maíz").',
+          },
+          insumos_a_fusionar_nombres: {
+            type: SchemaType.ARRAY,
+            items: { type: SchemaType.STRING },
+            description: 'Lista de nombres de marcas o insumos que serán absorbidos y añadidos como palabras clave (ej: ["Harina PAN", "Harina Juana"]).',
+          }
+        },
+        required: ['insumo_principal_nombre', 'insumos_a_fusionar_nombres']
+      }
+    },
+    {
+      name: 'proponer_despacho_sedes',
+      description: 'Prepara un despacho o traslado de mercancía/insumos entre sedes indicando origen, destino y lista de ítems con sus cantidades. Verifica stock en origen y propone la emisión con confirmación del usuario.',
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          sede_origen_nombre: {
+            type: SchemaType.STRING,
+            description: 'Nombre o parte del nombre de la sede origen (ej: "Sede Principal", "Centro").',
+          },
+          sede_destino_nombre: {
+            type: SchemaType.STRING,
+            description: 'Nombre o parte del nombre de la sede destino (ej: "Sede Norte", "Sucursal 2").',
+          },
+          items: {
+            type: SchemaType.ARRAY,
+            items: {
+              type: SchemaType.OBJECT,
+              properties: {
+                nombre_insumo: { type: SchemaType.STRING, description: 'Nombre del insumo a trasladar' },
+                cantidad: { type: SchemaType.NUMBER, description: 'Cantidad a trasladar' }
+              },
+              required: ['nombre_insumo', 'cantidad']
+            },
+            description: 'Lista de insumos y cantidades a despachar.',
+          },
+          notas: {
+            type: SchemaType.STRING,
+            description: 'Notas u observaciones del traslado.',
+          }
+        },
+        required: ['sede_origen_nombre', 'sede_destino_nombre', 'items']
+      }
+    },
+    {
+      name: 'proponer_venta_al_costo',
+      description: 'Prepara una salida de inventario por "Venta al Costo" (sin margen de ganancia) para un empleado o beneficiario específico, calculando el costo unitario y total en USD y Bs. Requiere privilegio de Venta al Costo.',
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          beneficiario: {
+            type: SchemaType.STRING,
+            description: 'Nombre completo del beneficiario (empleado, socio o persona que recibe el producto al costo).',
+          },
+          items: {
+            type: SchemaType.ARRAY,
+            items: {
+              type: SchemaType.OBJECT,
+              properties: {
+                nombre_insumo: { type: SchemaType.STRING, description: 'Nombre del insumo a retirar' },
+                cantidad: { type: SchemaType.NUMBER, description: 'Cantidad a vender al costo' }
+              },
+              required: ['nombre_insumo', 'cantidad']
+            },
+            description: 'Lista de insumos y cantidades.',
+          },
+          notas: {
+            type: SchemaType.STRING,
+            description: 'Observaciones o motivo de la venta al costo.',
+          }
+        },
+        required: ['beneficiario', 'items']
+      }
+    },
+    {
+      name: 'consultar_ventas',
+      description: 'Consulta el reporte y métricas de ventas agregadas (ranking de productos más vendidos, cantidades por producto o categoría, total recaudado en USD) en un periodo.',
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          periodo: {
+            type: SchemaType.STRING,
+            description: 'Periodo a consultar: hoy, ayer, esta_semana, este_mes, ultimos_30_dias, ultimos_6_meses, año_actual.',
+          },
+          filtro_producto: {
+            type: SchemaType.STRING,
+            description: 'Texto o fragmento del nombre del producto a filtrar.',
+          },
+          limite: {
+            type: SchemaType.NUMBER,
+            description: 'Cantidad máxima de productos a listar (por defecto 10).',
+          },
+          ordenar_por: {
+            type: SchemaType.STRING,
+            description: 'Orden del ranking: "mas_vendidos" o "menos_vendidos".',
+          },
+          sede_nombre: {
+            type: SchemaType.STRING,
+            description: 'Opcional. Nombre o número de la sede a filtrar (ej: "sede 1", "sede principal", "sede norte"). Dejar vacío para ver el consolidado general.',
+          }
+        },
+        required: ['periodo']
+      }
+    },
+    {
+      name: 'consultar_consumo_insumo',
+      description: 'Consulta el consumo de materia prima o insumo (reales y teóricos por recetas de productos vendidos) en un periodo.',
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          nombre_insumo: {
+            type: SchemaType.STRING,
+            description: 'Nombre o parte del nombre del insumo (ej: "mozzarella", "queso", "harina").',
+          },
+          periodo: {
+            type: SchemaType.STRING,
+            description: 'Periodo de tiempo: hoy, esta_semana, este_mes, ultimos_30_dias.',
+          }
+        },
+        required: ['nombre_insumo']
+      }
+    },
+    {
+      name: 'auditar_compras_sospechosas',
+      description: 'Audita y detecta posibles compras duplicadas registradas en un mismo día con montos idénticos o casi iguales.',
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          dias_atras: { type: SchemaType.NUMBER, description: 'Días hacia atrás a analizar (por defecto 30).' },
+          margen_tolerancia_usd: { type: SchemaType.NUMBER, description: 'Margen de diferencia máxima en USD (por defecto 0.05).' }
+        }
+      }
+    },
+    {
+      name: 'buscar_combos_inactivos',
+      description: 'Identifica y lista promociones o combos activos que NO han registrado ventas en los últimos N meses.',
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          meses_inactividad: { type: SchemaType.NUMBER, description: 'Meses sin ventas para clasificarlo como inactivo (por defecto 6).' }
+        }
+      }
+    }
+  ]
+};
+
+// ==========================================
+// ORQUESTADOR PRINCIPAL DEL CHAT CON GEMINI
+// ==========================================
+
+export interface CopilotRespuesta {
+  texto: string;
+  accionPropuesta?: {
+    tipo: 'desactivar_combos' | 'fusionar_insumos' | 'ejecutar_despacho' | 'ejecutar_venta_costo';
+    titulo: string;
+    items?: any[];
+    detalles?: any;
+  };
+  error?: string;
+}
+
+export async function enviarMensajeCopilot({
+  mensaje,
+  historial = [],
+  activeSedeId
+}: {
+  mensaje: string;
+  historial?: { role: 'user' | 'model'; parts: { text: string }[] }[];
+  activeSedeId?: string;
+}): Promise<CopilotRespuesta> {
+  try {
+    if (!process.env.GEMINI_API_KEY) {
+      return {
+        texto: 'Error de configuración: No se ha detectado GEMINI_API_KEY en las variables de entorno del servidor.',
+        error: 'missing_api_key'
+      };
+    }
+
+    const ctx = await getCopilotAuthContext(activeSedeId);
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+    const sedesListStr = ctx.sedes
+      .map((s, idx) => `Sede ${idx + 1}: "${s.nombre_sede}" (ID: ${s.id})`)
+      .join(' | ');
+
+    const systemInstruction = `
+Eres "Niteo Copilot", el asistente inteligente y analítico de la plataforma Niteo.
+Usuario: ${ctx.userName} (Rol: ${ctx.rol}).
+Empresa: "${ctx.empresa.nombre_comercial}" (Moneda: ${ctx.empresa.moneda} ${ctx.empresa.simbolo_moneda}).
+Catálogo Oficial de Sedes: ${sedesListStr}.
+Privilegio Venta al Costo: ${ctx.permisoVentaCosto ? 'HABILITADO' : 'DENEGADO'}.
+Zona horaria: ${DEFAULT_TIMEZONE} (Venezuela / Caracas).
+
+PERSONALIDAD Y TONO (AMIGABLE, COMPRENSIVO Y ULTRA-EFICIENTE EN TOKENS):
+- Sé cálido, empático, profesional y cordial (ej. "¡Hola! Con gusto te ayudo a revisar eso 😊", "¡Por supuesto! Aquí tienes el balance:").
+- NUNCA respondas seco, robótico ni cortante. Haz sentir al usuario acompañado y en confianza.
+- AHORRO MÁXIMO DE TOKENS: Sé muy concreto y directo en la entrega de datos. Evita introducciones largas o despedidas innecesarias. Presenta los números clave en negritas, listas o tablas compactas de Markdown. Amigable pero conciso.
+
+RESOLUCIÓN INTELIGENTE DE SEDES:
+- Si el usuario dice "sede 1", "sucursal 1", "la 1", o similar, corresponde EXACTAMENTE a la primera sede: "${ctx.sedes[0]?.nombre_sede || 'Sede Principal'}".
+- Si dice "sede 2", "sucursal 2", "la 2", corresponde a la segunda sede: "${ctx.sedes[1]?.nombre_sede || 'Sede Secundaria'}".
+- Si dice "sede principal", "la principal" o "central", asóciala con la sede principal (o la primera sede).
+- Si menciona el nombre directamente (ej. "Sede Norte", "Centro"), identifícala por coincidencia de texto.
+
+TOLERANCIA A ERRORES ORTOGRÁFICOS Y TIPOGRÁFICOS (TYPOS):
+- El usuario puede cometer faltas de ortografía, escribir rápido desde el celular o alterar letras (ej. "pisa" por "pizza", "mozarela" por "mozzarella", "sed 1" por "sede 1", "pago movl" por "pago móvil", "harinapan" por "harina pan", "despaho" por "despacho").
+- Entiende SIEMPRE su intención real de forma inteligente y amable, sin juzgar ni corregir al usuario innecesariamente.
+- Al invocar las herramientas de consulta, pasa los términos normalizados para asegurar el acierto, aunque la base de datos también cuenta con búsqueda difusa Levenshtein de respaldo.
+
+REGLAS DE OPERACIÓN:
+1. NUNCA INVENTES CIFRAS NI DATOS. Consulta siempre las herramientas para obtener datos verídicos de la base de datos.
+2. Si te preguntan por tasas de cambio de un día, ventas y compras en dólares y bolívares, pagos en Pago Móvil por sede, o consumos de insumos, llama a la herramienta adecuada.
+3. Si el usuario te indica una regla de conversión (ej. "una barra pesa 3kg"), calcula la división matemáticamente sobre los kg devueltos por la herramienta y explícalo claramente.
+4. Para acciones que modifican datos (desactivar combos, fusionar marcas, despachos entre sedes o ventas al costo):
+   - NUNCA afirmes haber ejecutado la mutación en la base de datos de inmediato.
+   - Llama a la herramienta "proponer_*" correspondiente.
+   - Describe la propuesta amablemente con los números exactos e invita al usuario a confirmar mediante el botón en pantalla.
+    `.trim();
+
+    const modelNamesToTry = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-flash-latest'];
+    let lastError: any = null;
+
+    for (const modelName of modelNamesToTry) {
+      try {
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          systemInstruction,
+          tools: [copilotTools]
+        });
+
+        const chat = model.startChat({
+          history: (historial || []).map(h => ({
+            role: h.role,
+            parts: h.parts
+          }))
+        });
+
+        let response = await chat.sendMessage(mensaje);
+        let candidate = response.response;
+        let accionPropuesta: CopilotRespuesta['accionPropuesta'] = undefined;
+
+        let toolLoops = 0;
+        const maxLoops = 6;
+
+        while (candidate.functionCalls() && candidate.functionCalls()!.length > 0 && toolLoops < maxLoops) {
+          toolLoops++;
+          const functionCalls = candidate.functionCalls()!;
+          const functionResponses = [];
+
+          for (const call of functionCalls) {
+            let toolResult: any = null;
+
+            switch (call.name) {
+              case 'consultar_tasa_cambio':
+                toolResult = await toolConsultarTasaCambio(ctx, call.args as any);
+                break;
+              case 'consultar_balance_dia':
+                toolResult = await toolConsultarBalanceDia(ctx, call.args as any);
+                break;
+              case 'consultar_ventas_por_metodo_pago':
+                toolResult = await toolConsultarVentasPorMetodoPago(ctx, call.args as any);
+                break;
+              case 'consultar_ventas':
+                toolResult = await toolConsultarVentas(ctx, call.args as any);
+                break;
+              case 'consultar_consumo_insumo':
+                toolResult = await toolConsultarConsumoInsumo(ctx, call.args as any);
+                break;
+              case 'auditar_compras_sospechosas':
+                toolResult = await toolAuditarComprasSospechosas(ctx, call.args as any);
+                break;
+              case 'buscar_combos_inactivos': {
+                toolResult = await toolBuscarCombosInactivos(ctx, call.args as any);
+                if (toolResult.combos_inactivos && toolResult.combos_inactivos.length > 0) {
+                  accionPropuesta = {
+                    tipo: 'desactivar_combos',
+                    titulo: `Desactivar ${toolResult.combos_inactivos.length} promociones/combos inactivos`,
+                    items: toolResult.combos_inactivos.map((c: any) => ({ id: c.id, nombre: c.nombre }))
+                  };
+                }
+                break;
+              }
+              case 'proponer_fusion_marcas': {
+                toolResult = await toolProponerFusionMarcas(ctx, call.args as any);
+                if (toolResult.exito) {
+                  accionPropuesta = {
+                    tipo: 'fusionar_insumos',
+                    titulo: `Confirmar Fusión en "${toolResult.insumo_principal.nombre}"`,
+                    detalles: {
+                      masterId: toolResult.insumo_principal.id,
+                      masterNombre: toolResult.insumo_principal.nombre,
+                      slaveIds: toolResult.insumos_a_absorber.map((s: any) => s.id),
+                      slaveNombres: toolResult.insumos_a_absorber.map((s: any) => s.nombre),
+                      stockTotal: toolResult.stock_total_resultante,
+                      unidadMedida: toolResult.insumo_principal.unidad_medida,
+                      keywords: toolResult.palabras_clave_resultantes
+                    }
+                  };
+                }
+                break;
+              }
+              case 'proponer_despacho_sedes': {
+                toolResult = await toolProponerDespachoSedes(ctx, call.args as any);
+                if (toolResult.exito) {
+                  accionPropuesta = {
+                    tipo: 'ejecutar_despacho',
+                    titulo: `Confirmar Despacho: ${toolResult.origen.nombre} ➔ ${toolResult.destino.nombre}`,
+                    detalles: {
+                      origenId: toolResult.origen.id,
+                      destinoId: toolResult.destino.id,
+                      origenNombre: toolResult.origen.nombre,
+                      destinoNombre: toolResult.destino.nombre,
+                      items: toolResult.items,
+                      notas: toolResult.notas
+                    }
+                  };
+                }
+                break;
+              }
+              case 'proponer_venta_al_costo': {
+                toolResult = await toolProponerVentaAlCosto(ctx, call.args as any);
+                if (toolResult.exito) {
+                  accionPropuesta = {
+                    tipo: 'ejecutar_venta_costo',
+                    titulo: `Confirmar Venta al Costo: ${toolResult.beneficiario} ($${toolResult.costo_total_usd} USD)`,
+                    detalles: {
+                      beneficiario: toolResult.beneficiario,
+                      items: toolResult.items,
+                      costoTotalUsd: toolResult.costo_total_usd,
+                      costoTotalBs: toolResult.costo_total_bs,
+                      notas: toolResult.notas
+                    }
+                  };
+                }
+                break;
+              }
+              default:
+                toolResult = { error: `Herramienta desconocida: ${call.name}` };
+            }
+
+            functionResponses.push({
+              functionResponse: {
+                name: call.name,
+                response: toolResult
+              }
+            });
+          }
+
+          const nextTurn = await chat.sendMessage(functionResponses);
+          candidate = nextTurn.response;
+        }
+
+        const textoFinal = candidate.text();
+
+        return {
+          texto: textoFinal,
+          accionPropuesta
+        };
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`[Copilot] Falló modelo ${modelName}, intentando siguiente...`, err?.message || err);
+        continue;
+      }
+    }
+
+    throw lastError || new Error('No se pudo conectar con los modelos de Gemini.');
+  } catch (err: any) {
+    console.error('[Copilot] Error general:', err);
+    return {
+      texto: err?.message?.includes('ACCESO_DENEGADO')
+        ? err.message
+        : 'Ocurrió un error al procesar tu solicitud con el Copilot. Por favor intenta de nuevo.',
+      error: err?.message || 'Error desconocido'
+    };
+  }
+}
+
+/**
+ * Ejecuta una acción interactiva confirmada directamente por el usuario desde la interfaz
+ */
+export async function ejecutarAccionCopilot({
+  accion,
+  payload,
+  activeSedeId
+}: {
+  accion: 'desactivar_combos' | 'fusionar_insumos' | 'ejecutar_despacho' | 'ejecutar_venta_costo';
+  payload: any;
+  activeSedeId?: string;
+}): Promise<{ success: boolean; mensaje: string; error?: string }> {
+  try {
+    const ctx = await getCopilotAuthContext(activeSedeId);
+
+    switch (accion) {
+      case 'desactivar_combos': {
+        const { supabase, empresaId } = ctx;
+        const comboIds = payload.combo_ids || [];
+        if (comboIds.length === 0) return { success: false, mensaje: 'No se enviaron IDs de combos para desactivar.' };
+
+        const { data: actualizados, error } = await supabase
+          .from('promociones_combos')
+          .update({ estado_activo: false })
+          .in('id', comboIds)
+          .eq('empresa_id', empresaId)
+          .select('id, nombre');
+
+        if (error) return { success: false, mensaje: `Error desactivando combos: ${error.message}` };
+
+        revalidatePath('/dashboard/promociones');
+        revalidatePath('/dashboard/terminal');
+        return { success: true, mensaje: `Se han desactivado ${(actualizados || []).length} promociones/combos correctamente.` };
+      }
+
+      case 'fusionar_insumos': {
+        const { masterId, slaveIds } = payload;
+        if (!masterId || !slaveIds || slaveIds.length === 0) {
+          return { success: false, mensaje: 'Datos incompletos para la fusión de insumos.' };
+        }
+        const res = await mergeInsumos(masterId, slaveIds);
+        if (!res.success) return { success: false, mensaje: res.error || 'Error fusionando insumos.' };
+
+        revalidatePath('/dashboard/inventario');
+        return { success: true, mensaje: `Fusión completada. El stock consolidado es de ${res.newStock} unidades y las marcas se agregaron a las palabras clave.` };
+      }
+
+      case 'ejecutar_despacho': {
+        const { origenId, destinoId, items, notas } = payload;
+        if (!origenId || !destinoId || !items || items.length === 0) {
+          return { success: false, mensaje: 'Datos incompletos para generar el despacho.' };
+        }
+        const itemsPayload = items.map((it: any) => ({
+          insumo_id: it.insumo_id,
+          nombre: it.nombre,
+          unidad_medida: it.unidad_medida,
+          cantidad: it.cantidad
+        }));
+        const res = await procesarDespachoEnServidor(ctx.empresaId, origenId, destinoId, notas || '', itemsPayload);
+        if (!res.success) return { success: false, mensaje: res.error || 'Error al procesar despacho.' };
+
+        revalidatePath('/dashboard/despachos');
+        revalidatePath('/dashboard/inventario');
+        return { success: true, mensaje: 'Despacho registrado en tránsito exitosamente hacia la sede destino.' };
+      }
+
+      case 'ejecutar_venta_costo': {
+        if (!ctx.permisoVentaCosto) {
+          return { success: false, mensaje: 'No tienes el permiso de Venta al Costo habilitado.' };
+        }
+        const { beneficiario, items, notas } = payload;
+        if (!beneficiario || !items || items.length === 0) {
+          return { success: false, mensaje: 'Datos incompletos para la venta al costo.' };
+        }
+        const itemsPayload = items.map((it: any) => ({
+          insumoId: it.insumoId,
+          cantidad: it.cantidad
+        }));
+        const res = await registrarVentaAlCostoMulti(itemsPayload, beneficiario, notas || '', ctx.empresaId, ctx.sedeId || ctx.sedes[0]?.id || '');
+        if (!res.success) return { success: false, mensaje: res.error || 'Error al registrar venta al costo.' };
+
+        revalidatePath('/dashboard/inventario');
+        return { success: true, mensaje: `Venta al Costo para ${beneficiario} procesada exitosamente con salida de almacén.` };
+      }
+
+      default:
+        return { success: false, mensaje: 'Acción no reconocida' };
+    }
+  } catch (err: any) {
+    return { success: false, mensaje: err?.message || 'Error al ejecutar acción' };
+  }
+}

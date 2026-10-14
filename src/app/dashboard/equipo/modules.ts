@@ -123,6 +123,12 @@ export const AVAILABLE_MODULES: ModuleDefinition[] = [
     description: 'Autoriza al usuario a eliminar facturas y compras de proveedores con reversión de stock', 
     category: 'admin' 
   },
+  { 
+    id: 'copilot_ia', 
+    label: 'Niteo Copilot (Asistente IA)', 
+    description: 'Acceso exclusivo al asistente inteligente para análisis de datos, consultas avanzadas, auditoría y operaciones del negocio', 
+    category: 'admin' 
+  },
 ];
 
 export const ROLE_PRESETS: Record<string, string[]> = {

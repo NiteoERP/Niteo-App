@@ -5,6 +5,7 @@ import { UserCircle } from 'lucide-react';
 import { LogoutButton } from '@/components/LogoutButton';
 import EmpresaProvider from '@/components/providers/EmpresaProvider';
 import { SidebarNav, SidebarBottom, MobileNav } from '@/components/Navigation';
+import CopilotWidget from '@/components/copilot/CopilotWidget';
 
 export default async function DashboardLayout({
   children,
@@ -183,6 +184,11 @@ export default async function DashboardLayout({
           planSuscripcion={licencia?.planSuscripcion || 'STARTER'} 
           rubro={empresaRubro}
         />
+
+        {/* Niteo Copilot (Asistente IA flotante - Restringido a MASTER o usuarios con permiso copilot_ia) */}
+        {(userRole === 'MASTER' || dbProfile?.rol === 'SUPERADMIN' || permisos.includes('copilot_ia')) && (
+          <CopilotWidget activeSedeId={dbProfile?.sede_id} />
+        )}
       </div>
     </div>
   );
