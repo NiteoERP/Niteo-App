@@ -66,8 +66,10 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
       if (filtroMetodo === 'CORTESIA') {
         if (!isCortesiaVenta(v)) return false;
       } else if (filtroMetodo === 'CREDITO') {
-        const hasCredito = v.pagos?.some((p: any) => normalizePaymentKey(p.tipo_pago).includes('credit'));
-        if (v.esta_pagado && !hasCredito) return false;
+        const hasCredito = v.pagos?.some((p: any) => normalizePaymentKey(p.tipo_pago).includes('credit') || normalizePaymentKey(p.tipo_pago).includes('fiado'));
+        if (!hasCredito) return false;
+      } else if (filtroMetodo === 'SIN_ESPECIFICAR') {
+        if (v.pagos && v.pagos.length > 0) return false;
       } else if (filtroMetodo !== 'TODOS') {
         const targetKey = normalizePaymentKey(filtroMetodo);
         const hasPago = v.pagos?.some((p: any) => normalizePaymentKey(p.tipo_pago) === targetKey);
@@ -234,7 +236,8 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
             >
               <option value="TODOS">💳 Todos los métodos</option>
               <option value="CORTESIA">⭐ Solo Cortesías</option>
-              <option value="CREDITO">⏳ Crédito / Por pagar</option>
+              <option value="CREDITO">⏳ Solo Créditos</option>
+              <option value="SIN_ESPECIFICAR">❓ Sin especificar</option>
               <optgroup label="Métodos de Pago">
                 {metodosDisponibles.map(m => (
                   <option key={m} value={m}>{m}</option>
@@ -386,7 +389,7 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
                           ) : (
                             <span className="text-[11px] font-medium text-neutral-500 flex items-center gap-1 bg-neutral-900 px-1.5 py-0.5 rounded border border-neutral-800">
                               <CreditCard size={11} className="shrink-0" />
-                              {sale.esta_pagado ? 'No registrado' : 'A Crédito'}
+                              Sin especificar
                             </span>
                           )}
                         </div>

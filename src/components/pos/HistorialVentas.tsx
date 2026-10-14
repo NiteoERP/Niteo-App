@@ -195,8 +195,10 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
       if (filtroMetodo === 'CORTESIA') {
         if (!isCortesiaVenta(v)) return false;
       } else if (filtroMetodo === 'CREDITO') {
-        const hasCredito = v.pagos?.some(p => normalizePaymentKey(p.tipo_pago).includes('credit'));
-        if (v.esta_pagado && !hasCredito) return false;
+        const hasCredito = v.pagos?.some(p => normalizePaymentKey(p.tipo_pago).includes('credit') || normalizePaymentKey(p.tipo_pago).includes('fiado'));
+        if (!hasCredito) return false;
+      } else if (filtroMetodo === 'SIN_ESPECIFICAR') {
+        if (v.pagos && v.pagos.length > 0) return false;
       } else if (filtroMetodo !== 'TODOS') {
         const targetKey = normalizePaymentKey(filtroMetodo);
         const hasPago = v.pagos?.some(p => normalizePaymentKey(p.tipo_pago) === targetKey);
@@ -382,7 +384,8 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
             >
               <option value="TODOS">💳 Todos los métodos</option>
               <option value="CORTESIA">⭐ Solo Cortesías</option>
-              <option value="CREDITO">⏳ Crédito / Por pagar</option>
+              <option value="CREDITO">⏳ Solo Créditos</option>
+              <option value="SIN_ESPECIFICAR">❓ Sin especificar</option>
               <optgroup label="Métodos de Pago">
                 {metodosDisponibles.map(m => (
                   <option key={m} value={m}>{m}</option>
@@ -586,7 +589,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                           ))
                         ) : (
                           <span className="text-[11px] text-neutral-400 bg-neutral-800/50 px-2 py-0.5 rounded-md">
-                            {venta.esta_pagado ? 'No registrado' : '⏳ A Crédito / Por pagar'}
+                            Sin especificar
                           </span>
                         )}
                       </div>
@@ -708,7 +711,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                             ))
                           ) : (
                             <span className="text-xs text-neutral-500">
-                              {venta.esta_pagado ? 'No registrado' : 'A Crédito / Por pagar'}
+                              Sin especificar
                             </span>
                           )}
                         </div>
@@ -800,7 +803,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                       )}
                     </div>
 
-                    {((venta.pagos && venta.pagos.length > 0) || isCortesia) && (
+                    {((venta.pagos && venta.pagos.length > 0) || isCortesia) ? (
                       <div className="mt-4 pt-3 border-t border-neutral-800/50">
                         <h4 className="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">Métodos de Pago</h4>
                         <div className="flex gap-2 flex-wrap">
@@ -823,6 +826,13 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                             </span>
                           ))}
                         </div>
+                      </div>
+                    ) : (
+                      <div className="mt-4 pt-3 border-t border-neutral-800/50">
+                        <h4 className="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">Método de Pago</h4>
+                        <span className="text-xs text-neutral-400 bg-neutral-800/60 px-2.5 py-1 rounded-md border border-neutral-700/60 font-medium">
+                          Sin especificar (No registrado)
+                        </span>
                       </div>
                     )}
                   </div>
