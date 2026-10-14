@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useTransition, useEffect } from 'react';
-import { X, Loader2, PackageSearch, Box, Trash2, Plus, Beaker, Lock, ToggleLeft, ToggleRight } from 'lucide-react';
+import { X, Loader2, PackageSearch, Box, Trash2, Plus, Beaker, Lock, ToggleLeft, ToggleRight, ArrowRightLeft } from 'lucide-react';
 import { createProducto, updateProducto } from '@/actions/catalogo-actions';
 import { getListasPrecios, getPreciosPorProducto } from '@/actions/listas-precios-actions';
 import { useEmpresa } from '@/components/providers/EmpresaProvider';
@@ -31,6 +31,12 @@ export default function ProductoForm({
   const [isPending, startTransition] = useTransition();
   const [listasPrecios, setListasPrecios] = useState<any[]>([]);
   const [preciosDinamicos, setPreciosDinamicos] = useState<Record<string, number>>({});
+
+  const gruposExistentes = React.useMemo(() => {
+    return Array.from(new Set(
+      productos.map((p: any) => p.grupo_similar).filter((g: any) => g && typeof g === 'string' && g.trim().length > 0)
+    )) as string[];
+  }, [productos]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -91,7 +97,8 @@ export default function ProductoForm({
     sede_id: null,
       sedes_ids: initialData?.sedes_ids || (initialData?.sede_id ? [initialData.sede_id] : []),
       sede_dropdown_open: false,
-    receta_items: existingRecipes
+    receta_items: existingRecipes,
+    grupo_similar: initialData?.grupo_similar || ''
   });
 
   const handleSaveNewCategory = async () => {
@@ -203,6 +210,7 @@ export default function ProductoForm({
           descripcion: formData.descripcion ? formData.descripcion.trim() : null,
           categoria_id: formData.categoria_id ? formData.categoria_id : null,
           notas_preparacion: formData.notas_preparacion_str ? formData.notas_preparacion_str.split(',').map((s: string) => s.trim()).filter((s: string) => s !== '') : [],
+          grupo_similar: formData.grupo_similar && formData.grupo_similar.trim().length > 0 ? formData.grupo_similar.trim() : null,
         };
         // Remove UI-only fields
         delete (payload as any).notas_preparacion_str;
@@ -411,6 +419,45 @@ export default function ProductoForm({
                 value={formData.descripcion}
                 onChange={e => setFormData({...formData, descripcion: e.target.value})}
               />
+            </div>
+
+            <div className="bg-neutral-950/60 border border-neutral-800 rounded-xl p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-white flex items-center gap-2">
+                  <ArrowRightLeft size={15} className="text-indigo-400" />
+                  Grupo de Similares / Principio Activo (Opcional)
+                </label>
+                <span className="text-[11px] text-neutral-500">Para cambios directos en el carrito de caja</span>
+              </div>
+              <p className="text-xs text-neutral-400">
+                Los productos que compartan este mismo grupo (ej. <span className="text-indigo-300 font-medium">&quot;Acetaminofén 500mg&quot;</span> o <span className="text-indigo-300 font-medium">&quot;Refresco Cola 1.5L&quot;</span>) se ofrecerán como alternativa directa en el POS sin tener que eliminarlos del carrito.
+              </p>
+              <input 
+                type="text"
+                placeholder="Ej: Acetaminofén 500mg, Refresco Cola 1.5L, Ibuprofeno 400mg..."
+                className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2 text-white focus:border-indigo-500 transition-colors text-sm placeholder:text-neutral-600"
+                value={formData.grupo_similar}
+                onChange={e => setFormData({...formData, grupo_similar: e.target.value})}
+              />
+              {gruposExistentes.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[10px] text-neutral-500">Existentes:</span>
+                  {gruposExistentes.slice(0, 8).map(g => (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, grupo_similar: g }))}
+                      className={`text-[10px] px-2 py-0.5 rounded-md border transition-all ${
+                        formData.grupo_similar === g 
+                          ? 'bg-indigo-500/25 text-indigo-300 border-indigo-500/50 font-bold' 
+                          : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:border-neutral-700 hover:text-white'
+                      }`}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div>

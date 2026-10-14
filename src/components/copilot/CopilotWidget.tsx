@@ -15,7 +15,9 @@ import {
   Truck,
   Combine,
   Tag,
-  Receipt
+  Receipt,
+  ArrowRightLeft,
+  Utensils
 } from 'lucide-react';
 import { enviarMensajeCopilot, ejecutarAccionCopilot, CopilotRespuesta } from '@/actions/copilot-actions';
 
@@ -29,6 +31,8 @@ interface MensajeChat {
 }
 
 const SUGERENCIAS_RAPIDAS = [
+  { label: '🍳 Receta y escandallo', prompt: 'Dime la receta de la Pizza Margarita y cuánto cuesta prepararla.' },
+  { label: '📝 Crear / Armar receta', prompt: 'Quiero armar la receta para la Pizza Margarita: 250g de masa de pizza, 120g de queso mozzarella y 60g de salsa de tomate.' },
   { label: '💵 Tasa de hoy', prompt: '¿Cuál es la tasa oficial de hoy?' },
   { label: '🌙 Cenas y compras de hoy', prompt: 'Dime las ventas de las cenas y las compras de hoy tanto en dólares como en bolívares.' },
   { label: '📱 Pago Móvil por sedes', prompt: '¿Cuáles fueron las ventas en Pago Móvil en las 2 sedes hoy?' },
@@ -169,6 +173,18 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
           beneficiario: accion.detalles?.beneficiario,
           items: accion.detalles?.items,
           notas: accion.detalles?.notas
+        };
+      } else if (accion.tipo === 'agrupar_similares') {
+        payload = {
+          grupo: accion.detalles?.grupo,
+          productoIds: accion.detalles?.productoIds
+        };
+      } else if (accion.tipo === 'guardar_receta') {
+        payload = {
+          productoId: accion.detalles?.productoId,
+          items: accion.detalles?.items,
+          costoTotal: accion.detalles?.costoTotal,
+          modo: accion.detalles?.modo
         };
       }
 
@@ -325,10 +341,48 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
                             {m.accionPropuesta.tipo === 'fusionar_insumos' && <Combine size={15} />}
                             {m.accionPropuesta.tipo === 'ejecutar_venta_costo' && <Receipt size={15} />}
                             {m.accionPropuesta.tipo === 'desactivar_combos' && <AlertTriangle size={15} />}
+                            {m.accionPropuesta.tipo === 'agrupar_similares' && <ArrowRightLeft size={15} />}
+                            {m.accionPropuesta.tipo === 'guardar_receta' && <Utensils size={15} />}
                             <span>{m.accionPropuesta.titulo}</span>
                           </div>
 
                           {/* Vista previa según el tipo de acción */}
+                          {m.accionPropuesta.tipo === 'guardar_receta' && (
+                            <div className="text-[11px] space-y-1.5 text-neutral-300">
+                              <p>Producto: <strong className="text-white">{m.accionPropuesta.detalles?.productoNombre}</strong></p>
+                              <div className="max-h-28 overflow-y-auto space-y-1 pt-1">
+                                {m.accionPropuesta.detalles?.items?.map((it: any, idx: number) => (
+                                  <div key={idx} className="flex justify-between items-center border-t border-neutral-800/80 pt-0.5">
+                                    <span className="truncate pr-2">{it.nombre}</span>
+                                    <span className="font-mono text-indigo-300 shrink-0 font-medium">
+                                      {it.cantidad} {it.unidad_medida} (${it.subtotal !== undefined ? it.subtotal : (it.cantidad * (it.costo_unitario || 0)).toFixed(2)})
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="flex justify-between items-center pt-1 border-t border-neutral-800 text-[11px]">
+                                <span>Costo Elaboración: <strong className="text-emerald-400 font-mono">${m.accionPropuesta.detalles?.costoTotal} USD</strong></span>
+                                {m.accionPropuesta.detalles?.precioVenta > 0 && (
+                                  <span>P. Venta: <strong className="text-white font-mono">${m.accionPropuesta.detalles?.precioVenta} USD</strong></span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {m.accionPropuesta.tipo === 'agrupar_similares' && (
+                            <div className="text-[11px] space-y-1.5 text-neutral-300">
+                              <p>Grupo / Principio Activo: <strong className="text-indigo-400 font-semibold">{m.accionPropuesta.detalles?.grupo}</strong></p>
+                              <div className="max-h-24 overflow-y-auto space-y-1 pt-1">
+                                {m.accionPropuesta.detalles?.productos?.map((it: any, idx: number) => (
+                                  <div key={idx} className="flex justify-between border-t border-neutral-800 pt-0.5">
+                                    <span className="truncate pr-2">{it.nombre}</span>
+                                    <span className="font-mono text-emerald-400 shrink-0 font-semibold">${Number(it.precio_venta).toFixed(2)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
                           {m.accionPropuesta.tipo === 'desactivar_combos' && (
                             <div className="max-h-28 overflow-y-auto space-y-1 text-[11px] text-neutral-300">
                               {m.accionPropuesta.items?.map((it, idx) => (
@@ -384,7 +438,7 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
                               ) : (
                                 <>
                                   <CheckCircle2 size={13} />
-                                  <span>Confirmar y Ejecutar</span>
+                                  <span>{m.accionPropuesta.tipo === 'guardar_receta' ? 'Guardar Receta en Catálogo' : 'Confirmar y Ejecutar'}</span>
                                 </>
                               )}
                             </button>

@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useTransition, useRef } from 'react';
-import { Plus, Search, Edit2, Trash2, PackageSearch, Box, Share2, Copy, Check, ExternalLink, ToggleLeft, ToggleRight, Link, Archive, RotateCcw } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, PackageSearch, Box, Share2, Copy, Check, ExternalLink, ToggleLeft, ToggleRight, Link, Archive, RotateCcw, ArrowRightLeft, X } from 'lucide-react';
 import ProductoForm from './ProductoForm';
 import BulkRecetaModal from './BulkRecetaModal';
 import DuplicarModal from './DuplicarModal';
-import { deleteProducto, restaurarProducto, bulkDeleteProductos, bulkRestaurarProductos, hardDeleteProducto } from '@/actions/catalogo-actions';
+import { deleteProducto, restaurarProducto, bulkDeleteProductos, bulkRestaurarProductos, hardDeleteProducto, bulkAsignarGrupoSimilar } from '@/actions/catalogo-actions';
 import { updateCatalogoConfig } from '@/app/dashboard/configuracion/actions';
 
 export default function CatalogoClient({ 
@@ -41,10 +41,18 @@ export default function CatalogoClient({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'catalogo' | 'archivados'>('catalogo');
   const [filterEstado, setFilterEstado] = useState<'todos' | 'activos' | 'inactivos'>('todos');
+  const [modalSimilarOpen, setModalSimilarOpen] = useState(false);
+  const [inputGrupoSimilar, setInputGrupoSimilar] = useState('');
   const stateTimeouts = useRef<Record<string, NodeJS.Timeout>>({});
   const typeTimeouts = useRef<Record<string, NodeJS.Timeout>>({});
   const [optimisticStates, setOptimisticStates] = useState<Record<string, boolean>>({});
   const [optimisticTypes, setOptimisticTypes] = useState<Record<string, 'ELABORADO' | 'REVENTA' | 'SERVICIO'>>({});
+
+  const gruposExistentes = React.useMemo(() => {
+    return Array.from(new Set(
+      productos.map((p: any) => p.grupo_similar).filter((g: any) => g && typeof g === 'string' && g.trim().length > 0)
+    )) as string[];
+  }, [productos]);
 
   const normalProducts = productos.filter(p => !p.archivado);
   const archivedProducts = productos.filter(p => !!p.archivado);
@@ -59,7 +67,8 @@ export default function CatalogoClient({
 
     const matchesSearch = (p.nombre?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
       (p.codigo_barras?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      (p.descripcion?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+      (p.descripcion?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (p.grupo_similar?.toLowerCase() || '').includes(searchTerm.toLowerCase());
     const matchesCat = !selectedCategoria || p.categoria_id === selectedCategoria;
         const matchesSede = !selectedSede || 
       (selectedSede === 'GLOBAL' 
@@ -151,6 +160,19 @@ export default function CatalogoClient({
       const res = await bulkUpdateProductos(selectedIds, { categoria_id: cId === 'NULL' ? null : cId });
       if (res.error) alert(res.error);
       else setSelectedIds([]);
+    });
+  };
+
+  const handleBulkAssignSimilar = async (grupo: string | null) => {
+    startTransition(async () => {
+      const res = await bulkAsignarGrupoSimilar(selectedIds, grupo);
+      if (!res.success && res.error) {
+        alert(res.error);
+      } else {
+        setSelectedIds([]);
+        setModalSimilarOpen(false);
+        setInputGrupoSimilar('');
+      }
     });
   };
 
@@ -457,6 +479,18 @@ export default function CatalogoClient({
                   <option value="GLOBAL">Global / Todas</option>
                   {sedes.map(s => <option key={`bulk-sede-${s.id}`} value={s.id}>{s.nombre_sede}</option>)}
                 </select>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInputGrupoSimilar('');
+                    setModalSimilarOpen(true);
+                  }}
+                  className="px-3 py-1.5 text-xs font-semibold bg-indigo-600/90 hover:bg-indigo-500 text-white rounded-lg transition-colors flex items-center gap-1.5 shadow-sm"
+                  disabled={isPending}
+                  title="Asignar o editar grupo de similares a los productos seleccionados"
+                >
+                  <ArrowRightLeft size={13} /> Agrupar Similares
+                </button>
                 <button 
                   onClick={handleBulkDelete}
                   disabled={isPending}
@@ -560,6 +594,12 @@ export default function CatalogoClient({
                     </span>
                   ) : (
                     <span className="text-[10px] text-neutral-600 italic">Sin categoría</span>
+                  )}
+                  {p.grupo_similar && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-[10px] font-semibold" title={`Grupo de similares: ${p.grupo_similar}`}>
+                      <ArrowRightLeft size={10} />
+                      {p.grupo_similar}
+                    </span>
                   )}
                   {viewMode === 'catalogo' ? (
                     <button 
@@ -685,6 +725,13 @@ export default function CatalogoClient({
                             </div>
                           )}
                           <p className="text-[11px] text-neutral-500 mt-0.5">{p.codigo_barras || 'Sin código'}</p>
+                          {p.grupo_similar && (
+                            <div className="mt-1">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-md" title={`Grupo de similares: ${p.grupo_similar}`}>
+                                <ArrowRightLeft size={10} /> {p.grupo_similar}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -817,6 +864,93 @@ export default function CatalogoClient({
           isOpen={isDuplicarOpen}
           onClose={() => setIsDuplicarOpen(false)}
         />
+      )}
+
+      {modalSimilarOpen && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-md p-6 shadow-2xl flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-neutral-800/80 pb-3">
+              <div className="flex items-center gap-2 text-indigo-400">
+                <ArrowRightLeft size={18} />
+                <h3 className="font-bold text-white text-base">Agrupar Productos Similares</h3>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setModalSimilarOpen(false)} 
+                className="text-neutral-500 hover:text-white"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p className="text-xs text-neutral-400 leading-relaxed">
+              Asigna un grupo común a los <strong className="text-white">{selectedIds.length}</strong> productos seleccionados (ej: <span className="text-indigo-300">&quot;Acetaminofén 500mg&quot;</span> o <span className="text-indigo-300">&quot;Refresco Cola 1.5L&quot;</span>). Esto habilitará el botón de cambio directo por alternativa en el carrito de Niteo POS.
+            </p>
+
+            <div>
+              <label className="text-xs font-semibold text-neutral-300 block mb-1.5">Nombre del Grupo / Principio Activo</label>
+              <input
+                type="text"
+                autoFocus
+                placeholder="Ej: Acetaminofén 500mg, Refresco Cola 1.5L..."
+                value={inputGrupoSimilar}
+                onChange={e => setInputGrupoSimilar(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && inputGrupoSimilar.trim()) handleBulkAssignSimilar(inputGrupoSimilar);
+                }}
+                className="w-full bg-neutral-950 border border-neutral-700 focus:border-indigo-500 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none transition-colors"
+              />
+              {gruposExistentes.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2.5 max-h-32 overflow-y-auto">
+                  <span className="text-[10px] text-neutral-500 block w-full">O selecciona un grupo existente:</span>
+                  {gruposExistentes.map(g => (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => setInputGrupoSimilar(g)}
+                      className={`text-[11px] px-2.5 py-1 rounded-lg border transition-all ${
+                        inputGrupoSimilar === g
+                          ? 'bg-indigo-600 text-white border-indigo-500 font-bold'
+                          : 'bg-neutral-800 text-neutral-300 border-neutral-700 hover:text-white hover:bg-neutral-700'
+                      }`}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-neutral-800/80">
+              <button
+                type="button"
+                onClick={() => handleBulkAssignSimilar(null)}
+                disabled={isPending}
+                className="text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 px-3 py-1.5 rounded-lg transition-colors"
+                title="Quitar cualquier grupo de similares a los productos seleccionados"
+              >
+                Quitar grupo
+              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setModalSimilarOpen(false)}
+                  className="px-3.5 py-1.5 text-xs text-neutral-400 hover:text-white rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleBulkAssignSimilar(inputGrupoSimilar)}
+                  disabled={isPending || !inputGrupoSimilar.trim()}
+                  className="px-4 py-1.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white rounded-xl shadow-md transition-all"
+                >
+                  {isPending ? 'Guardando...' : 'Asignar Grupo'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

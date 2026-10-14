@@ -179,7 +179,7 @@ function levenshteinDistance(a: string, b: string): number {
  * Determina si dos textos coinciden de manera aproximada tolerando errores ortográficos y typos
  * (ej: "mozarela" matchea "mozzarella", "pisa" matchea "pizza", "harinapan" matchea "harina pan")
  */
-function esCoincidenciaAproximada(textoReal?: string | null, textoBuscado?: string | null): boolean {
+function esCoincidenciaAproximada(textoReal?: string | null, textoBuscado?: string | null, distanciaCustom?: number): boolean {
   const t1 = normalizarTexto(textoReal);
   const t2 = normalizarTexto(textoBuscado);
   if (!t1 || !t2) return false;
@@ -591,6 +591,57 @@ async function toolProponerFusionMarcas(
     palabras_clave_resultantes: Array.from(nuevasKeywords).slice(0, 20),
     requiere_confirmacion: true,
     mensaje: `Se propone fusionar ${slaveInsumos.length} insumos en "${masterInsumo.nombre}". Sus marcas se agregarán como palabras clave y el stock total será ${stockSuma.toFixed(2)} ${masterInsumo.unidad_medida}. ¿Deseas confirmar la fusión?`
+  };
+}
+
+/**
+ * Propone la agrupación de productos del catálogo como similares / sustitutos (mismo grupo o principio activo)
+ */
+async function toolProponerAgrupacionSimilares(
+  ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
+  args: {
+    nombre_grupo: string;
+    productos_nombres_o_ids: string[];
+  }
+) {
+  const { supabase, empresaId } = ctx;
+  const grupoLimpio = args.nombre_grupo.trim();
+
+  const matchedProductos: any[] = [];
+  for (const query of args.productos_nombres_o_ids) {
+    const q = query.trim();
+    if (!q) continue;
+
+    const { data: prods } = await supabase
+      .from('productos')
+      .select('id, nombre, precio_venta, codigo_barras, grupo_similar')
+      .eq('empresa_id', empresaId)
+      .eq('archivado', false)
+      .or(`id.eq.${q},nombre.ilike.%${q}%`)
+      .limit(5);
+
+    if (prods && prods.length > 0) {
+      for (const p of prods) {
+        if (!matchedProductos.some(m => m.id === p.id)) {
+          matchedProductos.push(p);
+        }
+      }
+    }
+  }
+
+  if (matchedProductos.length === 0) {
+    return {
+      exito: false,
+      mensaje: `No se encontraron productos coincidentes en el catálogo para agrupar bajo "${grupoLimpio}".`
+    };
+  }
+
+  return {
+    exito: true,
+    grupo: grupoLimpio,
+    productos: matchedProductos,
+    total: matchedProductos.length,
+    mensaje: `Se encontraron ${matchedProductos.length} productos para agrupar bajo "${grupoLimpio}": ${matchedProductos.map(p => p.nombre).join(', ')}. ¿Deseas aplicar la agrupación?`
   };
 }
 
@@ -1146,6 +1197,329 @@ async function toolBuscarCombosInactivos(
   };
 }
 
+/**
+ * 12. Consultar la receta y escandallo de un producto existente
+ */
+async function toolConsultarReceta(
+  ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
+  args: { nombre_producto: string }
+) {
+  const { supabase, empresaId } = ctx;
+  const nombreBuscado = normalizarTexto(args.nombre_producto);
+
+  const { data: todosProductos, error: prodErr } = await supabase
+    .from('productos')
+    .select('id, nombre, precio_venta, costo, es_compuesto, es_reventa, descripcion')
+    .eq('empresa_id', empresaId)
+    .neq('archivado', true);
+
+  if (prodErr) return { error: `Error consultando productos: ${prodErr.message}` };
+  if (!todosProductos || todosProductos.length === 0) {
+    return { error: 'No se encontraron productos en el catálogo de esta empresa.' };
+  }
+
+  // Búsqueda exacta, contenida o aproximada con Levenshtein
+  let producto = todosProductos.find(p => normalizarTexto(p.nombre) === nombreBuscado);
+  if (!producto) {
+    producto = todosProductos.find(p => normalizarTexto(p.nombre).includes(nombreBuscado) || nombreBuscado.includes(normalizarTexto(p.nombre)));
+  }
+  if (!producto) {
+    producto = todosProductos.find(p => esCoincidenciaAproximada(p.nombre, args.nombre_producto, 2));
+  }
+
+  if (!producto) {
+    const sugerencias = todosProductos
+      .filter(p => esCoincidenciaAproximada(p.nombre, args.nombre_producto, 4))
+      .slice(0, 5)
+      .map(p => p.nombre);
+
+    return {
+      error: `No encontré ningún producto que coincida con "${args.nombre_producto}".`,
+      sugerencias: sugerencias.length > 0 ? sugerencias : todosProductos.slice(0, 5).map(p => p.nombre)
+    };
+  }
+
+  // Buscar receta vinculada
+  const { data: lineasReceta, error: recErr } = await supabase
+    .from('recetas')
+    .select('id, insumo_id, subproducto_id, cantidad_necesaria')
+    .eq('empresa_id', empresaId)
+    .eq('producto_id', producto.id);
+
+  if (recErr) return { error: `Error consultando receta: ${recErr.message}` };
+
+  if (!lineasReceta || lineasReceta.length === 0) {
+    return {
+      producto: {
+        id: producto.id,
+        nombre: producto.nombre,
+        precio_venta_usd: Number(producto.precio_venta || 0),
+        costo_actual_usd: Number(producto.costo || 0),
+        es_compuesto: producto.es_compuesto
+      },
+      tiene_receta: false,
+      mensaje: `El producto "${producto.nombre}" aún no tiene receta ni ingredientes vinculados en el sistema. Puedes indicarme los ingredientes y cantidades para configurársela.`
+    };
+  }
+
+  const insumoIds = lineasReceta.map(r => r.insumo_id).filter(Boolean);
+  const subprodIds = lineasReceta.map(r => r.subproducto_id).filter(Boolean);
+
+  const insumosMap = new Map<string, any>();
+  if (insumoIds.length > 0) {
+    const { data: insumos } = await supabase
+      .from('inventario_insumos')
+      .select('id, nombre, unidad_medida, costo_promedio, cantidad_actual')
+      .in('id', insumoIds);
+    (insumos || []).forEach(i => insumosMap.set(i.id, i));
+  }
+
+  const subprodsMap = new Map<string, any>();
+  if (subprodIds.length > 0) {
+    const { data: subprods } = await supabase
+      .from('productos')
+      .select('id, nombre, costo, precio_venta')
+      .in('id', subprodIds);
+    (subprods || []).forEach(p => subprodsMap.set(p.id, p));
+  }
+
+  let costoTotalReceta = 0;
+  const itemsDesglosados = lineasReceta.map(linea => {
+    const insumo = linea.insumo_id ? insumosMap.get(linea.insumo_id) : null;
+    const subprod = linea.subproducto_id ? subprodsMap.get(linea.subproducto_id) : null;
+
+    const nombre = insumo ? insumo.nombre : (subprod ? subprod.nombre : 'Elemento no identificado');
+    const tipo = insumo ? 'insumo' : 'subproducto';
+    const unidad = insumo ? insumo.unidad_medida : 'Und';
+    const costoUnit = insumo ? Number(insumo.costo_promedio || 0) : (subprod ? Number(subprod.costo || 0) : 0);
+    const cant = Number(linea.cantidad_necesaria || 0);
+    const subtotal = Math.round(cant * costoUnit * 10000) / 10000;
+
+    costoTotalReceta += subtotal;
+
+    return {
+      nombre,
+      tipo,
+      cantidad: cant,
+      unidad_medida: unidad,
+      costo_unitario_usd: Number(costoUnit.toFixed(4)),
+      subtotal_costo_usd: Number(subtotal.toFixed(2))
+    };
+  });
+
+  const precioVenta = Number(producto.precio_venta || 0);
+  const margenBrutoUsd = Math.round((precioVenta - costoTotalReceta) * 100) / 100;
+  const margenPct = precioVenta > 0 ? Math.round(((precioVenta - costoTotalReceta) / precioVenta) * 1000) / 10 : 0;
+  const foodCostPct = precioVenta > 0 ? Math.round((costoTotalReceta / precioVenta) * 1000) / 10 : 0;
+
+  return {
+    producto: {
+      id: producto.id,
+      nombre: producto.nombre,
+      precio_venta_usd: precioVenta,
+      costo_catalogo_usd: Number(producto.costo || 0)
+    },
+    tiene_receta: true,
+    costo_total_receta_usd: Number(costoTotalReceta.toFixed(2)),
+    margen_bruto_usd: margenBrutoUsd,
+    margen_porcentaje: margenPct,
+    food_cost_porcentaje: foodCostPct,
+    ingredientes: itemsDesglosados
+  };
+}
+
+/**
+ * 13. Proponer / armar la receta para un producto
+ */
+async function toolProponerReceta(
+  ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
+  args: {
+    nombre_producto: string;
+    ingredientes: Array<{
+      nombre_ingrediente: string;
+      cantidad: number;
+      unidad?: string;
+    }>;
+    modo?: 'reemplazar' | 'agregar';
+  }
+) {
+  const { supabase, empresaId } = ctx;
+  const nombreBuscado = normalizarTexto(args.nombre_producto);
+
+  // 1. Buscar producto en el catálogo
+  const { data: todosProductos, error: prodErr } = await supabase
+    .from('productos')
+    .select('id, nombre, precio_venta, costo, es_compuesto')
+    .eq('empresa_id', empresaId)
+    .neq('archivado', true);
+
+  if (prodErr) return { exito: false, error: `Error consultando productos: ${prodErr.message}` };
+  if (!todosProductos || todosProductos.length === 0) {
+    return { exito: false, error: 'No se encontraron productos en el catálogo.' };
+  }
+
+  let producto = todosProductos.find(p => normalizarTexto(p.nombre) === nombreBuscado);
+  if (!producto) {
+    producto = todosProductos.find(p => normalizarTexto(p.nombre).includes(nombreBuscado) || nombreBuscado.includes(normalizarTexto(p.nombre)));
+  }
+  if (!producto) {
+    producto = todosProductos.find(p => esCoincidenciaAproximada(p.nombre, args.nombre_producto, 2));
+  }
+
+  if (!producto) {
+    const sugerencias = todosProductos
+      .filter(p => esCoincidenciaAproximada(p.nombre, args.nombre_producto, 3))
+      .slice(0, 5)
+      .map(p => p.nombre);
+
+    return {
+      exito: false,
+      error: `No encontré el producto "${args.nombre_producto}" en tu catálogo. Asegúrate de que el producto exista o revisa el nombre.`,
+      sugerencias: sugerencias.length > 0 ? sugerencias : todosProductos.slice(0, 5).map(p => p.nombre)
+    };
+  }
+
+  // 2. Obtener insumos del inventario para vincular
+  const { data: todosInsumos } = await supabase
+    .from('inventario_insumos')
+    .select('id, nombre, unidad_medida, costo_promedio, cantidad_actual, palabras_clave')
+    .eq('empresa_id', empresaId);
+
+  const insumosDisponibles = todosInsumos || [];
+  const itemsResueltos: any[] = [];
+  const noEncontrados: string[] = [];
+  let costoTotalEstimado = 0;
+
+  for (const ing of (args.ingredientes || [])) {
+    const nomIng = normalizarTexto(ing.nombre_ingrediente);
+    
+    // Búsqueda en insumos
+    let insumoEncontrado = insumosDisponibles.find(i => normalizarTexto(i.nombre) === nomIng);
+    if (!insumoEncontrado) {
+      insumoEncontrado = insumosDisponibles.find(i => {
+        const nom = normalizarTexto(i.nombre);
+        return nom.includes(nomIng) || nomIng.includes(nom);
+      });
+    }
+    if (!insumoEncontrado) {
+      insumoEncontrado = insumosDisponibles.find(i => {
+        const kws = (i.palabras_clave || []).map((k: string) => normalizarTexto(k));
+        return kws.some((k: string) => k.includes(nomIng) || nomIng.includes(k));
+      });
+    }
+    if (!insumoEncontrado) {
+      insumoEncontrado = insumosDisponibles.find(i => esCoincidenciaAproximada(i.nombre, ing.nombre_ingrediente, 2));
+    }
+
+    if (insumoEncontrado) {
+      let cantidadFinal = Number(ing.cantidad) || 0;
+      const unidadInsumo = insumoEncontrado.unidad_medida || 'Und';
+      const unidadIngresada = (ing.unidad || '').toLowerCase().trim();
+
+      // Conversión inteligente de unidades
+      if (['kg', 'kilogramo', 'kilogramos', 'kilo', 'kilos'].includes(unidadInsumo.toLowerCase())) {
+        if (['g', 'gr', 'gramos', 'gramo'].includes(unidadIngresada)) {
+          cantidadFinal = cantidadFinal / 1000;
+        } else if (['lb', 'libras', 'libra'].includes(unidadIngresada)) {
+          cantidadFinal = cantidadFinal * 0.453592;
+        } else if (['oz', 'onzas', 'onza'].includes(unidadIngresada)) {
+          cantidadFinal = cantidadFinal * 0.0283495;
+        } else if (!unidadIngresada && cantidadFinal >= 50) {
+          cantidadFinal = cantidadFinal / 1000;
+        }
+      } else if (['lt', 'litro', 'litros', 'l'].includes(unidadInsumo.toLowerCase())) {
+        if (['ml', 'cc', 'mililitro', 'mililitros'].includes(unidadIngresada)) {
+          cantidadFinal = cantidadFinal / 1000;
+        } else if (!unidadIngresada && cantidadFinal >= 50) {
+          cantidadFinal = cantidadFinal / 1000;
+        }
+      } else if (['gr', 'gramo', 'gramos'].includes(unidadInsumo.toLowerCase())) {
+        if (['kg', 'kilo', 'kilos'].includes(unidadIngresada)) {
+          cantidadFinal = cantidadFinal * 1000;
+        }
+      } else if (['ml', 'mililitro'].includes(unidadInsumo.toLowerCase())) {
+        if (['lt', 'l', 'litro', 'litros'].includes(unidadIngresada)) {
+          cantidadFinal = cantidadFinal * 1000;
+        }
+      }
+
+      cantidadFinal = Math.round(cantidadFinal * 10000) / 10000;
+      const costoUnit = Number(insumoEncontrado.costo_promedio || 0);
+      const subtotal = Math.round(cantidadFinal * costoUnit * 10000) / 10000;
+      costoTotalEstimado += subtotal;
+
+      itemsResueltos.push({
+        tipo: 'insumo',
+        id: insumoEncontrado.id,
+        nombre: insumoEncontrado.nombre,
+        cantidad: cantidadFinal,
+        unidad_medida: unidadInsumo,
+        costo_unitario: Number(costoUnit.toFixed(4)),
+        subtotal: Number(subtotal.toFixed(2))
+      });
+      continue;
+    }
+
+    // Si no es insumo de almacén, buscar como subproducto en el catálogo
+    const subprodEncontrado = todosProductos.find(p => p.id !== producto.id && (
+      normalizarTexto(p.nombre) === nomIng ||
+      normalizarTexto(p.nombre).includes(nomIng) ||
+      esCoincidenciaAproximada(p.nombre, ing.nombre_ingrediente, 2)
+    ));
+
+    if (subprodEncontrado) {
+      const cantidadFinal = Number(ing.cantidad) || 1;
+      const costoUnit = Number(subprodEncontrado.costo || subprodEncontrado.precio_venta || 0);
+      const subtotal = Math.round(cantidadFinal * costoUnit * 10000) / 10000;
+      costoTotalEstimado += subtotal;
+
+      itemsResueltos.push({
+        tipo: 'producto',
+        id: subprodEncontrado.id,
+        nombre: subprodEncontrado.nombre,
+        cantidad: cantidadFinal,
+        unidad_medida: 'Und',
+        costo_unitario: Number(costoUnit.toFixed(4)),
+        subtotal: Number(subtotal.toFixed(2))
+      });
+      continue;
+    }
+
+    noEncontrados.push(ing.nombre_ingrediente);
+  }
+
+  if (itemsResueltos.length === 0) {
+    return {
+      exito: false,
+      error: `No pude asociar ningún ingrediente con los insumos existentes en el inventario. Insumos no encontrados: ${noEncontrados.join(', ')}. Verifica que estén creados en Inventario / Almacén.`
+    };
+  }
+
+  const precioVenta = Number(producto.precio_venta || 0);
+  const costoTotalRedondeado = Math.round(costoTotalEstimado * 100) / 100;
+  const margenUsd = Math.round((precioVenta - costoTotalRedondeado) * 100) / 100;
+  const margenPct = precioVenta > 0 ? Math.round(((precioVenta - costoTotalRedondeado) / precioVenta) * 1000) / 10 : 0;
+  const foodCostPct = precioVenta > 0 ? Math.round((costoTotalRedondeado / precioVenta) * 1000) / 10 : 0;
+
+  return {
+    exito: true,
+    producto: {
+      id: producto.id,
+      nombre: producto.nombre,
+      precio_venta: precioVenta,
+      costo_anterior: Number(producto.costo || 0)
+    },
+    modo: args.modo || 'reemplazar',
+    items: itemsResueltos,
+    costo_total_receta: costoTotalRedondeado,
+    precio_venta: precioVenta,
+    margen_bruto_usd: margenUsd,
+    margen_estimado_pct: margenPct,
+    food_cost_pct: foodCostPct,
+    ingredientes_no_encontrados: noEncontrados
+  };
+}
+
 // ==========================================
 // DECLARACIONES DE HERRAMIENTAS PARA GEMINI
 // ==========================================
@@ -1226,6 +1600,25 @@ const copilotTools: { functionDeclarations: FunctionDeclaration[] } = {
           }
         },
         required: ['insumo_principal_nombre', 'insumos_a_fusionar_nombres']
+      }
+    },
+    {
+      name: 'proponer_agrupacion_similares',
+      description: 'Prepara y propone la agrupación de productos del catálogo como similares / sustitutos bajo un mismo grupo o principio activo (ej: "Acetaminofén 500mg", "Refresco Cola 1.5L", "Ibuprofeno 400mg"). Esto habilita la alternativa de cambio directo en el carrito de Niteo POS. Requiere confirmación.',
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          nombre_grupo: {
+            type: SchemaType.STRING,
+            description: 'Nombre del grupo de similares o principio activo (ej: "Acetaminofén 500mg" o "Refresco Cola 1.5L").',
+          },
+          productos_nombres_o_ids: {
+            type: SchemaType.ARRAY,
+            items: { type: SchemaType.STRING },
+            description: 'Lista de nombres o IDs de los productos a agrupar como similares (ej: ["Atamel 500mg", "Tachipirin 500mg", "Acetaminofen"]).',
+          }
+        },
+        required: ['nombre_grupo', 'productos_nombres_o_ids']
       }
     },
     {
@@ -1360,6 +1753,60 @@ const copilotTools: { functionDeclarations: FunctionDeclaration[] } = {
           meses_inactividad: { type: SchemaType.NUMBER, description: 'Meses sin ventas para clasificarlo como inactivo (por defecto 6).' }
         }
       }
+    },
+    {
+      name: 'consultar_receta',
+      description: 'Consulta los ingredientes, cantidades, unidades y costo de preparación (escandallo) de la receta de un producto, así como su precio de venta y margen de ganancia.',
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          nombre_producto: {
+            type: SchemaType.STRING,
+            description: 'Nombre o parte del nombre del producto a consultar su receta (ej: "Pizza Margarita", "Hamburguesa Clásica").',
+          }
+        },
+        required: ['nombre_producto']
+      }
+    },
+    {
+      name: 'proponer_receta',
+      description: 'Ayuda a crear, armar o actualizar la receta/escandallo de un producto del catálogo vinculando insumos del almacén con sus cantidades y calculando el costo total y margen. Genera una propuesta interactiva para guardar la receta con confirmación del usuario.',
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          nombre_producto: {
+            type: SchemaType.STRING,
+            description: 'Nombre del producto al que se le asignará o actualizará la receta.',
+          },
+          ingredientes: {
+            type: SchemaType.ARRAY,
+            items: {
+              type: SchemaType.OBJECT,
+              properties: {
+                nombre_ingrediente: {
+                  type: SchemaType.STRING,
+                  description: 'Nombre del insumo o ingrediente en el almacén (ej: "queso mozzarella", "harina de trigo", "salsa de tomate", "pan de hamburguesa").'
+                },
+                cantidad: {
+                  type: SchemaType.NUMBER,
+                  description: 'Cantidad necesaria para 1 unidad del producto (ej: 0.25, 200, 1).'
+                },
+                unidad: {
+                  type: SchemaType.STRING,
+                  description: 'Opcional. Unidad de medida indicada por el usuario (ej: "g", "kg", "ml", "litros", "und"). Si no se envía, se deduce inteligentemente.'
+                }
+              },
+              required: ['nombre_ingrediente', 'cantidad']
+            },
+            description: 'Lista de ingredientes con cantidades para armar la receta.',
+          },
+          modo: {
+            type: SchemaType.STRING,
+            description: 'Opcional. "reemplazar" (por defecto, borra la receta anterior y guarda la nueva) o "agregar" (añade ingredientes a la receta existente).'
+          }
+        },
+        required: ['nombre_producto', 'ingredientes']
+      }
     }
   ]
 };
@@ -1371,7 +1818,7 @@ const copilotTools: { functionDeclarations: FunctionDeclaration[] } = {
 export interface CopilotRespuesta {
   texto: string;
   accionPropuesta?: {
-    tipo: 'desactivar_combos' | 'fusionar_insumos' | 'ejecutar_despacho' | 'ejecutar_venta_costo';
+    tipo: 'desactivar_combos' | 'fusionar_insumos' | 'ejecutar_despacho' | 'ejecutar_venta_costo' | 'guardar_receta' | 'agrupar_similares';
     titulo: string;
     items?: any[];
     detalles?: any;
@@ -1431,7 +1878,11 @@ REGLAS DE OPERACIÓN:
 1. NUNCA INVENTES CIFRAS NI DATOS. Consulta siempre las herramientas para obtener datos verídicos de la base de datos.
 2. Si te preguntan por tasas de cambio de un día, ventas y compras en dólares y bolívares, pagos en Pago Móvil por sede, o consumos de insumos, llama a la herramienta adecuada.
 3. Si el usuario te indica una regla de conversión (ej. "una barra pesa 3kg"), calcula la división matemáticamente sobre los kg devueltos por la herramienta y explícalo claramente.
-4. Para acciones que modifican datos (desactivar combos, fusionar marcas, despachos entre sedes o ventas al costo):
+4. ASISTENCIA Y ESCANDALLO DE RECETAS:
+   - Para consultar los ingredientes, escandallo de costos y márgenes de un producto del catálogo, llama a "consultar_receta".
+   - Si el usuario te pide armar, crear o actualizar una receta (o te lista qué ingredientes lleva un plato, ej. "La pizza margarita lleva 250g de masa, 150g de mozzarella y 80g de salsa"), llama inmediatamente a "proponer_receta" para vincular los insumos del almacén y preparar la tarjeta interactiva de guardado.
+   - Si el usuario te pide ideas o sugerencias de recetas para su negocio, asesóralo gastronómicamente con entusiasmo y propón recetas prácticas usando los insumos que tenga.
+5. Para acciones que modifican datos (desactivar combos, fusionar marcas, despachos entre sedes, ventas al costo o guardar recetas):
    - NUNCA afirmes haber ejecutado la mutación en la base de datos de inmediato.
    - Llama a la herramienta "proponer_*" correspondiente.
    - Describe la propuesta amablemente con los números exactos e invita al usuario a confirmar mediante el botón en pantalla.
@@ -1519,6 +1970,21 @@ REGLAS DE OPERACIÓN:
                 }
                 break;
               }
+              case 'proponer_agrupacion_similares': {
+                toolResult = await toolProponerAgrupacionSimilares(ctx, call.args as any);
+                if (toolResult.exito) {
+                  accionPropuesta = {
+                    tipo: 'agrupar_similares',
+                    titulo: `Agrupar ${toolResult.total} productos en "${toolResult.grupo}"`,
+                    detalles: {
+                      grupo: toolResult.grupo,
+                      productoIds: toolResult.productos.map((p: any) => p.id),
+                      productos: toolResult.productos
+                    }
+                  };
+                }
+                break;
+              }
               case 'proponer_despacho_sedes': {
                 toolResult = await toolProponerDespachoSedes(ctx, call.args as any);
                 if (toolResult.exito) {
@@ -1549,6 +2015,30 @@ REGLAS DE OPERACIÓN:
                       costoTotalUsd: toolResult.costo_total_usd,
                       costoTotalBs: toolResult.costo_total_bs,
                       notas: toolResult.notas
+                    }
+                  };
+                }
+                break;
+              }
+              case 'consultar_receta': {
+                toolResult = await toolConsultarReceta(ctx, call.args as any);
+                break;
+              }
+              case 'proponer_receta': {
+                toolResult = await toolProponerReceta(ctx, call.args as any);
+                if (toolResult.exito && toolResult.items && toolResult.items.length > 0) {
+                  accionPropuesta = {
+                    tipo: 'guardar_receta',
+                    titulo: `Guardar Receta: ${toolResult.producto.nombre}`,
+                    detalles: {
+                      productoId: toolResult.producto.id,
+                      productoNombre: toolResult.producto.nombre,
+                      items: toolResult.items,
+                      costoTotal: toolResult.costo_total_receta,
+                      precioVenta: toolResult.precio_venta,
+                      margenEstimadoPct: toolResult.margen_estimado_pct,
+                      foodCostPct: toolResult.food_cost_pct,
+                      modo: toolResult.modo
                     }
                   };
                 }
@@ -1603,7 +2093,7 @@ export async function ejecutarAccionCopilot({
   payload,
   activeSedeId
 }: {
-  accion: 'desactivar_combos' | 'fusionar_insumos' | 'ejecutar_despacho' | 'ejecutar_venta_costo';
+  accion: 'desactivar_combos' | 'fusionar_insumos' | 'agrupar_similares' | 'ejecutar_despacho' | 'ejecutar_venta_costo' | 'guardar_receta';
   payload: any;
   activeSedeId?: string;
 }): Promise<{ success: boolean; mensaje: string; error?: string }> {
@@ -1640,6 +2130,68 @@ export async function ejecutarAccionCopilot({
 
         revalidatePath('/dashboard/inventario');
         return { success: true, mensaje: `Fusión completada. El stock consolidado es de ${res.newStock} unidades y las marcas se agregaron a las palabras clave.` };
+      }
+
+      case 'agrupar_similares': {
+        const { grupo, productoIds } = payload;
+        if (!grupo || !productoIds || productoIds.length === 0) {
+          return { success: false, mensaje: 'Datos incompletos para agrupar similares.' };
+        }
+        const { bulkAsignarGrupoSimilar } = await import('@/actions/catalogo-actions');
+        const res = await bulkAsignarGrupoSimilar(productoIds, grupo);
+        if (!res.success) return { success: false, mensaje: res.error || 'Error agrupando productos.' };
+
+        revalidatePath('/dashboard/catalogo');
+        return { success: true, mensaje: `Se agruparon ${productoIds.length} productos bajo "${grupo}" exitosamente.` };
+      }
+
+      case 'guardar_receta': {
+        const { productoId, items, modo, costoTotal } = payload;
+        if (!productoId || !items || items.length === 0) {
+          return { success: false, mensaje: 'Datos incompletos para guardar la receta.' };
+        }
+        const { supabase, empresaId } = ctx;
+
+        // 1. Actualizar el producto como elaborado (es_compuesto = true, es_reventa = false, y costo = costoTotal)
+        const updateData: any = {
+          es_compuesto: true,
+          es_reventa: false
+        };
+        if (costoTotal !== undefined && costoTotal !== null && !isNaN(Number(costoTotal))) {
+          updateData.costo = Number(costoTotal);
+        }
+        const { error: prodErr } = await supabase
+          .from('productos')
+          .update(updateData)
+          .eq('id', productoId)
+          .eq('empresa_id', empresaId);
+
+        if (prodErr) {
+          return { success: false, mensaje: `Error actualizando producto: ${prodErr.message}` };
+        }
+
+        // 2. Si modo !== 'agregar', borrar recetas previas del producto
+        if (modo !== 'agregar') {
+          await supabase.from('recetas').delete().eq('producto_id', productoId).eq('empresa_id', empresaId);
+        }
+
+        // 3. Insertar nuevos registros en recetas
+        const inserts = items.map((it: any) => ({
+          empresa_id: empresaId,
+          producto_id: productoId,
+          insumo_id: it.tipo === 'insumo' ? it.id : null,
+          subproducto_id: it.tipo === 'producto' ? it.id : null,
+          cantidad_necesaria: it.cantidad
+        }));
+
+        const { error: insertError } = await supabase.from('recetas').insert(inserts);
+        if (insertError) {
+          return { success: false, mensaje: `Error guardando ingredientes de receta: ${insertError.message}` };
+        }
+
+        revalidatePath('/dashboard/catalogo');
+        revalidatePath('/dashboard/inventario');
+        return { success: true, mensaje: `Receta guardada exitosamente con ${inserts.length} ingredientes.` };
       }
 
       case 'ejecutar_despacho': {

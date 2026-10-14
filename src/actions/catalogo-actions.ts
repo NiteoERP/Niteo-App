@@ -59,7 +59,8 @@ export async function createProducto(data: any) {
       es_reventa: data.tipo === 'REVENTA',
         es_servicio: data.tipo === 'SERVICIO',
       porcentaje_ganancia: parseFloat(data.porcentaje_ganancia) || 0,
-      notas_preparacion: Array.isArray(data.notas_preparacion) ? data.notas_preparacion : []
+      notas_preparacion: Array.isArray(data.notas_preparacion) ? data.notas_preparacion : [],
+      grupo_similar: (data.grupo_similar && String(data.grupo_similar).trim().length > 0) ? String(data.grupo_similar).trim() : null
     })
     .select()
     .single();
@@ -187,7 +188,10 @@ export async function updateProducto(id: string, data: any) {
       es_reventa: data.tipo === 'REVENTA',
         es_servicio: data.tipo === 'SERVICIO',
       porcentaje_ganancia: parseFloat(data.porcentaje_ganancia) || 0,
-      notas_preparacion: Array.isArray(data.notas_preparacion) ? data.notas_preparacion : []
+      notas_preparacion: Array.isArray(data.notas_preparacion) ? data.notas_preparacion : [],
+      grupo_similar: (data.grupo_similar !== undefined)
+        ? ((data.grupo_similar && String(data.grupo_similar).trim().length > 0) ? String(data.grupo_similar).trim() : null)
+        : undefined
   }).eq('id', id);
   
   if (error) return { success: false, error: error.message };
@@ -533,6 +537,31 @@ export async function quickUpdateProductoType(id: string, nuevoTipo: 'ELABORADO'
     es_reventa,
     es_servicio
   }).eq('id', id);
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath('/dashboard/catalogo');
+  return { success: true };
+}
+
+export async function bulkAsignarGrupoSimilar(ids: string[], grupoSimilar: string | null) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'No autorizado' };
+
+  const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
+  if (!perfil) return { success: false, error: 'Perfil no encontrado' };
+
+  const cleanGroup = (grupoSimilar && grupoSimilar.trim().length > 0) ? grupoSimilar.trim() : null;
+
+  const { error } = await supabase
+    .from('productos')
+    .update({ 
+      grupo_similar: cleanGroup,
+      updated_at: new Date().toISOString()
+    })
+    .in('id', ids)
+    .eq('empresa_id', perfil.empresa_id);
 
   if (error) return { success: false, error: error.message };
 
