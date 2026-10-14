@@ -209,6 +209,9 @@ export async function updateProducto(id: string, data: any) {
     if (inserts.length > 0) {
       await supabase.from('recetas').insert(inserts);
     }
+  } else if (data.tipo === 'SERVICIO') {
+    // Un producto de tipo servicio no descuenta inventario ni usa recetas
+    await supabase.from('recetas').delete().eq('producto_id', id);
   }
 
   revalidatePath('/dashboard/catalogo');
@@ -530,6 +533,9 @@ export async function quickUpdateProductoType(id: string, nuevoTipo: 'ELABORADO'
         }
       }
     }
+  } else if (es_servicio) {
+    // Si cambia a servicio, eliminar recetas vinculadas para no descontar insumos
+    await supabase.from('recetas').delete().eq('producto_id', id);
   }
 
   const { error } = await supabase.from('productos').update({

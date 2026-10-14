@@ -53,7 +53,7 @@ export default async function CatalogoPage() {
           <h2 className="text-xl font-medium text-white">Catálogo de Ventas</h2>
           <p className="text-sm text-neutral-400 mt-1">
             Administra los productos que aparecerán en Niteo POS. 
-            Define si son Elaborados o de Reventa (Compra/Venta directa).
+            Define si son Elaborados, de Reventa o Servicios (sin stock).
           </p>
         </div>
       </div>

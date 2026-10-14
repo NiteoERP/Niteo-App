@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useTransition, useEffect } from 'react';
-import { X, Loader2, PackageSearch, Box, Trash2, Plus, Beaker, Lock, ToggleLeft, ToggleRight, ArrowRightLeft } from 'lucide-react';
+import { X, Loader2, PackageSearch, Box, Wrench, Trash2, Plus, Beaker, Lock, ToggleLeft, ToggleRight, ArrowRightLeft } from 'lucide-react';
 import { createProducto, updateProducto } from '@/actions/catalogo-actions';
 import { getListasPrecios, getPreciosPorProducto } from '@/actions/listas-precios-actions';
 import { useEmpresa } from '@/components/providers/EmpresaProvider';
@@ -126,18 +126,21 @@ export default function ProductoForm({
 
   // Two way binding
   const handleCostoChange = (val: number) => {
-    const newPrice = val * (1 + formData.porcentaje_ganancia / 100);
-    setFormData(prev => ({ ...prev, costo: val, precio_venta: parseFloat(newPrice.toFixed(2)) }));
+    const safe = isNaN(val) ? 0 : val;
+    const newPrice = safe * (1 + formData.porcentaje_ganancia / 100);
+    setFormData(prev => ({ ...prev, costo: safe, precio_venta: parseFloat(newPrice.toFixed(2)) }));
   };
 
   const handlePrecioChange = (val: number) => {
-    const newMargin = formData.costo > 0 ? ((val - formData.costo) / formData.costo) * 100 : 0;
-    setFormData(prev => ({ ...prev, precio_venta: val, porcentaje_ganancia: parseFloat(newMargin.toFixed(2)) }));
+    const safe = isNaN(val) ? 0 : val;
+    const newMargin = formData.costo > 0 ? ((safe - formData.costo) / formData.costo) * 100 : 0;
+    setFormData(prev => ({ ...prev, precio_venta: safe, porcentaje_ganancia: parseFloat(newMargin.toFixed(2)) }));
   };
 
   const handleGananciaChange = (val: number) => {
-    const newPrice = formData.costo * (1 + val / 100);
-    setFormData(prev => ({ ...prev, porcentaje_ganancia: val, precio_venta: parseFloat(newPrice.toFixed(2)) }));
+    const safe = isNaN(val) ? 0 : val;
+    const newPrice = formData.costo * (1 + safe / 100);
+    setFormData(prev => ({ ...prev, porcentaje_ganancia: safe, precio_venta: parseFloat(newPrice.toFixed(2)) }));
   };
 
   // Auto-calculate base cost from recipes
@@ -239,37 +242,57 @@ export default function ProductoForm({
 
             <div className="space-y-3">
               <label className="text-sm font-medium text-neutral-400 block">Tipo de Producto</label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div 
                   onClick={() => {
                     if (!canUseRecetas) return;
                     setFormData({...formData, tipo: 'ELABORADO'});
                   }}
-                  className={`relative p-4 rounded-xl border flex flex-col items-center text-center gap-2 transition-all ${!canUseRecetas ? 'opacity-50 cursor-not-allowed border-neutral-800 text-neutral-500' : formData.tipo === 'ELABORADO' ? 'border-indigo-500 bg-indigo-500/10 text-white cursor-pointer' : 'border-neutral-800 text-neutral-400 hover:border-neutral-700 cursor-pointer'}`}
+                  className={`relative p-4 rounded-xl border flex flex-col items-center text-center gap-2 transition-all ${!canUseRecetas ? 'opacity-50 cursor-not-allowed border-neutral-800 text-neutral-500' : formData.tipo === 'ELABORADO' ? 'border-indigo-500 bg-indigo-500/10 text-white cursor-pointer shadow-[0_0_15px_rgba(99,102,241,0.15)]' : 'border-neutral-800 text-neutral-400 hover:border-neutral-700 cursor-pointer'}`}
                 >
                   {!canUseRecetas && (
                     <div className="absolute top-2 right-2 text-rose-400" title="Requiere módulo de recetas">
                       <Lock size={14} />
                     </div>
                   )}
-                  <PackageSearch size={24} />
+                  <PackageSearch size={24} className={formData.tipo === 'ELABORADO' ? 'text-emerald-400' : 'text-neutral-400'} />
                   <div>
                     <p className="font-bold text-sm">Elaborado</p>
-                    <p className="text-[10px] mt-1 opacity-80">Hamburguesas, Platos. Usa ingredientes.</p>
+                    <p className="text-[10px] mt-1 opacity-80 leading-tight">Hamburguesas, platos. Usa ingredientes y recetas.</p>
                   </div>
                 </div>
 
                 <div 
                   onClick={() => setFormData({...formData, tipo: 'REVENTA'})}
-                  className={`p-4 rounded-xl border cursor-pointer flex flex-col items-center text-center gap-2 transition-all ${formData.tipo === 'REVENTA' ? 'border-indigo-500 bg-indigo-500/10 text-white' : 'border-neutral-800 text-neutral-400 hover:border-neutral-700'}`}
+                  className={`p-4 rounded-xl border cursor-pointer flex flex-col items-center text-center gap-2 transition-all ${formData.tipo === 'REVENTA' ? 'border-indigo-500 bg-indigo-500/10 text-white shadow-[0_0_15px_rgba(99,102,241,0.15)]' : 'border-neutral-800 text-neutral-400 hover:border-neutral-700'}`}
                 >
-                  <Box size={24} />
+                  <Box size={24} className={formData.tipo === 'REVENTA' ? 'text-blue-400' : 'text-neutral-400'} />
                   <div>
                     <p className="font-bold text-sm">Reventa</p>
-                    <p className="text-[10px] mt-1 opacity-80">Se compra a proveedores y se vende tal cual.</p>
+                    <p className="text-[10px] mt-1 opacity-80 leading-tight">Compra y venta directa. Descuenta stock.</p>
+                  </div>
+                </div>
+
+                <div 
+                  onClick={() => setFormData({...formData, tipo: 'SERVICIO'})}
+                  className={`p-4 rounded-xl border cursor-pointer flex flex-col items-center text-center gap-2 transition-all ${formData.tipo === 'SERVICIO' ? 'border-indigo-500 bg-indigo-500/10 text-white shadow-[0_0_15px_rgba(99,102,241,0.15)]' : 'border-neutral-800 text-neutral-400 hover:border-neutral-700'}`}
+                >
+                  <Wrench size={24} className={formData.tipo === 'SERVICIO' ? 'text-amber-400' : 'text-neutral-400'} />
+                  <div>
+                    <p className="font-bold text-sm">Servicio</p>
+                    <p className="text-[10px] mt-1 opacity-80 leading-tight">Mano de obra, delivery. No usa ni descuenta stock.</p>
                   </div>
                 </div>
               </div>
+
+              {formData.tipo === 'SERVICIO' && (
+                <div className="flex items-center gap-2.5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs">
+                  <Wrench size={16} className="shrink-0 text-amber-400" />
+                  <span>
+                    <strong>Modo Servicio:</strong> Este producto no requiere control de inventario ni existencias en almacén.
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

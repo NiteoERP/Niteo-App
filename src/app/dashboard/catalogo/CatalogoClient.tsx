@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useTransition, useRef } from 'react';
-import { Plus, Search, Edit2, Trash2, PackageSearch, Box, Share2, Copy, Check, ExternalLink, ToggleLeft, ToggleRight, Link, Archive, RotateCcw, ArrowRightLeft, X } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, PackageSearch, Box, Wrench, Share2, Copy, Check, ExternalLink, ToggleLeft, ToggleRight, Link, Archive, RotateCcw, ArrowRightLeft, X } from 'lucide-react';
 import ProductoForm from './ProductoForm';
 import BulkRecetaModal from './BulkRecetaModal';
 import DuplicarModal from './DuplicarModal';
@@ -41,6 +41,7 @@ export default function CatalogoClient({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'catalogo' | 'archivados'>('catalogo');
   const [filterEstado, setFilterEstado] = useState<'todos' | 'activos' | 'inactivos'>('todos');
+  const [filterTipo, setFilterTipo] = useState<'todos' | 'REVENTA' | 'ELABORADO' | 'SERVICIO'>('todos');
   const [modalSimilarOpen, setModalSimilarOpen] = useState(false);
   const [inputGrupoSimilar, setInputGrupoSimilar] = useState('');
   const stateTimeouts = useRef<Record<string, NodeJS.Timeout>>({});
@@ -63,6 +64,11 @@ export default function CatalogoClient({
     if (viewMode === 'catalogo') {
       if (filterEstado === 'activos' && !isActivo) return false;
       if (filterEstado === 'inactivos' && isActivo) return false;
+    }
+
+    if (filterTipo !== 'todos') {
+      const pTipo = optimisticTypes[p.id] || (p.es_servicio ? 'SERVICIO' : (p.es_compuesto ? 'ELABORADO' : 'REVENTA'));
+      if (pTipo !== filterTipo) return false;
     }
 
     const matchesSearch = (p.nombre?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
@@ -385,6 +391,18 @@ export default function CatalogoClient({
                 <option value="inactivos">Solo Inactivos</option>
               </select>
             )}
+            {viewMode === 'catalogo' && (
+              <select
+                value={filterTipo}
+                onChange={(e) => setFilterTipo(e.target.value as any)}
+                className="bg-neutral-900 border border-neutral-800 text-sm text-amber-300 font-medium rounded-lg px-3 py-2 focus:border-indigo-500 outline-none transition-colors flex-1 sm:flex-none sm:w-[135px] truncate"
+              >
+                <option value="todos">Todos los tipos</option>
+                <option value="REVENTA">Reventa</option>
+                <option value="ELABORADO">Elaborado</option>
+                <option value="SERVICIO">Servicio (Sin stock)</option>
+              </select>
+            )}
             <select
               value={selectedSede}
               onChange={(e) => setSelectedSede(e.target.value)}
@@ -540,7 +558,13 @@ export default function CatalogoClient({
                         onChange={() => handleToggleSelect(p.id)}
                       />
                     </div>
-                    {p.es_compuesto ? <PackageSearch className="text-emerald-400 w-5 h-5 shrink-0" /> : <Box className="text-blue-400 w-5 h-5 shrink-0" />}
+                    {p.es_compuesto ? (
+                      <PackageSearch className="text-emerald-400 w-5 h-5 shrink-0" />
+                    ) : p.es_servicio ? (
+                      <Wrench className="text-amber-400 w-5 h-5 shrink-0" />
+                    ) : (
+                      <Box className="text-blue-400 w-5 h-5 shrink-0" />
+                    )}
                     <div className="min-w-0">
                       <p className="font-medium text-white truncate">{p.nombre}</p>
                       {p.descripcion && <p className="text-xs text-neutral-400 line-clamp-1">{p.descripcion}</p>}
@@ -709,7 +733,13 @@ export default function CatalogoClient({
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        {p.es_compuesto ? <PackageSearch className="text-emerald-400 w-5 h-5" /> : <Box className="text-blue-400 w-5 h-5" />}
+                        {p.es_compuesto ? (
+                          <PackageSearch className="text-emerald-400 w-5 h-5 shrink-0" />
+                        ) : p.es_servicio ? (
+                          <Wrench className="text-amber-400 w-5 h-5 shrink-0" />
+                        ) : (
+                          <Box className="text-blue-400 w-5 h-5 shrink-0" />
+                        )}
                         <div>
                           <p className="font-medium text-white">{p.nombre}</p>
                           {p.descripcion && (
