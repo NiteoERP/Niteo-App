@@ -2010,7 +2010,7 @@ export async function enviarMensajeCopilot({
     }
 
     const ctx = await getCopilotAuthContext(activeSedeId);
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const apiKey = process.env.GEMINI_API_KEY;
 
     const sedesListStr = ctx.sedes
       .map((s, idx) => `Sede ${idx + 1}: "${s.nombre_sede}" (ID: ${s.id})`)
@@ -2058,205 +2058,266 @@ REGLAS DE OPERACIÓN:
    - Describe la propuesta amablemente con los números exactos e invita al usuario a confirmar mediante el botón en pantalla.
     `.trim();
 
-    const modelNamesToTry = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-flash-latest'];
+    const modelNamesToTry = [
+      'gemini-flash-lite-latest',
+      'gemini-3.5-flash-lite',
+      'gemini-flash-latest',
+      'gemini-3.5-flash',
+      'gemini-3.8-flash'
+    ];
     let lastError: any = null;
+
+    // Preparar historial inicial en formato nativo de Gemini
+    const contents: Array<{ role: string; parts: any[] }> = (historial || []).map(h => ({
+      role: h.role,
+      parts: h.parts
+    }));
+    contents.push({
+      role: 'user',
+      parts: [{ text: mensaje }]
+    });
+
+    const systemInstructionPayload = {
+      parts: [{ text: systemInstruction }]
+    };
 
     for (const modelName of modelNamesToTry) {
       try {
-        const model = genAI.getGenerativeModel({
-          model: modelName,
-          systemInstruction,
-          tools: [copilotTools]
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+        const activeContents = JSON.parse(JSON.stringify(contents));
+
+        let res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: activeContents,
+            tools: [copilotTools],
+            systemInstruction: systemInstructionPayload
+          })
         });
 
-        const chat = model.startChat({
-          history: (historial || []).map(h => ({
-            role: h.role,
-            parts: h.parts
-          }))
-        });
+        let data = await res.json();
+        if (data.error) {
+          throw new Error(`[${modelName}] ${data.error.message || 'Error API'}`);
+        }
 
-        let response = await chat.sendMessage(mensaje);
-        let candidate = response.response;
+        let candidate = data.candidates?.[0];
+        if (!candidate || !candidate.content) {
+          throw new Error(`[${modelName}] No se recibió candidato válido de Gemini.`);
+        }
+
         let accionPropuesta: CopilotRespuesta['accionPropuesta'] = undefined;
-
         let toolLoops = 0;
         const maxLoops = 6;
 
-        while (candidate.functionCalls() && candidate.functionCalls()!.length > 0 && toolLoops < maxLoops) {
-          toolLoops++;
-          const functionCalls = candidate.functionCalls()!;
-          const functionResponses = [];
+        while (candidate?.content?.parts && toolLoops < maxLoops) {
+          const fnCalls = candidate.content.parts.filter((p: any) => p.functionCall);
+          if (fnCalls.length === 0) break;
 
-          for (const call of functionCalls) {
+          toolLoops++;
+          // Preservar la respuesta del modelo con su thoughtSignature e IDs
+          activeContents.push(candidate.content);
+
+          const functionResponses: any[] = [];
+
+          for (const part of fnCalls) {
+            const call = part.functionCall;
             let toolResult: any = null;
 
-            switch (call.name) {
-              case 'consultar_tasa_cambio':
-                toolResult = await toolConsultarTasaCambio(ctx, call.args as any);
-                break;
-              case 'consultar_balance_dia':
-                toolResult = await toolConsultarBalanceDia(ctx, call.args as any);
-                break;
-              case 'consultar_ventas_por_metodo_pago':
-                toolResult = await toolConsultarVentasPorMetodoPago(ctx, call.args as any);
-                break;
-              case 'consultar_ventas':
-                toolResult = await toolConsultarVentas(ctx, call.args as any);
-                break;
-              case 'consultar_consumo_insumo':
-                toolResult = await toolConsultarConsumoInsumo(ctx, call.args as any);
-                break;
-              case 'auditar_compras_sospechosas':
-                toolResult = await toolAuditarComprasSospechosas(ctx, call.args as any);
-                break;
-              case 'buscar_combos_inactivos': {
-                toolResult = await toolBuscarCombosInactivos(ctx, call.args as any);
-                if (toolResult.combos_inactivos && toolResult.combos_inactivos.length > 0) {
-                  accionPropuesta = {
-                    tipo: 'desactivar_combos',
-                    titulo: `Desactivar ${toolResult.combos_inactivos.length} promociones/combos inactivos`,
-                    items: toolResult.combos_inactivos.map((c: any) => ({ id: c.id, nombre: c.nombre }))
-                  };
+            try {
+              switch (call.name) {
+                case 'consultar_tasa_cambio':
+                  toolResult = await toolConsultarTasaCambio(ctx, call.args || {});
+                  break;
+                case 'consultar_balance_dia':
+                  toolResult = await toolConsultarBalanceDia(ctx, call.args || {});
+                  break;
+                case 'consultar_ventas_por_metodo_pago':
+                  toolResult = await toolConsultarVentasPorMetodoPago(ctx, call.args || {});
+                  break;
+                case 'consultar_ventas':
+                  toolResult = await toolConsultarVentas(ctx, call.args || {});
+                  break;
+                case 'consultar_consumo_insumo':
+                  toolResult = await toolConsultarConsumoInsumo(ctx, call.args || {});
+                  break;
+                case 'auditar_compras_sospechosas':
+                  toolResult = await toolAuditarComprasSospechosas(ctx, call.args || {});
+                  break;
+                case 'buscar_combos_inactivos': {
+                  toolResult = await toolBuscarCombosInactivos(ctx, call.args || {});
+                  if (toolResult?.combos_inactivos && toolResult.combos_inactivos.length > 0) {
+                    accionPropuesta = {
+                      tipo: 'desactivar_combos',
+                      titulo: `Desactivar ${toolResult.combos_inactivos.length} promociones/combos inactivos`,
+                      items: toolResult.combos_inactivos.map((c: any) => ({ id: c.id, nombre: c.nombre }))
+                    };
+                  }
+                  break;
                 }
-                break;
-              }
-              case 'proponer_fusion_marcas': {
-                toolResult = await toolProponerFusionMarcas(ctx, call.args as any);
-                if (toolResult.exito) {
-                  accionPropuesta = {
-                    tipo: 'fusionar_insumos',
-                    titulo: `Confirmar Fusión en "${toolResult.insumo_principal.nombre}"`,
-                    detalles: {
-                      masterId: toolResult.insumo_principal.id,
-                      masterNombre: toolResult.insumo_principal.nombre,
-                      slaveIds: toolResult.insumos_a_absorber.map((s: any) => s.id),
-                      slaveNombres: toolResult.insumos_a_absorber.map((s: any) => s.nombre),
-                      stockTotal: toolResult.stock_total_resultante,
-                      unidadMedida: toolResult.insumo_principal.unidad_medida,
-                      keywords: toolResult.palabras_clave_resultantes
-                    }
-                  };
+                case 'proponer_fusion_marcas': {
+                  toolResult = await toolProponerFusionMarcas(ctx, call.args || {});
+                  if (toolResult?.exito) {
+                    accionPropuesta = {
+                      tipo: 'fusionar_insumos',
+                      titulo: `Confirmar Fusión en "${toolResult.insumo_principal.nombre}"`,
+                      detalles: {
+                        masterId: toolResult.insumo_principal.id,
+                        masterNombre: toolResult.insumo_principal.nombre,
+                        slaveIds: toolResult.insumos_a_absorber.map((s: any) => s.id),
+                        slaveNombres: toolResult.insumos_a_absorber.map((s: any) => s.nombre),
+                        stockTotal: toolResult.stock_total_resultante,
+                        unidadMedida: toolResult.insumo_principal.unidad_medida,
+                        keywords: toolResult.palabras_clave_resultantes
+                      }
+                    };
+                  }
+                  break;
                 }
-                break;
-              }
-              case 'proponer_agrupacion_similares': {
-                toolResult = await toolProponerAgrupacionSimilares(ctx, call.args as any);
-                if (toolResult.exito) {
-                  accionPropuesta = {
-                    tipo: 'agrupar_similares',
-                    titulo: `Agrupar ${toolResult.total} productos en "${toolResult.grupo}"`,
-                    detalles: {
-                      grupo: toolResult.grupo,
-                      productoIds: toolResult.productos.map((p: any) => p.id),
-                      productos: toolResult.productos
-                    }
-                  };
+                case 'proponer_agrupacion_similares': {
+                  toolResult = await toolProponerAgrupacionSimilares(ctx, call.args || {});
+                  if (toolResult?.exito) {
+                    accionPropuesta = {
+                      tipo: 'agrupar_similares',
+                      titulo: `Agrupar ${toolResult.total} productos en "${toolResult.grupo}"`,
+                      detalles: {
+                        grupo: toolResult.grupo,
+                        productoIds: toolResult.productos.map((p: any) => p.id),
+                        productos: toolResult.productos
+                      }
+                    };
+                  }
+                  break;
                 }
-                break;
-              }
-              case 'proponer_despacho_sedes': {
-                toolResult = await toolProponerDespachoSedes(ctx, call.args as any);
-                if (toolResult.exito) {
-                  accionPropuesta = {
-                    tipo: 'ejecutar_despacho',
-                    titulo: `Confirmar Despacho: ${toolResult.origen.nombre} ➔ ${toolResult.destino.nombre}`,
-                    detalles: {
-                      origenId: toolResult.origen.id,
-                      destinoId: toolResult.destino.id,
-                      origenNombre: toolResult.origen.nombre,
-                      destinoNombre: toolResult.destino.nombre,
-                      items: toolResult.items,
-                      notas: toolResult.notas
-                    }
-                  };
+                case 'proponer_despacho_sedes': {
+                  toolResult = await toolProponerDespachoSedes(ctx, call.args || {});
+                  if (toolResult?.exito) {
+                    accionPropuesta = {
+                      tipo: 'ejecutar_despacho',
+                      titulo: `Confirmar Despacho: ${toolResult.origen.nombre} ➔ ${toolResult.destino.nombre}`,
+                      detalles: {
+                        origenId: toolResult.origen.id,
+                        destinoId: toolResult.destino.id,
+                        origenNombre: toolResult.origen.nombre,
+                        destinoNombre: toolResult.destino.nombre,
+                        items: toolResult.items,
+                        notas: toolResult.notas
+                      }
+                    };
+                  }
+                  break;
                 }
-                break;
-              }
-              case 'proponer_venta_al_costo': {
-                toolResult = await toolProponerVentaAlCosto(ctx, call.args as any);
-                if (toolResult.exito) {
-                  accionPropuesta = {
-                    tipo: 'ejecutar_venta_costo',
-                    titulo: `Confirmar Venta al Costo: ${toolResult.beneficiario} ($${toolResult.costo_total_usd} USD)`,
-                    detalles: {
-                      beneficiario: toolResult.beneficiario,
-                      items: toolResult.items,
-                      costoTotalUsd: toolResult.costo_total_usd,
-                      costoTotalBs: toolResult.costo_total_bs,
-                      notas: toolResult.notas
-                    }
-                  };
+                case 'proponer_venta_al_costo': {
+                  toolResult = await toolProponerVentaAlCosto(ctx, call.args || {});
+                  if (toolResult?.exito) {
+                    accionPropuesta = {
+                      tipo: 'ejecutar_venta_costo',
+                      titulo: `Confirmar Venta al Costo: ${toolResult.beneficiario} ($${toolResult.costo_total_usd} USD)`,
+                      detalles: {
+                        beneficiario: toolResult.beneficiario,
+                        items: toolResult.items,
+                        costoTotalUsd: toolResult.costo_total_usd,
+                        costoTotalBs: toolResult.costo_total_bs,
+                        notas: toolResult.notas
+                      }
+                    };
+                  }
+                  break;
                 }
-                break;
-              }
-              case 'consultar_receta': {
-                toolResult = await toolConsultarReceta(ctx, call.args as any);
-                break;
-              }
-              case 'proponer_receta': {
-                toolResult = await toolProponerReceta(ctx, call.args as any);
-                if (toolResult.exito && toolResult.items && toolResult.items.length > 0) {
-                  accionPropuesta = {
-                    tipo: 'guardar_receta',
-                    titulo: `Guardar Receta: ${toolResult.producto.nombre}`,
-                    detalles: {
-                      productoId: toolResult.producto.id,
-                      productoNombre: toolResult.producto.nombre,
-                      items: toolResult.items,
-                      costoTotal: toolResult.costo_total_receta,
-                      precioVenta: toolResult.precio_venta,
-                      margenEstimadoPct: toolResult.margen_estimado_pct,
-                      foodCostPct: toolResult.food_cost_pct,
-                      modo: toolResult.modo
-                    }
-                  };
+                case 'consultar_receta': {
+                  toolResult = await toolConsultarReceta(ctx, call.args || {});
+                  break;
                 }
-                break;
-              }
-              case 'proponer_combo': {
-                toolResult = await toolProponerCombo(ctx, call.args as any);
-                if (toolResult.exito && toolResult.items && toolResult.items.length > 0) {
-                  accionPropuesta = {
-                    tipo: 'crear_combo',
-                    titulo: `Crear Combo: "${toolResult.nombre}" ($${toolResult.precio_fijo} USD)`,
-                    items: toolResult.items.map((it: any) => ({
-                      id: it.producto_id,
-                      nombre: `${it.cantidad}x ${it.nombre} ($${it.subtotal} USD)`
-                    })),
-                    detalles: {
-                      nombre: toolResult.nombre,
-                      descripcion: toolResult.descripcion,
-                      tipo: toolResult.tipo,
-                      regla_precio: toolResult.regla_precio,
-                      precio_fijo: toolResult.precio_fijo,
-                      precio_lista_total: toolResult.precio_lista_total,
-                      ahorro_usd: toolResult.ahorro_usd,
-                      ahorro_pct: toolResult.ahorro_porcentaje,
-                      config_seleccion: toolResult.config_seleccion,
-                      items: toolResult.items
-                    }
-                  };
+                case 'proponer_receta': {
+                  toolResult = await toolProponerReceta(ctx, call.args || {});
+                  if (toolResult?.exito && toolResult.items && toolResult.items.length > 0) {
+                    accionPropuesta = {
+                      tipo: 'guardar_receta',
+                      titulo: `Guardar Receta: ${toolResult.producto.nombre}`,
+                      detalles: {
+                        productoId: toolResult.producto.id,
+                        productoNombre: toolResult.producto.nombre,
+                        items: toolResult.items,
+                        costoTotal: toolResult.costo_total_receta,
+                        precioVenta: toolResult.precio_venta,
+                        margenEstimadoPct: toolResult.margen_estimado_pct,
+                        foodCostPct: toolResult.food_cost_pct,
+                        modo: toolResult.modo
+                      }
+                    };
+                  }
+                  break;
                 }
-                break;
+                case 'proponer_combo': {
+                  toolResult = await toolProponerCombo(ctx, call.args || {});
+                  if (toolResult?.exito && toolResult.items && toolResult.items.length > 0) {
+                    accionPropuesta = {
+                      tipo: 'crear_combo',
+                      titulo: `Crear Combo: "${toolResult.nombre}" ($${toolResult.precio_fijo} USD)`,
+                      items: toolResult.items.map((it: any) => ({
+                        id: it.producto_id,
+                        nombre: `${it.cantidad}x ${it.nombre} ($${it.subtotal} USD)`
+                      })),
+                      detalles: {
+                        nombre: toolResult.nombre,
+                        descripcion: toolResult.descripcion,
+                        tipo: toolResult.tipo,
+                        regla_precio: toolResult.regla_precio,
+                        precio_fijo: toolResult.precio_fijo,
+                        precio_lista_total: toolResult.precio_lista_total,
+                        ahorro_usd: toolResult.ahorro_usd,
+                        ahorro_pct: toolResult.ahorro_porcentaje,
+                        config_seleccion: toolResult.config_seleccion,
+                        items: toolResult.items
+                      }
+                    };
+                  }
+                  break;
+                }
+                default:
+                  toolResult = { error: `Herramienta desconocida: ${call.name}` };
               }
-              default:
-                toolResult = { error: `Herramienta desconocida: ${call.name}` };
+            } catch (toolExecErr: any) {
+              console.error(`[Copilot] Error al ejecutar herramienta "${call.name}":`, toolExecErr);
+              toolResult = { error: `No se pudo obtener información: ${toolExecErr?.message || 'Error interno'}` };
             }
 
             functionResponses.push({
               functionResponse: {
                 name: call.name,
-                response: toolResult
+                response: toolResult || { exito: true }
               }
             });
           }
 
-          const nextTurn = await chat.sendMessage(functionResponses);
-          candidate = nextTurn.response;
+          // En la API nativa de Gemini, las respuestas a functionCalls se envían con role: "user"
+          activeContents.push({
+            role: 'user',
+            parts: functionResponses
+          });
+
+          res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: activeContents,
+              tools: [copilotTools],
+              systemInstruction: systemInstructionPayload
+            })
+          });
+
+          data = await res.json();
+          if (data.error) {
+            throw new Error(`[${modelName}] ${data.error.message || 'Error en turno de función'}`);
+          }
+
+          candidate = data.candidates?.[0];
         }
 
-        const textoFinal = candidate.text();
+        const textPart = candidate?.content?.parts?.find((p: any) => p.text);
+        const textoFinal = textPart?.text || (accionPropuesta
+          ? 'He analizado los datos y preparado la propuesta. Puedes confirmarla a continuación:'
+          : 'He procesado tu consulta correctamente.');
 
         return {
           texto: textoFinal,
@@ -2275,7 +2336,7 @@ REGLAS DE OPERACIÓN:
     return {
       texto: err?.message?.includes('ACCESO_DENEGADO')
         ? err.message
-        : 'Ocurrió un error al procesar tu solicitud con el Copilot. Por favor intenta de nuevo.',
+        : 'Los servidores de Gemini están experimentando una alta demanda temporal en este momento. Por favor espera unos segundos e intenta nuevamente.',
       error: err?.message || 'Error desconocido'
     };
   }

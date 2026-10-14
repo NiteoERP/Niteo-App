@@ -77,6 +77,16 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
     }
   }, [mensajes, abierto, minimizado]);
 
+  // Ajuste dinámico de altura del textarea para evitar recortes de texto y scrollbars molestos
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      const scrollH = textareaRef.current.scrollHeight;
+      const calculatedHeight = Math.min(Math.max(scrollH, 36), 120);
+      textareaRef.current.style.height = `${calculatedHeight}px`;
+    }
+  }, [inputTexto]);
+
   const handleReiniciarChat = () => {
     setMensajes([
       {
@@ -514,7 +524,7 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
 
               {/* Input Area */}
               <div className="p-3.5 bg-neutral-950/90 backdrop-blur-md border-t border-neutral-800/70">
-                <div className="flex items-end gap-2 bg-neutral-900/90 border border-neutral-800 rounded-2xl px-3.5 py-2.5 focus-within:border-indigo-500/80 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all shadow-inner">
+                <div className="flex items-center gap-2 bg-neutral-900/90 border border-neutral-800 rounded-2xl px-3.5 py-2 focus-within:border-indigo-500/80 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all shadow-inner">
                   <textarea
                     ref={textareaRef}
                     value={inputTexto}
@@ -522,12 +532,13 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
                     onKeyDown={handleKeyDown}
                     placeholder="Pregúntale a Copilot sobre tasas, ventas, sedes, recetas, combos..."
                     rows={1}
-                    className="flex-1 bg-transparent border-0 resize-none text-xs sm:text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none max-h-24 overflow-y-auto"
+                    className="flex-1 bg-transparent border-0 resize-none text-xs sm:text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none min-h-[36px] max-h-28 py-2 px-1 leading-relaxed overflow-y-auto hide-scrollbar"
+                    style={{ height: '36px' }}
                   />
                   <button
                     onClick={() => handleEnviar()}
                     disabled={!inputTexto.trim() || cargando}
-                    className="p-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl shadow-md shadow-indigo-600/30 transition-all duration-200 active:scale-95 disabled:opacity-30 disabled:hover:from-indigo-600 disabled:hover:to-purple-600 flex-shrink-0 cursor-pointer"
+                    className="p-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl shadow-md shadow-indigo-600/30 transition-all duration-200 active:scale-95 disabled:opacity-30 disabled:hover:from-indigo-600 disabled:hover:to-purple-600 flex-shrink-0 cursor-pointer self-end mb-0.5"
                     title="Enviar mensaje"
                   >
                     <Send size={15} />
