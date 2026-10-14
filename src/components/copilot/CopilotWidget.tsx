@@ -257,47 +257,51 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
       {/* Ventana de Chat flotante */}
       {abierto && (
         <div
-          className={`fixed bottom-6 right-6 z-50 flex flex-col bg-neutral-900 border border-neutral-800 rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 ${
+          className={`fixed bottom-6 right-6 z-50 flex flex-col bg-neutral-900/95 backdrop-blur-xl border border-neutral-800/90 rounded-2xl sm:rounded-3xl shadow-[0_25px_70px_-15px_rgba(0,0,0,0.9),0_0_40px_rgba(99,102,241,0.18)] overflow-hidden transition-all duration-300 ${
             minimizado 
               ? 'w-80 h-16' 
-              : 'w-[94vw] sm:w-[500px] h-[660px] max-h-[88vh]'
+              : 'w-[94vw] sm:w-[500px] h-[670px] max-h-[88vh]'
           }`}
         >
+          {/* Subtle Top Glowing Line */}
+          <div className="h-[2px] w-full bg-gradient-to-r from-purple-500 via-indigo-500 to-indigo-600" />
+
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3.5 bg-neutral-950 border-b border-neutral-800/80">
+          <div className="flex items-center justify-between px-4 py-3.5 bg-neutral-950/90 backdrop-blur-md border-b border-neutral-800/70">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
-                <Sparkles size={17} />
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/25 ring-1 ring-white/10">
+                <Sparkles size={16} />
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <h3 className="text-sm font-semibold text-neutral-100">Niteo Copilot</h3>
-                  <span className="text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/30 px-1.5 py-0.5 rounded-full font-mono">
+                  <h3 className="text-sm font-semibold text-neutral-100 tracking-tight">Niteo Copilot</h3>
+                  <span className="text-[10px] bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full font-mono flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                     Gemini AI
                   </span>
                 </div>
-                <p className="text-[11px] text-neutral-400">Inteligencia de Datos y Operaciones</p>
+                <p className="text-[11px] text-neutral-400 font-normal">Inteligencia de Datos y Operaciones</p>
               </div>
             </div>
 
             <div className="flex items-center gap-1 text-neutral-400">
               <button
                 onClick={handleReiniciarChat}
-                className="p-1.5 hover:text-amber-300 hover:bg-neutral-800 rounded-lg transition"
+                className="p-1.5 hover:text-amber-300 hover:bg-neutral-800/80 rounded-xl transition"
                 title="Reiniciar conversación y liberar memoria"
               >
                 <RotateCcw size={15} />
               </button>
               <button
                 onClick={() => setMinimizado(!minimizado)}
-                className="p-1.5 hover:text-neutral-200 hover:bg-neutral-800 rounded-lg transition"
+                className="p-1.5 hover:text-neutral-200 hover:bg-neutral-800/80 rounded-xl transition"
                 title={minimizado ? 'Maximizar' : 'Minimizar'}
               >
                 {minimizado ? <Maximize2 size={16} /> : <Minimize2 size={16} />}
               </button>
               <button
                 onClick={() => setAbierto(false)}
-                className="p-1.5 hover:text-neutral-200 hover:bg-neutral-800 rounded-lg transition"
+                className="p-1.5 hover:text-neutral-200 hover:bg-neutral-800/80 rounded-xl transition"
                 title="Cerrar"
               >
                 <X size={16} />
@@ -314,7 +318,7 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
                     key={i}
                     onClick={() => handleEnviar(sug.prompt)}
                     disabled={cargando}
-                    className="flex-shrink-0 text-[11px] bg-neutral-800/80 hover:bg-indigo-950 hover:text-indigo-200 hover:border-indigo-700/50 text-neutral-300 border border-neutral-700/50 px-2.5 py-1 rounded-full transition whitespace-nowrap active:scale-95 disabled:opacity-50"
+                    className="flex-shrink-0 text-[11px] bg-neutral-900/90 hover:bg-indigo-950/60 hover:text-indigo-200 hover:border-indigo-500/50 text-neutral-300 border border-neutral-800 px-3 py-1.5 rounded-full transition-all duration-200 whitespace-nowrap active:scale-95 disabled:opacity-50 shadow-sm"
                   >
                     {sug.label}
                   </button>
@@ -337,8 +341,8 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
                       <div
                         className={`max-w-[90%] rounded-2xl px-4 py-2.5 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap break-words ${
                           esUsuario
-                            ? 'bg-indigo-600 text-white rounded-br-none shadow-md'
-                            : 'bg-neutral-800/95 text-neutral-200 border border-neutral-700/60 rounded-bl-none shadow-sm'
+                            ? 'bg-gradient-to-r from-indigo-600 via-indigo-600 to-purple-600 text-white rounded-br-sm shadow-md shadow-indigo-950/40 border border-indigo-400/20'
+                            : 'bg-neutral-800/90 backdrop-blur-sm text-neutral-100 border border-neutral-700/60 rounded-bl-sm shadow-sm'
                         }`}
                       >
                         {m.texto}
@@ -346,7 +350,7 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
 
                       {/* Tarjeta de Acción Interactiva con Confirmación Humana */}
                       {m.accionPropuesta && !m.accionEjecutada && (
-                        <div className="mt-2.5 max-w-[92%] p-3.5 bg-neutral-950 border border-amber-500/50 rounded-xl space-y-2.5 shadow-lg">
+                        <div className="mt-3 max-w-[95%] p-4 bg-gradient-to-b from-neutral-950/95 to-neutral-900/95 border border-amber-500/40 rounded-2xl space-y-3 shadow-xl shadow-black/60 backdrop-blur-md">
                           <div className="flex items-center gap-2 text-amber-400 font-semibold text-xs">
                             {m.accionPropuesta.tipo === 'ejecutar_despacho' && <Truck size={15} />}
                             {m.accionPropuesta.tipo === 'fusionar_insumos' && <Combine size={15} />}
@@ -467,16 +471,16 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
                             <button
                               onClick={() => handleEjecutarAccion(m.id, m.accionPropuesta)}
                               disabled={ejecutandoAccion === m.id}
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-semibold transition disabled:opacity-50"
+                              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 rounded-xl text-xs font-bold transition-all duration-200 active:scale-95 shadow-lg shadow-amber-500/20 disabled:opacity-50 cursor-pointer"
                             >
                               {ejecutandoAccion === m.id ? (
                                 <>
-                                  <RefreshCw size={12} className="animate-spin" />
+                                  <RefreshCw size={13} className="animate-spin" />
                                   <span>Procesando...</span>
                                 </>
                               ) : (
                                 <>
-                                  <CheckCircle2 size={13} />
+                                  <CheckCircle2 size={14} className="stroke-[2.5]" />
                                   <span>
                                     {m.accionPropuesta.tipo === 'guardar_receta' ? 'Guardar Receta en Catálogo' :
                                      m.accionPropuesta.tipo === 'crear_combo' ? 'Confirmar y Crear Combo' :
@@ -495,11 +499,11 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
                 {/* Indicador de carga */}
                 {cargando && (
                   <div className="flex items-start gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-indigo-950 border border-indigo-700/50 flex items-center justify-center text-indigo-400 flex-shrink-0 animate-pulse">
-                      <Bot size={15} />
+                    <div className="w-8 h-8 rounded-xl bg-indigo-950/80 border border-indigo-700/50 flex items-center justify-center text-indigo-400 flex-shrink-0 shadow-md shadow-indigo-950 animate-pulse">
+                      <Bot size={16} />
                     </div>
-                    <div className="p-3 bg-neutral-800/80 border border-neutral-700/50 rounded-2xl rounded-bl-none text-xs text-neutral-400 flex items-center gap-2">
-                      <RefreshCw size={13} className="animate-spin text-purple-400" />
+                    <div className="p-3 bg-neutral-800/80 backdrop-blur-sm border border-neutral-700/50 rounded-2xl rounded-bl-sm text-xs text-neutral-300 flex items-center gap-2 shadow-sm">
+                      <RefreshCw size={13} className="animate-spin text-indigo-400" />
                       <span>Consultando datos y preparando respuesta con Gemini...</span>
                     </div>
                   </div>
@@ -509,21 +513,21 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
               </div>
 
               {/* Input Area */}
-              <div className="p-3 bg-neutral-950 border-t border-neutral-800/80">
-                <div className="flex items-end gap-2 bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 focus-within:border-indigo-500/80 transition">
+              <div className="p-3.5 bg-neutral-950/90 backdrop-blur-md border-t border-neutral-800/70">
+                <div className="flex items-end gap-2 bg-neutral-900/90 border border-neutral-800 rounded-2xl px-3.5 py-2.5 focus-within:border-indigo-500/80 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all shadow-inner">
                   <textarea
                     ref={textareaRef}
                     value={inputTexto}
                     onChange={e => setInputTexto(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Pregúntale a Copilot sobre tasas, ventas, sedes, despachos..."
+                    placeholder="Pregúntale a Copilot sobre tasas, ventas, sedes, recetas, combos..."
                     rows={1}
                     className="flex-1 bg-transparent border-0 resize-none text-xs sm:text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none max-h-24 overflow-y-auto"
                   />
                   <button
                     onClick={() => handleEnviar()}
                     disabled={!inputTexto.trim() || cargando}
-                    className="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition disabled:opacity-40 disabled:hover:bg-indigo-600 flex-shrink-0"
+                    className="p-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl shadow-md shadow-indigo-600/30 transition-all duration-200 active:scale-95 disabled:opacity-30 disabled:hover:from-indigo-600 disabled:hover:to-purple-600 flex-shrink-0 cursor-pointer"
                     title="Enviar mensaje"
                   >
                     <Send size={15} />
@@ -531,7 +535,10 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
                 </div>
                 <div className="flex items-center justify-between mt-2 px-1 text-[10px] text-neutral-500">
                   <span>Enter para enviar • Shift+Enter para salto de línea</span>
-                  <span>Protegido por permisos y RLS</span>
+                  <span className="flex items-center gap-1 font-mono">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    Seguridad RLS & Roles
+                  </span>
                 </div>
               </div>
             </>
