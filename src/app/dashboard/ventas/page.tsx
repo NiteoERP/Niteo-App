@@ -84,9 +84,9 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
           </p>
 
         </div>
-        {perfil?.rol === "MASTER" && activeSedeId && tab !== 'terminal' && (
+        {perfil?.rol === "MASTER" && tab !== 'terminal' && (
           <div className="mt-4 md:mt-0">
-            <SedeSelector sedes={sedes || []} activeSedeId={activeSedeId} />
+            <SedeSelector sedes={sedes || []} activeSedeId={activeSedeId || 'ALL'} />
           </div>
         )}
 

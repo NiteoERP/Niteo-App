@@ -4,7 +4,7 @@ import { GoogleGenerativeAI, SchemaType, FunctionDeclaration } from '@google/gen
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
-import { DEFAULT_TIMEZONE, getTimezoneOffsetString } from '@/utils/date-utils';
+import { DEFAULT_TIMEZONE, getTimezoneOffsetString, toLocalDateKey, getLocalDayRange } from '@/utils/date-utils';
 import { getTasaBcvForDateAction } from '@/actions/config-actions';
 import { mergeInsumos } from '@/app/dashboard/inventario/actions';
 import { procesarDespachoEnServidor } from '@/actions/despachos-actions';
@@ -55,7 +55,8 @@ async function getCopilotAuthContext(requestedSedeId?: string) {
   const { data: sedes } = await supabase
     .from('sedes')
     .select('id, nombre_sede')
-    .eq('empresa_id', perfil.empresa_id);
+    .eq('empresa_id', perfil.empresa_id)
+    .order('nombre_sede', { ascending: true });
 
   return {
     supabase,
@@ -91,16 +92,15 @@ function calcularRangoFechas(periodo: string): { inicio: string; fin: string; de
 
   switch (periodo) {
     case 'hoy': {
-      inicio.setHours(0, 0, 0, 0);
-      fin.setHours(23, 59, 59, 999);
-      return { inicio: inicio.toISOString(), fin: fin.toISOString(), descripcion: 'Hoy' };
+      const hoyKey = toLocalDateKey(now, DEFAULT_TIMEZONE);
+      const range = getLocalDayRange(hoyKey, DEFAULT_TIMEZONE);
+      return { inicio: range.start, fin: range.end, descripcion: 'Hoy' };
     }
     case 'ayer': {
-      inicio.setDate(inicio.getDate() - 1);
-      inicio.setHours(0, 0, 0, 0);
-      const finAyer = new Date(inicio);
-      finAyer.setHours(23, 59, 59, 999);
-      return { inicio: inicio.toISOString(), fin: finAyer.toISOString(), descripcion: 'Ayer' };
+      const ayerDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const ayerKey = toLocalDateKey(ayerDate, DEFAULT_TIMEZONE);
+      const range = getLocalDayRange(ayerKey, DEFAULT_TIMEZONE);
+      return { inicio: range.start, fin: range.end, descripcion: 'Ayer' };
     }
     case 'esta_semana': {
       const day = now.getDay();
@@ -230,24 +230,33 @@ function resolverSede(
 
   const cleanTerm = normalizarTexto(termino);
 
-  if (cleanTerm === '1' || cleanTerm.includes('primera') || cleanTerm === 'sede 1' || cleanTerm === 'sucursal 1' || cleanTerm === 'sde 1' || cleanTerm === 'sed 1') {
-    return sedes[0] || null;
-  }
-  if (cleanTerm === '2' || cleanTerm.includes('segunda') || cleanTerm === 'sede 2' || cleanTerm === 'sucursal 2' || cleanTerm === 'sde 2' || cleanTerm === 'sed 2') {
-    return sedes[1] || null;
-  }
-  if (cleanTerm === '3' || cleanTerm.includes('tercera') || cleanTerm === 'sede 3' || cleanTerm === 'sucursal 3') {
-    return sedes[2] || null;
-  }
+  // 1. Coincidencia directa por texto completo en nombre_sede
+  const directa = sedes.find(s => {
+    const sNorm = normalizarTexto(s.nombre_sede);
+    return sNorm === cleanTerm || sNorm.includes(cleanTerm) || cleanTerm.includes(sNorm);
+  });
+  if (directa) return directa;
 
+  // 2. Si el término contiene un número de sede ("sede 2", "2", "sucursal 2")
   const matchNum = cleanTerm.match(/(?:sede|sucursal|caja|tienda|pos|sde|sed)?\s*(\d+)/i);
   if (matchNum && matchNum[1]) {
-    const idx = parseInt(matchNum[1], 10) - 1;
+    const numBuscado = matchNum[1];
+    // Prioridad A: Buscar una sede cuyo nombre contenga ese número explícito (ej: "Sede 2" o "1. ⭐ Sede AV 32")
+    const porNombreConNumero = sedes.find(s => {
+      const sNorm = normalizarTexto(s.nombre_sede);
+      const matchSedeNum = sNorm.match(/(?:sede|sucursal|caja|tienda|pos)?\s*(\d+)/i) || sNorm.match(/\b(\d+)\b/);
+      return matchSedeNum && matchSedeNum[1] === numBuscado;
+    });
+    if (porNombreConNumero) return porNombreConNumero;
+
+    // Prioridad B: Por índice ordinal
+    const idx = parseInt(numBuscado, 10) - 1;
     if (idx >= 0 && idx < sedes.length) {
       return sedes[idx];
     }
   }
 
+  // 3. Coincidencia por palabras clave como "principal", "matriz", "central"
   if (cleanTerm.includes('principal') || cleanTerm.includes('matriz') || cleanTerm.includes('central') || cleanTerm.includes('principa') || cleanTerm.includes('pricipal')) {
     const principal = sedes.find(s => {
       const sNorm = normalizarTexto(s.nombre_sede);
@@ -257,9 +266,9 @@ function resolverSede(
     return sedes[0];
   }
 
-  const directa = sedes.find(s => esCoincidenciaAproximada(s.nombre_sede, cleanTerm));
-
-  return directa || null;
+  // 4. Coincidencia difusa Levenshtein
+  const difusa = sedes.find(s => esCoincidenciaAproximada(s.nombre_sede, cleanTerm));
+  return difusa || null;
 }
 
 // ==========================================
@@ -293,10 +302,8 @@ async function toolConsultarBalanceDia(
   args: { fecha: string; turno?: 'todo_el_dia' | 'cenas_nocturno' | 'almuerzo'; sede_nombre?: string }
 ) {
   const { supabase, empresaId, sedeId, sedes } = ctx;
-  const fechaStr = args.fecha || new Date().toISOString().substring(0, 10);
-  const tzOffset = getTimezoneOffsetString(DEFAULT_TIMEZONE);
-  const inicioDia = `${fechaStr}T00:00:00${tzOffset}`;
-  const finDia = `${fechaStr}T23:59:59.999${tzOffset}`;
+  const fechaStr = args.fecha || toLocalDateKey(new Date(), DEFAULT_TIMEZONE);
+  const { start: inicioDia, end: finDia } = getLocalDayRange(fechaStr, DEFAULT_TIMEZONE);
 
   let targetSedeId = sedeId;
   let sedeIdentificada = 'General / Todas las sedes';
@@ -338,10 +345,10 @@ async function toolConsultarBalanceDia(
     totalVentasUsd += monto;
     countFacturas++;
 
-    // Verificar si es turno noche / cena
+    // Verificar si es turno noche / cena en horario local de Venezuela (>= 18:00 o <= 04:00)
     const fDate = new Date(fac.fecha_venta);
-    const hour = fDate.getHours();
-    if (hour >= 18 || hour <= 4) {
+    const hourLocal = parseInt(new Intl.DateTimeFormat('en-US', { timeZone: DEFAULT_TIMEZONE, hour: 'numeric', hour12: false }).format(fDate), 10);
+    if (hourLocal >= 18 || hourLocal <= 4) {
       totalCenasUsd += monto;
       countCenas++;
     }

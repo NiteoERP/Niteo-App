@@ -45,8 +45,13 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
     
     // Realtime changes for new sales
     const supabase = createClient();
-    const channel = supabase.channel('realtime_ventas_historial')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'ventas_facturas', filter: `sede_id=eq.${sedeId}` }, () => {
+    const filterConfig: any = { event: '*', schema: 'public', table: 'ventas_facturas' };
+    if (sedeId && sedeId !== 'ALL') {
+      filterConfig.filter = `sede_id=eq.${sedeId}`;
+    }
+
+    const channel = supabase.channel(`realtime_ventas_historial_${sedeId || 'all'}`)
+      .on('postgres_changes', filterConfig, () => {
         getHistorialVentasCompleto(sedeId, fechaFiltro || undefined, page, 100, activeTz).then(data => setVentas(data));
         getResumenVerificacionMes(sedeId, format(calMonth, 'yyyy-MM'), activeTz).then(setMonthSummary);
       })

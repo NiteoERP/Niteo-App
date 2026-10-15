@@ -18,6 +18,7 @@ import { format, subDays, startOfWeek, endOfWeek, startOfDay, endOfDay,
 // import autoTable from 'jspdf-autotable';
 import NiteoDateRangePicker from '@/components/ui/NiteoDateRangePicker';
 import InformeComprasNetas from '@/components/informes/InformeComprasNetas';
+import CuentasPorCobrarView, { groupCuentasPorCobrarData } from '@/components/informes/CuentasPorCobrarView';
 
 
 // ─── Tipos ──────────────────────────────────────────────────────────────────
@@ -329,6 +330,89 @@ export default function InformesPage() {
   const exportExcel = async () => {
     if (!reportData || reportData.length === 0) return;
     const XLSX = await import('xlsx');
+
+    if (selectedReport?.id === 'cuentas_por_cobrar') {
+      const { groups, grandTotal, grandTotalPagado, grandTotalImpago, totalDocumentos } = groupCuentasPorCobrarData(reportData);
+      const rows: any[] = [];
+      rows.push({
+        'Número de documento': 'REPORTE DE CUENTAS POR COBRAR - NITEO ERP',
+        'Fecha': '',
+        'Vencimiento': '',
+        'Total': '',
+        'Total pagado': '',
+        'Total impago': '',
+        'Estado': '',
+      });
+      rows.push({
+        'Número de documento': `Período: ${format(sheetStartDate, 'dd/MM/yyyy')} - ${format(sheetEndDate, 'dd/MM/yyyy')}`,
+        'Fecha': '',
+        'Vencimiento': '',
+        'Total': '',
+        'Total pagado': '',
+        'Total impago': '',
+        'Estado': '',
+      });
+      rows.push({});
+
+      for (const g of groups) {
+        rows.push({
+          'Número de documento': `Customer: ${g.cliente}${g.rif && g.rif !== '-' ? ` (${g.rif})` : ''}`,
+          'Fecha': '',
+          'Vencimiento': '',
+          'Total': '',
+          'Total pagado': '',
+          'Total impago': '',
+          'Estado': '',
+        });
+        for (const d of g.documentos) {
+          rows.push({
+            'Número de documento': d.numero_documento,
+            'Fecha': d.fecha,
+            'Vencimiento': d.vencimiento,
+            'Total': d.total,
+            'Total pagado': d.total_pagado,
+            'Total impago': d.total_impago,
+            'Estado': d.estado,
+          });
+        }
+        rows.push({
+          'Número de documento': `Subtotal ${g.cliente}`,
+          'Fecha': '',
+          'Vencimiento': '',
+          'Total': g.total,
+          'Total pagado': g.total_pagado,
+          'Total impago': g.total_impago,
+          'Estado': g.total_impago > 0 ? 'POR COBRAR' : 'PAGADO',
+        });
+        rows.push({});
+      }
+
+      rows.push({
+        'Número de documento': `GRAN TOTAL (${totalDocumentos} documentos)`,
+        'Fecha': '',
+        'Vencimiento': '',
+        'Total': grandTotal,
+        'Total pagado': grandTotalPagado,
+        'Total impago': grandTotalImpago,
+        'Estado': '',
+      });
+
+      const ws = XLSX.utils.json_to_sheet(rows);
+      ws['!cols'] = [
+        { width: 34 },
+        { width: 14 },
+        { width: 14 },
+        { width: 14 },
+        { width: 14 },
+        { width: 16 },
+        { width: 14 },
+      ];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Cuentas_por_Cobrar');
+      XLSX.writeFile(wb, `Cuentas_Por_Cobrar_${format(new Date(), 'yyyyMMdd')}.xlsx`);
+      return;
+    }
+
     const keys = Array.from(new Set(reportData.flatMap(r => Object.keys(r)))).filter(k => k !== 'combo_desglose');
     const firstKeyCandidates = ['Fecha', 'FECHA', 'fecha', 'numero_orden', 'codigo', 'cliente', 'operador', 'OPERADOR', 'categoria', 'nombre_cajero', 'nombre_cliente'];
     const foundFirstKey = firstKeyCandidates.find(k => keys.includes(k));
@@ -381,6 +465,89 @@ export default function InformesPage() {
     doc.setTextColor(100, 100, 100);
     doc.text(`Período: ${format(sheetStartDate, 'dd/MM/yyyy')} - ${format(sheetEndDate, 'dd/MM/yyyy')}`, 14, 36);
     doc.text(`Generado el: ${new Date().toLocaleString()}`, 14, 42);
+
+    if (selectedReport?.id === 'cuentas_por_cobrar') {
+      const { groups, grandTotal, grandTotalPagado, grandTotalImpago, totalDocumentos } = groupCuentasPorCobrarData(reportData);
+      
+      let currentY = 50;
+
+      for (const g of groups) {
+        if (currentY > 250) {
+          doc.addPage();
+          currentY = 20;
+        }
+
+        const head: any[] = [
+          [
+            { content: `Customer: ${g.cliente}${g.rif && g.rif !== '-' ? ` (${g.rif})` : ''}`, colSpan: 6, styles: { fillColor: [240, 240, 245], textColor: [15, 23, 42], fontStyle: 'bold', fontSize: 9 } }
+          ],
+          ['Número de documento', 'Fecha', 'Vencimiento', 'Total', 'Total pagado', 'Total impago']
+        ];
+
+        const body: any[] = g.documentos.map(d => [
+          d.numero_documento,
+          d.fecha,
+          d.vencimiento,
+          d.total.toFixed(2),
+          d.total_pagado.toFixed(2),
+          d.total_impago.toFixed(2),
+        ]);
+
+        body.push([
+          { content: `Subtotal ${g.cliente}:`, colSpan: 3, styles: { halign: 'right', fontStyle: 'bold', textColor: [100, 100, 100] } },
+          { content: g.total.toFixed(2), styles: { halign: 'right', fontStyle: 'bold' } },
+          { content: g.total_pagado.toFixed(2), styles: { halign: 'right', fontStyle: 'bold' } },
+          { content: g.total_impago.toFixed(2), styles: { halign: 'right', fontStyle: 'bold', fillColor: [230, 230, 235], textColor: [0, 0, 0] } },
+        ]);
+
+        autoTable(doc, {
+          startY: currentY,
+          head: head,
+          body: body,
+          theme: 'grid',
+          headStyles: { fillColor: [30, 41, 59], textColor: 255, fontSize: 8 },
+          styles: { fontSize: 8, cellPadding: 2 },
+          columnStyles: {
+            0: { cellWidth: 'auto' },
+            1: { halign: 'center' },
+            2: { halign: 'center' },
+            3: { halign: 'right' },
+            4: { halign: 'right' },
+            5: { halign: 'right' },
+          },
+          margin: { left: 14, right: 14 },
+        });
+
+        currentY = (doc as any).lastAutoTable.finalY + 8;
+      }
+
+      if (currentY > 230) {
+        doc.addPage();
+        currentY = 20;
+      }
+
+      autoTable(doc, {
+        startY: currentY,
+        head: [['RESUMEN GENERAL DE CUENTAS POR COBRAR', 'VALOR']],
+        body: [
+          ['Total Documentos a Crédito:', `${totalDocumentos}`],
+          ['Total Facturado a Crédito:', `$ ${grandTotal.toFixed(2)}`],
+          ['Total Cobrado / Pagado:', `$ ${grandTotalPagado.toFixed(2)}`],
+          ['TOTAL IMPAGO (DEUDA GLOBAL):', `$ ${grandTotalImpago.toFixed(2)}`],
+        ],
+        theme: 'grid',
+        headStyles: { fillColor: [15, 23, 42], textColor: 255, fontStyle: 'bold' },
+        styles: { fontSize: 9, cellPadding: 2.5 },
+        columnStyles: {
+          0: { fontStyle: 'bold' },
+          1: { halign: 'right', fontStyle: 'bold' },
+        },
+        margin: { left: 14, right: 14 },
+      });
+
+      doc.save(`Cuentas_Por_Cobrar_${format(new Date(), 'yyyyMMdd')}.pdf`);
+      return;
+    }
 
     const keys = Array.from(new Set(reportData.flatMap(r => Object.keys(r)))).filter(k => k !== 'combo_desglose');
     const firstKeyCandidates = ['Fecha', 'FECHA', 'fecha', 'numero_orden', 'codigo', 'cliente', 'operador', 'OPERADOR', 'categoria', 'nombre_cajero', 'nombre_cliente'];
@@ -787,42 +954,44 @@ export default function InformesPage() {
               </button>
 
               {/* — Mini gráfico placeholder — */}
-              <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-4 space-y-3">
-                <p className="text-xs font-bold text-neutral-500 uppercase tracking-wider">Vista Previa</p>
-                {!reportData && !isLoading && (
-                  <div className="h-32 flex flex-col items-center justify-center text-neutral-700 gap-2">
-                    <BarChart2 size={32} className="opacity-30" />
-                    <p className="text-xs">Genera el reporte para ver el resumen</p>
-                  </div>
-                )}
-                {isLoading && (
-                  <div className="h-32 flex items-center justify-center">
-                    <Loader2 size={24} className="animate-spin text-indigo-400" />
-                  </div>
-                )}
-                {reportData && !isLoading && (
-                  <>
-                    {/* Gráfico de barras simulado con las primeras columnas numéricas */}
-                    
-                  </>
-                )}
-              </div>
+              {selectedReport.id !== 'cuentas_por_cobrar' && (
+                <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-4 space-y-3">
+                  <p className="text-xs font-bold text-neutral-500 uppercase tracking-wider">Vista Previa</p>
+                  {!reportData && !isLoading && (
+                    <div className="h-32 flex flex-col items-center justify-center text-neutral-700 gap-2">
+                      <BarChart2 size={32} className="opacity-30" />
+                      <p className="text-xs">Genera el reporte para ver el resumen</p>
+                    </div>
+                  )}
+                  {isLoading && (
+                    <div className="h-32 flex items-center justify-center">
+                      <Loader2 size={24} className="animate-spin text-indigo-400" />
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* — Resultados en tarjetas — */}
               {reportData && !isLoading && (
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-bold text-neutral-500 uppercase tracking-wider">
-                      {reportData.length} resultado{reportData.length !== 1 ? 's' : ''}
-                    </p>
-                    <button
-                      onClick={exportExcel}
-                      className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-medium"
-                    >
-                      <FileSpreadsheet size={12} /> Excel
-                    </button>
-                  </div>
-                  <ResultTable data={reportData} />
+                  {selectedReport.id !== 'cuentas_por_cobrar' && (
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold text-neutral-500 uppercase tracking-wider">
+                        {reportData.length} resultado{reportData.length !== 1 ? 's' : ''}
+                      </p>
+                      <button
+                        onClick={exportExcel}
+                        className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-medium"
+                      >
+                        <FileSpreadsheet size={12} /> Excel
+                      </button>
+                    </div>
+                  )}
+                  {selectedReport.id === 'cuentas_por_cobrar' ? (
+                    <CuentasPorCobrarView data={reportData} isPrintView={false} onExportExcel={exportExcel} />
+                  ) : (
+                    <ResultTable data={reportData} />
+                  )}
                 </div>
               )}
 
@@ -943,7 +1112,9 @@ export default function InformesPage() {
                 </div>
               </div>
 
-              {(() => {
+              {selectedReport?.id === 'cuentas_por_cobrar' ? (
+                <CuentasPorCobrarView data={reportData} isPrintView={true} onExportExcel={exportExcel} />
+              ) : (() => {
                 const keys = Array.from(new Set(reportData.flatMap(r => Object.keys(r)))).filter(k => k !== 'combo_desglose');
                 const firstKeyCandidates = ['Fecha', 'FECHA', 'fecha', 'Día', 'Dia', 'DIA', 'numero_orden', 'codigo', 'cliente', 'operador', 'OPERADOR', 'categoria', 'nombre_cajero', 'nombre_cliente'];
                 const foundFirstKey = firstKeyCandidates.find(k => keys.includes(k));
@@ -1203,23 +1374,30 @@ function DesktopReportPanel({
           {reportData && !isLoading && (
             <>
               {/* Mini gráfico */}
-              <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-sm font-bold text-neutral-300">Resumen Visual</p>
-                  <button onClick={onExport}
-                    className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-medium bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20 transition-colors">
-                    <FileSpreadsheet size={12} /> Exportar Excel
-                  </button>
+              {report.id !== 'cuentas_por_cobrar' && (
+                <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-sm font-bold text-neutral-300">Resumen Visual</p>
+                    <button onClick={onExport}
+                      className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-medium bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20 transition-colors">
+                      <FileSpreadsheet size={12} /> Exportar Excel
+                    </button>
+                  </div>
                 </div>
-                
-              </div>
+              )}
 
               {/* Tarjetas de resultados */}
               <div>
-                <p className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-3">
-                  {reportData.length} resultado{reportData.length !== 1 ? 's' : ''}
-                </p>
-                <ResultTable data={reportData} />
+                {report.id !== 'cuentas_por_cobrar' && (
+                  <p className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-3">
+                    {reportData.length} resultado{reportData.length !== 1 ? 's' : ''}
+                  </p>
+                )}
+                {report.id === 'cuentas_por_cobrar' ? (
+                  <CuentasPorCobrarView data={reportData} isPrintView={false} onExportExcel={onExport} />
+                ) : (
+                  <ResultTable data={reportData} />
+                )}
               </div>
             </>
           )}

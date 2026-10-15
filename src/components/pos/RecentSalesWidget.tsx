@@ -37,7 +37,10 @@ export default function RecentSalesWidget() {
           const initial = await getVentasRecientes(profile.sede_id);
           setSales(initial.slice(0, 5));
         } else {
-          // If no sede (e.g. Admin), optionally fetch all sales or leave empty
+          // Si el usuario es MASTER / Admin sin sede fija, consultar todas las sedes
+          setSedeId('ALL');
+          const initial = await getVentasRecientes('ALL');
+          setSales(initial.slice(0, 5));
         }
       } catch (err) {
         console.error("Error loading recent sales:", err);
@@ -49,25 +52,35 @@ export default function RecentSalesWidget() {
   }, [supabase]);
 
   useEffect(() => {
-    if (!sedeId) return;
+    const channelConfig: any = {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'ventas_facturas'
+    };
+    if (sedeId && sedeId !== 'ALL') {
+      channelConfig.filter = `sede_id=eq.${sedeId}`;
+    }
 
     const channel = supabase
       .channel('realtime-widget-ventas')
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'ventas_facturas', filter: `id_sede=eq.${sedeId}` },
+        channelConfig,
         (payload: any) => {
           const newVentaRaw = payload.new;
           
           const newVenta: VentaPOS = {
-            id_factura: newVentaRaw.id_factura,
+            id_factura: newVentaRaw.id,
             id_pos: newVentaRaw.id_pos,
             numero_documento: newVentaRaw.numero_documento,
             fecha_venta: newVentaRaw.fecha_venta,
             total: newVentaRaw.total,
             descuento: newVentaRaw.descuento,
             tipo_documento: newVentaRaw.tipo_documento,
-            esta_pagado: newVentaRaw.esta_pagado,
+            esta_pagado: newVentaRaw.estado_pago === 1,
+            cliente_nombre: newVentaRaw.cliente_nombre,
+            cajero_nombre: newVentaRaw.cajero_nombre,
+            mesero_nombre: newVentaRaw.mesero_nombre,
             detalles: [],
           };
 

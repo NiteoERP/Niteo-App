@@ -47,10 +47,17 @@ export interface ProductoPOS {
   precios_dinamicos?: Record<string, number>;
 }
 
-export async function getVentasRecientes(sedeId: string): Promise<VentaPOS[]> {
+export async function getVentasRecientes(sedeId?: string): Promise<VentaPOS[]> {
   const supabase = await createClient();
 
-  const { data: ventas, error } = await supabase
+  const { data: { user } } = await supabase.auth.getUser();
+  let empresaId: string | undefined;
+  if (user) {
+    const { data: perf } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
+    empresaId = perf?.empresa_id;
+  }
+
+  let query = supabase
     .from('ventas_facturas')
     .select(`
       *,
@@ -70,11 +77,19 @@ export async function getVentasRecientes(sedeId: string): Promise<VentaPOS[]> {
         )
       )
     `)
-    .eq('sede_id', sedeId)
     .neq('numero_documento', 'TEST')
     .order('fecha_venta', { ascending: false })
-    .limit(50);
+    .limit(100);
 
+  if (empresaId) {
+    query = query.eq('empresa_id', empresaId);
+  }
+
+  if (sedeId && sedeId !== 'ALL') {
+    query = query.eq('sede_id', sedeId);
+  }
+
+  const { data: ventas, error } = await query;
   if (error) {
     console.error('Error fetching ventas recientes:', error);
     return [];
@@ -195,14 +210,25 @@ export async function getHistorialVentasCompleto(
 ): Promise<HistorialVentaPOS[]> {
   const supabase = await createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  let empresaId: string | undefined;
+  if (user) {
+    const { data: perf } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
+    empresaId = perf?.empresa_id;
+  }
+
   let timeZone = clientTimeZone;
   if (!timeZone) {
-    const { data: sede } = await supabase
-      .from('sedes')
-      .select('empresas(zona_horaria)')
-      .eq('id', sedeId)
-      .maybeSingle();
-    timeZone = (sede as any)?.empresas?.zona_horaria || DEFAULT_TIMEZONE;
+    if (sedeId && sedeId !== 'ALL') {
+      const { data: sede } = await supabase
+        .from('sedes')
+        .select('empresas(zona_horaria)')
+        .eq('id', sedeId)
+        .maybeSingle();
+      timeZone = (sede as any)?.empresas?.zona_horaria || DEFAULT_TIMEZONE;
+    } else {
+      timeZone = DEFAULT_TIMEZONE;
+    }
   }
 
   let query = supabase
@@ -216,9 +242,16 @@ export async function getHistorialVentasCompleto(
         productos ( nombre, codigo_barras )
       )
     `)
-    .eq('sede_id', sedeId)
     .neq('numero_documento', 'TEST')
     .order('fecha_venta', { ascending: false });
+
+  if (empresaId) {
+    query = query.eq('empresa_id', empresaId);
+  }
+
+  if (sedeId && sedeId !== 'ALL') {
+    query = query.eq('sede_id', sedeId);
+  }
 
   if (fechaFiltro) {
     const range = getLocalDayRange(fechaFiltro, timeZone);
@@ -281,24 +314,33 @@ export async function getResumenVerificacionMes(
 
   let timeZone = clientTimeZone;
   if (!timeZone) {
-    const { data: sede } = await supabase
-      .from('sedes')
-      .select('empresas(zona_horaria)')
-      .eq('id', sedeId)
-      .maybeSingle();
-    timeZone = (sede as any)?.empresas?.zona_horaria || DEFAULT_TIMEZONE;
+    if (sedeId && sedeId !== 'ALL') {
+      const { data: sede } = await supabase
+        .from('sedes')
+        .select('empresas(zona_horaria)')
+        .eq('id', sedeId)
+        .maybeSingle();
+      timeZone = (sede as any)?.empresas?.zona_horaria || DEFAULT_TIMEZONE;
+    } else {
+      timeZone = DEFAULT_TIMEZONE;
+    }
   }
 
   const range = getLocalDayRange(yearMonth, timeZone);
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('ventas_facturas')
     .select('fecha_venta, verificado')
-    .eq('sede_id', sedeId)
     .neq('numero_documento', 'TEST')
     .eq('estado_activo', true)
     .gte('fecha_venta', range.start)
     .lte('fecha_venta', range.end);
+
+  if (sedeId && sedeId !== 'ALL') {
+    query = query.eq('sede_id', sedeId);
+  }
+
+  const { data, error } = await query;
 
   if (error || !data) {
     console.error('Error fetching monthly verification summary:', error);

@@ -264,6 +264,7 @@ export async function generateReport(
             id,
             numero_documento,
             fecha_venta,
+            fecha_vencimiento,
             total,
             saldo_pendiente,
             estado_pago,
@@ -291,7 +292,7 @@ export async function generateReport(
           .gte('fecha_venta', p_fecha_inicio)
           .lte('fecha_venta', p_fecha_fin)
           .eq('estado_activo', true)
-          .order('fecha_venta', { ascending: false })
+          .order('fecha_venta', { ascending: true })
           .range(from, from + batchSize - 1);
 
         if (p_sede_id) {
@@ -349,11 +350,13 @@ export async function generateReport(
           estado = montoPagado > 0.001 ? 'PARCIAL' : 'PENDIENTE';
         }
 
-        const clienteNom = f.clientes?.nombre || f.cliente_nombre || 'Cliente Eventual';
+        const clienteNom = (f.clientes?.nombre || f.cliente_nombre || 'Cliente Eventual').trim();
         const rif = f.clientes?.rif_cedula || '-';
         const sedeNom = f.sedes?.nombre_sede || '-';
         const fDate = new Date(f.fecha_venta);
-        const fechaStr = format(fDate, 'dd/MM/yyyy HH:mm');
+        const fechaStr = !isNaN(fDate.getTime()) ? format(fDate, 'dd/MM/yyyy') : '-';
+        const vDate = f.fecha_vencimiento ? new Date(f.fecha_vencimiento) : fDate;
+        const vencStr = !isNaN(vDate.getTime()) ? format(vDate, 'dd/MM/yyyy') : fechaStr;
 
         const totVenta = Number(Number(f.total || 0).toFixed(2));
         const mCred = Number(montoCredito.toFixed(2));
@@ -366,31 +369,51 @@ export async function generateReport(
         sumSaldo += mSaldo;
 
         rows.push({
-          Fecha: fechaStr,
-          'N° Documento': f.numero_documento || '-',
-          Cliente: clienteNom,
+          'Número de documento': f.numero_documento || '-',
+          'Fecha': fechaStr,
+          'Vencimiento': vencStr,
+          'Total': totVenta,
+          'Total pagado': mPag,
+          'Total impago': mSaldo,
+          'Cliente': clienteNom,
           'Cédula / RIF': rif,
-          'Total Factura': totVenta,
-          'Monto Crédito': mCred,
-          'Monto Pagado': mPag,
-          'Saldo Pendiente': mSaldo,
-          Estado: estado,
-          Sucursal: sedeNom,
+          'Estado': estado,
+          'Sucursal': sedeNom,
+          numero_documento: f.numero_documento || '-',
+          fecha: fechaStr,
+          vencimiento: vencStr,
+          total: totVenta,
+          total_pagado: mPag,
+          total_impago: mSaldo,
+          cliente: clienteNom,
+          rif: rif,
+          estado: estado,
+          sucursal: sedeNom,
         });
       }
 
       if (rows.length > 0) {
         rows.push({
-          Fecha: 'TOTALES',
-          'N° Documento': `${rows.length} créditos`,
-          Cliente: '',
+          'Número de documento': `${rows.length} créditos`,
+          'Fecha': 'TOTALES',
+          'Vencimiento': '',
+          'Total': Number(sumTotalVenta.toFixed(2)),
+          'Total pagado': Number(sumPagado.toFixed(2)),
+          'Total impago': Number(sumSaldo.toFixed(2)),
+          'Cliente': '',
           'Cédula / RIF': '',
-          'Total Factura': Number(sumTotalVenta.toFixed(2)),
-          'Monto Crédito': Number(sumCredito.toFixed(2)),
-          'Monto Pagado': Number(sumPagado.toFixed(2)),
-          'Saldo Pendiente': Number(sumSaldo.toFixed(2)),
-          Estado: '',
-          Sucursal: '',
+          'Estado': '',
+          'Sucursal': '',
+          numero_documento: `${rows.length} créditos`,
+          fecha: 'TOTALES',
+          vencimiento: '',
+          total: Number(sumTotalVenta.toFixed(2)),
+          total_pagado: Number(sumPagado.toFixed(2)),
+          total_impago: Number(sumSaldo.toFixed(2)),
+          cliente: '',
+          rif: '',
+          estado: '',
+          sucursal: '',
         });
       }
 

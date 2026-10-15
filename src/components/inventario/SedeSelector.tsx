@@ -29,10 +29,11 @@ export default function SedeSelector({ sedes, activeSedeId }: { sedes: any[], ac
       <Store size={16} className="text-indigo-400" />
       <span className="text-sm font-medium text-neutral-400">Sede:</span>
       <select 
-        value={activeSedeId || ''} 
+        value={activeSedeId || 'ALL'} 
         onChange={handleChange}
         className="bg-transparent border-none text-white text-sm font-bold focus:outline-none focus:ring-0 cursor-pointer appearance-none pr-4"
       >
+        <option value="ALL" className="bg-neutral-900 text-amber-400 font-bold">⭐ Todas las Sedes (Consolidado)</option>
         {sedes.map(s => (
           <option key={s.id} value={s.id} className="bg-neutral-900 text-white">{s.nombre_sede}</option>
         ))}

@@ -105,11 +105,20 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
   }, [sales, filtradas, filtroMetodo]);
 
   useEffect(() => {
+    setSales(initialSales);
+  }, [initialSales]);
+
+  useEffect(() => {
+    const filterConfig: any = { event: 'INSERT', schema: 'public', table: 'ventas_facturas' };
+    if (sedeId && sedeId !== 'ALL') {
+      filterConfig.filter = `sede_id=eq.${sedeId}`;
+    }
+
     const channel = supabase
-      .channel('realtime-ventas')
+      .channel(`realtime-ventas-${sedeId || 'all'}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'ventas_facturas', filter: `sede_id=eq.${sedeId}` },
+        filterConfig,
         async (payload: any) => {
           const newVentaRaw = payload.new;
           
