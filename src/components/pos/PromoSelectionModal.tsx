@@ -68,9 +68,12 @@ export default function PromoSelectionModal({
 
     const q = busqueda.trim().toLowerCase();
     if (!q) return list;
+    const norm = (s: string) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const qNorm = norm(q);
     return list.filter(
       (p) =>
         p.nombre.toLowerCase().includes(q) ||
+        norm(p.nombre).includes(qNorm) ||
         (p.codigo_barras || '').toLowerCase().includes(q)
     );
   }, [catalogo, categoriaFiltroId, busqueda]);

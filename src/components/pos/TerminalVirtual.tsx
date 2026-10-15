@@ -136,14 +136,21 @@ export default function TerminalVirtual({
   const [editandoPrecioId, setEditandoPrecioId] = useState<string | null>(null);
   const [precioEditTemp, setPrecioEditTemp] = useState('');
 
+  const normalizarBusqueda = (s: string) =>
+    (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
   const catalogoFiltrado = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
     if (!q) return catalogo;
-    return catalogo.filter(
-      (p) =>
-        p.nombre.toLowerCase().includes(q) ||
+    const qNorm = normalizarBusqueda(q);
+    return catalogo.filter((p) => {
+      const nom = (p.nombre || '').toLowerCase();
+      return (
+        nom.includes(q) ||
+        normalizarBusqueda(nom).includes(qNorm) ||
         (p.codigo_barras || '').toLowerCase().includes(q)
-    );
+      );
+    });
   }, [catalogo, busqueda]);
 
   const total = useMemo(
@@ -181,6 +188,17 @@ export default function TerminalVirtual({
   };
 
   const agregarProducto = useCallback((prod: ProductoPOS) => {
+    const nomNorm = normalizarBusqueda(prod.nombre || '');
+    const matchedPromo = promociones.find(
+      (pr) => pr.producto_id === prod.producto_id || normalizarBusqueda(pr.nombre) === nomNorm
+    ) || ((nomNorm.includes('cocteles 2x1') || (nomNorm.includes('promo') && nomNorm.includes('2x1'))) ? promociones[0] : undefined);
+
+    if (matchedPromo) {
+      setPromoSeleccionada(matchedPromo);
+      setPromoModalAbierta(true);
+      return;
+    }
+
     setCarrito((prev) => {
       const existe = prev.find((i) => !i.es_promo && i.producto_id === prod.producto_id);
       if (existe) {
@@ -201,7 +219,7 @@ export default function TerminalVirtual({
       ];
     });
     setResultado(null);
-  }, []);
+  }, [promociones]);
 
   const cambiarCantidad = useCallback((key: string, delta: number) => {
     setCarrito((prev) =>
@@ -425,59 +443,6 @@ export default function TerminalVirtual({
         )}
 
         <div className="flex-1 overflow-y-auto">
-          {/* Promociones y Combos Activos */}
-          {promociones && promociones.length > 0 && !busqueda && (
-            <div className="mb-5 space-y-2.5">
-              <div className="flex items-center gap-2">
-                <Sparkles size={15} className="text-amber-400" />
-                <span className="text-xs font-bold uppercase tracking-wider text-neutral-300">
-                  Promociones y Combos Activos
-                </span>
-                <span className="text-[10px] bg-indigo-500/20 text-indigo-300 font-bold px-2 py-0.5 rounded-full border border-indigo-500/30">
-                  {promociones.length} activa{promociones.length > 1 ? 's' : ''}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                {promociones.map((p) => {
-                  const cant = p.config_seleccion?.cantidad_total || 2;
-                  const cobrar = p.config_seleccion?.cobrar_cantidad || 1;
-                  return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => abrirPromoModal(p)}
-                      className="group relative flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-indigo-950/40 via-neutral-900 to-purple-950/30 border border-indigo-500/30 hover:border-indigo-400 hover:shadow-xl hover:shadow-indigo-500/10 text-left transition-all active:scale-[0.98]"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0 group-hover:scale-105 transition-transform">
-                          <Wine size={18} />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5 mb-0.5">
-                            <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-indigo-500/25 text-indigo-200">
-                              {cant}x{cobrar} {p.tipo === 'NX_M' ? 'PROMO' : 'COMBO'}
-                            </span>
-                          </div>
-                          <h4 className="text-xs sm:text-sm font-bold text-white truncate">
-                            {p.nombre}
-                          </h4>
-                          <p className="text-[11px] text-neutral-400 truncate mt-0.5">
-                            Toca para seleccionar {cant} cócteles
-                          </p>
-                        </div>
-                      </div>
-
-                      <span className="text-xs font-bold text-indigo-400 group-hover:translate-x-1 transition-transform shrink-0 ml-2">
-                        Elegir →
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
           {catalogoFiltrado.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-neutral-500 gap-3">
               <Package size={40} className="text-neutral-700" />

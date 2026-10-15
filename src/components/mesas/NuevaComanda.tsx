@@ -1118,6 +1118,7 @@ export default function NuevaComanda({
         onClose={() => setModalPromoAbierto(false)}
         catalogo={productos}
         promoProductoId={promoSeleccionada?.id}
+        tasaEfectiva={tasaEfectiva}
         onConfirmar={handleConfirmarPromoCocktail}
       />
     </div>

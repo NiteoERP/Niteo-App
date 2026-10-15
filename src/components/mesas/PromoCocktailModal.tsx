@@ -15,6 +15,7 @@ interface Props {
   onClose: () => void;
   catalogo: any[];
   promoProductoId?: string;
+  tasaEfectiva?: number;
   onConfirmar: (item: {
     producto_id: string;
     nombre: string;
@@ -45,7 +46,22 @@ const NOMBRES_COCTELES = [
 
 const normalizar = (s: string) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
-export default function PromoCocktailModal({ isOpen, onClose, catalogo, promoProductoId, onConfirmar }: Props) {
+function formatearBs(montoBs: number): string {
+  if (isNaN(montoBs) || montoBs < 0) return '0,00';
+  return montoBs.toLocaleString('es-VE', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+export default function PromoCocktailModal({
+  isOpen,
+  onClose,
+  catalogo,
+  promoProductoId,
+  tasaEfectiva = 0,
+  onConfirmar,
+}: Props) {
   const [busqueda, setBusqueda] = useState('');
   const [seleccionados, setSeleccionados] = useState<{ [id: string]: number }>({});
 
@@ -176,6 +192,7 @@ export default function PromoCocktailModal({ isOpen, onClose, catalogo, promoPro
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="w-9 h-9 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white flex items-center justify-center transition-colors shrink-0"
           >
@@ -210,7 +227,14 @@ export default function PromoCocktailModal({ isOpen, onClose, catalogo, promoPro
             <div className="flex items-center gap-2">
               <div className="text-right">
                 <span className="text-[10px] text-neutral-400 block">Total:</span>
-                <span className="text-base sm:text-lg font-black text-emerald-400">${precioFinal.toFixed(2)}</span>
+                <div className="flex items-baseline gap-1.5 justify-end">
+                  <span className="text-base sm:text-lg font-black text-emerald-400">${precioFinal.toFixed(2)}</span>
+                  {tasaEfectiva > 0 && (
+                    <span className="text-[11px] font-bold text-neutral-300">
+                      (Bs. {formatearBs(precioFinal * tasaEfectiva)})
+                    </span>
+                  )}
+                </div>
               </div>
               {ahorro > 0 && (
                 <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 rounded-full">
@@ -252,21 +276,29 @@ export default function PromoCocktailModal({ isOpen, onClose, catalogo, promoPro
                 className={`p-3 rounded-xl border transition-all flex items-center justify-between ${
                   cant > 0
                     ? 'bg-indigo-950/40 border-indigo-500/60 shadow-md shadow-indigo-500/10'
-                    : 'bg-neutral-850/60 border-neutral-800 hover:border-neutral-700'
+                    : 'bg-neutral-800/40 border-neutral-800 hover:border-neutral-700'
                 }`}
               >
                 <div className="flex-1 pr-2 min-w-0">
                   <h4 className="font-bold text-white text-xs sm:text-sm truncate">{c.nombre}</h4>
-                  <span className="text-xs font-semibold text-neutral-400">
-                    ${precio.toFixed(2)}
-                  </span>
+                  <div className="flex items-baseline gap-1.5 mt-0.5">
+                    <span className="text-xs font-semibold text-neutral-300">
+                      ${precio.toFixed(2)}
+                    </span>
+                    {tasaEfectiva > 0 && (
+                      <span className="text-[10px] font-semibold text-emerald-400">
+                        · Bs. {formatearBs(precio * tasaEfectiva)}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
                   {cant > 0 && (
                     <button
+                      type="button"
                       onClick={() => handleQuitar(cid)}
-                      className="w-8 h-8 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white flex items-center justify-center transition-colors active:scale-95"
+                      className="w-8 h-8 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white flex items-center justify-center transition-colors active:scale-95 touch-manipulation"
                     >
                       <Minus size={15} />
                     </button>
@@ -279,9 +311,10 @@ export default function PromoCocktailModal({ isOpen, onClose, catalogo, promoPro
                   )}
 
                   <button
+                    type="button"
                     onClick={() => handleAgregar(cid)}
                     disabled={totalSeleccionado >= 2}
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-95 ${
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-95 touch-manipulation ${
                       totalSeleccionado >= 2
                         ? 'bg-neutral-800 text-neutral-600 cursor-not-allowed opacity-40'
                         : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30'
@@ -298,16 +331,18 @@ export default function PromoCocktailModal({ isOpen, onClose, catalogo, promoPro
         {/* Footer */}
         <div className="p-3 sm:p-4 bg-neutral-950/90 border-t border-neutral-800 flex items-center justify-between gap-3">
           <button
+            type="button"
             onClick={onClose}
-            className="px-4 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white rounded-xl font-bold transition-colors text-xs sm:text-sm"
+            className="px-4 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white rounded-xl font-bold transition-colors text-xs sm:text-sm touch-manipulation"
           >
             Cancelar
           </button>
 
           <button
+            type="button"
             onClick={handleConfirmar}
             disabled={totalSeleccionado !== 2}
-            className="flex-1 py-2.5 sm:py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-neutral-800 disabled:text-neutral-600 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center gap-2 text-xs sm:text-sm active:scale-[0.99]"
+            className="flex-1 py-2.5 sm:py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-neutral-800 disabled:text-neutral-600 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center gap-2 text-xs sm:text-sm active:scale-[0.99] touch-manipulation"
           >
             <Check size={16} />
             {totalSeleccionado === 2
