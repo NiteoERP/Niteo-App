@@ -12,11 +12,6 @@ export async function updateMemberAccess(memberId: string, permisos: string[], s
   if (user?.app_metadata?.user_role !== 'MASTER') {
     return { success: false, error: 'No autorizado. Solo el usuario Master puede modificar permisos.' };
   }
-
-  const supabaseAdmin = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
   
   const payload: any = {
     permisos,
@@ -27,7 +22,8 @@ export async function updateMemberAccess(memberId: string, permisos: string[], s
     payload.pin_seguridad = pin_seguridad || null;
   }
 
-  const { error } = await supabaseAdmin
+  // Actualización bajo RLS nativo con el cliente autenticado del usuario Master
+  const { error } = await supabase
     .from('perfiles')
     .update(payload)
     .eq('id', memberId);
@@ -134,17 +130,22 @@ export async function updateMemberRole(memberId: string, newRole: string) {
     return { success: false, error: 'No autorizado. Solo el usuario Master puede modificar roles.' };
   }
 
-  const supabaseAdmin = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
-  const { error } = await supabaseAdmin.from('perfiles').update({ rol: newRole }).eq('id', memberId);
+  // 1. Actualización en DB gobernada por RLS (política perfiles_update_master_misma_empresa)
+  const { error } = await supabase.from('perfiles').update({ rol: newRole }).eq('id', memberId);
   if (error) return { success: false, error: error.message };
 
-  await supabaseAdmin.auth.admin.updateUserById(memberId, {
-    app_metadata: { user_role: newRole }
-  });
+  // 2. Sincronización de app_metadata en auth.users (requiere API de Auth Admin porque auth.users no es pública)
+  try {
+    const supabaseAdmin = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    await supabaseAdmin.auth.admin.updateUserById(memberId, {
+      app_metadata: { user_role: newRole }
+    });
+  } catch (e) {
+    console.error('Error sincronizando user_role en auth.users:', e);
+  }
 
   revalidatePath('/dashboard/equipo');
   return { success: true };
@@ -224,11 +225,6 @@ export async function updateMemberDetails(
     return { success: false, error: 'No autorizado. Solo el usuario Master puede modificar permisos.' };
   }
 
-  const supabaseAdmin = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
   const payload: any = {
     ...(data.nombre_completo ? { nombre_completo: data.nombre_completo } : {}),
     ...(data.rol ? { rol: data.rol } : {}),
@@ -244,7 +240,8 @@ export async function updateMemberDetails(
     payload.permiso_venta_costo = data.permiso_venta_costo;
   }
 
-  const { error } = await supabaseAdmin
+  // 1. Actualización en DB gobernada por RLS (política perfiles_update_master_misma_empresa)
+  const { error } = await supabase
     .from('perfiles')
     .update(payload)
     .eq('id', memberId);
@@ -253,8 +250,13 @@ export async function updateMemberDetails(
     return { success: false, error: error.message };
   }
 
+  // 2. Sincronización de app_metadata en auth.users si cambió el rol
   if (data.rol) {
     try {
+      const supabaseAdmin = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
       await supabaseAdmin.auth.admin.updateUserById(memberId, {
         app_metadata: { user_role: data.rol }
       });
