@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, Minus, Send, MessageSquare, Loader2, CheckCircle2, RefreshCw, ShoppingCart, X, Trash2, User, UserCheck, Search, Hash, ChevronRight, Printer, TableProperties } from 'lucide-react';
+import { Plus, Minus, Send, MessageSquare, Loader2, CheckCircle2, RefreshCw, ShoppingCart, X, Trash2, User, UserCheck, Search, Hash, ChevronRight, Printer, TableProperties, Sparkles } from 'lucide-react';
 import { obtenerCatalogoMesa, obtenerTasaMesa, enviarComanda, buscarClientePorCedula, buscarClientesMesa, type ItemComanda, type ClienteSugeridoMesa } from '@/actions/mesas-actions';
 import type { TerminalVinculado } from './MesasHub';
+import PromoCocktailModal from './PromoCocktailModal';
 
 interface CartItem extends ItemComanda {
   key: string;
@@ -66,6 +67,8 @@ export default function NuevaComanda({
   const [carrito, setCarrito] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [mesa, setMesa] = useState('');
+  const [modalPromoAbierto, setModalPromoAbierto] = useState(false);
+  const [promoSeleccionada, setPromoSeleccionada] = useState<any>(null);
 
   // Sincronizar mesa cuando viene preseleccionada desde Mesas Abiertas
   useEffect(() => {
@@ -226,9 +229,18 @@ export default function NuevaComanda({
 
   useEffect(() => { cargarCatalogo(); }, [cargarCatalogo]);
 
+  const normalizarBusqueda = (s: string) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
   const prodsFiltrados = productos.filter((p: any) => {
     const matchCat = catActiva === 'Todos' || (p.categorias?.nombre || 'Sin categoría') === catActiva;
-    const matchSearch = p.nombre.toLowerCase().includes(busqueda.toLowerCase());
+    if (!busqueda.trim()) return matchCat;
+
+    const q = busqueda.trim().toLowerCase();
+    const qNorm = normalizarBusqueda(q);
+    const nom = (p?.nombre || '').toLowerCase();
+    const nomNorm = normalizarBusqueda(nom);
+
+    const matchSearch = nom.includes(q) || nomNorm.includes(qNorm);
     return matchCat && matchSearch;
   });
   
@@ -240,6 +252,17 @@ export default function NuevaComanda({
   };
 
   const agregarAlCarrito = (prod: any) => {
+    const nombreNorm = (prod?.nombre || '').toLowerCase();
+    const esPromoCocktail = nombreNorm.includes('cócteles 2x1') ||
+                           nombreNorm.includes('cocteles 2x1') ||
+                           (nombreNorm.includes('promo') && nombreNorm.includes('2x1'));
+
+    if (esPromoCocktail) {
+      setPromoSeleccionada(prod);
+      setModalPromoAbierto(true);
+      return;
+    }
+
     const notasProd = extraerNotasPreparacion(prod);
     const comentarioInicial = notasProd.length > 0 ? notasProd.join(', ') : '';
 
@@ -259,6 +282,28 @@ export default function NuevaComanda({
         notas_preparacion: notasProd,
       }];
     });
+  };
+
+  const handleConfirmarPromoCocktail = (item: {
+    producto_id: string;
+    nombre: string;
+    precio_unitario: number;
+    notas_preparacion: string[];
+    comentario: string;
+  }) => {
+    const key = `${item.producto_id}-${Date.now()}`;
+    setCarrito(prev => [
+      ...prev,
+      {
+        key,
+        producto_id: item.producto_id,
+        nombre: item.nombre,
+        cantidad: 1,
+        precio_unitario: item.precio_unitario,
+        comentario: item.comentario,
+        notas_preparacion: item.notas_preparacion,
+      }
+    ]);
   };
 
   const eliminarItem = (key: string) => {
@@ -657,9 +702,15 @@ export default function NuevaComanda({
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" size={16} />
         <input
           type="text"
-          placeholder="Buscar productos..."
+          placeholder="Buscar productos (mojito, pizza, promo, 2x1...)..."
           value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
+          onChange={(e) => {
+            const val = e.target.value;
+            setBusqueda(val);
+            if (val.trim() && catActiva !== 'Todos') {
+              setCatActiva('Todos');
+            }
+          }}
           className="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-10 pr-4 py-3.5 text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-colors"
         />
         {busqueda && (
@@ -732,9 +783,21 @@ export default function NuevaComanda({
                       </div>
                     )}
 
-                    <p className={`text-xs sm:text-sm font-semibold leading-snug break-words whitespace-normal transition-colors ${inCart ? 'pr-14 text-white' : 'text-neutral-200 group-hover:text-white'}`}>
-                      {prod.nombre}
-                    </p>
+                    <div>
+                      {(() => {
+                        const nLow = (prod.nombre || '').toLowerCase();
+                        const esPromo = nLow.includes('promo') || nLow.includes('2x1');
+                        if (!esPromo) return null;
+                        return (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30 mb-1">
+                            <Sparkles size={10} /> 2x1
+                          </span>
+                        );
+                      })()}
+                      <p className={`text-xs sm:text-sm font-semibold leading-snug break-words whitespace-normal transition-colors ${inCart ? 'pr-14 text-white' : 'text-neutral-200 group-hover:text-white'}`}>
+                        {prod.nombre}
+                      </p>
+                    </div>
                     <div className="mt-3 flex flex-col items-start gap-0.5">
                       <span className={`text-base font-extrabold ${inCart ? 'text-indigo-400' : 'text-neutral-300'}`}>
                         ${Number(prod.precio_venta).toFixed(2)}
@@ -1048,6 +1111,15 @@ export default function NuevaComanda({
           </div>
         </div>
       )}
-</div>
+
+      {/* Modal de selección de Cócteles 2x1 */}
+      <PromoCocktailModal
+        isOpen={modalPromoAbierto}
+        onClose={() => setModalPromoAbierto(false)}
+        catalogo={productos}
+        promoProductoId={promoSeleccionada?.id}
+        onConfirmar={handleConfirmarPromoCocktail}
+      />
+    </div>
   );
 }
