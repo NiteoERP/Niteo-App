@@ -179,6 +179,8 @@ export async function enviarComanda(payload: ComandaPayload): Promise<{ success:
   let comentarioFinal = (payload.comentarioGeneral || '').trim();
   if (payload.numeroCopias && payload.numeroCopias === 2) {
     comentarioFinal = (comentarioFinal ? comentarioFinal + ' ' : '') + '[COPIAS:2]';
+  } else if (payload.numeroCopias && payload.numeroCopias === 1) {
+    comentarioFinal = (comentarioFinal ? comentarioFinal + ' ' : '') + '[COPIAS:1]';
   }
 
   // 1. Extraer y sanear datos del cliente
