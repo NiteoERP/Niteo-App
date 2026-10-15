@@ -177,6 +177,9 @@ function appendReportTotals(reportId: string, rawData: any[]): any[] {
   }
 
   if (reportId === 'detalle_ventas') {
+    if (rawData.some(r => r.numero_orden === 'TOTALES' || r.numero_documento === 'TOTALES')) {
+      return rawData;
+    }
     let sumSub = 0;
     let sumDesc = 0;
     let sumTot = 0;
@@ -193,10 +196,11 @@ function appendReportTotals(reportId: string, rawData: any[]): any[] {
         fecha_hora: '',
         cliente: '',
         cajero: '',
-        productos: '',
-        subtotal: sumSub,
-        descuento: sumDesc,
-        total: sumTot,
+        mesero: '',
+        productos: `${rawData.length} registros`,
+        subtotal: Number(sumSub.toFixed(2)),
+        descuento: Number(sumDesc.toFixed(2)),
+        total: Number(sumTot.toFixed(2)),
         metodos_pago: '',
         estado: '',
       },
@@ -1070,6 +1074,187 @@ export function useGenerateReport(empresaId: string) {
           return;
         }
 
+        // ── Detalle de Ventas (con filtro de categoría, productos filtrados y mesero) ──
+        if (reportId === 'detalle_ventas') {
+          let allFacturas: any[] = [];
+          let from = 0;
+          const batchSize = 1000;
+
+          while (true) {
+            let query = supabase
+              .from('ventas_facturas')
+              .select(`
+                id,
+                numero_orden,
+                numero_documento,
+                fecha_venta,
+                cliente_nombre,
+                cajero_nombre,
+                mesero_nombre,
+                total,
+                descuento,
+                estado_pago,
+                tipo_documento,
+                clientes (
+                  id,
+                  nombre
+                ),
+                ventas_detalles (
+                  cantidad,
+                  precio_unitario,
+                  total,
+                  descuento,
+                  combo_items,
+                  productos (
+                    id,
+                    nombre,
+                    categoria_id,
+                    categorias (
+                      id,
+                      nombre
+                    )
+                  )
+                ),
+                ventas_pagos (
+                  tipo_pago,
+                  monto
+                )
+              `)
+              .eq('empresa_id', p_empresa_id)
+              .gte('fecha_venta', p_fecha_inicio)
+              .lte('fecha_venta', p_fecha_fin)
+              .eq('estado_activo', true)
+              .order('fecha_venta', { ascending: false })
+              .range(from, from + batchSize - 1);
+
+            if (p_sede_id) query = query.eq('sede_id', p_sede_id);
+            if (p_cliente_id) query = query.eq('cliente_id', p_cliente_id);
+            if (p_cajero_id) query = query.ilike('cajero_nombre', `%${p_cajero_id}%`);
+
+            const { data, error } = await query;
+            if (error) throw error;
+            if (!data || data.length === 0) break;
+            allFacturas = allFacturas.concat(data);
+            if (data.length < batchSize) break;
+            from += batchSize;
+          }
+
+          const isCortesia = (f: any) => {
+            const docType = (f.tipo_documento || '').toLowerCase();
+            const docOrd = (f.numero_orden || '').toLowerCase();
+            const docNum = (f.numero_documento || '').toLowerCase();
+            const pagos = f.ventas_pagos || [];
+            const hasCortesiaPago = pagos.some((p: any) => {
+              const tp = (p.tipo_pago || '').toLowerCase();
+              return tp.includes('cortes') || tp.includes('regal');
+            });
+            return hasCortesiaPago || docType.includes('cortes') || docOrd.includes('cortes') || docNum.includes('cortes');
+          };
+
+          const rows: Record<string, any>[] = [];
+          let sumSub = 0;
+          let sumDesc = 0;
+          let sumTot = 0;
+
+          for (const f of allFacturas) {
+            if (isCortesia(f)) continue;
+
+            const allDetalles = f.ventas_detalles || [];
+            let relevantDetalles = allDetalles;
+
+            if (p_categoria) {
+              relevantDetalles = allDetalles.filter((d: any) => {
+                const catName = d.productos?.categorias?.nombre || '';
+                return catName.toLowerCase() === p_categoria.toLowerCase();
+              });
+              if (relevantDetalles.length === 0) {
+                continue; // No contiene productos de esta categoría
+              }
+            }
+
+            const facturaTotal = Number(f.total || 0);
+            const facturaDescuento = Number(f.descuento || 0);
+            const facturaSubtotalOriginal = facturaTotal + facturaDescuento;
+
+            let rowSubtotal = 0;
+            let rowDescuento = 0;
+            const prodList: string[] = [];
+
+            if (p_categoria) {
+              for (const d of relevantDetalles) {
+                const cant = Number(d.cantidad || 1);
+                const tot = Number(d.total || (Number(d.precio_unitario || 0) * cant));
+                rowSubtotal += tot;
+                rowDescuento += Number(d.descuento || 0);
+                const pName = d.productos?.nombre || 'Producto';
+                prodList.push(`${pName} x${cant}`);
+              }
+              if (facturaDescuento > 0 && rowDescuento === 0 && facturaSubtotalOriginal > 0) {
+                rowDescuento = Number(((rowSubtotal / facturaSubtotalOriginal) * facturaDescuento).toFixed(2));
+              }
+            } else {
+              for (const d of relevantDetalles) {
+                const cant = Number(d.cantidad || 1);
+                const pName = d.productos?.nombre || 'Producto';
+                prodList.push(`${pName} x${cant}`);
+              }
+              rowDescuento = facturaDescuento;
+              rowSubtotal = facturaSubtotalOriginal;
+            }
+
+            const rowTotal = Number(Math.max(0, rowSubtotal - rowDescuento).toFixed(2));
+            rowSubtotal = Number(rowSubtotal.toFixed(2));
+            rowDescuento = Number(rowDescuento.toFixed(2));
+
+            sumSub += rowSubtotal;
+            sumDesc += rowDescuento;
+            sumTot += rowTotal;
+
+            const cliente = f.clientes?.nombre || f.cliente_nombre || 'Consumidor Final';
+            const fDate = new Date(f.fecha_venta);
+            const fechaHora = !isNaN(fDate.getTime()) ? format(fDate, 'dd/MM/yyyy hh:mm a') : '-';
+            const pagos = f.ventas_pagos || [];
+            const metodos = Array.from(new Set(pagos.map((p: any) => p.tipo_pago).filter(Boolean))).join(', ') || 'Efectivo';
+            const estado = f.estado_pago === 1 ? 'Pagado' : (f.estado_pago === 2 ? 'Crédito' : (f.estado_pago === 0 ? 'Pendiente' : 'Pagado'));
+
+            rows.push({
+              numero_orden: f.numero_orden || '—',
+              numero_documento: f.numero_documento || '—',
+              fecha_hora: fechaHora,
+              cliente,
+              cajero: f.cajero_nombre || '—',
+              mesero: f.mesero_nombre || '—',
+              productos: prodList.join(', '),
+              subtotal: rowSubtotal,
+              descuento: rowDescuento,
+              total: rowTotal,
+              metodos_pago: metodos,
+              estado,
+            });
+          }
+
+          if (rows.length > 0) {
+            rows.push({
+              numero_orden: 'TOTALES',
+              numero_documento: '',
+              fecha_hora: '',
+              cliente: '',
+              cajero: '',
+              mesero: '',
+              productos: `${rows.length} registros${p_categoria ? ` (Cat: ${p_categoria})` : ''}`,
+              subtotal: Number(sumSub.toFixed(2)),
+              descuento: Number(sumDesc.toFixed(2)),
+              total: Number(sumTot.toFixed(2)),
+              metodos_pago: '',
+              estado: '',
+            });
+          }
+
+          setReportData(rows);
+          setIsGenerating(false);
+          return;
+        }
+
         let rpcName = '';
         let rpcParams: Record<string, any> = {};
 
@@ -1112,15 +1297,6 @@ export function useGenerateReport(empresaId: string) {
             rpcParams = { p_empresa_id, p_sede_id, p_fecha_inicio, p_fecha_fin };
             break;
 
-          case 'detalle_ventas':
-            rpcName = 'get_reporte_detalle_ventas';
-            rpcParams = {
-              p_empresa_id, p_sede_id, p_fecha_inicio, p_fecha_fin,
-              p_cliente_id,
-              p_cajero_nombre: p_cajero_id,
-            };
-            break;
-
           case 'ventas_categoria':
             rpcName = 'get_reporte_ventas_categoria';
             rpcParams = {
@@ -1152,14 +1328,6 @@ export function useGenerateReport(empresaId: string) {
         if (rpcError) throw new Error(rpcError.message);
 
         let dataToProcess = data ?? [];
-        if (reportId === 'detalle_ventas' && Array.isArray(dataToProcess)) {
-          dataToProcess = dataToProcess.filter((r: any) => {
-            const mp = String(r.metodos_pago || '').toLowerCase();
-            const numDoc = String(r.numero_documento || '').toLowerCase();
-            const numOrd = String(r.numero_orden || '').toLowerCase();
-            return !mp.includes('cortes') && !mp.includes('regal') && !numDoc.includes('cortes') && !numOrd.includes('cortes');
-          });
-        }
 
         if (reportId === 'productos_vendidos' && Array.isArray(dataToProcess)) {
           try {

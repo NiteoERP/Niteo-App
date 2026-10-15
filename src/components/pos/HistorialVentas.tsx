@@ -35,7 +35,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
 
   const cargarVentas = async () => {
     setLoading(true);
-    const data = await getHistorialVentasCompleto(sedeId, fechaFiltro || undefined, page, 100, activeTz);
+    const data = await getHistorialVentasCompleto(sedeId, fechaFiltro || undefined, page, 100, activeTz, busqueda || undefined);
     setVentas(prev => page === 1 ? data : [...prev, ...data]);
     setLoading(false);
   };
@@ -52,13 +52,13 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
 
     const channel = supabase.channel(`realtime_ventas_historial_${sedeId || 'all'}`)
       .on('postgres_changes', filterConfig, () => {
-        getHistorialVentasCompleto(sedeId, fechaFiltro || undefined, page, 100, activeTz).then(data => setVentas(data));
+        getHistorialVentasCompleto(sedeId, fechaFiltro || undefined, page, 100, activeTz, busqueda || undefined).then(data => setVentas(data));
         getResumenVerificacionMes(sedeId, format(calMonth, 'yyyy-MM'), activeTz).then(setMonthSummary);
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [sedeId, fechaFiltro, page, activeTz]);
+  }, [sedeId, fechaFiltro, page, activeTz, busqueda]);
 
   useEffect(() => {
     getResumenVerificacionMes(sedeId, format(calMonth, 'yyyy-MM'), activeTz).then(setMonthSummary);

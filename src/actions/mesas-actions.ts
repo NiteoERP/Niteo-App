@@ -294,13 +294,15 @@ export async function obtenerMesasAbiertas(sedeId: string) {
     .eq('sede_id', sedeId)
     .order('actualizado_en', { ascending: false });
 
-  // 2. Obtener comandas enviadas por meseros que todavía están en tránsito hacia el POS (estado = 'pendiente')
+  // 2. Obtener comandas enviadas por meseros que todavía están activas o en tránsito (estado 'pendiente' o 'recibido')
+  const sixHoursAgo = new Date(Date.now() - 6 * 3600 * 1000).toISOString();
   const { data: comandasPendientes } = await admin
     .from('comandas_mesero')
     .select('id, mesa_identificador, mesero_nombre, cliente_nombre, comentario_general, items, tipo, estado, created_at, metodo_pago_sugerido')
     .eq('sede_id', sedeId)
-    .eq('estado', 'pendiente')
+    .in('estado', ['pendiente', 'recibido'])
     .eq('tipo', 'comanda')
+    .gte('created_at', sixHoursAgo)
     .order('created_at', { ascending: false });
 
   const baseTasa = await obtenerTasaMesa(sedeId);

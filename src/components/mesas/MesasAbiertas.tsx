@@ -77,10 +77,10 @@ export default function MesasAbiertas({ terminal, meseroNombre, metodosPago, onM
         setMesas([]);
         return;
       }
-      // Agrupar por mesa_identificador — quedar con la comanda más reciente de cada mesa
+      // Agrupar por id (o mesa_identificador si no tiene id) para no ocultar cuentas distintas
       const porMesa: Record<string, any> = {};
       for (const cmd of data) {
-        const key = cmd.mesa_identificador as string;
+        const key = (cmd.id || cmd.mesa_identificador) as string;
         if (!porMesa[key] || new Date(cmd.created_at as string) > new Date(porMesa[key].created_at)) {
           porMesa[key] = cmd;
         }

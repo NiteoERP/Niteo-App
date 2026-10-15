@@ -206,7 +206,8 @@ export async function getHistorialVentasCompleto(
   fechaFiltro?: string,
   page: number = 1,
   limit: number = 50,
-  clientTimeZone?: string
+  clientTimeZone?: string,
+  busqueda?: string
 ): Promise<HistorialVentaPOS[]> {
   const supabase = await createClient();
 
@@ -253,6 +254,11 @@ export async function getHistorialVentasCompleto(
     query = query.eq('sede_id', sedeId);
   }
 
+  if (busqueda && busqueda.trim()) {
+    const b = busqueda.trim().replace(/\*/g, '');
+    query = query.or(`cliente_nombre.ilike.*${b}*,numero_orden.ilike.*${b}*,numero_documento.ilike.*${b}*,id_pos.ilike.*${b}*`);
+  }
+
   if (fechaFiltro) {
     const range = getLocalDayRange(fechaFiltro, timeZone);
     query = query
@@ -283,7 +289,7 @@ export async function getHistorialVentasCompleto(
     tipo_documento: v.tipo_documento,
     estado_activo: v.estado_activo,
     esta_pagado: v.estado_pago === 1,
-    cliente_nombre: v.clientes?.nombre || v.cliente_nombre,
+    cliente_nombre: v.clientes?.nombre || v.cliente_nombre || v.numero_orden || 'Venta Rápida',
       cajero_nombre: v.cajero_nombre,
       mesero_nombre: v.mesero_nombre,
       propina: v.propina,

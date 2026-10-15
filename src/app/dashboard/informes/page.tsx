@@ -57,9 +57,9 @@ const REPORT_CATALOG: ReportGroup[] = [
       {
         id: 'detalle_ventas',
         name: 'Detalle de Ventas',
-        desc: 'Cada factura con nº de orden, cliente, cajero, productos y pago',
+        desc: 'Cada factura con orden/mesa, cliente, cajero, mesero, productos filtrados por categoría y pago',
         icon: List,
-        extraFilters: ['cliente', 'cajero'],
+        extraFilters: ['categoria', 'cajero', 'cliente'],
         badge: 'Nuevo',
       },
       {
