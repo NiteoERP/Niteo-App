@@ -555,9 +555,29 @@ export async function generateReport(
     return { success: false, error: error.message };
   }
 
-  // En productos_vendidos: agregar desglose de sub-productos para promociones y combos
+  // En productos_vendidos: agregar descripciones de combos y desglose de sub-productos para promociones
   if (reportId === 'productos_vendidos' && Array.isArray(data)) {
     try {
+      const { data: prodsDesc } = await supabase
+        .from('productos')
+        .select('nombre, descripcion')
+        .eq('empresa_id', p_empresa_id);
+
+      const descMap = new Map<string, string>();
+      (prodsDesc || []).forEach((p: any) => {
+        if (p.nombre && p.descripcion) {
+          descMap.set(p.nombre.trim().toUpperCase(), p.descripcion.trim());
+        }
+      });
+
+      let mappedData = data.map((row: any) => {
+        const pName = String(row.producto || '').trim().toUpperCase();
+        return {
+          ...row,
+          descripcion: descMap.get(pName) || ''
+        };
+      });
+
       let queryCombos = supabase
         .from('ventas_detalles')
         .select(`
@@ -608,7 +628,7 @@ export async function generateReport(
           }
         }
 
-        const dataConDesglose = data.map((row: any) => {
+        mappedData = mappedData.map((row: any) => {
           if (row.producto && promoSubItemsMap[row.producto]) {
             const desglose = Object.entries(promoSubItemsMap[row.producto]).map(([nombre, cantidad]) => ({
               nombre,
@@ -622,10 +642,10 @@ export async function generateReport(
           }
           return row;
         });
-        return { success: true, data: dataConDesglose };
       }
+      return { success: true, data: mappedData };
     } catch (errCombo) {
-      console.warn('Advertencia en informes-actions obteniendo desglose de promociones:', errCombo);
+      console.warn('Advertencia en informes-actions obteniendo descripciones o desglose de promociones:', errCombo);
     }
   }
 

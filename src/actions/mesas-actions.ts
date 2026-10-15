@@ -289,22 +289,28 @@ export async function obtenerMesasAbiertas(sedeId: string) {
   const { createAdminClient } = await import('@/utils/supabase/admin');
   const admin = createAdminClient();
 
-  // 1. Obtener cuentas abiertas en vivo sincronizadas por el POS
+  // 1. Obtener cuentas abiertas en vivo sincronizadas por el POS (máximo últimas 16 horas para descartar sesiones viejas cerradas)
+  const shiftCutoff = new Date(Date.now() - 16 * 3600 * 1000).toISOString();
   const { data: posCuentas } = await admin
     .from('pos_cuentas_abiertas')
     .select('id, numero_documento, nombre_cuenta, total, fecha_apertura, actualizado_en, detalles')
     .eq('sede_id', sedeId)
+    .gte('actualizado_en', shiftCutoff)
     .order('actualizado_en', { ascending: false });
 
-  // 2. Obtener comandas enviadas por meseros que todavía están activas o en tránsito (estado 'pendiente' o 'recibido')
-  const sixHoursAgo = new Date(Date.now() - 6 * 3600 * 1000).toISOString();
+  // 2. Obtener comandas enviadas por meseros que todavía están en tránsito al POS (estado 'pendiente' estrictamente en los últimos 30 minutos)
+  // NOTA CRÍTICA:
+  // Si la comanda ya está en 'recibido', el POS ya la procesó y la cuenta vive en 'pos_cuentas_abiertas'.
+  // Si no está en 'pos_cuentas_abiertas' y ya fue recibida, significa que fue cobrada, cancelada o borrada en el POS.
+  // ¡NUNCA incluir 'recibido' aquí, de lo contrario resucita mesas ya borradas del POS!
+  const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
   const { data: comandasPendientes } = await admin
     .from('comandas_mesero')
     .select('id, mesa_identificador, mesero_nombre, cliente_nombre, comentario_general, items, tipo, estado, created_at, metodo_pago_sugerido')
     .eq('sede_id', sedeId)
-    .in('estado', ['pendiente', 'recibido'])
+    .eq('estado', 'pendiente')
     .eq('tipo', 'comanda')
-    .gte('created_at', sixHoursAgo)
+    .gte('created_at', thirtyMinutesAgo)
     .order('created_at', { ascending: false });
 
   const baseTasa = await obtenerTasaMesa(sedeId);
@@ -336,6 +342,7 @@ export async function obtenerMesasAbiertas(sedeId: string) {
         total_bs: totalBs,
         tasa_efectiva: tasaMesa,
         created_at: c.fecha_apertura || c.actualizado_en || new Date().toISOString(),
+        actualizado_en: c.actualizado_en || c.fecha_apertura || new Date().toISOString(),
         metodo_pago_sugerido: null,
       });
     }
@@ -373,6 +380,7 @@ export async function obtenerMesasAbiertas(sedeId: string) {
           total_bs: totalBs,
           tasa_efectiva: baseTasa,
           created_at: cp.created_at,
+          actualizado_en: cp.created_at,
           metodo_pago_sugerido: cp.metodo_pago_sugerido,
         });
       }

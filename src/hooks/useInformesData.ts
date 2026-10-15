@@ -1331,6 +1331,27 @@ export function useGenerateReport(empresaId: string) {
 
         if (reportId === 'productos_vendidos' && Array.isArray(dataToProcess)) {
           try {
+            // Cargar descripciones de productos para mostrar contenido de combos y promociones
+            const { data: prodsDesc } = await supabase
+              .from('productos')
+              .select('nombre, descripcion')
+              .eq('empresa_id', p_empresa_id);
+
+            const descMap = new Map<string, string>();
+            (prodsDesc || []).forEach((p: any) => {
+              if (p.nombre && p.descripcion) {
+                descMap.set(p.nombre.trim().toUpperCase(), p.descripcion.trim());
+              }
+            });
+
+            dataToProcess = dataToProcess.map((row: any) => {
+              const pName = String(row.producto || '').trim().toUpperCase();
+              return {
+                ...row,
+                descripcion: descMap.get(pName) || ''
+              };
+            });
+
             let queryCombos = supabase
               .from('ventas_detalles')
               .select(`
@@ -1397,7 +1418,7 @@ export function useGenerateReport(empresaId: string) {
               });
             }
           } catch (errCombo) {
-            console.warn('Advertencia en useInformesData obteniendo desglose de promociones:', errCombo);
+            console.warn('Advertencia en useInformesData obteniendo descripciones o desglose de promociones:', errCombo);
           }
         }
 

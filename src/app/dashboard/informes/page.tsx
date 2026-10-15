@@ -413,7 +413,7 @@ export default function InformesPage() {
       return;
     }
 
-    const keys = Array.from(new Set(reportData.flatMap(r => Object.keys(r)))).filter(k => k !== 'combo_desglose');
+    const keys = Array.from(new Set(reportData.flatMap(r => Object.keys(r)))).filter(k => k !== 'combo_desglose' && k !== 'descripcion');
     const firstKeyCandidates = ['Fecha', 'FECHA', 'fecha', 'numero_orden', 'codigo', 'cliente', 'operador', 'OPERADOR', 'categoria', 'nombre_cajero', 'nombre_cliente'];
     const foundFirstKey = firstKeyCandidates.find(k => keys.includes(k));
     if (foundFirstKey && keys.indexOf(foundFirstKey) > 0) {
@@ -424,9 +424,16 @@ export default function InformesPage() {
     const normalizedData = reportData.map(row => {
       const obj: Record<string, any> = {};
       keys.forEach(k => {
-        if (k === 'producto' && Array.isArray(row.combo_desglose) && row.combo_desglose.length > 0) {
-          const desgloseText = row.combo_desglose.map((s: any) => `${s.nombre} x${s.cantidad}`).join(', ');
-          obj[k] = `${row[k]} [Sub-productos: ${desgloseText}]`;
+        if (k === 'producto') {
+          let pVal = String(row[k] ?? '');
+          if (row.descripcion) {
+            pVal += ` (${row.descripcion})`;
+          }
+          if (Array.isArray(row.combo_desglose) && row.combo_desglose.length > 0) {
+            const desgloseText = row.combo_desglose.map((s: any) => `${s.nombre} x${s.cantidad}`).join(', ');
+            pVal += ` [Sub-productos: ${desgloseText}]`;
+          }
+          obj[k] = pVal;
         } else {
           obj[k] = row[k] ?? '';
         }
@@ -549,7 +556,7 @@ export default function InformesPage() {
       return;
     }
 
-    const keys = Array.from(new Set(reportData.flatMap(r => Object.keys(r)))).filter(k => k !== 'combo_desglose');
+    const keys = Array.from(new Set(reportData.flatMap(r => Object.keys(r)))).filter(k => k !== 'combo_desglose' && k !== 'descripcion');
     const firstKeyCandidates = ['Fecha', 'FECHA', 'fecha', 'numero_orden', 'codigo', 'cliente', 'operador', 'OPERADOR', 'categoria', 'nombre_cajero', 'nombre_cliente'];
     const foundFirstKey = firstKeyCandidates.find(k => keys.includes(k));
     if (foundFirstKey && keys.indexOf(foundFirstKey) > 0) {
@@ -562,9 +569,16 @@ export default function InformesPage() {
     const body = reportData.map(row => {
       return keys.map(k => {
         const val = row[k];
-        if (k === 'producto' && Array.isArray(row.combo_desglose) && row.combo_desglose.length > 0) {
-          const desgloseText = row.combo_desglose.map((s: any) => `  ↳ ${s.nombre} (x${s.cantidad})`).join('\n');
-          return `${val}\n${desgloseText}`;
+        if (k === 'producto') {
+          let pVal = String(val ?? '');
+          if (row.descripcion) {
+            pVal += `\n(${row.descripcion})`;
+          }
+          if (Array.isArray(row.combo_desglose) && row.combo_desglose.length > 0) {
+            const desgloseText = row.combo_desglose.map((s: any) => `  ↳ ${s.nombre} (x${s.cantidad})`).join('\n');
+            pVal += `\n${desgloseText}`;
+          }
+          return pVal;
         }
         if (typeof val === 'number') {
           return val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -1499,7 +1513,7 @@ function ResultTable({ data }: { data: any[] }) {
   }, [data]);
 
   if (!data || data.length === 0) return null;
-  const keys = Array.from(new Set(data.flatMap(r => Object.keys(r)))).filter(k => k !== 'combo_desglose');
+  const keys = Array.from(new Set(data.flatMap(r => Object.keys(r)))).filter(k => k !== 'combo_desglose' && k !== 'descripcion');
   const firstKeyCandidates = ['Fecha', 'FECHA', 'fecha', 'numero_orden', 'codigo', 'cliente', 'operador', 'OPERADOR', 'categoria', 'nombre_cajero', 'nombre_cliente'];
   const foundFirstKey = firstKeyCandidates.find(k => keys.includes(k));
   if (foundFirstKey && keys.indexOf(foundFirstKey) > 0) {
@@ -1532,35 +1546,46 @@ function ResultTable({ data }: { data: any[] }) {
                   {keys.map((key, i) => {
                     const val = row[key];
                     const isNumber = typeof val === 'number';
-                    const hasDesglose = key === 'producto' && Array.isArray(row.combo_desglose) && row.combo_desglose.length > 0;
+                    const isProductoKey = key === 'producto' && !isTotalRow;
+                    const hasDesglose = isProductoKey && Array.isArray(row.combo_desglose) && row.combo_desglose.length > 0;
+                    const hasDescripcion = isProductoKey && typeof row.descripcion === 'string' && row.descripcion.trim().length > 0;
                     return (
                       <td key={key} className={`px-6 py-3 whitespace-nowrap ${
                         isTotalRow 
                           ? (i === 0 ? 'font-black text-amber-400 sticky left-0 bg-neutral-800 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]' : 'font-black text-amber-300')
                           : (i === 0 ? 'font-medium text-white sticky left-0 bg-neutral-900 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)] z-10' : 'text-neutral-300')
                       }`}>
-                        {hasDesglose ? (
+                        {isProductoKey && (hasDescripcion || hasDesglose) ? (
                           <div className="py-1">
                             <div className="font-semibold text-white flex items-center gap-2">
                               <span>{String(val ?? '')}</span>
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 uppercase tracking-wider">
-                                Promo / Combo
-                              </span>
+                              {hasDescripcion && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 uppercase tracking-wider">
+                                  Combo / Promo
+                                </span>
+                              )}
                             </div>
-                            <div className="mt-2 pl-3 border-l-2 border-indigo-500/40 space-y-1">
-                              <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-400 block">
-                                Desglose en barra / sub-productos:
-                              </span>
-                              {row.combo_desglose.map((sub: any) => (
-                                <div key={sub.nombre} className="flex items-center gap-2 text-xs text-neutral-300">
-                                  <span className="text-indigo-400 font-mono">↳</span>
-                                  <span className="font-medium">{sub.nombre}</span>
-                                  <span className="px-1.5 py-0.5 rounded bg-neutral-800 text-indigo-300 border border-neutral-700 text-[11px] font-mono font-semibold">
-                                    x{sub.cantidad} servidos
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
+                            {hasDescripcion && (
+                              <div className="text-xs text-neutral-400 mt-1 font-normal whitespace-normal max-w-lg leading-relaxed italic">
+                                {row.descripcion}
+                              </div>
+                            )}
+                            {hasDesglose && (
+                              <div className="mt-2 pl-3 border-l-2 border-indigo-500/40 space-y-1">
+                                <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-400 block">
+                                  Desglose en barra / sub-productos:
+                                </span>
+                                {row.combo_desglose.map((sub: any) => (
+                                  <div key={sub.nombre} className="flex items-center gap-2 text-xs text-neutral-300">
+                                    <span className="text-indigo-400 font-mono">↳</span>
+                                    <span className="font-medium">{sub.nombre}</span>
+                                    <span className="px-1.5 py-0.5 rounded bg-neutral-800 text-indigo-300 border border-neutral-700 text-[11px] font-mono font-semibold">
+                                      x{sub.cantidad} servidos
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         ) : key.toLowerCase() === 'estado' && !isTotalRow && val ? (
                           val === 'PAGADO' ? (

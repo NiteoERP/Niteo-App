@@ -15,6 +15,8 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronUp,
+  ArrowDownAZ,
+  ArrowUpDown,
 } from 'lucide-react';
 import { obtenerMesasAbiertas, enviarComanda, cancelarItemMesa } from '@/actions/mesas-actions';
 import type { TerminalVinculado } from './MesasHub';
@@ -69,12 +71,58 @@ export default function MesasAbiertas({ terminal, meseroNombre, metodosPago, onM
   const onMesasLoadedRef = useRef(onMesasLoaded);
   useEffect(() => { onMesasLoadedRef.current = onMesasLoaded; }, [onMesasLoaded]);
 
+  const [orden, setOrden] = useState<'recientes' | 'alfabetico'>('recientes');
+  const ordenRef = useRef<'recientes' | 'alfabetico'>('recientes');
+
+  useEffect(() => {
+    try {
+      const guardado = localStorage.getItem('orden_mesas_mesero');
+      if (guardado === 'recientes' || guardado === 'alfabetico') {
+        setOrden(guardado);
+        ordenRef.current = guardado;
+      }
+    } catch {
+      // Ignorar restricciones de almacenamiento local
+    }
+  }, []);
+
+  const ordenarLista = useCallback((items: any[], modo: 'recientes' | 'alfabetico') => {
+    return [...items].sort((a: any, b: any) => {
+      if (modo === 'recientes') {
+        const timeA = new Date(a.actualizado_en || a.created_at || 0).getTime();
+        const timeB = new Date(b.actualizado_en || b.created_at || 0).getTime();
+        return timeB - timeA;
+      }
+      return String(a.mesa_identificador || '').localeCompare(
+        String(b.mesa_identificador || ''),
+        undefined,
+        { numeric: true, sensitivity: 'base' }
+      );
+    });
+  }, []);
+
+  const cambiarOrden = (nuevoOrden: 'recientes' | 'alfabetico') => {
+    setOrden(nuevoOrden);
+    ordenRef.current = nuevoOrden;
+    try {
+      localStorage.setItem('orden_mesas_mesero', nuevoOrden);
+    } catch {
+      // Ignorar errores en almacenamiento
+    }
+    setMesas(prev => {
+      const reordenada = ordenarLista(prev, nuevoOrden);
+      onMesasLoadedRef.current?.(reordenada.length, reordenada);
+      return reordenada;
+    });
+  };
+
   const cargar = useCallback(async (showRefresh = false) => {
     if (showRefresh) setRefreshing(true);
     try {
       const data = await obtenerMesasAbiertas(terminal.sedeId);
       if (!Array.isArray(data)) {
         setMesas([]);
+        onMesasLoadedRef.current?.(0, []);
         return;
       }
       // Agrupar por id (o mesa_identificador si no tiene id) para no ocultar cuentas distintas
@@ -85,16 +133,15 @@ export default function MesasAbiertas({ terminal, meseroNombre, metodosPago, onM
           porMesa[key] = cmd;
         }
       }
-      const listaFinal = Object.values(porMesa).sort((a: any, b: any) =>
-        String(a.mesa_identificador).localeCompare(String(b.mesa_identificador))
-      );
+      const rawList = Object.values(porMesa);
+      const listaFinal = ordenarLista(rawList, ordenRef.current);
       setMesas(listaFinal);
       onMesasLoadedRef.current?.(listaFinal.length, listaFinal);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [terminal.sedeId]);
+  }, [terminal.sedeId, ordenarLista]);
 
   useEffect(() => {
     cargar();
@@ -204,7 +251,7 @@ export default function MesasAbiertas({ terminal, meseroNombre, metodosPago, onM
       )}
 
       <div className="flex items-center justify-between px-1">
-        <p className="text-neutral-500 text-xs">
+        <p className="text-neutral-400 text-xs font-medium">
           {mesas.length === 0
             ? 'No hay mesas abiertas'
             : `${mesas.length} mesa${mesas.length > 1 ? 's' : ''} abierta${mesas.length > 1 ? 's' : ''}`
@@ -213,12 +260,46 @@ export default function MesasAbiertas({ terminal, meseroNombre, metodosPago, onM
         <button
           onClick={() => cargar(true)}
           disabled={refreshing}
-          className="flex items-center gap-1.5 text-neutral-500 hover:text-white text-xs transition-colors"
+          className="flex items-center gap-1.5 text-neutral-400 hover:text-white text-xs transition-colors px-2.5 py-1 rounded-lg bg-neutral-900 border border-neutral-800 active:scale-95"
         >
           <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
-          Actualizar
+          <span>Actualizar</span>
         </button>
       </div>
+
+      {mesas.length > 0 && (
+        <div className="flex items-center justify-between bg-neutral-900/90 border border-neutral-800 rounded-xl p-1 gap-1">
+          <span className="text-[11px] font-semibold text-neutral-400 pl-2 uppercase tracking-wider flex items-center gap-1">
+            <ArrowUpDown size={12} className="text-indigo-400" /> Ordenar:
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => cambiarOrden('recientes')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                orden === 'recientes'
+                  ? 'bg-neutral-800 text-white shadow-sm border border-neutral-700/80'
+                  : 'text-neutral-400 hover:text-neutral-200'
+              }`}
+            >
+              <Clock size={12} className={orden === 'recientes' ? 'text-indigo-400' : 'text-neutral-500'} />
+              <span>Más recientes</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => cambiarOrden('alfabetico')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                orden === 'alfabetico'
+                  ? 'bg-neutral-800 text-white shadow-sm border border-neutral-700/80'
+                  : 'text-neutral-400 hover:text-neutral-200'
+              }`}
+            >
+              <ArrowDownAZ size={13} className={orden === 'alfabetico' ? 'text-indigo-400' : 'text-neutral-500'} />
+              <span>Alfabético</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {mesas.length === 0 ? (
         <div className="text-center py-16">
