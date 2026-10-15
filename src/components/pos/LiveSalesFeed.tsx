@@ -235,13 +235,13 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
           )}
         </div>
 
-        {/* Selector de Método de Pago */}
-        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-          <div className="relative min-w-[190px] flex-1 sm:flex-initial">
+        {/* Selector de Método de Pago y Cortesías */}
+        <div className="flex flex-col xs:flex-row sm:flex-row items-stretch xs:items-center gap-2">
+          <div className="relative flex-1 sm:min-w-[210px] sm:flex-initial min-w-0">
             <select
               value={filtroMetodo}
               onChange={(e) => setFiltroMetodo(e.target.value)}
-              className="w-full bg-neutral-950 border border-neutral-800 rounded-lg pl-3 pr-8 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors cursor-pointer appearance-none"
+              className="w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-3 pr-8 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors cursor-pointer appearance-none"
             >
               <option value="TODOS">💳 Todos los métodos</option>
               <option value="CORTESIA">⭐ Solo Cortesías</option>
@@ -260,7 +260,7 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
           <button
             type="button"
             onClick={() => setFiltroMetodo(prev => prev === 'CORTESIA' ? 'TODOS' : 'CORTESIA')}
-            className={`px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all whitespace-nowrap border ${
+            className={`px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all whitespace-nowrap border shrink-0 ${
               filtroMetodo === 'CORTESIA'
                 ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-sm shadow-amber-500/10'
                 : 'bg-neutral-800 hover:bg-neutral-700 text-neutral-300 border-neutral-700 hover:text-white'
@@ -270,7 +270,7 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
             <span>⭐</span>
             <span>Cortesías</span>
             {totalCortesias > 0 && (
-              <span className="ml-0.5 px-1.5 py-0.2 text-[10px] bg-amber-500/30 text-amber-200 rounded-full font-bold">
+              <span className="ml-0.5 px-1.5 py-0.5 text-[10px] bg-amber-500/30 text-amber-200 rounded-full font-bold">
                 {totalCortesias}
               </span>
             )}
@@ -279,19 +279,19 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
       </div>
 
       {/* Resumen de Resultados Filtrados */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-3.5 py-3 bg-black/30 border border-neutral-800/80 rounded-xl text-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:px-4 sm:py-3.5 bg-neutral-900 sm:bg-black/30 border border-neutral-800 rounded-2xl text-xs">
         <div className="flex items-center justify-between sm:justify-start gap-2 text-neutral-400 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
-            <span>
-              Mostrando <strong className="text-white">{filtradas.length}</strong> de {sales.length} en vivo
+            <span className="text-xs sm:text-sm">
+              Mostrando <strong className="text-white font-bold">{filtradas.length}</strong> de {sales.length} en vivo
             </span>
             {filtroMetodo === 'CORTESIA' && (
-              <span className="flex items-center gap-1 text-amber-400 font-medium bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+              <span className="flex items-center gap-1 text-amber-400 font-medium bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
                 ⭐ Solo Cortesías
               </span>
             )}
             {filtroMetodo !== 'TODOS' && filtroMetodo !== 'CORTESIA' && (
-              <span className="flex items-center gap-1 text-indigo-400 font-medium bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+              <span className="flex items-center gap-1 text-indigo-400 font-medium bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">
                 {filtroMetodo}
               </span>
             )}
@@ -302,36 +302,39 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
                 setBusqueda('');
                 setFiltroMetodo('TODOS');
               }}
-              className="text-[11px] text-rose-400 hover:text-rose-300 underline transition-colors cursor-pointer sm:hidden"
+              className="text-xs text-rose-400 hover:text-rose-300 font-medium underline transition-colors cursor-pointer sm:hidden"
             >
               Limpiar
             </button>
           )}
         </div>
 
-        <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t border-neutral-800/70 sm:border-0">
-          <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
-            <div className="flex items-center gap-1.5">
-              <span className="text-neutral-400">
-                {filtroMetodo === 'CORTESIA' ? 'Valor Regalado:' : 'Total Percibido:'}
-              </span>
-              <span className={`font-extrabold text-sm sm:text-base ${filtroMetodo === 'CORTESIA' ? 'text-amber-400' : 'text-emerald-400'}`}>
-                {formatCurrency(totalMontoFiltrado)}
-              </span>
-            </div>
-            {filtroMetodo !== 'CORTESIA' && totalValorRegalado > 0 && (
-              <span className="text-[11px] text-amber-400/90 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 whitespace-nowrap" title="Valor en productos entregados por cortesía (excluidos del ingreso percibido)">
+        <div className="flex items-center justify-between sm:justify-end gap-4 pt-2.5 sm:pt-0 border-t border-neutral-800 sm:border-0">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2">
+            <span className="text-[10px] sm:text-xs uppercase sm:normal-case tracking-wider sm:tracking-normal text-neutral-400 font-semibold sm:font-normal">
+              {filtroMetodo === 'CORTESIA' ? 'Valor Regalado:' : 'Total Percibido:'}
+            </span>
+            <span className={`font-extrabold text-base sm:text-base whitespace-nowrap ${filtroMetodo === 'CORTESIA' ? 'text-amber-400' : 'text-emerald-400'}`}>
+              {formatCurrency(totalMontoFiltrado)}
+            </span>
+          </div>
+
+          {filtroMetodo !== 'CORTESIA' && totalValorRegalado > 0 && (
+            <div className="flex flex-col sm:flex-row sm:items-center items-end gap-0.5 sm:gap-1.5">
+              <span className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold sm:hidden">Cortesías</span>
+              <span className="text-xs text-amber-300 bg-amber-500/15 px-2.5 py-1 rounded-lg border border-amber-500/30 font-semibold whitespace-nowrap" title="Valor en productos entregados por cortesía (excluidos del ingreso percibido)">
                 🎁 {formatCurrency(totalValorRegalado)}
               </span>
-            )}
-          </div>
+            </div>
+          )}
+
           {(busqueda || filtroMetodo !== 'TODOS') && (
             <button
               onClick={() => {
                 setBusqueda('');
                 setFiltroMetodo('TODOS');
               }}
-              className="hidden sm:inline-block text-[11px] text-neutral-400 hover:text-white underline ml-2 transition-colors cursor-pointer whitespace-nowrap"
+              className="hidden sm:inline-block text-xs text-neutral-400 hover:text-white underline ml-2 transition-colors cursor-pointer whitespace-nowrap"
             >
               Limpiar filtros
             </button>
@@ -339,133 +342,224 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
         </div>
       </div>
 
-      {/* Tabla de Ventas en Vivo */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden">
+      {/* Lista de Ventas en Vivo (Tarjetas separadas) */}
+      <div>
         {filtradas.length === 0 ? (
-          <div className="p-12 text-center text-neutral-500">
+          <div className="p-12 text-center text-neutral-500 bg-neutral-900 border border-neutral-800 rounded-2xl">
             <Receipt className="mx-auto h-12 w-12 opacity-20 mb-4" />
             <p>No hay ventas coincidentes {sales.length > 0 ? 'con los filtros seleccionados' : 'hoy'}.</p>
             <p className="text-xs mt-1">Las transacciones del POS aparecerán aquí automáticamente.</p>
           </div>
         ) : (
-          <div className="flex flex-col divide-y divide-neutral-800">
+          <div className="space-y-4 sm:space-y-3.5">
             {filtradas.map((sale) => {
               const isExpanded = expandedRow === sale.id_factura;
+              const isCortesia = isCortesiaVenta(sale);
+              const totalItemsCount = sale.detalles?.reduce((acc: number, item: any) => acc + Number(item.cantidad || 1), 0) || 0;
+              const orderLabel = sale.numero_orden || (sale.tipo_documento === 'Sales' || sale.tipo_documento === 'VENTA' ? 'Venta de Caja' : sale.tipo_documento);
+
+              const accentBorderClass = isCortesia
+                ? 'border-l-4 border-l-amber-500 border-neutral-700/80'
+                : 'border-l-4 border-l-emerald-500 border-neutral-700/80';
+
               return (
-              <div key={sale.id_factura} className="group flex flex-col hover:bg-neutral-800/30 transition-colors duration-200">
-                
-                {/* Header (Resumen) */}
-                <div 
-                  className="flex flex-col md:flex-row md:items-center justify-between p-3.5 sm:p-4 cursor-pointer gap-3 md:gap-4"
-                  onClick={() => setExpandedRow(isExpanded ? null : sale.id_factura)}
+                <div
+                  key={sale.id_factura}
+                  className={`bg-neutral-900 border ${accentBorderClass} rounded-2xl overflow-hidden shadow-lg shadow-black/40 transition-all hover:border-neutral-600`}
                 >
-                  {/* Izquierda: Info Cliente y Hora */}
-                  <div className="flex items-start sm:items-center justify-between md:justify-start gap-3">
-                    <div className="flex items-start sm:items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 text-indigo-400 shrink-0">
-                        <Receipt size={18} />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-neutral-200 font-medium flex items-center gap-2 text-sm sm:text-base flex-wrap">
-                          <span className="font-bold text-white uppercase truncate">{sale.numero_orden || (sale.tipo_documento === 'Sales' || sale.tipo_documento === 'VENTA' ? 'Venta de Caja' : sale.tipo_documento)}</span>
-                          {sale.esta_pagado && <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />}
-                          {isCortesiaVenta(sale) && (
-                            <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase flex items-center gap-1 shadow-sm">
-                              <span>⭐</span> Cortesía
+                  {/* Header (Resumen) */}
+                  <div
+                    className="cursor-pointer select-none"
+                    onClick={() => setExpandedRow(isExpanded ? null : sale.id_factura)}
+                  >
+                    {/* VISTA MÓVIL (< md) */}
+                    <div className="flex flex-col md:hidden">
+                      <div className="bg-neutral-800/60 border-b border-neutral-800 px-3.5 py-3 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <div className="w-7 h-7 rounded-lg bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
+                              <Receipt size={15} />
+                            </div>
+                            <span className="font-mono text-sm font-extrabold text-white truncate">
+                              {formatDocNumber(sale.numero_documento)}
                             </span>
-                          )}
-                        </div>
-                        <p className="text-neutral-500 text-xs sm:text-sm flex items-center gap-1 mt-0.5">
-                          <Clock size={12} className="shrink-0" /> {formatDateTime(sale.fecha_venta)}
-                          <span className="mx-1">•</span>
-                          <span className="font-semibold text-neutral-300">{formatDocNumber(sale.numero_documento)}</span>
-                        </p>
-                        {/* Cliente y Método de Pago */}
-                        <div className="flex flex-wrap gap-x-2.5 gap-y-1 mt-1.5">
-                          {sale.cliente_nombre && (
-                            <span className="text-xs text-neutral-300 flex items-center gap-1 bg-neutral-800/70 px-2 py-0.5 rounded border border-neutral-700/60">
-                              <Users size={11} className="text-indigo-400 shrink-0" />
-                              <span className="truncate max-w-[160px]">{privacyMode ? '****' : sale.cliente_nombre}</span>
-                            </span>
-                          )}
-                          {sale.pagos && sale.pagos.length > 0 ? (
-                            sale.pagos.map((p, idx) => (
-                              <span key={idx} className="text-[11px] font-medium text-emerald-400 flex items-center gap-1 bg-emerald-400/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
-                                <CreditCard size={11} className="shrink-0" />
-                                {getCanonicalPaymentMethodName(p.tipo_pago)}: {formatCurrency(p.monto)}
+                            {sale.esta_pagado && <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />}
+                            {isCortesia && (
+                              <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase shrink-0">
+                                ⭐ Cortesía
                               </span>
-                            ))
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <div className="text-right">
+                              {isCortesia ? (
+                                <div className="flex items-baseline gap-1">
+                                  <span className="text-sm font-extrabold text-amber-400 whitespace-nowrap">$0.00</span>
+                                  <span className="text-[10px] text-amber-400/80 font-medium whitespace-nowrap">({formatCurrency(sale.total)})</span>
+                                </div>
+                              ) : (
+                                <span className="text-sm font-extrabold whitespace-nowrap px-2 py-0.5 rounded-md text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
+                                  {formatCurrency(sale.total)}
+                                </span>
+                              )}
+                            </div>
+                            <div className="w-7 h-7 rounded-lg bg-neutral-800 border border-neutral-700/70 flex items-center justify-center text-neutral-300 shrink-0">
+                              {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-neutral-700/40">
+                          <div className="flex items-center gap-1.5 text-xs text-neutral-400 whitespace-nowrap shrink-0">
+                            <Clock size={12} className="text-indigo-400/80 shrink-0" />
+                            <span>{formatDateTime(sale.fecha_venta)}</span>
+                          </div>
+                          <span className="text-[11px] font-bold text-indigo-300 bg-indigo-500/15 border border-indigo-500/30 px-2 py-0.5 rounded-md truncate max-w-[150px]">
+                            {orderLabel}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="p-3.5 space-y-2.5 bg-neutral-900">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold mb-0.5">Cliente</p>
+                            <div className="flex items-center gap-1.5 text-white font-semibold text-sm">
+                              <Users size={14} className="text-indigo-400 shrink-0" />
+                              <span className="break-words leading-snug">
+                                {privacyMode ? '****' : (sale.cliente_nombre || 'Consumidor Final')}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-between gap-2 flex-wrap">
+                          <span className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold">Método de Pago</span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {sale.pagos && sale.pagos.length > 0 ? (
+                              sale.pagos.map((p, idx) => (
+                                <span key={idx} className="text-[11px] font-semibold text-emerald-300 flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/25">
+                                  <CreditCard size={11} className="shrink-0" />
+                                  {getCanonicalPaymentMethodName(p.tipo_pago)}: {formatCurrency(p.monto)}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-[11px] font-medium text-neutral-400 bg-neutral-800 px-2 py-0.5 rounded-md border border-neutral-700">
+                                Sin especificar
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="pt-2 border-t border-neutral-800/50 flex items-center justify-between text-[11px] text-neutral-400">
+                          <span className="flex items-center gap-1.5 font-medium">
+                            <Receipt size={12} className="text-indigo-400" />
+                            {totalItemsCount} {totalItemsCount === 1 ? 'producto' : 'productos'} en la orden
+                          </span>
+                          <span className="text-indigo-400 font-semibold">
+                            {isExpanded ? 'Ocultar detalle ▲' : 'Ver detalle ▼'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* VISTA ESCRITORIO (md+) */}
+                    <div className="hidden md:flex items-center justify-between p-4 gap-4">
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 text-indigo-400 shrink-0">
+                          <Receipt size={18} />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-neutral-200 font-medium flex items-center gap-2 text-base flex-wrap">
+                            <span className="font-mono font-bold text-white">{formatDocNumber(sale.numero_documento)}</span>
+                            <span className="text-neutral-600">•</span>
+                            <span className="font-bold text-indigo-300 uppercase truncate">{orderLabel}</span>
+                            {sale.esta_pagado && <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />}
+                            {isCortesia && (
+                              <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase flex items-center gap-1 shadow-sm">
+                                <span>⭐</span> Cortesía
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-neutral-400 text-xs flex items-center gap-1.5 mt-1">
+                            <Clock size={12} className="text-indigo-400/70 shrink-0" /> {formatDateTime(sale.fecha_venta)}
+                          </p>
+                          <div className="flex flex-wrap gap-x-2.5 gap-y-1 mt-2">
+                            {sale.cliente_nombre && (
+                              <span className="text-xs text-neutral-200 flex items-center gap-1 bg-neutral-800 px-2 py-0.5 rounded-md border border-neutral-700">
+                                <Users size={11} className="text-indigo-400 shrink-0" />
+                                <span className="truncate max-w-[200px]">{privacyMode ? '****' : sale.cliente_nombre}</span>
+                              </span>
+                            )}
+                            {sale.pagos && sale.pagos.length > 0 ? (
+                              sale.pagos.map((p, idx) => (
+                                <span key={idx} className="text-[11px] font-semibold text-emerald-400 flex items-center gap-1 bg-emerald-400/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                                  <CreditCard size={11} className="shrink-0" />
+                                  {getCanonicalPaymentMethodName(p.tipo_pago)}: {formatCurrency(p.monto)}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-[11px] font-medium text-neutral-500 flex items-center gap-1 bg-neutral-900 px-2 py-0.5 rounded-md border border-neutral-800">
+                                <CreditCard size={11} className="shrink-0" />
+                                Sin especificar
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-end gap-4 shrink-0">
+                        <div className="text-right">
+                          {isCortesia ? (
+                            <div>
+                              <p className="text-amber-400 font-extrabold text-lg">$0.00</p>
+                              <p className="text-amber-400/80 text-[11px] font-medium">Cortesía ({formatCurrency(sale.total)})</p>
+                            </div>
                           ) : (
-                            <span className="text-[11px] font-medium text-neutral-500 flex items-center gap-1 bg-neutral-900 px-1.5 py-0.5 rounded border border-neutral-800">
-                              <CreditCard size={11} className="shrink-0" />
-                              Sin especificar
-                            </span>
+                            <p className="text-emerald-400 font-extrabold text-lg">{formatCurrency(sale.total)}</p>
+                          )}
+                          {sale.descuento > 0 && !isCortesia && (
+                            <p className="text-amber-500 text-xs">- {formatCurrency(sale.descuento)} desc.</p>
                           )}
                         </div>
-                      </div>
-                    </div>
-
-                    {/* Monto y Flecha visibles arriba a la derecha en móvil */}
-                    <div className="flex md:hidden items-center gap-2 shrink-0">
-                      <div className="text-right">
-                        {isCortesiaVenta(sale) ? (
-                          <div>
-                            <p className="text-amber-400 font-extrabold text-base">$0.00</p>
-                            <p className="text-amber-400/80 text-[10px] font-medium">({formatCurrency(sale.total)})</p>
-                          </div>
-                        ) : (
-                          <p className="text-emerald-400 font-extrabold text-base">{formatCurrency(sale.total)}</p>
-                        )}
-                      </div>
-                      <div className="p-1 rounded-lg bg-neutral-800/60 text-neutral-400">
-                        {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Derecha (Escritorio): Total y Flecha */}
-                  <div className="hidden md:flex items-center justify-end gap-6 shrink-0">
-                    <div className="text-right">
-                      {isCortesiaVenta(sale) ? (
-                        <div>
-                          <p className="text-amber-400 font-bold text-lg">$0.00</p>
-                          <p className="text-amber-400/80 text-[11px] font-medium">Cortesía ({formatCurrency(sale.total)})</p>
+                        <div className="w-8 h-8 rounded-lg bg-neutral-800 flex items-center justify-center text-neutral-400">
+                          {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                         </div>
-                      ) : (
-                        <p className="text-neutral-200 font-bold text-lg">{formatCurrency(sale.total)}</p>
-                      )}
-                      {sale.descuento > 0 && !isCortesiaVenta(sale) && (
-                        <p className="text-amber-500 text-xs">- {formatCurrency(sale.descuento)} desc.</p>
-                      )}
-                    </div>
-                    <div className="text-neutral-600 group-hover:text-neutral-400 transition-colors">
-                      {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Body (Detalles Expandidos) */}
-                {isExpanded && (
-                  <div className="px-4 pb-4 pt-2 bg-neutral-900/50 md:bg-neutral-950/50 border-t border-neutral-800/50">
-                    <div className="md:pl-14">
-                      <h4 className="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3">Items del Ticket</h4>
-                      <div className="space-y-2">
+                  {/* Body (Detalles Expandidos) */}
+                  {isExpanded && (
+                    <div className="p-3.5 sm:p-4 bg-neutral-950/90 border-t border-neutral-800">
+                      <h4 className="text-xs font-bold text-neutral-300 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                        <Receipt size={14} className="text-indigo-400" />
+                        Items del Ticket
+                      </h4>
+                      <div className="bg-neutral-900/90 border border-neutral-800/90 rounded-xl p-3 divide-y divide-neutral-800/70">
                         {sale.detalles.map((d: any) => (
-                          <div key={d.id_detalle} className="bg-black/20 p-2 rounded text-sm space-y-1">
-                            <div className="flex justify-between items-center">
-                              <span className="text-neutral-300 flex items-center gap-1.5 flex-wrap">
-                                <span className="text-neutral-500 mr-1">{d.cantidad}x</span> 
-                                {privacyMode ? 'Producto Oculto' : (d.producto_nombre || 'Producto S/N')}
+                          <div key={d.id_detalle} className="py-2 first:pt-0 last:pb-0 text-xs sm:text-sm space-y-1">
+                            <div className="flex justify-between items-start gap-3">
+                              <div className="flex items-start gap-2 text-neutral-200 min-w-0 flex-1">
+                                <span className="bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs px-2 py-0.5 rounded-md font-bold shrink-0">
+                                  {d.cantidad}x
+                                </span>
+                                <span className="font-semibold text-white break-words leading-snug pt-0.5">
+                                  {privacyMode ? 'Producto Oculto' : (d.producto_nombre || 'Producto S/N')}
+                                </span>
                                 {d.combo_items && d.combo_items.length > 0 && (
-                                  <span className="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1.5 py-0.2 rounded font-bold uppercase">
+                                  <span className="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1.5 py-0.2 rounded font-bold uppercase shrink-0">
                                     Promo
                                   </span>
                                 )}
+                              </div>
+                              <span className="text-emerald-400 font-bold font-mono shrink-0 pt-0.5 whitespace-nowrap">
+                                {formatCurrency(d.total)}
                               </span>
-                              <span className="text-neutral-400 font-medium font-mono">{formatCurrency(d.total)}</span>
                             </div>
                             {d.combo_items && d.combo_items.length > 0 && !privacyMode && (
-                              <div className="ml-5 pl-2 border-l border-indigo-500/40 text-[11px] text-neutral-400 space-y-0.5">
+                              <div className="ml-8 pl-2.5 border-l-2 border-indigo-500/40 text-[11px] text-neutral-400 space-y-0.5 mt-1">
                                 {d.combo_items.map((sub: any, sIdx: number) => (
                                   <div key={sIdx}>
                                     ↳ {sub.cantidad > 1 ? `${sub.cantidad}x ` : ''}{sub.nombre}
@@ -477,10 +571,10 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
                         ))}
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            )})}
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

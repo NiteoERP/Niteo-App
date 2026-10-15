@@ -241,8 +241,8 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
   }, [ventas, filtradas, filtroMetodo]);
 
   
-      return (
-    <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-3 sm:p-4 md:p-6 animate-in fade-in space-y-4 sm:space-y-6">
+  return (
+    <div className="bg-transparent sm:bg-neutral-900 sm:border sm:border-neutral-800 rounded-xl p-0 sm:p-4 md:p-6 animate-in fade-in space-y-4 sm:space-y-6">
       {reembolsoVenta && (
         <ReembolsoModal 
           venta={reembolsoVenta}
@@ -262,7 +262,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
       )}
       
       <div className={`relative z-30 transition-all ${isCalendarOpen ? 'min-h-[420px] sm:min-h-[440px]' : ''}`}>
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 bg-black/40 border border-neutral-800 rounded-2xl p-3.5 sm:p-5">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 bg-neutral-900 sm:bg-black/40 border border-neutral-800 rounded-2xl p-3.5 sm:p-5">
           <div>
             <h3 className="text-white font-bold text-sm sm:text-base">Estado de Verificación</h3>
             <p className="text-xs text-neutral-400 mt-0.5">Las ventas verdes han sido verificadas en el Cierre de Caja.</p>
@@ -357,16 +357,16 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
       </div>
 
       {/* Barra de Filtros y Búsqueda */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2.5 sm:gap-3 bg-neutral-950/80 border border-neutral-800 p-3 sm:p-3.5 rounded-xl">
+      <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2.5 sm:gap-3 bg-neutral-900 sm:bg-neutral-950/80 border border-neutral-800 p-3 sm:p-3.5 rounded-2xl">
         {/* Buscador */}
         <div className="relative flex-1">
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
           <input
             type="text"
-            placeholder="Buscar por # doc, cliente o mesa..."
+            placeholder="Buscar por # pedido, cliente, mesero o mesa..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            className="w-full bg-neutral-900 border border-neutral-800 rounded-lg pl-9 pr-8 py-2.5 sm:py-2 text-xs sm:text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-indigo-500 transition-colors"
+            className="w-full bg-neutral-950 sm:bg-neutral-900 border border-neutral-800 rounded-xl pl-9 pr-8 py-2.5 text-xs sm:text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-indigo-500 transition-colors"
           />
           {busqueda && (
             <button 
@@ -379,13 +379,13 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
           )}
         </div>
 
-        {/* Selector de Método de Pago */}
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1 sm:min-w-[190px] sm:flex-initial min-w-0">
+        {/* Selector de Método de Pago y Cortesías */}
+        <div className="flex flex-col xs:flex-row sm:flex-row items-stretch xs:items-center gap-2">
+          <div className="relative flex-1 sm:min-w-[210px] sm:flex-initial min-w-0">
             <select
               value={filtroMetodo}
               onChange={(e) => setFiltroMetodo(e.target.value)}
-              className="w-full bg-neutral-900 border border-neutral-800 rounded-lg pl-3 pr-8 py-2.5 sm:py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors cursor-pointer appearance-none truncate"
+              className="w-full bg-neutral-950 sm:bg-neutral-900 border border-neutral-800 rounded-xl pl-3 pr-8 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors cursor-pointer appearance-none"
             >
               <option value="TODOS">💳 Todos los métodos</option>
               <option value="CORTESIA">⭐ Solo Cortesías</option>
@@ -397,24 +397,24 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                 ))}
               </optgroup>
             </select>
-            <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
           </div>
 
           {/* Botón Acceso Rápido Solo Cortesías */}
           <button
             type="button"
             onClick={() => setFiltroMetodo(prev => prev === 'CORTESIA' ? 'TODOS' : 'CORTESIA')}
-            className={`px-3 sm:px-3.5 py-2.5 sm:py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all whitespace-nowrap border shrink-0 ${
+            className={`px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all whitespace-nowrap border shrink-0 ${
               filtroMetodo === 'CORTESIA'
                 ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-sm shadow-amber-500/10'
-                : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border-neutral-800 hover:text-white'
+                : 'bg-neutral-950 sm:bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border-neutral-800 hover:text-white'
             }`}
             title="Ver rápidamente todas las ventas por cortesía"
           >
             <span>⭐</span>
             <span>Cortesías</span>
             {totalCortesias > 0 && (
-              <span className="ml-0.5 px-1.5 py-0.2 text-[10px] bg-amber-500/30 text-amber-200 rounded-full font-bold">
+              <span className="ml-0.5 px-1.5 py-0.5 text-[10px] bg-amber-500/30 text-amber-200 rounded-full font-bold">
                 {totalCortesias}
               </span>
             )}
@@ -422,25 +422,25 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
         </div>
       </div>
 
-      {/* Resumen de Resultados Filtrados */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-3.5 py-3 bg-black/30 border border-neutral-800/80 rounded-xl text-xs">
+      {/* Resumen de Resultados Filtrados (KPI Bar) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:px-4 sm:py-3.5 bg-neutral-900 sm:bg-black/30 border border-neutral-800 rounded-2xl text-xs">
         <div className="flex items-center justify-between sm:justify-start gap-2 text-neutral-400 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
-            <span>
-              Mostrando <strong className="text-white">{filtradas.length}</strong> {filtradas.length === 1 ? 'venta' : 'ventas'}
+            <span className="text-xs sm:text-sm">
+              Mostrando <strong className="text-white font-bold">{filtradas.length}</strong> {filtradas.length === 1 ? 'venta' : 'ventas'}
             </span>
             {filtroMetodo === 'CORTESIA' && (
-              <span className="flex items-center gap-1 text-amber-400 font-medium bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+              <span className="flex items-center gap-1 text-amber-400 font-medium bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
                 ⭐ Solo Cortesías
               </span>
             )}
             {filtroMetodo !== 'TODOS' && filtroMetodo !== 'CORTESIA' && (
-              <span className="flex items-center gap-1 text-indigo-400 font-medium bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+              <span className="flex items-center gap-1 text-indigo-400 font-medium bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">
                 {filtroMetodo}
               </span>
             )}
             {fechaFiltro && (
-              <span className="flex items-center gap-1 text-neutral-300 bg-neutral-800 px-2 py-0.5 rounded border border-neutral-700">
+              <span className="flex items-center gap-1 text-neutral-300 bg-neutral-800 px-2 py-0.5 rounded-md border border-neutral-700">
                 📅 {format(parseISO(fechaFiltro), 'dd MMM yyyy', { locale: es })}
               </span>
             )}
@@ -452,29 +452,32 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                 setFiltroMetodo('TODOS');
                 setFechaFiltro('');
               }}
-              className="text-[11px] text-rose-400 hover:text-rose-300 underline transition-colors cursor-pointer sm:hidden"
+              className="text-xs text-rose-400 hover:text-rose-300 font-medium underline transition-colors cursor-pointer sm:hidden"
             >
               Limpiar
             </button>
           )}
         </div>
 
-        <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t border-neutral-800/70 sm:border-0">
-          <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
-            <div className="flex items-center gap-1.5">
-              <span className="text-neutral-400">
-                {filtroMetodo === 'CORTESIA' ? 'Valor Regalado:' : 'Total Percibido:'}
-              </span>
-              <span className={`font-extrabold text-sm sm:text-base ${filtroMetodo === 'CORTESIA' ? 'text-amber-400' : 'text-emerald-400'}`}>
-                {formatCurrency(totalMontoFiltrado)}
-              </span>
-            </div>
-            {filtroMetodo !== 'CORTESIA' && totalValorRegalado > 0 && (
-              <span className="text-[11px] text-amber-400/90 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 whitespace-nowrap" title="Valor en productos entregados por cortesía (excluidos del ingreso percibido)">
+        <div className="flex items-center justify-between sm:justify-end gap-4 pt-2.5 sm:pt-0 border-t border-neutral-800 sm:border-0">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2">
+            <span className="text-[10px] sm:text-xs uppercase sm:normal-case tracking-wider sm:tracking-normal text-neutral-400 font-semibold sm:font-normal">
+              {filtroMetodo === 'CORTESIA' ? 'Valor Regalado:' : 'Total Percibido:'}
+            </span>
+            <span className={`font-extrabold text-base sm:text-base whitespace-nowrap ${filtroMetodo === 'CORTESIA' ? 'text-amber-400' : 'text-emerald-400'}`}>
+              {formatCurrency(totalMontoFiltrado)}
+            </span>
+          </div>
+
+          {filtroMetodo !== 'CORTESIA' && totalValorRegalado > 0 && (
+            <div className="flex flex-col sm:flex-row sm:items-center items-end gap-0.5 sm:gap-1.5">
+              <span className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold sm:hidden">Cortesías</span>
+              <span className="text-xs text-amber-300 bg-amber-500/15 px-2.5 py-1 rounded-lg border border-amber-500/30 font-semibold whitespace-nowrap" title="Valor en productos entregados por cortesía (excluidos del ingreso percibido)">
                 🎁 {formatCurrency(totalValorRegalado)}
               </span>
-            )}
-          </div>
+            </div>
+          )}
+
           {(busqueda || filtroMetodo !== 'TODOS' || fechaFiltro) && (
             <button
               onClick={() => {
@@ -482,7 +485,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                 setFiltroMetodo('TODOS');
                 setFechaFiltro('');
               }}
-              className="hidden sm:inline-block text-[11px] text-neutral-400 hover:text-white underline ml-1 transition-colors cursor-pointer whitespace-nowrap"
+              className="hidden sm:inline-block text-xs text-neutral-400 hover:text-white underline ml-1 transition-colors cursor-pointer whitespace-nowrap"
             >
               Limpiar filtros
             </button>
@@ -493,149 +496,177 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
       {loading ? (
         <div className="flex justify-center p-12 text-indigo-400 animate-pulse">Cargando historial...</div>
       ) : filtradas.length === 0 ? (
-        <div className="text-center p-8 sm:p-12 text-neutral-500 border border-neutral-800 border-dashed rounded-xl text-sm">
+        <div className="text-center p-8 sm:p-12 text-neutral-500 border border-neutral-800 border-dashed rounded-2xl text-sm">
           No hay ventas registradas {fechaFiltro ? 'en esta fecha' : 'con los filtros seleccionados'}.
         </div>
       ) : (
-        <div className="space-y-3">
-          {filtradas.map(venta => {
+        <div className="space-y-4 sm:space-y-3.5">
+          {filtradas.map((venta) => {
             const isExpanded = expandedId === venta.id_factura.toString();
             const isCortesia = isCortesiaVenta(venta);
             const clienteLabel = venta.cliente_nombre && venta.cliente_nombre !== 'Unknown' ? venta.cliente_nombre : 'Consumidor Final';
+            const totalItemsCount = venta.detalles?.reduce((acc, item) => acc + Number(item.cantidad || 1), 0) || 0;
+
+            const accentBorderClass =
+              venta.estado_activo === false
+                ? 'border-l-4 border-l-red-500 border-red-900/50 opacity-80'
+                : venta.tipo_documento === 'REEMBOLSO'
+                ? 'border-l-4 border-l-rose-500 border-neutral-700/80'
+                : isCortesia
+                ? 'border-l-4 border-l-amber-500 border-neutral-700/80'
+                : venta.verificado
+                ? 'border-l-4 border-l-emerald-500 border-neutral-700/80'
+                : 'border-l-4 border-l-indigo-500 border-neutral-700/80';
 
             return (
               <div
                 key={venta.id_factura}
-                className={`bg-black/25 border ${
-                  venta.estado_activo === false
-                    ? 'border-red-900/50 opacity-75 border-l-4 border-l-amber-500'
-                    : venta.tipo_documento === 'REEMBOLSO'
-                    ? 'border-neutral-800 border-l-4 border-l-red-500'
-                    : 'border-neutral-800'
-                } rounded-xl overflow-hidden transition-all hover:border-neutral-700`}
+                className={`bg-neutral-900 border ${accentBorderClass} rounded-2xl overflow-hidden shadow-lg shadow-black/40 transition-all hover:border-neutral-600`}
               >
                 {/* Resumen Fila / Tarjeta */}
                 <div
-                  className="p-3.5 sm:p-4 cursor-pointer"
+                  className="cursor-pointer select-none"
                   onClick={() => setExpandedId(isExpanded ? null : venta.id_factura.toString())}
                 >
-                  {/* VISTA MÓVIL (< md): Tarjeta estructurada y fácil de leer en teléfono */}
-                  <div className="flex flex-col gap-3 md:hidden">
-                    {/* Fila Superior Móvil: Check + #Doc + Badges (Izq) | Monto Total + Chevron (Der) */}
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <button
-                          onClick={(e) => handleToggleVerificado(e, venta.id_factura.toString(), !!venta.verificado)}
-                          className={`p-1 -ml-1 rounded-full transition-colors shrink-0 ${
-                            venta.verificado ? 'text-emerald-400 hover:text-emerald-300' : 'text-neutral-600 hover:text-neutral-400'
-                          }`}
-                          title={venta.verificado ? 'Desmarcar' : 'Marcar como verificado'}
-                        >
-                          {venta.verificado ? <CheckCircle2 size={22} /> : <Circle size={22} />}
-                        </button>
-                        <div className="bg-neutral-800/90 p-2 rounded-lg shrink-0">
-                          <Receipt size={18} className="text-indigo-400" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <p className={`text-base font-extrabold tracking-tight ${venta.estado_activo === false ? 'text-red-400 line-through' : 'text-white'}`}>
-                              {formatDocNumber(venta.numero_documento)}
-                            </p>
-                            {venta.estado_activo === false && (
-                              <span className="bg-red-500/20 text-red-400 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">
-                                Anulada
-                              </span>
-                            )}
-                            {isCortesia && (
-                              <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase flex items-center gap-0.5">
-                                ⭐ Cortesía
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1.5 text-[11px] text-neutral-400 mt-0.5">
-                            <Clock size={11} className="shrink-0" />
-                            <span>{formatDateTime(venta.fecha_venta)}</span>
-                          </div>
-                        </div>
-                      </div>
+                  {/* VISTA MÓVIL (< md): Tarjeta con Cabecera y Cuerpo bien diferenciados */}
+                  <div className="flex flex-col md:hidden">
+                    {/* Cabecera de la Tarjeta Móvil */}
+                    <div className="bg-neutral-800/60 border-b border-neutral-800 px-3.5 py-3 space-y-2">
+                      {/* Fila 1: Check + #Pedido (Izquierda) | Total USD + Botón Desplegar (Derecha) */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <button
+                            onClick={(e) => handleToggleVerificado(e, venta.id_factura.toString(), !!venta.verificado)}
+                            className={`p-1 -ml-1 rounded-full transition-colors shrink-0 ${
+                              venta.verificado ? 'text-emerald-400 hover:text-emerald-300' : 'text-neutral-500 hover:text-neutral-300'
+                            }`}
+                            title={venta.verificado ? 'Desmarcar' : 'Marcar como verificado'}
+                          >
+                            {venta.verificado ? <CheckCircle2 size={22} /> : <Circle size={22} />}
+                          </button>
 
-                      <div className="flex items-center gap-2 shrink-0">
-                        <div className="text-right">
-                          {isCortesia ? (
-                            <div>
-                              <p className="text-base font-extrabold text-amber-400">$0.00</p>
-                              <p className="text-[10px] text-amber-400/80 font-medium">({formatCurrency(venta.total)})</p>
-                            </div>
-                          ) : (
-                            <p className={`text-base font-extrabold ${venta.estado_activo === false ? 'text-red-400' : 'text-emerald-400'}`}>
-                              {formatCurrency(venta.total)}
-                            </p>
+                          <span className={`font-mono text-sm font-extrabold tracking-tight truncate ${
+                            venta.estado_activo === false ? 'text-red-400 line-through' : 'text-white'
+                          }`}>
+                            {formatDocNumber(venta.numero_documento)}
+                          </span>
+
+                          {venta.estado_activo === false && (
+                            <span className="bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
+                              Anulada
+                            </span>
+                          )}
+                          {isCortesia && (
+                            <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase shrink-0">
+                              ⭐ Cortesía
+                            </span>
                           )}
                         </div>
-                        <div className="p-1 rounded-lg bg-neutral-800/60 text-neutral-400">
-                          {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <div className="text-right">
+                            {isCortesia ? (
+                              <div className="flex items-baseline gap-1">
+                                <span className="text-sm font-extrabold text-amber-400 whitespace-nowrap">$0.00</span>
+                                <span className="text-[10px] text-amber-400/80 font-medium whitespace-nowrap">({formatCurrency(venta.total)})</span>
+                              </div>
+                            ) : (
+                              <span className={`text-sm font-extrabold whitespace-nowrap px-2 py-0.5 rounded-md ${
+                                venta.estado_activo === false
+                                  ? 'text-red-400 bg-red-500/10'
+                                  : 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20'
+                              }`}>
+                                {formatCurrency(venta.total)}
+                              </span>
+                            )}
+                          </div>
+                          <div className="w-7 h-7 rounded-lg bg-neutral-800 border border-neutral-700/70 flex items-center justify-center text-neutral-300 shrink-0">
+                            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Fila 2: Fecha y Hora (Izquierda) | Método de Pago (Derecha) */}
+                      <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-neutral-700/40">
+                        <div className="flex items-center gap-1.5 text-xs text-neutral-400 whitespace-nowrap shrink-0">
+                          <Clock size={12} className="text-indigo-400/80 shrink-0" />
+                          <span>{formatDateTime(venta.fecha_venta)}</span>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-1 flex-wrap min-w-0">
+                          {isCortesia ? (
+                            <span className="text-[11px] text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-md font-semibold truncate">
+                              ⭐ Cortesía
+                            </span>
+                          ) : venta.pagos?.length > 0 ? (
+                            venta.pagos.map((p, idx) => (
+                              <span key={idx} className="text-[11px] text-indigo-200 bg-indigo-500/15 px-2 py-0.5 rounded-md border border-indigo-500/30 font-semibold truncate max-w-[150px]">
+                                {getCanonicalPaymentMethodName(p.tipo_pago)}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-[11px] text-neutral-400 bg-neutral-800 px-2 py-0.5 rounded-md border border-neutral-700">
+                              Sin especificar
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
 
-                    {/* Fila Media Móvil: Métodos de Pago */}
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] text-neutral-500 font-medium">Método de pago</span>
-                      <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                        {isCortesia ? (
-                          <span className="text-[11px] text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-md font-medium">
-                            ⭐ Cortesía
-                          </span>
-                        ) : venta.pagos?.length > 0 ? (
-                          venta.pagos.map((p, idx) => (
-                            <span key={idx} className="text-[11px] text-neutral-200 bg-neutral-800 px-2 py-0.5 rounded-md border border-neutral-700/70 font-medium">
-                              {getCanonicalPaymentMethodName(p.tipo_pago)}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-[11px] text-neutral-400 bg-neutral-800/50 px-2 py-0.5 rounded-md">
-                            Sin especificar
-                          </span>
+                    {/* Cuerpo de la Tarjeta Móvil: Datos claros y separados */}
+                    <div className="p-3.5 space-y-2.5 bg-neutral-900">
+                      {/* Fila Cliente y Orden/Mesa */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold mb-0.5">Cliente</p>
+                          <div className="flex items-center gap-1.5 text-white font-semibold text-sm">
+                            <Users size={14} className="text-indigo-400 shrink-0" />
+                            <span className="break-words leading-snug">{clienteLabel}</span>
+                          </div>
+                        </div>
+
+                        {venta.numero_orden && venta.numero_orden !== '-' && (
+                          <div className="text-right shrink-0 bg-neutral-800/80 border border-neutral-700/70 px-2.5 py-1 rounded-lg">
+                            <p className="text-[9px] uppercase tracking-wider text-neutral-400 font-bold">Orden / Mesa</p>
+                            <p className="text-xs font-bold text-indigo-300">{venta.numero_orden}</p>
+                          </div>
                         )}
                       </div>
-                    </div>
 
-                    {/* Grilla 2x2 Móvil: Cliente, Orden/Mesa, Cajero, Mesero */}
-                    <div className="grid grid-cols-2 gap-2.5 bg-neutral-950/70 border border-neutral-800/80 rounded-xl p-2.5 text-xs">
-                      <div className="min-w-0">
-                        <p className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold mb-0.5">Cliente</p>
-                        <div className="flex items-center gap-1.5 text-neutral-200 font-medium">
-                          <Users size={12} className="text-indigo-400/80 shrink-0" />
-                          <span className="truncate">{clienteLabel}</span>
+                      {/* Fila Cajero y Mesero */}
+                      <div className="grid grid-cols-2 gap-3 pt-2.5 border-t border-neutral-800/80 text-xs">
+                        <div className="min-w-0">
+                          <p className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold mb-0.5">Cajero</p>
+                          <div className="flex items-center gap-1.5 text-neutral-300 font-medium">
+                            <Contact size={13} className="text-emerald-400/80 shrink-0" />
+                            <span className="truncate">{venta.cajero_nombre || 'Principal'}</span>
+                          </div>
+                        </div>
+                        <div className="min-w-0 border-l border-neutral-800/80 pl-3">
+                          <p className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold mb-0.5">Mesero</p>
+                          <div className="flex items-center gap-1.5 text-neutral-300 font-medium">
+                            <ConciergeBell size={13} className="text-amber-400/80 shrink-0" />
+                            <span className="truncate">{venta.mesero_nombre || 'N/A'}</span>
+                          </div>
                         </div>
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold mb-0.5">Orden / Mesa</p>
-                        <div className="flex items-center gap-1.5 text-neutral-200 font-medium">
-                          <Hash size={12} className="text-indigo-400/80 shrink-0" />
-                          <span className="truncate">{venta.numero_orden || '-'}</span>
-                        </div>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold mb-0.5">Cajero</p>
-                        <div className="flex items-center gap-1.5 text-neutral-300 font-medium">
-                          <Contact size={12} className="text-neutral-500 shrink-0" />
-                          <span className="truncate">{venta.cajero_nombre || 'Principal'}</span>
-                        </div>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold mb-0.5">Mesero</p>
-                        <div className="flex items-center gap-1.5 text-neutral-300 font-medium">
-                          <ConciergeBell size={12} className="text-neutral-500 shrink-0" />
-                          <span className="truncate">{venta.mesero_nombre || 'N/A'}</span>
-                        </div>
+
+                      {/* Pie de Tarjeta Móvil: Indicador de Productos */}
+                      <div className="pt-2 border-t border-neutral-800/50 flex items-center justify-between text-[11px] text-neutral-400">
+                        <span className="flex items-center gap-1.5 font-medium">
+                          <Receipt size={12} className="text-indigo-400" />
+                          {totalItemsCount} {totalItemsCount === 1 ? 'producto' : 'productos'} en la orden
+                        </span>
+                        <span className="text-indigo-400 font-semibold">
+                          {isExpanded ? 'Ocultar detalle ▲' : 'Ver detalle ▼'}
+                        </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* VISTA ESCRITORIO (md+): Fila horizontal clásica */}
-                  <div className="hidden md:flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-4 min-w-[210px]">
+                  {/* VISTA ESCRITORIO (md+): Fila horizontal estructurada */}
+                  <div className="hidden md:flex items-center justify-between gap-4 p-4">
+                    <div className="flex items-center gap-3.5 min-w-[220px]">
                       <button 
                         onClick={(e) => handleToggleVerificado(e, venta.id_factura.toString(), !!venta.verificado)}
                         className={`p-1 rounded-full transition-colors ${venta.verificado ? 'text-emerald-400 hover:text-emerald-300' : 'text-neutral-600 hover:text-neutral-400'}`}
@@ -643,51 +674,57 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                       >
                         {venta.verificado ? <CheckCircle2 size={24} /> : <Circle size={24} />}
                       </button>
-                      <div className="bg-neutral-800 p-2 rounded-lg">
+                      <div className="bg-neutral-800 p-2.5 rounded-xl border border-neutral-700/60">
                         <Receipt size={20} className="text-indigo-400" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className={`font-bold ${venta.estado_activo === false ? 'text-red-400 line-through' : 'text-white'}`}>{formatDocNumber(venta.numero_documento)}</p>
-                          {venta.estado_activo === false && <span className="bg-red-500/20 text-red-400 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">Anulada</span>}
+                          <p className={`font-mono font-bold text-base ${venta.estado_activo === false ? 'text-red-400 line-through' : 'text-white'}`}>
+                            {formatDocNumber(venta.numero_documento)}
+                          </p>
+                          {venta.estado_activo === false && (
+                            <span className="bg-red-500/20 text-red-400 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">
+                              Anulada
+                            </span>
+                          )}
                           {isCortesia && (
                             <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase flex items-center gap-1 shadow-sm">
                               <span>⭐</span> Cortesía
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-neutral-400 mt-1">
-                          <Clock size={12} /> {formatDateTime(venta.fecha_venta)}
+                        <div className="flex items-center gap-1.5 text-xs text-neutral-400 mt-1">
+                          <Clock size={12} className="text-indigo-400/70" /> {formatDateTime(venta.fecha_venta)}
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-4 min-w-[280px]">
+                    <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-4 min-w-[280px] border-x border-neutral-800/80 px-4">
                       <div className="flex flex-col items-start justify-center min-w-0">
-                        <p className="text-xs text-neutral-500 mb-1 w-full text-left">Cliente</p>
-                        <div className="flex items-center justify-start gap-1.5 text-neutral-300 text-sm font-medium w-full text-left">
-                          <Users size={14} className="text-neutral-500 shrink-0" />
-                          <span className="truncate">{clienteLabel}</span>
+                        <p className="text-[11px] uppercase tracking-wider text-neutral-500 font-semibold mb-1 w-full text-left">Cliente</p>
+                        <div className="flex items-center justify-start gap-1.5 text-white text-sm font-semibold w-full text-left">
+                          <Users size={14} className="text-indigo-400 shrink-0" />
+                          <span className="truncate" title={clienteLabel}>{clienteLabel}</span>
                         </div>
                       </div>
                       <div className="flex flex-col items-start justify-center min-w-0">
-                        <p className="text-xs text-neutral-500 mb-1 w-full text-left">Orden / Mesa</p>
+                        <p className="text-[11px] uppercase tracking-wider text-neutral-500 font-semibold mb-1 w-full text-left">Orden / Mesa</p>
                         <div className="flex items-center justify-start gap-1.5 text-neutral-300 text-sm font-medium w-full text-left">
                           <Hash size={14} className="text-neutral-500 shrink-0" />
                           <span className="truncate">{venta.numero_orden || '-'}</span>
                         </div>
                       </div>
                       <div className="flex flex-col items-start justify-center min-w-0">
-                        <p className="text-xs text-neutral-500 mb-1 w-full text-left">Cajero</p>
+                        <p className="text-[11px] uppercase tracking-wider text-neutral-500 font-semibold mb-1 w-full text-left">Cajero</p>
                         <div className="flex items-center justify-start gap-1.5 text-neutral-300 text-sm font-medium w-full text-left">
-                          <Contact size={14} className="text-neutral-500 shrink-0" />
+                          <Contact size={14} className="text-emerald-400/80 shrink-0" />
                           <span className="truncate">{venta.cajero_nombre || 'Principal'}</span>
                         </div>
                       </div>
                       <div className="flex flex-col items-start justify-center min-w-0">
-                        <p className="text-xs text-neutral-500 mb-1 w-full text-left">Mesero</p>
+                        <p className="text-[11px] uppercase tracking-wider text-neutral-500 font-semibold mb-1 w-full text-left">Mesero</p>
                         <div className="flex items-center justify-start gap-1.5 text-neutral-300 text-sm font-medium w-full text-left">
-                          <ConciergeBell size={14} className="text-neutral-500 shrink-0" />
+                          <ConciergeBell size={14} className="text-amber-400/80 shrink-0" />
                           <span className="truncate">{venta.mesero_nombre || 'N/A'}</span>
                         </div>
                       </div>
@@ -697,20 +734,20 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                       <div className="text-right">
                         {isCortesia ? (
                           <div>
-                            <p className="text-sm font-bold text-amber-400">$0.00</p>
-                            <p className="text-[10px] text-amber-400/80 font-medium">Cortesía ({formatCurrency(venta.total)})</p>
+                            <p className="text-base font-extrabold text-amber-400">$0.00</p>
+                            <p className="text-[11px] text-amber-400/80 font-medium">Cortesía ({formatCurrency(venta.total)})</p>
                           </div>
                         ) : (
-                          <p className={`text-sm font-bold ${venta.estado_activo === false ? 'text-red-400' : 'text-emerald-400'}`}>
+                          <p className={`text-base font-extrabold ${venta.estado_activo === false ? 'text-red-400' : 'text-emerald-400'}`}>
                             {formatCurrency(venta.total)}
                           </p>
                         )}
-                        <div className="flex items-center justify-end gap-1 flex-wrap mt-0.5">
+                        <div className="flex items-center justify-end gap-1 flex-wrap mt-1">
                           {isCortesia ? (
                             <span className="text-[11px] text-amber-400/90 font-medium">⭐ Cortesía</span>
                           ) : venta.pagos?.length > 0 ? (
                             venta.pagos.map((p, idx) => (
-                              <span key={idx} className="text-[10px] text-neutral-300 bg-neutral-800/80 px-1.5 py-0.5 rounded border border-neutral-700/50">
+                              <span key={idx} className="text-[11px] text-indigo-200 bg-indigo-500/15 px-2 py-0.5 rounded-md border border-indigo-500/30 font-medium">
                                 {getCanonicalPaymentMethodName(p.tipo_pago)}
                               </span>
                             ))
@@ -721,36 +758,41 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                           )}
                         </div>
                       </div>
-                      {isExpanded ? <ChevronUp size={20} className="text-neutral-500" /> : <ChevronDown size={20} className="text-neutral-500" />}
+                      <div className="w-8 h-8 rounded-lg bg-neutral-800 flex items-center justify-center text-neutral-400">
+                        {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Detalle Expandido */}
                 {isExpanded && (
-                  <div className="bg-neutral-900/60 p-3.5 sm:p-4 border-t border-neutral-800">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                      <h4 className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Detalle de la Orden</h4>
-                      <div className="flex flex-wrap gap-2">
+                  <div className="bg-neutral-950/90 p-3.5 sm:p-4 border-t border-neutral-800 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                      <h4 className="text-xs font-bold text-neutral-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <Receipt size={14} className="text-indigo-400" />
+                        Detalle de la Orden
+                      </h4>
+                      <div className="grid grid-cols-3 sm:flex sm:flex-wrap gap-2">
                         <button
                           onClick={(e) => handleReimprimir(e, venta)}
-                          className="flex-1 sm:flex-initial justify-center text-xs flex items-center gap-1.5 bg-indigo-500/15 text-indigo-300 hover:bg-indigo-500/25 border border-indigo-500/30 px-3 py-2 sm:py-1.5 rounded-lg transition-colors font-semibold"
+                          className="justify-center text-xs flex items-center gap-1.5 bg-indigo-500/15 text-indigo-300 hover:bg-indigo-500/25 border border-indigo-500/30 px-2.5 py-2 sm:px-3 sm:py-1.5 rounded-xl transition-colors font-semibold"
                         >
-                          <Printer size={14} /> Reimprimir
+                          <Printer size={13} className="shrink-0" /> <span>Reimprimir</span>
                         </button>
                         {venta.estado_activo !== false ? (
                           <button
                             onClick={(e) => handleAnular(e, venta.id_factura.toString())}
-                            className="flex-1 sm:flex-initial justify-center text-xs flex items-center gap-1.5 bg-red-500/15 text-red-400 hover:bg-red-500/25 border border-red-500/30 px-3 py-2 sm:py-1.5 rounded-lg transition-colors font-semibold"
+                            className="justify-center text-xs flex items-center gap-1.5 bg-red-500/15 text-red-400 hover:bg-red-500/25 border border-red-500/30 px-2.5 py-2 sm:px-3 sm:py-1.5 rounded-xl transition-colors font-semibold"
                           >
-                            <Ban size={14} /> Anular
+                            <Ban size={13} className="shrink-0" /> <span>Anular</span>
                           </button>
                         ) : (
                           <button
                             onClick={(e) => handleRestaurar(e, venta.id_factura.toString())}
-                            className="flex-1 sm:flex-initial justify-center text-xs flex items-center gap-1.5 bg-green-500/15 text-green-400 hover:bg-green-500/25 border border-green-500/30 px-3 py-2 sm:py-1.5 rounded-lg transition-colors font-semibold"
+                            className="col-span-2 sm:col-span-1 justify-center text-xs flex items-center gap-1.5 bg-green-500/15 text-green-400 hover:bg-green-500/25 border border-green-500/30 px-2.5 py-2 sm:px-3 sm:py-1.5 rounded-xl transition-colors font-semibold"
                           >
-                            <RotateCcw size={14} /> Restaurar Factura
+                            <RotateCcw size={13} className="shrink-0" /> <span>Restaurar</span>
                           </button>
                         )}
                         {venta.estado_activo !== false && venta.tipo_documento !== 'REEMBOLSO' && (
@@ -759,21 +801,25 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                               e.stopPropagation();
                               setReembolsoVenta(venta);
                             }}
-                            className="flex-1 sm:flex-initial justify-center text-xs flex items-center gap-1.5 bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 border border-amber-500/30 px-3 py-2 sm:py-1.5 rounded-lg transition-colors font-semibold"
+                            className="justify-center text-xs flex items-center gap-1.5 bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 border border-amber-500/30 px-2.5 py-2 sm:px-3 sm:py-1.5 rounded-xl transition-colors font-semibold"
                           >
-                            <Undo2 size={14} /> Reembolso
+                            <Undo2 size={13} className="shrink-0" /> <span>Reembolso</span>
                           </button>
                         )}
                       </div>
                     </div>
-                    <div className="space-y-2">
+
+                    {/* Lista de productos tipo ticket */}
+                    <div className="bg-neutral-900/90 border border-neutral-800/90 rounded-xl p-3 divide-y divide-neutral-800/70">
                       {venta.detalles.map(d => (
-                        <div key={d.id_detalle} className="py-1.5 border-b border-neutral-800/50 last:border-0 space-y-1">
-                          <div className="flex justify-between items-start gap-2 text-xs sm:text-sm">
-                            <div className="flex items-start gap-2 text-neutral-300 min-w-0 flex-1">
-                              <span className="bg-neutral-800 text-indigo-400 text-xs px-2 py-0.5 rounded-full font-semibold shrink-0">{d.cantidad}x</span>
-                              <div className="min-w-0 flex items-center gap-1.5 flex-wrap">
-                                <span className="font-medium text-white break-words">{d.producto_nombre || 'Item'}</span>
+                        <div key={d.id_detalle} className="py-2 first:pt-0 last:pb-0 space-y-1">
+                          <div className="flex justify-between items-start gap-3 text-xs sm:text-sm">
+                            <div className="flex items-start gap-2 text-neutral-200 min-w-0 flex-1">
+                              <span className="bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs px-2 py-0.5 rounded-md font-bold shrink-0">
+                                {d.cantidad}x
+                              </span>
+                              <div className="min-w-0 flex items-center gap-1.5 flex-wrap pt-0.5">
+                                <span className="font-semibold text-white break-words leading-snug">{d.producto_nombre || 'Item'}</span>
                                 {d.combo_items && d.combo_items.length > 0 && (
                                   <span className="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1.5 py-0.2 rounded font-bold uppercase">
                                     Promo
@@ -781,12 +827,14 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                                 )}
                               </div>
                             </div>
-                            <span className="text-neutral-200 font-semibold font-mono shrink-0">{formatCurrency(d.total)}</span>
+                            <span className="text-emerald-400 font-bold font-mono shrink-0 pt-0.5 whitespace-nowrap">
+                              {formatCurrency(d.total)}
+                            </span>
                           </div>
 
                           {/* Desglose de cócteles / sub-productos en la orden */}
                           {d.combo_items && d.combo_items.length > 0 && (
-                            <div className="ml-6 sm:ml-7 pl-2.5 border-l-2 border-indigo-500/40 space-y-0.5 text-xs text-neutral-400">
+                            <div className="ml-8 pl-2.5 border-l-2 border-indigo-500/40 space-y-0.5 text-xs text-neutral-400 mt-1">
                               {d.combo_items.map((sub: any, sIdx: number) => (
                                 <div key={sIdx} className="flex items-center justify-between text-[11px] gap-2">
                                   <span className="truncate">↳ {sub.cantidad > 1 ? `${sub.cantidad}x ` : ''}{sub.nombre}</span>
@@ -798,44 +846,44 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                         </div>
                       ))}
                       {Number(venta.propina) > 0 && (
-                        <div className="flex justify-between items-center text-xs sm:text-sm py-1.5 border-b border-neutral-800/50 last:border-0 mt-2">
+                        <div className="flex justify-between items-center text-xs sm:text-sm pt-2.5 mt-1">
                           <div className="flex items-center gap-2 text-amber-300">
                             <span className="bg-amber-500/20 text-amber-400 border border-amber-500/40 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">Propina</span>
                             <span className="font-semibold">{venta.mesero_nombre || 'Mesero'}</span>
                           </div>
-                          <span className="text-amber-400 font-bold">+ {formatCurrency(Number(venta.propina))}</span>
+                          <span className="text-amber-400 font-bold whitespace-nowrap">+ {formatCurrency(Number(venta.propina))}</span>
                         </div>
                       )}
                     </div>
 
                     {((venta.pagos && venta.pagos.length > 0) || isCortesia) ? (
-                      <div className="mt-4 pt-3 border-t border-neutral-800/50">
-                        <h4 className="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">Métodos de Pago</h4>
+                      <div className="pt-1">
+                        <h4 className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-2">Desglose de Pago</h4>
                         <div className="flex gap-2 flex-wrap">
                           {isCortesia && (!venta.pagos || venta.pagos.length === 0 || !venta.pagos.some(p => p.tipo_pago?.toLowerCase().includes('cortes'))) && (
-                            <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs px-2.5 py-1 rounded-md font-medium flex items-center gap-1">
+                            <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1">
                               ⭐ Cortesía (100% Bonificado / $0.00)
                             </span>
                           )}
                           {venta.pagos?.map((p, idx) => (
                             <span 
                               key={idx} 
-                              className={`text-xs px-2.5 py-1 rounded-md font-medium flex items-center gap-1 border ${
+                              className={`text-xs px-2.5 py-1.5 rounded-lg font-semibold flex items-center gap-1 border ${
                                 p.tipo_pago?.toLowerCase().includes('cortes')
                                   ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                                  : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                  : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
                               }`}
                             >
-                              <DollarSign size={12} />
+                              <DollarSign size={13} />
                               {getCanonicalPaymentMethodName(p.tipo_pago)}: {formatCurrency(p.monto)}
                             </span>
                           ))}
                         </div>
                       </div>
                     ) : (
-                      <div className="mt-4 pt-3 border-t border-neutral-800/50">
-                        <h4 className="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">Método de Pago</h4>
-                        <span className="text-xs text-neutral-400 bg-neutral-800/60 px-2.5 py-1 rounded-md border border-neutral-700/60 font-medium">
+                      <div className="pt-1">
+                        <h4 className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-2">Método de Pago</h4>
+                        <span className="text-xs text-neutral-400 bg-neutral-800/60 px-2.5 py-1 rounded-lg border border-neutral-700/60 font-medium">
                           Sin especificar (No registrado)
                         </span>
                       </div>
@@ -850,7 +898,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
             <button 
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1 || loading}
-              className="px-4 py-2.5 sm:py-2 bg-neutral-800 hover:bg-neutral-700 text-white text-xs sm:text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
+              className="px-4 py-2.5 sm:py-2 bg-neutral-800 hover:bg-neutral-700 text-white text-xs sm:text-sm font-medium rounded-xl disabled:opacity-50 transition-colors"
             >
               Anterior
             </button>
@@ -858,7 +906,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
             <button 
               onClick={() => setPage(p => p + 1)}
               disabled={ventas.length < page * 100 || loading}
-              className="px-4 py-2.5 sm:py-2 bg-neutral-800 hover:bg-neutral-700 text-white text-xs sm:text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
+              className="px-4 py-2.5 sm:py-2 bg-neutral-800 hover:bg-neutral-700 text-white text-xs sm:text-sm font-medium rounded-xl disabled:opacity-50 transition-colors"
             >
               Siguiente
             </button>
