@@ -7,6 +7,16 @@ import { translateAuthError } from '@/utils/errors';
 
 export async function updateMemberAccess(memberId: string, permisos: string[], sede_id: string | null, pin_seguridad?: string) {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (user?.app_metadata?.user_role !== 'MASTER') {
+    return { success: false, error: 'No autorizado. Solo el usuario Master puede modificar permisos.' };
+  }
+
+  const supabaseAdmin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
   
   const payload: any = {
     permisos,
@@ -17,7 +27,7 @@ export async function updateMemberAccess(memberId: string, permisos: string[], s
     payload.pin_seguridad = pin_seguridad || null;
   }
 
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from('perfiles')
     .update(payload)
     .eq('id', memberId);
@@ -118,8 +128,24 @@ export async function createUser(email: string, password: string, nombreCompleto
 
 export async function updateMemberRole(memberId: string, newRole: string) {
   const supabase = await createClient();
-  const { error } = await supabase.from('perfiles').update({ rol: newRole }).eq('id', memberId);
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (user?.app_metadata?.user_role !== 'MASTER') {
+    return { success: false, error: 'No autorizado. Solo el usuario Master puede modificar roles.' };
+  }
+
+  const supabaseAdmin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const { error } = await supabaseAdmin.from('perfiles').update({ rol: newRole }).eq('id', memberId);
   if (error) return { success: false, error: error.message };
+
+  await supabaseAdmin.auth.admin.updateUserById(memberId, {
+    app_metadata: { user_role: newRole }
+  });
+
   revalidatePath('/dashboard/equipo');
   return { success: true };
 }
@@ -198,6 +224,11 @@ export async function updateMemberDetails(
     return { success: false, error: 'No autorizado. Solo el usuario Master puede modificar permisos.' };
   }
 
+  const supabaseAdmin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
   const payload: any = {
     ...(data.nombre_completo ? { nombre_completo: data.nombre_completo } : {}),
     ...(data.rol ? { rol: data.rol } : {}),
@@ -213,7 +244,7 @@ export async function updateMemberDetails(
     payload.permiso_venta_costo = data.permiso_venta_costo;
   }
 
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from('perfiles')
     .update(payload)
     .eq('id', memberId);
@@ -224,10 +255,6 @@ export async function updateMemberDetails(
 
   if (data.rol) {
     try {
-      const supabaseAdmin = createAdminClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      );
       await supabaseAdmin.auth.admin.updateUserById(memberId, {
         app_metadata: { user_role: data.rol }
       });
