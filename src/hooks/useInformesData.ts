@@ -772,27 +772,37 @@ export function useGenerateReport(empresaId: string) {
           for (const row of rows as any[]) {
             const fecha = toLocalDateKey(row.fecha_venta, timeZone);
             if (!byDate[fecha]) byDate[fecha] = { fecha, total_usd: 0, metodos: {} };
+            
+            const isCortesiaDoc = (row.tipo_documento && (row.tipo_documento.toLowerCase().includes('cortes') || row.tipo_documento.toLowerCase().includes('regal'))) ||
+                                  (row.numero_orden && (row.numero_orden.toLowerCase().includes('cortes') || row.numero_orden.toLowerCase().includes('regal')));
+
+            const isRefund = (row.tipo_documento && (
+              row.tipo_documento.toLowerCase().includes('refund') ||
+              row.tipo_documento.toLowerCase().includes('devolucion') ||
+              row.tipo_documento.toLowerCase().includes('nota_credito') ||
+              row.tipo_documento.toLowerCase().includes('nc')
+            )) || Number(row.total || 0) < 0;
+
+            const sign = isRefund ? -1 : 1;
             const pagos = row.ventas_pagos || [];
             let perceivedRowTotal = 0;
+
             if (pagos.length > 0) {
               for (const p of pagos) {
                 const metodo = p.tipo_pago || 'Otro';
-                const monto = Number(p.monto || 0);
-                const isCortesia = metodo.toLowerCase().includes('cortes') || metodo.toLowerCase().includes('regal');
+                const isCortesia = isCortesiaDoc || metodo.toLowerCase().includes('cortes') || metodo.toLowerCase().includes('regal');
                 // Cortesías NO se computan como ingresos de ventas percibidos
                 if (!isCortesia) {
+                  const monto = sign * Math.abs(Number(p.monto || 0));
                   byDate[fecha].metodos[metodo] = (byDate[fecha].metodos[metodo] || 0) + monto;
                   perceivedRowTotal += monto;
                 }
               }
-            } else {
-              const isDocCortesia = (row.tipo_documento && row.tipo_documento.toLowerCase().includes('cortes')) ||
-                                    (row.numero_orden && row.numero_orden.toLowerCase().includes('cortes'));
-              if (!isDocCortesia) {
-                const metodo = 'Efectivo';
-                byDate[fecha].metodos[metodo] = (byDate[fecha].metodos[metodo] || 0) + Number(row.total || 0);
-                perceivedRowTotal += Number(row.total || 0);
-              }
+            } else if (!isCortesiaDoc) {
+              const metodo = 'Efectivo';
+              const monto = sign * Math.abs(Number(row.total || 0));
+              byDate[fecha].metodos[metodo] = (byDate[fecha].metodos[metodo] || 0) + monto;
+              perceivedRowTotal += monto;
             }
             byDate[fecha].total_usd += perceivedRowTotal;
           }
@@ -1277,20 +1287,29 @@ export function useGenerateReport(empresaId: string) {
               rowSubtotal = facturaSubtotalOriginal;
             }
 
-            const rowTotal = Number(Math.max(0, rowSubtotal - rowDescuento).toFixed(2));
-            rowSubtotal = Number(rowSubtotal.toFixed(2));
-            rowDescuento = Number(rowDescuento.toFixed(2));
+            const isRefund = (f.tipo_documento && (
+              f.tipo_documento.toLowerCase().includes('refund') ||
+              f.tipo_documento.toLowerCase().includes('devolucion') ||
+              f.tipo_documento.toLowerCase().includes('nota_credito') ||
+              f.tipo_documento.toLowerCase().includes('nc')
+            )) || Number(f.total || 0) < 0;
 
-            sumSub += rowSubtotal;
-            sumDesc += rowDescuento;
-            sumTot += rowTotal;
+            const sign = isRefund ? -1 : 1;
+            const finalSubtotal = Number((sign * Math.abs(rowSubtotal)).toFixed(2));
+            const finalDescuento = Number(rowDescuento.toFixed(2));
+            const finalTotal = Number((sign * Math.abs(Math.max(0, rowSubtotal - rowDescuento))).toFixed(2));
+
+            sumSub += finalSubtotal;
+            sumDesc += finalDescuento;
+            sumTot += finalTotal;
 
             const cliente = f.clientes?.nombre || f.cliente_nombre || 'Consumidor Final';
             const fDate = new Date(f.fecha_venta);
             const fechaHora = !isNaN(fDate.getTime()) ? format(fDate, 'dd/MM/yyyy hh:mm a') : '-';
             const pagos = f.ventas_pagos || [];
             const metodos = Array.from(new Set(pagos.map((p: any) => p.tipo_pago).filter(Boolean))).join(', ') || 'Efectivo';
-            const estado = f.estado_pago === 1 ? 'Pagado' : (f.estado_pago === 2 ? 'Crédito' : (f.estado_pago === 0 ? 'Pendiente' : 'Pagado'));
+            let estado = f.estado_pago === 1 ? 'Pagado' : (f.estado_pago === 2 ? 'Crédito' : (f.estado_pago === 0 ? 'Pendiente' : 'Pagado'));
+            if (isRefund) estado = 'Devolución';
 
             rows.push({
               numero_orden: f.numero_orden || '—',
@@ -1300,9 +1319,9 @@ export function useGenerateReport(empresaId: string) {
               cajero: f.cajero_nombre || '—',
               mesero: f.mesero_nombre || '—',
               productos: prodList.join(', '),
-              subtotal: rowSubtotal,
-              descuento: rowDescuento,
-              total: rowTotal,
+              subtotal: finalSubtotal,
+              descuento: finalDescuento,
+              total: finalTotal,
               metodos_pago: metodos,
               estado,
             });

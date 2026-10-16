@@ -18,6 +18,7 @@ export interface VentaPOS {
   cliente_nombre?: string;
   cajero_nombre?: string;
   mesero_nombre?: string;
+  propina?: number;
   pagos?: { tipo_pago: string, monto: number }[];
   metodo_pago?: string;       // resumen del primer mÃ©todo de pago registrado
   detalles: VentaDetalle[];

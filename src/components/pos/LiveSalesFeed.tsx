@@ -65,6 +65,8 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
 
       if (filtroMetodo === 'CORTESIA') {
         if (!isCortesiaVenta(v)) return false;
+      } else if (filtroMetodo === 'PROPINA') {
+        if (Number(v.propina || 0) <= 0) return false;
       } else if (filtroMetodo === 'CREDITO') {
         const hasCredito = v.pagos?.some((p: any) => normalizePaymentKey(p.tipo_pago).includes('credit') || normalizePaymentKey(p.tipo_pago).includes('fiado'));
         if (!hasCredito) return false;
@@ -80,16 +82,20 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
     });
   }, [sales, busqueda, filtroMetodo]);
 
-  const { totalMontoFiltrado, totalValorRegalado, totalCortesias } = useMemo(() => {
+  const { totalMontoFiltrado, totalValorRegalado, totalCortesias, totalPropinasFiltrado, totalPropinasCount } = useMemo(() => {
     let sumPercibido = 0;
     let sumRegalado = 0;
     let cortesiasCount = 0;
+    let sumPropinas = 0;
+    let propinasCount = 0;
 
     sales.forEach(s => {
       if (isCortesiaVenta(s)) cortesiasCount++;
+      if (Number(s.propina || 0) > 0) propinasCount++;
     });
 
     filtradas.forEach(s => {
+      if (Number(s.propina || 0) > 0) sumPropinas += Number(s.propina || 0);
       if (isCortesiaVenta(s)) {
         sumRegalado += Number(s.total || 0);
       } else {
@@ -100,7 +106,9 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
     return { 
       totalMontoFiltrado: filtroMetodo === 'CORTESIA' ? sumRegalado : sumPercibido, 
       totalValorRegalado: sumRegalado,
-      totalCortesias: cortesiasCount 
+      totalCortesias: cortesiasCount,
+      totalPropinasFiltrado: sumPropinas,
+      totalPropinasCount: propinasCount
     };
   }, [sales, filtradas, filtroMetodo]);
 
@@ -244,6 +252,7 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
               className="w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-3 pr-8 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors cursor-pointer appearance-none"
             >
               <option value="TODOS">💳 Todos los métodos</option>
+              <option value="PROPINA">🪙 Solo con Propina</option>
               <option value="CORTESIA">⭐ Solo Cortesías</option>
               <option value="CREDITO">⏳ Solo Créditos</option>
               <option value="SIN_ESPECIFICAR">❓ Sin especificar</option>
@@ -255,6 +264,26 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
             </select>
             <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
           </div>
+
+          {/* Botón Acceso Rápido Solo Propinas */}
+          <button
+            type="button"
+            onClick={() => setFiltroMetodo(prev => prev === 'PROPINA' ? 'TODOS' : 'PROPINA')}
+            className={`px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all whitespace-nowrap border shrink-0 ${
+              filtroMetodo === 'PROPINA'
+                ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-sm shadow-amber-500/10'
+                : 'bg-neutral-950 sm:bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border-neutral-800 hover:text-white'
+            }`}
+            title="Ver rápidamente todas las ventas con propina"
+          >
+            <span>🪙</span>
+            <span>Propinas</span>
+            {totalPropinasCount > 0 && (
+              <span className="ml-0.5 px-1.5 py-0.5 text-[10px] bg-amber-500/30 text-amber-200 rounded-full font-bold">
+                {totalPropinasCount}
+              </span>
+            )}
+          </button>
 
           {/* Botón Acceso Rápido Solo Cortesías */}
           <button
@@ -285,6 +314,11 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
             <span className="text-xs sm:text-sm">
               Mostrando <strong className="text-white font-bold">{filtradas.length}</strong> de {sales.length} en vivo
             </span>
+            {filtroMetodo === 'PROPINA' && (
+              <span className="flex items-center gap-1 text-amber-400 font-medium bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                🪙 Solo con Propina
+              </span>
+            )}
             {filtroMetodo === 'CORTESIA' && (
               <span className="flex items-center gap-1 text-amber-400 font-medium bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
                 ⭐ Solo Cortesías
@@ -319,6 +353,14 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
             </span>
           </div>
 
+          {totalPropinasFiltrado > 0 && (
+            <div className="flex flex-col sm:flex-row sm:items-center items-end gap-0.5 sm:gap-1.5">
+              <span className="text-[10px] uppercase tracking-wider text-amber-500 font-semibold sm:hidden">Propinas</span>
+              <span className="text-xs text-amber-300 bg-amber-500/15 px-2.5 py-1 rounded-lg border border-amber-500/30 font-semibold whitespace-nowrap" title="Total de propinas registradas en este período">
+                🪙 Propinas: +{formatCurrency(totalPropinasFiltrado)}
+              </span>
+            </div>
+          )}
           {filtroMetodo !== 'CORTESIA' && totalValorRegalado > 0 && (
             <div className="flex flex-col sm:flex-row sm:items-center items-end gap-0.5 sm:gap-1.5">
               <span className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold sm:hidden">Cortesías</span>
@@ -399,9 +441,16 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
                                   <span className="text-[10px] text-amber-400/80 font-medium whitespace-nowrap">({formatCurrency(sale.total)})</span>
                                 </div>
                               ) : (
-                                <span className="text-sm font-extrabold whitespace-nowrap px-2 py-0.5 rounded-md text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
-                                  {formatCurrency(sale.total)}
-                                </span>
+                                <div>
+                                  <span className="text-sm font-extrabold whitespace-nowrap px-2 py-0.5 rounded-md text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
+                                    {formatCurrency(sale.total)}
+                                  </span>
+                                  {Number(sale.propina) > 0 && (
+                                    <p className="text-[10px] font-bold text-amber-400 mt-0.5 text-right whitespace-nowrap">
+                                      +{formatCurrency(Number(sale.propina))} propina
+                                    </p>
+                                  )}
+                                </div>
                               )}
                             </div>
                             <div className="w-7 h-7 rounded-lg bg-neutral-800 border border-neutral-700/70 flex items-center justify-center text-neutral-300 shrink-0">
@@ -517,7 +566,14 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
                               <p className="text-amber-400/80 text-[11px] font-medium">Cortesía ({formatCurrency(sale.total)})</p>
                             </div>
                           ) : (
-                            <p className="text-emerald-400 font-extrabold text-lg">{formatCurrency(sale.total)}</p>
+                            <div>
+                              <p className="text-emerald-400 font-extrabold text-lg">{formatCurrency(sale.total)}</p>
+                              {Number(sale.propina) > 0 && (
+                                <p className="text-xs font-bold text-amber-400 mt-0.5 text-right whitespace-nowrap">
+                                  +{formatCurrency(Number(sale.propina))} propina
+                                </p>
+                              )}
+                            </div>
                           )}
                           {sale.descuento > 0 && !isCortesia && (
                             <p className="text-amber-500 text-xs">- {formatCurrency(sale.descuento)} desc.</p>
@@ -569,6 +625,15 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
                             )}
                           </div>
                         ))}
+                        {Number(sale.propina) > 0 && (
+                          <div className="flex justify-between items-center text-xs sm:text-sm pt-2.5 mt-2 border-t border-amber-500/20 bg-amber-500/5 px-3 py-2 rounded-xl">
+                            <div className="flex items-center gap-2 text-amber-300">
+                              <span className="bg-amber-500/20 text-amber-400 border border-amber-500/40 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">Propina</span>
+                              <span className="font-semibold">{sale.mesero_nombre || 'Mesero'}</span>
+                            </div>
+                            <span className="text-amber-400 font-bold whitespace-nowrap">+ {formatCurrency(Number(sale.propina))}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}

@@ -379,29 +379,60 @@ async function toolConsultarBalanceDia(
   const tasaInfo = await getTasaBcvForDateAction(fechaStr);
   const tasa = tasaInfo.tasa || 1;
 
-  // Consultar Ventas Facturas
-  let queryVentas = supabase
-    .from('ventas_facturas')
-    .select('id, total, fecha_venta, numero_documento')
-    .eq('empresa_id', empresaId)
-    .gte('fecha_venta', inicioDia)
-    .lte('fecha_venta', finDia)
-    .neq('numero_documento', 'TEST');
+  // Consultar Ventas Facturas con paginación exhaustiva y filtros dorados
+  let allFacturas: any[] = [];
+  let fromV = 0;
+  const batchV = 1000;
 
-  if (targetSedeId) {
-    queryVentas = queryVentas.eq('sede_id', targetSedeId);
+  while (true) {
+    let queryVentas = supabase
+      .from('ventas_facturas')
+      .select('id, total, fecha_venta, numero_documento, tipo_documento, numero_orden, ventas_pagos(tipo_pago, monto)')
+      .eq('empresa_id', empresaId)
+      .eq('estado_activo', true)
+      .gte('fecha_venta', inicioDia)
+      .lte('fecha_venta', finDia)
+      .neq('numero_documento', 'TEST')
+      .range(fromV, fromV + batchV - 1);
+
+    if (targetSedeId) {
+      queryVentas = queryVentas.eq('sede_id', targetSedeId);
+    }
+
+    const { data: batch, error: vErr } = await queryVentas;
+    if (vErr) return { error: `Error consultando ventas: ${vErr.message}` };
+    if (!batch || batch.length === 0) break;
+    allFacturas.push(...batch);
+    if (batch.length < batchV) break;
+    fromV += batchV;
   }
-
-  const { data: facturas, error: vErr } = await queryVentas;
-  if (vErr) return { error: `Error consultando ventas: ${vErr.message}` };
 
   let totalVentasUsd = 0;
   let totalCenasUsd = 0; // Ventas a partir de las 18:00 (6:00 PM)
   let countFacturas = 0;
   let countCenas = 0;
 
-  for (const fac of facturas || []) {
-    const monto = Number(fac.total || 0);
+  for (const fac of allFacturas) {
+    // Excluir Cortesías / Regalías
+    const isCortesia = fac.ventas_pagos?.some((p: any) => {
+      const tp = (p.tipo_pago || '').toLowerCase();
+      return tp.includes('cortes') || tp.includes('regal');
+    }) ||
+    (fac.tipo_documento && (fac.tipo_documento.toLowerCase().includes('cortes') || fac.tipo_documento.toLowerCase().includes('regal'))) ||
+    (fac.numero_orden && (fac.numero_orden.toLowerCase().includes('cortes') || fac.numero_orden.toLowerCase().includes('regal')));
+
+    if (isCortesia) continue;
+
+    const isRefund = (fac.tipo_documento && (
+      fac.tipo_documento.toLowerCase().includes('refund') ||
+      fac.tipo_documento.toLowerCase().includes('devolucion') ||
+      fac.tipo_documento.toLowerCase().includes('nota_credito') ||
+      fac.tipo_documento.toLowerCase().includes('nc')
+    )) || Number(fac.total || 0) < 0;
+
+    const rawTotal = Number(fac.total || 0);
+    const monto = isRefund ? -Math.abs(rawTotal) : Math.abs(rawTotal);
+
     totalVentasUsd += monto;
     countFacturas++;
 
@@ -414,25 +445,37 @@ async function toolConsultarBalanceDia(
     }
   }
 
-  // Consultar Compras
-  let queryCompras = supabase
-    .from('compras_puntuales')
-    .select('id, monto_divisas, monto_bs, proveedor, detalles')
-    .eq('id_empresa', empresaId)
-    .gte('fecha_registro', inicioDia)
-    .lte('fecha_registro', finDia);
+  // Consultar Compras con paginación y excluir ANULADAS
+  let allCompras: any[] = [];
+  let fromC = 0;
+  const batchC = 1000;
 
-  if (targetSedeId) {
-    queryCompras = queryCompras.eq('id_sede', targetSedeId);
+  while (true) {
+    let queryCompras = supabase
+      .from('compras_puntuales')
+      .select('id, monto_divisas, monto_bs, proveedor, detalles, estado')
+      .eq('id_empresa', empresaId)
+      .neq('estado', 'ANULADA')
+      .gte('fecha_registro', inicioDia)
+      .lte('fecha_registro', finDia)
+      .range(fromC, fromC + batchC - 1);
+
+    if (targetSedeId) {
+      queryCompras = queryCompras.eq('id_sede', targetSedeId);
+    }
+
+    const { data: batch, error: cErr } = await queryCompras;
+    if (cErr) return { error: `Error consultando compras: ${cErr.message}` };
+    if (!batch || batch.length === 0) break;
+    allCompras.push(...batch);
+    if (batch.length < batchC) break;
+    fromC += batchC;
   }
-
-  const { data: compras, error: cErr } = await queryCompras;
-  if (cErr) return { error: `Error consultando compras: ${cErr.message}` };
 
   let totalComprasUsd = 0;
   let totalComprasBs = 0;
 
-  for (const comp of compras || []) {
+  for (const comp of allCompras) {
     totalComprasUsd += Number(comp.monto_divisas || 0);
     totalComprasBs += Number(comp.monto_bs || (Number(comp.monto_divisas || 0) * tasa));
   }
@@ -458,7 +501,7 @@ async function toolConsultarBalanceDia(
     compras: {
       total_compras_usd: Number(totalComprasUsd.toFixed(2)),
       total_compras_bs: Number(totalComprasBs.toFixed(2)),
-      total_compras_registradas: (compras || []).length
+      total_compras_registradas: allCompras.length
     },
     balance_neto: {
       balance_usd: Number((totalVentasUsd - totalComprasUsd).toFixed(2)),
@@ -502,6 +545,8 @@ async function toolConsultarVentasPorMetodoPago(
         sede_id,
         total,
         fecha_venta,
+        tipo_documento,
+        numero_orden,
         ventas_pagos (
           tipo_pago,
           monto
@@ -552,6 +597,18 @@ async function toolConsultarVentasPorMetodoPago(
     const sId = fac.sede_id || 'sin_sede';
     const sNombre = sedeNombres[sId] || 'Sede Principal / Sin Asignar';
 
+    const isCortesiaDoc = (fac.tipo_documento && (fac.tipo_documento.toLowerCase().includes('cortes') || fac.tipo_documento.toLowerCase().includes('regal'))) ||
+                          (fac.numero_orden && (fac.numero_orden.toLowerCase().includes('cortes') || fac.numero_orden.toLowerCase().includes('regal')));
+
+    const isRefund = (fac.tipo_documento && (
+      fac.tipo_documento.toLowerCase().includes('refund') ||
+      fac.tipo_documento.toLowerCase().includes('devolucion') ||
+      fac.tipo_documento.toLowerCase().includes('nota_credito') ||
+      fac.tipo_documento.toLowerCase().includes('nc')
+    )) || Number(fac.total || 0) < 0;
+
+    const sign = isRefund ? -1 : 1;
+
     if (!desglosadoPorSede[sId]) {
       desglosadoPorSede[sId] = {
         sede_id: sId,
@@ -564,9 +621,12 @@ async function toolConsultarVentasPorMetodoPago(
 
     const pagos = (fac as any).ventas_pagos || [];
     for (const p of pagos) {
+      const isPagoCortesia = isCortesiaDoc || (p.tipo_pago || '').toLowerCase().includes('cortes') || (p.tipo_pago || '').toLowerCase().includes('regal');
+      if (isPagoCortesia) continue;
+
       const pClean = (p.tipo_pago || '').toLowerCase().replace(/[_\s-]/g, '');
       if (pClean.includes(metodoBuscado) || metodoBuscado.includes(pClean)) {
-        const monto = Number(p.monto || 0);
+        const monto = sign * Math.abs(Number(p.monto || 0));
         desglosadoPorSede[sId].total_usd += monto;
         desglosadoPorSede[sId].total_bs += monto * tasaHoy;
         desglosadoPorSede[sId].transacciones += 1;
@@ -939,14 +999,22 @@ async function toolConsultarVentas(
   }
 
   // 1. Paginación exhaustiva para ventas_facturas (supera el límite de 1000 registros de PostgREST)
-  let allFacturas: Array<{ id: string; total: number; sede_id: string; fecha_venta: string }> = [];
+  let allFacturas: Array<{
+    id: string;
+    total: number;
+    sede_id: string;
+    fecha_venta: string;
+    tipo_documento?: string;
+    numero_orden?: string;
+    ventas_pagos?: Array<{ tipo_pago?: string; monto?: number }>;
+  }> = [];
   let from = 0;
   const batchSize = 1000;
 
   while (true) {
     let query = supabase
       .from('ventas_facturas')
-      .select('id, total, sede_id, fecha_venta')
+      .select('id, total, sede_id, fecha_venta, tipo_documento, numero_orden, ventas_pagos(tipo_pago, monto)')
       .eq('empresa_id', empresaId)
       .gte('fecha_venta', inicio)
       .lte('fecha_venta', fin)
@@ -969,11 +1037,31 @@ async function toolConsultarVentas(
   }
 
   let totalRecaudado = 0;
-  const totalFacturas = allFacturas.length;
+  let facturasValidasCount = 0;
 
   for (const fac of allFacturas) {
-    const facTotal = Number(fac.total || 0);
-    totalRecaudado += facTotal;
+    // Excluir Cortesías / Regalías
+    const isCortesia = fac.ventas_pagos?.some((p: any) => {
+      const tp = (p.tipo_pago || '').toLowerCase();
+      return tp.includes('cortes') || tp.includes('regal');
+    }) ||
+    (fac.tipo_documento && (fac.tipo_documento.toLowerCase().includes('cortes') || fac.tipo_documento.toLowerCase().includes('regal'))) ||
+    (fac.numero_orden && (fac.numero_orden.toLowerCase().includes('cortes') || fac.numero_orden.toLowerCase().includes('regal')));
+
+    if (isCortesia) continue;
+
+    const isRefund = (fac.tipo_documento && (
+      fac.tipo_documento.toLowerCase().includes('refund') ||
+      fac.tipo_documento.toLowerCase().includes('devolucion') ||
+      fac.tipo_documento.toLowerCase().includes('nota_credito') ||
+      fac.tipo_documento.toLowerCase().includes('nc')
+    )) || Number(fac.total || 0) < 0;
+
+    const rawTotal = Number(fac.total || 0);
+    const facMonto = isRefund ? -Math.abs(rawTotal) : Math.abs(rawTotal);
+
+    totalRecaudado += facMonto;
+    facturasValidasCount++;
 
     const sId = fac.sede_id;
     if (sId) {
@@ -985,10 +1073,12 @@ async function toolConsultarVentas(
           total_facturas: 0
         };
       }
-      desglosadoPorSede[sId].total_usd += facTotal;
+      desglosadoPorSede[sId].total_usd += facMonto;
       desglosadoPorSede[sId].total_facturas += 1;
     }
   }
+
+  const totalFacturas = facturasValidasCount;
 
   // 2. Ranking de productos y filtro de producto
   const agrupadoPorProducto: Record<string, {

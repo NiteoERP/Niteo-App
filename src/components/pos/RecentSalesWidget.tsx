@@ -81,6 +81,7 @@ export default function RecentSalesWidget() {
             cliente_nombre: newVentaRaw.cliente_nombre,
             cajero_nombre: newVentaRaw.cajero_nombre,
             mesero_nombre: newVentaRaw.mesero_nombre,
+            propina: Number(newVentaRaw.propina || 0),
             detalles: [],
           };
 
@@ -152,7 +153,12 @@ export default function RecentSalesWidget() {
                 {sale.tipo_documento?.toLowerCase().includes('cortes') ? (
                   <p className="text-amber-400 font-bold text-sm">$0.00 <span className="text-[10px] text-amber-400/80 font-normal">⭐ Cortesía</span></p>
                 ) : (
-                  <p className="text-neutral-200 font-bold text-sm">{formatCurrency(sale.total)}</p>
+                  <div>
+                    <p className="text-neutral-200 font-bold text-sm">{formatCurrency(sale.total)}</p>
+                    {Number(sale.propina || 0) > 0 && (
+                      <p className="text-[10px] text-amber-400 font-bold">+{formatCurrency(Number(sale.propina))} propina</p>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

@@ -199,6 +199,8 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
       // 2. Filtro de método de pago
       if (filtroMetodo === 'CORTESIA') {
         if (!isCortesiaVenta(v)) return false;
+      } else if (filtroMetodo === 'PROPINA') {
+        if (Number(v.propina || 0) <= 0) return false;
       } else if (filtroMetodo === 'CREDITO') {
         const hasCredito = v.pagos?.some(p => normalizePaymentKey(p.tipo_pago).includes('credit') || normalizePaymentKey(p.tipo_pago).includes('fiado'));
         if (!hasCredito) return false;
@@ -214,17 +216,21 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
     });
   }, [ventas, busqueda, filtroMetodo]);
 
-  const { totalMontoFiltrado, totalValorRegalado, totalCortesias } = useMemo(() => {
+  const { totalMontoFiltrado, totalValorRegalado, totalCortesias, totalPropinasFiltrado, totalPropinasCount } = useMemo(() => {
     let sumPercibido = 0;
     let sumRegalado = 0;
     let cortesiasCount = 0;
+    let sumPropinas = 0;
+    let propinasCount = 0;
 
     ventas.forEach(v => {
       if (isCortesiaVenta(v)) cortesiasCount++;
+      if (Number(v.propina || 0) > 0) propinasCount++;
     });
 
     filtradas.forEach(v => {
       if (v.estado_activo !== false) {
+        sumPropinas += Number(v.propina || 0);
         if (isCortesiaVenta(v)) {
           sumRegalado += Number(v.total || 0);
         } else {
@@ -236,7 +242,9 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
     return { 
       totalMontoFiltrado: filtroMetodo === 'CORTESIA' ? sumRegalado : sumPercibido, 
       totalValorRegalado: sumRegalado,
-      totalCortesias: cortesiasCount 
+      totalCortesias: cortesiasCount,
+      totalPropinasFiltrado: sumPropinas,
+      totalPropinasCount: propinasCount
     };
   }, [ventas, filtradas, filtroMetodo]);
 
@@ -388,6 +396,7 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
               className="w-full bg-neutral-950 sm:bg-neutral-900 border border-neutral-800 rounded-xl pl-3 pr-8 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors cursor-pointer appearance-none"
             >
               <option value="TODOS">💳 Todos los métodos</option>
+              <option value="PROPINA">🪙 Solo con Propina</option>
               <option value="CORTESIA">⭐ Solo Cortesías</option>
               <option value="CREDITO">⏳ Solo Créditos</option>
               <option value="SIN_ESPECIFICAR">❓ Sin especificar</option>
@@ -399,6 +408,26 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
             </select>
             <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
           </div>
+
+          {/* Botón Acceso Rápido Solo Propinas */}
+          <button
+            type="button"
+            onClick={() => setFiltroMetodo(prev => prev === 'PROPINA' ? 'TODOS' : 'PROPINA')}
+            className={`px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all whitespace-nowrap border shrink-0 ${
+              filtroMetodo === 'PROPINA'
+                ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-sm shadow-amber-500/10'
+                : 'bg-neutral-950 sm:bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border-neutral-800 hover:text-white'
+            }`}
+            title="Ver rápidamente todas las ventas con propina"
+          >
+            <span>🪙</span>
+            <span>Propinas</span>
+            {totalPropinasCount > 0 && (
+              <span className="ml-0.5 px-1.5 py-0.5 text-[10px] bg-amber-500/30 text-amber-200 rounded-full font-bold">
+                {totalPropinasCount}
+              </span>
+            )}
+          </button>
 
           {/* Botón Acceso Rápido Solo Cortesías */}
           <button
@@ -429,6 +458,11 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
             <span className="text-xs sm:text-sm">
               Mostrando <strong className="text-white font-bold">{filtradas.length}</strong> {filtradas.length === 1 ? 'venta' : 'ventas'}
             </span>
+            {filtroMetodo === 'PROPINA' && (
+              <span className="flex items-center gap-1 text-amber-400 font-medium bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                🪙 Solo con Propina
+              </span>
+            )}
             {filtroMetodo === 'CORTESIA' && (
               <span className="flex items-center gap-1 text-amber-400 font-medium bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
                 ⭐ Solo Cortesías
@@ -469,6 +503,14 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
             </span>
           </div>
 
+          {totalPropinasFiltrado > 0 && (
+            <div className="flex flex-col sm:flex-row sm:items-center items-end gap-0.5 sm:gap-1.5">
+              <span className="text-[10px] uppercase tracking-wider text-amber-500 font-semibold sm:hidden">Propinas</span>
+              <span className="text-xs text-amber-300 bg-amber-500/15 px-2.5 py-1 rounded-lg border border-amber-500/30 font-semibold whitespace-nowrap" title="Total de propinas registradas en este período">
+                🪙 Propinas: +{formatCurrency(totalPropinasFiltrado)}
+              </span>
+            </div>
+          )}
           {filtroMetodo !== 'CORTESIA' && totalValorRegalado > 0 && (
             <div className="flex flex-col sm:flex-row sm:items-center items-end gap-0.5 sm:gap-1.5">
               <span className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold sm:hidden">Cortesías</span>
@@ -571,13 +613,20 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                                 <span className="text-[10px] text-amber-400/80 font-medium whitespace-nowrap">({formatCurrency(venta.total)})</span>
                               </div>
                             ) : (
-                              <span className={`text-sm font-extrabold whitespace-nowrap px-2 py-0.5 rounded-md ${
-                                venta.estado_activo === false
-                                  ? 'text-red-400 bg-red-500/10'
-                                  : 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20'
-                              }`}>
-                                {formatCurrency(venta.total)}
-                              </span>
+                              <div>
+                                <span className={`text-sm font-extrabold whitespace-nowrap px-2 py-0.5 rounded-md ${
+                                  venta.estado_activo === false
+                                    ? 'text-red-400 bg-red-500/10'
+                                    : 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20'
+                                }`}>
+                                  {formatCurrency(venta.total)}
+                                </span>
+                                {Number(venta.propina) > 0 && (
+                                  <p className="text-[10px] font-bold text-amber-400 mt-0.5 text-right whitespace-nowrap">
+                                    +{formatCurrency(Number(venta.propina))} propina
+                                  </p>
+                                )}
+                              </div>
                             )}
                           </div>
                           <div className="w-7 h-7 rounded-lg bg-neutral-800 border border-neutral-700/70 flex items-center justify-center text-neutral-300 shrink-0">
@@ -738,11 +787,23 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                             <p className="text-[11px] text-amber-400/80 font-medium">Cortesía ({formatCurrency(venta.total)})</p>
                           </div>
                         ) : (
-                          <p className={`text-base font-extrabold ${venta.estado_activo === false ? 'text-red-400' : 'text-emerald-400'}`}>
-                            {formatCurrency(venta.total)}
-                          </p>
+                          <div>
+                            <p className={`text-base font-extrabold ${venta.estado_activo === false ? 'text-red-400' : 'text-emerald-400'}`}>
+                              {formatCurrency(venta.total)}
+                            </p>
+                            {Number(venta.propina) > 0 && (
+                              <p className="text-xs font-bold text-amber-400 mt-0.5 text-right whitespace-nowrap">
+                                +{formatCurrency(Number(venta.propina))} propina
+                              </p>
+                            )}
+                          </div>
                         )}
                         <div className="flex items-center justify-end gap-1 flex-wrap mt-1">
+                          {Number(venta.propina) > 0 && (
+                            <span className="text-[11px] text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-500/30 font-semibold flex items-center gap-1">
+                              🪙 Propina: {formatCurrency(Number(venta.propina))}
+                            </span>
+                          )}
                           {isCortesia ? (
                             <span className="text-[11px] text-amber-400/90 font-medium">⭐ Cortesía</span>
                           ) : venta.pagos?.length > 0 ? (

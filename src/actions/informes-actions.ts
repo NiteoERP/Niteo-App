@@ -95,22 +95,34 @@ export async function generateReport(
 
     // JS-based reports (no RPC needed)
     if (['compras_insumos', 'compras_operador', 'gastos_operativos'].includes(reportId)) {
-      const query = supabase
-        .from('compras_puntuales')
-        .select(`
-          id, proveedor, fecha_registro, monto_divisas, monto_bs, tasa_cambio, detalles, metodo_pago, usuario_id
-        `)
-        .eq('id_empresa', p_empresa_id)
-        .gte('fecha_registro', p_fecha_inicio)
-        .lte('fecha_registro', p_fecha_fin)
-        .order('fecha_registro', { ascending: false });
+      let allCompras: any[] = [];
+      let fromCompras = 0;
+      const batchSizeCompras = 1000;
 
-      if (p_sede_id) query.eq('id_sede', p_sede_id);
-      
-      const { data, error } = await query;
-      if (error) return { success: false, error: error.message };
+      while (true) {
+        let query = supabase
+          .from('compras_puntuales')
+          .select(`
+            id, proveedor, fecha_registro, monto_divisas, monto_bs, tasa_cambio, detalles, metodo_pago, usuario_id, estado
+          `)
+          .eq('id_empresa', p_empresa_id)
+          .gte('fecha_registro', p_fecha_inicio)
+          .lte('fecha_registro', p_fecha_fin)
+          .neq('estado', 'ANULADA')
+          .order('fecha_registro', { ascending: false })
+          .range(fromCompras, fromCompras + batchSizeCompras - 1);
 
-      const userIds = [...new Set(data.map((d: any) => d.usuario_id).filter(Boolean))];
+        if (p_sede_id) query = query.eq('id_sede', p_sede_id);
+        
+        const { data, error } = await query;
+        if (error) return { success: false, error: error.message };
+        if (!data || data.length === 0) break;
+        allCompras = allCompras.concat(data);
+        if (data.length < batchSizeCompras) break;
+        fromCompras += batchSizeCompras;
+      }
+
+      const userIds = [...new Set(allCompras.map((d: any) => d.usuario_id).filter(Boolean))];
       let profilesMap: Record<string, string> = {};
       if (userIds.length > 0) {
         const { data: profiles } = await supabase.from('perfiles').select('id, nombre_completo').in('id', userIds);
@@ -119,7 +131,7 @@ export async function generateReport(
         }
       }
 
-      const joinedData = data.map((d: any) => ({ ...d, nombre_operador: profilesMap[d.usuario_id] || 'Desconocido' }));
+      const joinedData = allCompras.map((d: any) => ({ ...d, nombre_operador: profilesMap[d.usuario_id] || 'Desconocido' }));
 
       if (reportId === 'compras_insumos') {
         let sumDivisas = 0;
@@ -788,7 +800,14 @@ async function handleDetalleVentasReport(
       rowSubtotal = facturaSubtotalOriginal;
     }
 
-    const rowTotal = Number(Math.max(0, rowSubtotal - rowDescuento).toFixed(2));
+    const docType = (f.tipo_documento || '').toLowerCase();
+    const isRefund = docType.includes('devoluc') || docType.includes('refund') || docType.includes('nota_credito') || docType.includes('nc') || Number(f.total || 0) < 0;
+
+    let rowTotal = Number(Math.max(0, rowSubtotal - rowDescuento).toFixed(2));
+    if (isRefund) {
+      rowSubtotal = -Math.abs(rowSubtotal);
+      rowTotal = -Math.abs(rowTotal);
+    }
     rowSubtotal = Number(rowSubtotal.toFixed(2));
     rowDescuento = Number(rowDescuento.toFixed(2));
 
@@ -801,7 +820,7 @@ async function handleDetalleVentasReport(
     const fechaHora = !isNaN(fDate.getTime()) ? format(fDate, 'dd/MM/yyyy hh:mm a') : '-';
     const pagos = f.ventas_pagos || [];
     const metodos = Array.from(new Set(pagos.map((p: any) => p.tipo_pago).filter(Boolean))).join(', ') || 'Efectivo';
-    const estado = f.estado_pago === 1 ? 'Pagado' : (f.estado_pago === 2 ? 'Crédito' : (f.estado_pago === 0 ? 'Pendiente' : 'Pagado'));
+    const estado = isRefund ? 'Devolución' : (f.estado_pago === 1 ? 'Pagado' : (f.estado_pago === 2 ? 'Crédito' : (f.estado_pago === 0 ? 'Pendiente' : 'Pagado')));
 
     rows.push({
       numero_orden: f.numero_orden || '—',
@@ -841,20 +860,33 @@ async function handleDetalleVentasReport(
 
 async function handleComprasReports(supabase: any, reportId: string, empresaId: string, sedeId: string | null, start: string, end: string) {
   if (reportId === 'compras_proveedores') {
-    const query = supabase
-      .from('compras_puntuales')
-      .select('proveedor, monto_divisas, monto_bs')
-      .eq('id_empresa', empresaId)
-      .gte('fecha_registro', start)
-      .lte('fecha_registro', end);
+    let allData: any[] = [];
+    let from = 0;
+    const batchSize = 1000;
 
-    if (sedeId) query.eq('id_sede', sedeId);
-    
-    const { data, error } = await query;
-    if (error) return { success: false, error: error.message };
+    while (true) {
+      let query = supabase
+        .from('compras_puntuales')
+        .select('proveedor, monto_divisas, monto_bs, estado')
+        .eq('id_empresa', empresaId)
+        .gte('fecha_registro', start)
+        .lte('fecha_registro', end)
+        .neq('estado', 'ANULADA')
+        .order('fecha_registro', { ascending: false })
+        .range(from, from + batchSize - 1);
+
+      if (sedeId) query = query.eq('id_sede', sedeId);
+      
+      const { data, error } = await query;
+      if (error) return { success: false, error: error.message };
+      if (!data || data.length === 0) break;
+      allData = allData.concat(data);
+      if (data.length < batchSize) break;
+      from += batchSize;
+    }
 
     const summary: Record<string, { proveedor: string; total_divisas: number; total_bs: number; cantidad: number }> = {};
-    for (const d of data) {
+    for (const d of allData) {
       const p = (d.proveedor || 'Sin Nombre').trim();
       if (!summary[p]) summary[p] = { proveedor: p, total_divisas: 0, total_bs: 0, cantidad: 0 };
       summary[p].total_divisas += Number(d.monto_divisas || 0);
@@ -893,21 +925,34 @@ async function handleComprasReports(supabase: any, reportId: string, empresaId: 
   }
   
   if (reportId === 'compras_metodos_pago') {
-    const query = supabase
-      .from('compras_puntuales')
-      .select('metodo_pago, monto_divisas, monto_bs')
-      .eq('id_empresa', empresaId)
-      .gte('fecha_registro', start)
-      .lte('fecha_registro', end);
+    let allData: any[] = [];
+    let from = 0;
+    const batchSize = 1000;
+
+    while (true) {
+      let query = supabase
+        .from('compras_puntuales')
+        .select('metodo_pago, monto_divisas, monto_bs, estado')
+        .eq('id_empresa', empresaId)
+        .gte('fecha_registro', start)
+        .lte('fecha_registro', end)
+        .neq('estado', 'ANULADA')
+        .order('fecha_registro', { ascending: false })
+        .range(from, from + batchSize - 1);
+        
+      if (sedeId) query = query.eq('id_sede', sedeId);
       
-    if (sedeId) query.eq('id_sede', sedeId);
-    
-    const { data, error } = await query;
-    if (error) return { success: false, error: error.message };
+      const { data, error } = await query;
+      if (error) return { success: false, error: error.message };
+      if (!data || data.length === 0) break;
+      allData = allData.concat(data);
+      if (data.length < batchSize) break;
+      from += batchSize;
+    }
 
     const summary: Record<string, { metodo: string; total_divisas: number; total_bs: number; cantidad: number }> = {};
     
-    for (const row of data) {
+    for (const row of allData) {
       const m = row.metodo_pago || 'Desconocido';
       if (!summary[m]) summary[m] = { metodo: m, total_divisas: 0, total_bs: 0, cantidad: 0 };
       summary[m].total_divisas += Number(row.monto_divisas || 0);
@@ -930,81 +975,104 @@ async function handleMermasYRegaliasReport(
 ) {
   try {
     // 1. Obtener pagos de cortesía con su factura, cliente, detalles y productos
-    let pagosQuery = supabase
-      .from('ventas_pagos')
-      .select(`
-        id,
-        tipo_pago,
-        monto,
-        ventas_facturas!inner (
+    let allPagosData: any[] = [];
+    let fromPagos = 0;
+    const batchSizePagos = 1000;
+
+    while (true) {
+      let pagosQuery = supabase
+        .from('ventas_pagos')
+        .select(`
           id,
-          fecha_venta,
-          numero_documento,
-          numero_orden,
-          cliente_nombre,
-          tipo_documento,
-          total,
-          empresa_id,
-          sede_id,
-          clientes (
+          tipo_pago,
+          monto,
+          ventas_facturas!inner (
             id,
-            nombre
-          ),
-          ventas_detalles (
-            cantidad,
-            precio_unitario,
+            fecha_venta,
+            numero_documento,
+            numero_orden,
+            cliente_nombre,
+            tipo_documento,
             total,
-            productos (
+            empresa_id,
+            sede_id,
+            clientes (
               id,
-              nombre,
-              costo,
-              precio_venta
+              nombre
+            ),
+            ventas_detalles (
+              cantidad,
+              precio_unitario,
+              total,
+              productos (
+                id,
+                nombre,
+                costo,
+                precio_venta
+              )
             )
           )
-        )
-      `)
-      .ilike('tipo_pago', '%cortes%')
-      .eq('ventas_facturas.estado_activo', true)
-      .eq('ventas_facturas.empresa_id', empresaId)
-      .gte('ventas_facturas.fecha_venta', start)
-      .lte('ventas_facturas.fecha_venta', end)
-      .order('ventas_facturas(fecha_venta)', { ascending: false });
+        `)
+        .ilike('tipo_pago', '%cortes%')
+        .eq('ventas_facturas.estado_activo', true)
+        .eq('ventas_facturas.empresa_id', empresaId)
+        .gte('ventas_facturas.fecha_venta', start)
+        .lte('ventas_facturas.fecha_venta', end)
+        .order('ventas_facturas(fecha_venta)', { ascending: false })
+        .range(fromPagos, fromPagos + batchSizePagos - 1);
 
-    if (sedeId) {
-      pagosQuery = pagosQuery.eq('ventas_facturas.sede_id', sedeId);
-    }
+      if (sedeId) {
+        pagosQuery = pagosQuery.eq('ventas_facturas.sede_id', sedeId);
+      }
 
-    const { data: pagosData, error: pagosErr } = await pagosQuery;
-    if (pagosErr) {
-      console.error('Error fetching cortesias:', pagosErr);
-      return { success: false, error: pagosErr.message };
+      const { data: bData, error: pagosErr } = await pagosQuery;
+      if (pagosErr) {
+        console.error('Error fetching cortesias:', pagosErr);
+        return { success: false, error: pagosErr.message };
+      }
+      if (!bData || bData.length === 0) break;
+      allPagosData = allPagosData.concat(bData);
+      if (bData.length < batchSizePagos) break;
+      fromPagos += batchSizePagos;
     }
 
     // 2. Consultar mermas manuales registradas en la tabla shrinkages si existen
-    let shrinkagesQuery = supabase
-      .from('shrinkages')
-      .select(`
-        id,
-        quantity,
-        unit_cost,
-        total_loss,
-        notes,
-        created_at,
-        shrinkage_reasons (name),
-        productos (nombre, precio_venta),
-        inventario_insumos (nombre)
-      `)
-      .gte('created_at', start)
-      .lte('created_at', end);
+    let allShrinkData: any[] = [];
+    let fromShrink = 0;
+    const batchSizeShrink = 1000;
 
-    if (empresaId) {
-      shrinkagesQuery = shrinkagesQuery.eq('empresa_id', empresaId);
-    }
-    if (sedeId) {
-      shrinkagesQuery = shrinkagesQuery.eq('sede_id', sedeId);
-    }
+    while (true) {
+      let shrinkagesQuery = supabase
+        .from('shrinkages')
+        .select(`
+          id,
+          quantity,
+          unit_cost,
+          total_loss,
+          notes,
+          created_at,
+          shrinkage_reasons (name),
+          productos (nombre, precio_venta),
+          inventario_insumos (nombre)
+        `)
+        .gte('created_at', start)
+        .lte('created_at', end)
+        .order('created_at', { ascending: false })
+        .range(fromShrink, fromShrink + batchSizeShrink - 1);
 
-    const { data: shrinkData } = await shrinkagesQuery;
+      if (empresaId) {
+        shrinkagesQuery = shrinkagesQuery.eq('empresa_id', empresaId);
+      }
+      if (sedeId) {
+        shrinkagesQuery = shrinkagesQuery.eq('sede_id', sedeId);
+      }
+
+      const { data: sData } = await shrinkagesQuery;
+      if (!sData || sData.length === 0) break;
+      allShrinkData = allShrinkData.concat(sData);
+      if (sData.length < batchSizeShrink) break;
+      fromShrink += batchSizeShrink;
+    }
 
     const rows: Record<string, any>[] = [];
     let sumCantidad = 0;
@@ -1012,7 +1080,7 @@ async function handleMermasYRegaliasReport(
     let sumVentaTotal = 0;
 
     // Procesar Cortesías
-    for (const p of pagosData || []) {
+    for (const p of allPagosData) {
       const f = p.ventas_facturas;
       if (!f) continue;
 
@@ -1072,7 +1140,7 @@ async function handleMermasYRegaliasReport(
     }
 
     // Procesar Mermas si existen
-    for (const s of (shrinkData as any[]) || []) {
+    for (const s of allShrinkData) {
       const fechaStr = formatFecha(s.created_at);
       const cant = Number(s.quantity || 1);
       const costoUnit = Number(s.unit_cost || 0);
