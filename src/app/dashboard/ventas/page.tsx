@@ -1,14 +1,13 @@
 import React from 'react';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
-import { getVentasRecientes, getProductosCatalogo, VentaPOS, ProductoPOS } from '@/actions/pos-actions';
+import { getVentasRecientes, VentaPOS } from '@/actions/pos-actions';
 import LiveSalesFeed from '@/components/pos/LiveSalesFeed';
 import CuentasAbiertasWidget from '@/components/pos/CuentasAbiertasWidget';
-import CatalogView from '@/components/pos/CatalogView';
 import HistorialVentas from '@/components/pos/HistorialVentas';
 import SedeSelector from '@/components/inventario/SedeSelector';
 import { cookies } from 'next/headers';
-import { Store, PackageSearch, Users, History } from 'lucide-react';
+import { Store, Users, History } from 'lucide-react';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -20,7 +19,8 @@ export const dynamic = 'force-dynamic';
 
 export default async function POSPage({ searchParams }: { searchParams: Promise<{ tab?: string, sede?: string }> }) {
   const params = await searchParams;
-  const tab = params.tab || 'ventas';
+  let tab = params.tab || 'ventas';
+  if (tab === 'catalogo') tab = 'ventas';
   const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
 
@@ -61,12 +61,9 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
 
   // Fetch initial data based on tab
   let initialSales: VentaPOS[] = [];
-  let catalog: ProductoPOS[] = [];
 
   if (tab === 'ventas') {
     initialSales = await getVentasRecientes(activeSedeId);
-  } else if (tab === 'catalogo') {
-    catalog = await getProductosCatalogo(perfil.empresa_id);
   }
 
   return (
@@ -90,14 +87,12 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
           </div>
         )}
 
-
-        
         </div>
         {/* Tabs Navigation */}
-        <div className="grid grid-cols-2 sm:flex bg-neutral-900 border border-neutral-800 rounded-xl p-1.5 gap-1">
+        <div className="flex bg-neutral-900 border border-neutral-800 rounded-xl p-1.5 gap-1 overflow-x-auto">
           <a
             href={`?tab=ventas${activeSedeId ? `&sede=${activeSedeId}` : ''}`}
-            className={`flex flex-1 items-center justify-center gap-2 h-11 sm:h-12 px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
+            className={`flex flex-1 min-w-[130px] sm:min-w-0 items-center justify-center gap-2 h-11 sm:h-12 px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
               tab === 'ventas'
                 ? 'bg-neutral-800 text-white shadow-sm border border-neutral-700/60'
                 : 'text-neutral-400 hover:text-white hover:bg-neutral-800/50'
@@ -108,7 +103,7 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
           </a>
           <a
             href={`?tab=cuentas${activeSedeId ? `&sede=${activeSedeId}` : ''}`}
-            className={`flex flex-1 items-center justify-center gap-2 h-11 sm:h-12 px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
+            className={`flex flex-1 min-w-[130px] sm:min-w-0 items-center justify-center gap-2 h-11 sm:h-12 px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
               tab === 'cuentas'
                 ? 'bg-neutral-800 text-white shadow-sm border border-neutral-700/60'
                 : 'text-neutral-400 hover:text-white hover:bg-neutral-800/50'
@@ -118,19 +113,8 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
             <span>Cuentas Abiertas</span>
           </a>
           <a
-            href={`?tab=catalogo${activeSedeId ? `&sede=${activeSedeId}` : ''}`}
-            className={`flex flex-1 items-center justify-center gap-2 h-11 sm:h-12 px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
-              tab === 'catalogo'
-                ? 'bg-neutral-800 text-white shadow-sm border border-neutral-700/60'
-                : 'text-neutral-400 hover:text-white hover:bg-neutral-800/50'
-            }`}
-          >
-            <PackageSearch size={15} className="shrink-0" />
-            <span>Catálogo</span>
-          </a>
-          <a
             href={`?tab=historial${activeSedeId ? `&sede=${activeSedeId}` : ''}`}
-            className={`flex flex-1 items-center justify-center gap-2 h-11 sm:h-12 px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
+            className={`flex flex-1 min-w-[130px] sm:min-w-0 items-center justify-center gap-2 h-11 sm:h-12 px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
               tab === 'historial'
                 ? 'bg-neutral-800 text-white shadow-sm border border-neutral-700/60'
                 : 'text-neutral-400 hover:text-white hover:bg-neutral-800/50'
@@ -148,9 +132,6 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
       )}
       {tab === 'cuentas' && (
         <CuentasAbiertasWidget sedeId={activeSedeId} />
-      )}
-      {tab === 'catalogo' && (
-        <CatalogView catalog={catalog} />
       )}
       {tab === 'historial' && (
         <HistorialVentas sedeId={activeSedeId} />
