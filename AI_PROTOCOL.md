@@ -78,6 +78,11 @@ Cada vez que se complete una tarea técnica, se debe seguir este flujo sin salta
      *(Esto dispara el despliegue automático en Vercel).*
 
 2. **Para cambios en `niteo-pos`:**
+   - **Incremento Obligatorio de Versión (+1):**
+     Cada vez que se realice un cambio o actualización técnica en `niteo-pos`, se debe incrementar obligatoriamente en 1 el número de versión (SemVer `MAJOR.MINOR.PATCH`, ej: de `1.0.0` a `1.0.1`):
+     1. En `niteo-pos/updater.go`: Actualizar `const CurrentAppVersion = "X.X.X"`.
+     2. En `niteo-pos/wails.json`: Actualizar `"productVersion": "X.X.X"`.
+     3. En `niteo-web/public/downloads/version.json`: Actualizar `"version": "X.X.X"`, fecha y novedades en `changelog`.
    - Compilar el binario e instalador para Windows:
      ```powershell
      wails build -nsis
@@ -86,7 +91,7 @@ Cada vez que se complete una tarea técnica, se debe seguir este flujo sin salta
      ```powershell
      Copy-Item -Path "build\bin\niteo-pos-amd64-installer.exe" -Destination "..\niteo-web\public\downloads\niteo-pos-setup.exe" -Force
      ```
-   - Hacer commit en `niteo-pos` y posterior push en `niteo-web` para que el instalador quede disponible inmediatamente en la web.
+   - Hacer commit en `niteo-pos` y posterior push en `niteo-web` para que el instalador y el manifiesto de versión queden disponibles inmediatamente en la web (disparando el aviso de actualización en todas las terminales).
 
 3. **Para migraciones de Base de Datos:**
    - Crear el archivo `.sql` en `niteo-web/supabase/migrations/`.
