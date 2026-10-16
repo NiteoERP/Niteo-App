@@ -17,7 +17,7 @@ export const AVAILABLE_MODULES: ModuleDefinition[] = [
   { 
     id: 'pos', 
     label: 'Ventas y Facturación (POS)', 
-    description: 'Punto de venta, cobro de tickets y terminal de venta', 
+    description: 'Punto de venta, cobro de tickets, terminal de venta e Historial de Ventas', 
     category: 'operaciones' 
   },
   { 
