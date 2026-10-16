@@ -1753,6 +1753,221 @@ async function toolProponerActualizarPrecio(
   };
 }
 
+/**
+ * 16. Proponer y simular actualización o redondeo masivo de precios del catálogo
+ */
+async function toolProponerAjusteMasivoPrecios(
+  ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
+  args: {
+    criterio_ajuste: string;
+    direccion?: 'cercano' | 'arriba' | 'abajo';
+    porcentaje?: number;
+    redondear_tras_porcentaje?: boolean;
+    terminacion_deseada?: number;
+    terminacion_filtro?: number;
+    filtro_categoria?: string;
+    filtro_tipo?: 'todos' | 'solo_productos' | 'solo_combos';
+  }
+) {
+  const { supabase, empresaId } = ctx;
+  const direccion = args.direccion || 'cercano';
+  const criterio = args.criterio_ajuste || 'redondeo_cincuenta_centavos';
+  const filtroTipo = args.filtro_tipo || 'todos';
+  const filtroCategoria = args.filtro_categoria ? normalizarTexto(args.filtro_categoria) : '';
+
+  // 1. Obtener productos activos de la empresa con sus categorías
+  const { data: prods, error: errProds } = await supabase
+    .from('productos')
+    .select('id, nombre, precio_venta, costo, categoria_id, categorias ( id, nombre )')
+    .eq('empresa_id', empresaId)
+    .neq('archivado', true);
+
+  if (errProds) {
+    return { exito: false, error: `Error al consultar productos: ${errProds.message}` };
+  }
+
+  // 2. Obtener promociones y combos activos de la empresa
+  const { data: promos, error: errPromos } = await supabase
+    .from('promociones_combos')
+    .select('id, nombre, precio_fijo, producto_id, tipo, regla_precio, estado_activo')
+    .eq('empresa_id', empresaId);
+
+  if (errPromos) {
+    console.warn('[Copilot] No se pudieron cargar promociones:', errPromos.message);
+  }
+
+  const todasPromos = (promos || []).filter(p => p.estado_activo !== false);
+  const todosProds = prods || [];
+
+  // Mapeo para no duplicar productos vinculados directamente a promociones/combos
+  const promoProductoIds = new Set(todasPromos.map(p => p.producto_id).filter(Boolean));
+
+  // Función de cálculo de nuevo precio según criterio y dirección
+  const calcularPrecio = (precioActual: number): number => {
+    let nuevo = precioActual;
+
+    if (criterio === 'porcentaje' && typeof args.porcentaje === 'number') {
+      nuevo = precioActual * (1 + args.porcentaje / 100);
+      if (!args.redondear_tras_porcentaje) {
+        return Math.max(0, Math.round(nuevo * 100) / 100);
+      }
+      // Redondeo a $0.50 tras porcentaje
+      if (direccion === 'arriba') nuevo = Math.ceil(nuevo * 2) / 2;
+      else if (direccion === 'abajo') nuevo = Math.floor(nuevo * 2) / 2;
+      else nuevo = Math.round(nuevo * 2) / 2;
+      return Math.max(0, Math.round(nuevo * 100) / 100);
+    }
+
+    if (criterio === 'redondeo_entero' || criterio === 'eliminar_centavos') {
+      if (direccion === 'arriba') nuevo = Math.ceil(nuevo);
+      else if (direccion === 'abajo') nuevo = Math.floor(nuevo);
+      else nuevo = Math.round(nuevo);
+    } else if (criterio === 'redondeo_cincuenta_centavos') {
+      if (direccion === 'arriba') nuevo = Math.ceil(nuevo * 2) / 2;
+      else if (direccion === 'abajo') nuevo = Math.floor(nuevo * 2) / 2;
+      else nuevo = Math.round(nuevo * 2) / 2;
+    } else if (criterio === 'fijar_terminacion' && typeof args.terminacion_deseada === 'number') {
+      const entero = Math.floor(nuevo);
+      const dec = args.terminacion_deseada >= 1 ? args.terminacion_deseada / 100 : args.terminacion_deseada;
+      nuevo = entero + dec;
+    }
+
+    return Math.max(0, Math.round(nuevo * 100) / 100);
+  };
+
+  interface ItemModificado {
+    id: string;
+    comboId?: string | null;
+    productoId?: string | null;
+    tipo: 'producto' | 'combo';
+    nombre: string;
+    nuevo_nombre: string;
+    categoria: string;
+    precio_anterior: number;
+    nuevo_precio: number;
+    diferencia_usd: number;
+  }
+
+  const itemsModificados: ItemModificado[] = [];
+
+  // Procesar Combos / Promociones
+  if (filtroTipo !== 'solo_productos') {
+    for (const promo of todasPromos) {
+      if (filtroCategoria && !filtroCategoria.includes('combo') && !filtroCategoria.includes('promo')) {
+        const nomNorm = normalizarTexto(promo.nombre);
+        if (!nomNorm.includes(filtroCategoria)) continue;
+      }
+
+      const precioActual = Number(promo.precio_fijo || 0);
+      if (precioActual <= 0) continue;
+
+      if (typeof args.terminacion_filtro === 'number') {
+        const decActual = Math.round((precioActual % 1) * 100);
+        const decFiltro = Math.round(args.terminacion_filtro >= 1 ? args.terminacion_filtro : args.terminacion_filtro * 100);
+        if (Math.abs(decActual - decFiltro) > 1) continue;
+      }
+
+      const nuevoPrecio = calcularPrecio(precioActual);
+      if (Math.abs(nuevoPrecio - precioActual) > 0.001) {
+        let nuevoNombre = promo.nombre;
+        if (nuevoNombre.includes('$')) {
+          nuevoNombre = nuevoNombre.replace(/\$\s*\d+(\.\d+)?/g, `$${nuevoPrecio}`).trim();
+        }
+
+        itemsModificados.push({
+          id: promo.id,
+          comboId: promo.id,
+          productoId: promo.producto_id || null,
+          tipo: 'combo',
+          nombre: promo.nombre,
+          nuevo_nombre: nuevoNombre,
+          categoria: 'Promociones y Combos',
+          precio_anterior: precioActual,
+          nuevo_precio: nuevoPrecio,
+          diferencia_usd: Math.round((nuevoPrecio - precioActual) * 100) / 100
+        });
+      }
+    }
+  }
+
+  // Procesar Productos individuales
+  if (filtroTipo !== 'solo_combos') {
+    for (const prod of todosProds) {
+      if (promoProductoIds.has(prod.id)) continue;
+
+      const catNombre = (prod.categorias as any)?.nombre || 'General';
+      const catNorm = normalizarTexto(catNombre);
+
+      if (filtroCategoria && !catNorm.includes(filtroCategoria)) {
+        const prodNorm = normalizarTexto(prod.nombre);
+        if (!prodNorm.includes(filtroCategoria)) continue;
+      }
+
+      const precioActual = Number(prod.precio_venta || 0);
+      if (precioActual <= 0) continue;
+
+      if (typeof args.terminacion_filtro === 'number') {
+        const decActual = Math.round((precioActual % 1) * 100);
+        const decFiltro = Math.round(args.terminacion_filtro >= 1 ? args.terminacion_filtro : args.terminacion_filtro * 100);
+        if (Math.abs(decActual - decFiltro) > 1) continue;
+      }
+
+      const nuevoPrecio = calcularPrecio(precioActual);
+      if (Math.abs(nuevoPrecio - precioActual) > 0.001) {
+        let nuevoNombre = prod.nombre;
+        if (nuevoNombre.includes('$')) {
+          nuevoNombre = nuevoNombre.replace(/\$\s*\d+(\.\d+)?/g, `$${nuevoPrecio}`).trim();
+        }
+
+        itemsModificados.push({
+          id: prod.id,
+          productoId: prod.id,
+          tipo: 'producto',
+          nombre: prod.nombre,
+          nuevo_nombre: nuevoNombre,
+          categoria: catNombre,
+          precio_anterior: precioActual,
+          nuevo_precio: nuevoPrecio,
+          diferencia_usd: Math.round((nuevoPrecio - precioActual) * 100) / 100
+        });
+      }
+    }
+  }
+
+  let descCriterio = 'Redondeo a múltiplos de $0.50';
+  if (criterio === 'redondeo_entero' || criterio === 'eliminar_centavos') {
+    descCriterio = `Redondeo a enteros (${direccion === 'arriba' ? 'al alza' : direccion === 'abajo' ? 'a la baja' : 'al más cercano'})`;
+  } else if (criterio === 'porcentaje') {
+    descCriterio = `${(args.porcentaje || 0) >= 0 ? '+' : ''}${args.porcentaje}%${args.redondear_tras_porcentaje ? ' con redondeo a $0.50' : ''}`;
+  } else if (criterio === 'fijar_terminacion') {
+    descCriterio = `Fijar terminación en .${args.terminacion_deseada}`;
+  }
+
+  if (itemsModificados.length === 0) {
+    return {
+      exito: false,
+      total_afectados: 0,
+      mensaje: `Todos los precios evaluados ya cumplen con el criterio (${descCriterio}). No se encontraron precios pendientes por modificar.`
+    };
+  }
+
+  const sumaDif = itemsModificados.reduce((acc, it) => acc + it.diferencia_usd, 0);
+  const cambioPromedio = Math.round((sumaDif / itemsModificados.length) * 100) / 100;
+
+  return {
+    exito: true,
+    criterio,
+    descripcion_criterio: descCriterio,
+    total_afectados: itemsModificados.length,
+    items: itemsModificados,
+    resumen: {
+      total_productos: itemsModificados.filter(i => i.tipo === 'producto').length,
+      total_combos: itemsModificados.filter(i => i.tipo === 'combo').length,
+      cambio_promedio_usd: cambioPromedio
+    }
+  };
+}
+
 // ==========================================
 // DECLARACIONES DE HERRAMIENTAS PARA GEMINI
 // ==========================================
@@ -2102,6 +2317,48 @@ const copilotTools: { functionDeclarations: FunctionDeclaration[] } = {
         },
         required: ['nombre_combo_o_producto', 'nuevo_precio']
       }
+    },
+    {
+      name: 'proponer_ajuste_masivo_precios',
+      description: 'Propone una actualización, ajuste o redondeo MASIVO de precios en el catálogo de productos y/o promociones/combos de la empresa (ej: redondear todo el catálogo a múltiplos de $0.50, redondear a números enteros sin decimales, aumentar o descontar un porcentaje general, fijar terminaciones específicas, o filtrar solo por una categoría como "Pizzas" o solo combos). Genera la simulación completa y la tarjeta interactiva con botón de confirmación en bloque para el usuario.',
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          criterio_ajuste: {
+            type: SchemaType.STRING,
+            description: 'Tipo de ajuste a realizar: "redondeo_cincuenta_centavos" (a múltiplos de $0.50 como 1.00, 1.50, 2.00, 2.50), "redondeo_entero" (a enteros 1.00, 2.00, 3.00), "porcentaje" (sumar o restar un % a los precios), "fijar_terminacion" (forzar una terminación decimal específica como .00 o .50).'
+          },
+          direccion: {
+            type: SchemaType.STRING,
+            description: 'Dirección del redondeo: "cercano" (al más próximo, default), "arriba" (hacia arriba / alza), "abajo" (hacia abajo / baja).'
+          },
+          porcentaje: {
+            type: SchemaType.NUMBER,
+            description: 'Opcional. Porcentaje numérico si criterio_ajuste es "porcentaje" (ej: 10 para +10%, -5 para -5%).'
+          },
+          redondear_tras_porcentaje: {
+            type: SchemaType.BOOLEAN,
+            description: 'Opcional. Si es true y se aplica porcentaje, redondea los precios resultantes a múltiplos de $0.50.'
+          },
+          terminacion_deseada: {
+            type: SchemaType.NUMBER,
+            description: 'Opcional. Terminación decimal deseada (ej: 0.50, 0.00, 0.99) si criterio_ajuste es "fijar_terminacion".'
+          },
+          terminacion_filtro: {
+            type: SchemaType.NUMBER,
+            description: 'Opcional. Si el usuario pide modificar únicamente productos con cierta terminación de centavos (ej: 0.85 o 85).'
+          },
+          filtro_categoria: {
+            type: SchemaType.STRING,
+            description: 'Opcional. Nombre de categoría para limitar el ajuste (ej: "Pizzas", "Bebidas"). Si se omite o es "todo", aplica a todo el catálogo.'
+          },
+          filtro_tipo: {
+            type: SchemaType.STRING,
+            description: 'Opcional. "todos" (por defecto), "solo_productos", o "solo_combos".'
+          }
+        },
+        required: ['criterio_ajuste']
+      }
     }
   ]
 };
@@ -2113,7 +2370,7 @@ const copilotTools: { functionDeclarations: FunctionDeclaration[] } = {
 export interface CopilotRespuesta {
   texto: string;
   accionPropuesta?: {
-    tipo: 'desactivar_combos' | 'fusionar_insumos' | 'ejecutar_despacho' | 'ejecutar_venta_costo' | 'guardar_receta' | 'agrupar_similares' | 'crear_combo' | 'actualizar_precio_combo';
+    tipo: 'desactivar_combos' | 'fusionar_insumos' | 'ejecutar_despacho' | 'ejecutar_venta_costo' | 'guardar_receta' | 'agrupar_similares' | 'crear_combo' | 'actualizar_precio_combo' | 'ajuste_masivo_precios';
     titulo: string;
     items?: any[];
     detalles?: any;
@@ -2181,12 +2438,16 @@ REGLAS DE OPERACIÓN:
    - Si el usuario te pide crear o armar un combo o promoción (ej: "hazme el combo fiesta que lleva 2 pizzas familiares tradicionales, 1 con maiz y un ref 2lt"), llama inmediatamente a "proponer_combo".
    - Extrae los productos indicados y sus cantidades.
    - Si el usuario no especificó el precio, la herramienta sumará los precios de lista individuales de los productos. En tu respuesta, presenta el desglose claro y sugiere un precio atractivo o indícale que puede confirmarlo para que quede disponible en el punto de venta.
-6. ACTUALIZACIÓN DE PRECIOS DE COMBOS, PROMOCIONES O PRODUCTOS EXISTENTES:
-   - Si el usuario te pide cambiar, actualizar o modificar el precio de un combo, promoción o producto ya existente (ej: "actualiza el precio de la promo de pastichos a 14", "cambia el precio del combo a $14", "pon la promo a 14", "vale 14 actualizalo"):
-   - NUNCA intentes crear un combo nuevo ni uses "proponer_combo".
-   - Llama INMEDIATAMENTE a "proponer_actualizar_precio" indicando el nombre y el nuevo precio.
-   - En tu respuesta, menciona amablemente el precio anterior y el nuevo precio, e indica al usuario que confirme la actualización con el botón en pantalla.
-7. Para acciones que modifican datos (desactivar combos, fusionar marcas, despachos entre sedes, ventas al costo, guardar recetas, crear combos o actualizar precios):
+6. ACTUALIZACIÓN Y REDONDEO DE PRECIOS (INDIVIDUAL Y MASIVO):
+   - ACTUALIZACIÓN INDIVIDUAL:
+     Si el usuario pide cambiar, actualizar o modificar el precio de un combo, promoción o producto puntual existente (ej: "actualiza la promo a 14", "pon la hamburguesa a $10"):
+     Llama a "proponer_actualizar_precio" indicando el nombre y el nuevo precio.
+   - ACTUALIZACIÓN Y REDONDEO MASIVO (CATÁLOGO COMPLETO O POR CATEGORÍA):
+     Si el usuario pide redondear precios de todo el catálogo, de una categoría, eliminar centavos, redondear a múltiplos de $0.50 o $1.00, o aplicar un incremento porcentual masivo (ej: "redondea los precios a 0.50", "redondea todos los precios al entero más cercano", "quita los centavos", "ajusta los precios que terminen en .85", "aumenta un 10% a las pizzas y redondea"):
+     Llama INMEDIATAMENTE a "proponer_ajuste_masivo_precios".
+     NUNCA digas que no cuentas con una herramienta masiva ni obligues al usuario a revisar uno por uno.
+     Describe el resumen del ajuste calculado de forma cordial (cuántos productos y combos cambiarán) e invítalo a verificar la vista previa en la tarjeta interactiva y confirmar con el botón.
+7. Para acciones que modifican datos (desactivar combos, fusionar marcas, despachos entre sedes, ventas al costo, guardar recetas, crear combos o actualizar/redondear precios):
    - NUNCA afirmes haber ejecutado la mutación en la base de datos de inmediato.
    - Llama a la herramienta "proponer_*" correspondiente.
    - Describe la propuesta amablemente con los números exactos e invita al usuario a confirmar mediante el botón en pantalla.
@@ -2427,6 +2688,26 @@ REGLAS DE OPERACIÓN:
                   }
                   break;
                 }
+                case 'proponer_ajuste_masivo_precios': {
+                  toolResult = await toolProponerAjusteMasivoPrecios(ctx, call.args || {});
+                  if (toolResult?.exito && toolResult.total_afectados > 0) {
+                    accionPropuesta = {
+                      tipo: 'ajuste_masivo_precios',
+                      titulo: `Ajuste Masivo de Precios: ${toolResult.total_afectados} ítems (${toolResult.descripcion_criterio})`,
+                      items: toolResult.items,
+                      detalles: {
+                        criterio: toolResult.criterio,
+                        descripcionCriterio: toolResult.descripcion_criterio,
+                        totalAfectados: toolResult.total_afectados,
+                        totalProductos: toolResult.resumen.total_productos,
+                        totalCombos: toolResult.resumen.total_combos,
+                        cambioPromedioUsd: toolResult.resumen.cambio_promedio_usd,
+                        items: toolResult.items
+                      }
+                    };
+                  }
+                  break;
+                }
                 default:
                   toolResult = { error: `Herramienta desconocida: ${call.name}` };
               }
@@ -2435,10 +2716,27 @@ REGLAS DE OPERACIÓN:
               toolResult = { error: `No se pudo obtener información: ${toolExecErr?.message || 'Error interno'}` };
             }
 
+            let formattedResponse = toolResult || { exito: true };
+            if (call.name === 'proponer_ajuste_masivo_precios' && toolResult?.items) {
+              formattedResponse = {
+                exito: toolResult.exito,
+                total_afectados: toolResult.total_afectados,
+                descripcion_criterio: toolResult.descripcion_criterio,
+                resumen: toolResult.resumen,
+                ejemplos: toolResult.items.slice(0, 10).map((it: any) => ({
+                  nombre: it.nombre,
+                  precio_anterior: it.precio_anterior,
+                  nuevo_precio: it.nuevo_precio,
+                  diferencia: it.diferencia_usd
+                })),
+                nota_para_asistente: 'Se ha presentado la tarjeta interactiva completa en pantalla con el botón para que el usuario confirme y aplique el cambio.'
+              };
+            }
+
             functionResponses.push({
               functionResponse: {
                 name: call.name,
-                response: toolResult || { exito: true }
+                response: formattedResponse
               }
             });
           }
@@ -2503,7 +2801,7 @@ export async function ejecutarAccionCopilot({
   payload,
   activeSedeId
 }: {
-  accion: 'desactivar_combos' | 'fusionar_insumos' | 'agrupar_similares' | 'ejecutar_despacho' | 'ejecutar_venta_costo' | 'guardar_receta' | 'crear_combo' | 'actualizar_precio_combo';
+  accion: 'desactivar_combos' | 'fusionar_insumos' | 'agrupar_similares' | 'ejecutar_despacho' | 'ejecutar_venta_costo' | 'guardar_receta' | 'crear_combo' | 'actualizar_precio_combo' | 'ajuste_masivo_precios';
   payload: any;
   activeSedeId?: string;
 }): Promise<{ success: boolean; mensaje: string; error?: string }> {
@@ -2708,6 +3006,70 @@ export async function ejecutarAccionCopilot({
         return {
           success: true,
           mensaje: `¡Precio de "${nomFinal}" actualizado correctamente a $${precio.toFixed(2)} USD en catálogo y punto de venta!`
+        };
+      }
+
+      case 'ajuste_masivo_precios': {
+        const { items } = payload;
+        const { supabase, empresaId } = ctx;
+
+        if (!items || !Array.isArray(items) || items.length === 0) {
+          return { success: false, mensaje: 'No hay productos o combos seleccionados para actualizar.' };
+        }
+
+        let totalActualizados = 0;
+        const batchSize = 15;
+
+        for (let i = 0; i < items.length; i += batchSize) {
+          const chunk = items.slice(i, i + batchSize);
+          await Promise.all(
+            chunk.map(async (it: any) => {
+              const precio = Number(it.nuevo_precio);
+              if (isNaN(precio) || precio < 0) return;
+
+              // 1. Actualizar en promociones_combos si es combo o tiene comboId
+              if (it.comboId || it.tipo === 'combo') {
+                const cId = it.comboId || it.id;
+                const updatePayload: any = { precio_fijo: precio };
+                if (it.nuevo_nombre && it.nuevo_nombre !== it.nombre) {
+                  updatePayload.nombre = it.nuevo_nombre;
+                }
+                const { error: errPromo } = await supabase
+                  .from('promociones_combos')
+                  .update(updatePayload)
+                  .eq('id', cId)
+                  .eq('empresa_id', empresaId);
+                if (!errPromo) totalActualizados++;
+              }
+
+              // 2. Actualizar en productos si es producto o combo con productoId
+              if (it.productoId || it.tipo === 'producto') {
+                const pId = it.productoId || it.id;
+                const updatePayload: any = { precio_venta: precio };
+                if (it.nuevo_nombre && it.nuevo_nombre !== it.nombre) {
+                  updatePayload.nombre = it.nuevo_nombre;
+                }
+                const { error: errProd } = await supabase
+                  .from('productos')
+                  .update(updatePayload)
+                  .eq('id', pId)
+                  .eq('empresa_id', empresaId);
+                if (!errProd && !it.comboId && it.tipo === 'producto') {
+                  totalActualizados++;
+                }
+              }
+            })
+          );
+        }
+
+        revalidatePath('/dashboard/promociones');
+        revalidatePath('/dashboard/catalogo');
+        revalidatePath('/dashboard/terminal');
+        revalidatePath('/dashboard/pos');
+
+        return {
+          success: true,
+          mensaje: `¡Se actualizaron con éxito los precios de ${totalActualizados} registros en el catálogo y punto de venta!`
         };
       }
 

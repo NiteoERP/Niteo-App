@@ -18,7 +18,8 @@ import {
   Receipt,
   ArrowRightLeft,
   Utensils,
-  Layers
+  Layers,
+  Coins
 } from 'lucide-react';
 import { enviarMensajeCopilot, ejecutarAccionCopilot, CopilotRespuesta } from '@/actions/copilot-actions';
 
@@ -32,6 +33,7 @@ interface MensajeChat {
 }
 
 const SUGERENCIAS_RAPIDAS = [
+  { label: '🪄 Redondear a $0.50', prompt: 'Redondea todos los precios del catálogo al múltiplo de $0.50 más cercano.' },
   { label: '🎉 Crear Combo Fiesta', prompt: 'Hazme el combo fiesta que lleva 2 pizzas familiares tradicionales, 1 con maiz y un ref 2lt' },
   { label: '🍳 Receta y escandallo', prompt: 'Dime la receta de la Pizza Margarita y cuánto cuesta prepararla.' },
   { label: '📝 Crear / Armar receta', prompt: 'Quiero armar la receta para la Pizza Margarita: 250g de masa de pizza, 120g de queso mozzarella y 60g de salsa de tomate.' },
@@ -436,10 +438,14 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
           nuevoNombre: accion.detalles?.nuevoNombre,
           nuevoPrecio: accion.detalles?.nuevoPrecio
         };
+      } else if (accion.tipo === 'ajuste_masivo_precios') {
+        payload = {
+          items: accion.items || accion.detalles?.items || []
+        };
       }
 
       const res = await ejecutarAccionCopilot({
-        accion: accion.tipo,
+        accion: accion.tipo as any,
         payload,
         activeSedeId
       });
@@ -633,6 +639,7 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
                         {m.accionPropuesta.tipo === 'guardar_receta' && <Utensils size={15} />}
                         {m.accionPropuesta.tipo === 'crear_combo' && <Layers size={15} />}
                         {m.accionPropuesta.tipo === 'actualizar_precio_combo' && <Tag size={15} />}
+                        {m.accionPropuesta.tipo === 'ajuste_masivo_precios' && <Coins size={15} />}
                         <span>{m.accionPropuesta.titulo}</span>
                       </div>
 
@@ -761,6 +768,52 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
                             </div>
                           )}
 
+                          {m.accionPropuesta.tipo === 'ajuste_masivo_precios' && (
+                            <div className="text-[11px] space-y-2 text-neutral-300">
+                              <div className="flex items-center justify-between text-[11px] text-neutral-400">
+                                <span>Criterio: <strong className="text-white">{m.accionPropuesta.detalles?.descripcionCriterio || 'Ajuste de Precios'}</strong></span>
+                                <span className="bg-amber-950/80 text-amber-300 px-2 py-0.5 rounded-full border border-amber-800 text-[10px] font-semibold">
+                                  {m.accionPropuesta.detalles?.totalAfectados || m.accionPropuesta.items?.length || 0} ítems
+                                </span>
+                              </div>
+
+                              {/* Vista previa scrollable de productos y combos */}
+                              <div className="max-h-52 overflow-y-auto space-y-1.5 p-2 bg-neutral-900/90 rounded-xl border border-neutral-800 divide-y divide-neutral-800/60 custom-scrollbar">
+                                {(m.accionPropuesta.items || m.accionPropuesta.detalles?.items || []).map((it: any, idx: number) => {
+                                  const diff = Number(it.diferencia_usd || 0);
+                                  return (
+                                    <div key={idx} className="flex items-center justify-between pt-1.5 first:pt-0 gap-2">
+                                      <div className="min-w-0 flex-1">
+                                        <p className="truncate text-white font-medium text-[11px]">{it.nombre}</p>
+                                        <div className="flex items-center gap-1.5 text-[9px] text-neutral-500">
+                                          <span className="capitalize">{it.tipo === 'combo' ? 'Combo / Promo' : (it.categoria || 'Producto')}</span>
+                                          {it.nuevo_nombre && it.nuevo_nombre !== it.nombre && (
+                                            <span className="text-indigo-400 truncate">➔ {it.nuevo_nombre}</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-2 shrink-0 font-mono text-[11px]">
+                                        <span className="line-through text-neutral-500">${Number(it.precio_anterior).toFixed(2)}</span>
+                                        <span className="text-neutral-500">➔</span>
+                                        <span className="text-emerald-400 font-bold">${Number(it.nuevo_precio).toFixed(2)}</span>
+                                        <span className={`text-[10px] px-1 py-0.2 rounded font-medium ${diff >= 0 ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/50' : 'bg-red-950/80 text-red-400 border border-red-800/50'}`}>
+                                          {diff >= 0 ? `+${diff.toFixed(2)}` : diff.toFixed(2)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+
+                              {m.accionPropuesta.detalles?.cambioPromedioUsd !== undefined && (
+                                <div className="flex justify-between items-center text-[10px] text-neutral-400 px-1 pt-0.5">
+                                  <span>Variación promedio: <strong className={Number(m.accionPropuesta.detalles.cambioPromedioUsd) >= 0 ? 'text-emerald-400' : 'text-amber-400'}>{Number(m.accionPropuesta.detalles.cambioPromedioUsd) >= 0 ? '+' : ''}${Number(m.accionPropuesta.detalles.cambioPromedioUsd).toFixed(2)} USD</strong></span>
+                                  <span>Prods: {m.accionPropuesta.detalles.totalProductos || 0} | Combos: {m.accionPropuesta.detalles.totalCombos || 0}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
                           <div className="pt-2 flex items-center gap-2">
                             <button
                               onClick={() => handleEjecutarAccion(m.id, m.accionPropuesta)}
@@ -779,6 +832,7 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
                                     {m.accionPropuesta.tipo === 'guardar_receta' ? 'Guardar Receta en Catálogo' :
                                      m.accionPropuesta.tipo === 'crear_combo' ? 'Confirmar y Crear Combo' :
                                      m.accionPropuesta.tipo === 'actualizar_precio_combo' ? 'Confirmar y Actualizar Precio' :
+                                     m.accionPropuesta.tipo === 'ajuste_masivo_precios' ? `Confirmar y Actualizar ${m.accionPropuesta.detalles?.totalAfectados || m.accionPropuesta.items?.length || ''} Precios` :
                                      'Confirmar y Ejecutar'}
                                   </span>
                                 </>
