@@ -25,20 +25,87 @@ type CartItem = {
   monedaItem: 'USD' | 'VES';
 };
 
+// Clave única para el borrador local de compras (resiliente a caídas de señal)
+const COMPRA_DRAFT_KEY = 'niteo_compra_mobile_draft_v2';
+
 export default function MobileCompraForm() {
   const [activeStep, setActiveStep] = useState<1 | 2>(1);
-  const [fechaEmision, setFechaEmision] = useState(() => new Date().toISOString().split('T')[0]);
+  const [fechaEmision, setFechaEmision] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(COMPRA_DRAFT_KEY);
+        if (saved) {
+          const p = JSON.parse(saved);
+          if (p.fechaEmision) return p.fechaEmision;
+        }
+      } catch (e) {}
+    }
+    return new Date().toISOString().split('T')[0];
+  });
   const [insumos, setInsumos] = useState<Insumo[]>([]);
   const [tasaDelDia, setTasaDelDia] = useState<number>(36.5);
 
-  // ── Cabecera de factura ──────────────────────────────────────────────────
-  const [proveedor, setProveedor] = useState('');
-  const [monedaGlobal, setMonedaGlobal] = useState<'USD' | 'VES'>('USD');
-  const [metodoPago, setMetodoPago] = useState('Efectivo USD');
+  // ── Cabecera de factura (con restauración persistente ante caída de red) ──
+  const [proveedor, setProveedor] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(COMPRA_DRAFT_KEY);
+        if (saved) return JSON.parse(saved).proveedor || '';
+      } catch (e) {}
+    }
+    return '';
+  });
+  const [monedaGlobal, setMonedaGlobal] = useState<'USD' | 'VES'>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(COMPRA_DRAFT_KEY);
+        if (saved && (JSON.parse(saved).monedaGlobal === 'VES' || JSON.parse(saved).monedaGlobal === 'USD')) {
+          return JSON.parse(saved).monedaGlobal;
+        }
+      } catch (e) {}
+    }
+    return 'USD';
+  });
+  const [metodoPago, setMetodoPago] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(COMPRA_DRAFT_KEY);
+        if (saved && JSON.parse(saved).metodoPago) return JSON.parse(saved).metodoPago;
+      } catch (e) {}
+    }
+    return 'Efectivo USD';
+  });
   const [montoAbonado, setMontoAbonado] = useState('');
-  const [descripcion, setDescripcion] = useState('');
-  const [descuento, setDescuento] = useState('');
-  const [iva, setIva] = useState('');
+  const [descripcion, setDescripcion] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(COMPRA_DRAFT_KEY);
+        if (saved && JSON.parse(saved).descripcion) return JSON.parse(saved).descripcion;
+      } catch (e) {}
+    }
+    return '';
+  });
+  const [descuento, setDescuento] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(COMPRA_DRAFT_KEY);
+        if (saved && JSON.parse(saved).descuento) return JSON.parse(saved).descuento;
+      } catch (e) {}
+    }
+    return '';
+  });
+  const [iva, setIva] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(COMPRA_DRAFT_KEY);
+        if (saved && JSON.parse(saved).iva) return JSON.parse(saved).iva;
+      } catch (e) {}
+    }
+    return '';
+  });
+
+  const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
 
   // ── Métodos de pago y tiendas frecuentes ────────────────────────────────
   const [dbMetodos, setDbMetodos] = useState<any[]>([]);
@@ -220,7 +287,81 @@ export default function MobileCompraForm() {
   };
 
   // ── Carrito ──────────────────────────────────────────────────────────────
-  const [cart, setCart] = useState<CartItem[]>([]);
+  // ── Carrito (restaurado de borrador si existe) ───────────────────────────
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(COMPRA_DRAFT_KEY);
+        if (saved) {
+          const p = JSON.parse(saved);
+          if (Array.isArray(p.cart) && p.cart.length > 0) return p.cart;
+        }
+      } catch (e) {}
+    }
+    return [];
+  });
+
+  // Verificar si hay borrador recuperado y escuchar eventos de conectividad
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(COMPRA_DRAFT_KEY);
+        if (saved) {
+          const p = JSON.parse(saved);
+          if (p.proveedor || (Array.isArray(p.cart) && p.cart.length > 0) || p.descripcion) {
+            setHasRestoredDraft(true);
+          }
+        }
+      } catch (e) {}
+
+      const handleOnline = () => setIsOffline(false);
+      const handleOffline = () => setIsOffline(true);
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+      setIsOffline(!navigator.onLine);
+
+      return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+      };
+    }
+  }, []);
+
+  // Guardar automáticamente en borrador ante cualquier cambio
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const hasData = Boolean(proveedor || cart.length > 0 || descripcion || descuento || iva);
+    if (hasData) {
+      try {
+        const draft = {
+          fechaEmision,
+          proveedor,
+          monedaGlobal,
+          metodoPago,
+          descripcion,
+          descuento,
+          iva,
+          cart,
+          activeStep,
+          savedAt: Date.now()
+        };
+        localStorage.setItem(COMPRA_DRAFT_KEY, JSON.stringify(draft));
+      } catch (e) {}
+    }
+  }, [fechaEmision, proveedor, monedaGlobal, metodoPago, descripcion, descuento, iva, cart, activeStep]);
+
+  const handleDescartarBorrador = () => {
+    if (confirm('¿Estás seguro de descartar este borrador y empezar de nuevo? Se limpiarán los insumos y datos ingresados.')) {
+      try { localStorage.removeItem(COMPRA_DRAFT_KEY); } catch (e) {}
+      setCart([]);
+      setProveedor('');
+      setDescripcion('');
+      setDescuento('');
+      setIva('');
+      setFechaEmision(new Date().toISOString().split('T')[0]);
+      setHasRestoredDraft(false);
+    }
+  };
   const [isPending, startTransition] = useTransition();
   const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -293,29 +434,36 @@ export default function MobileCompraForm() {
         return { ...item, costoTotal: finalCosto, cantidad: item.cantidad_base };
       });
 
-      const res = await registrarFacturaInsumos({
-        proveedor: proveedor || 'Proveedor General',
-        fecha_emision: fechaEmision,
-        moneda: monedaGlobal,
-        tasa: tasaDelDia,
-        metodo_pago: metodoPago,
-        descripcion: descripcion,
-        es_compra_rapida: true,
-        descuento: Number(descuento) || 0,
-        iva: Number(iva) || 0,
-        items: normalizedItems,
-      } as any);
+      try {
+        const res = await registrarFacturaInsumos({
+          proveedor: proveedor || 'Proveedor General',
+          fecha_emision: fechaEmision,
+          moneda: monedaGlobal,
+          tasa: tasaDelDia,
+          metodo_pago: metodoPago,
+          descripcion: descripcion,
+          es_compra_rapida: true,
+          descuento: Number(descuento) || 0,
+          iva: Number(iva) || 0,
+          items: normalizedItems,
+        } as any);
 
-      if (res.error) {
-        setErrorMsg(res.error);
-      } else {
-        setSuccess(true);
-        setCart([]);
-        setProveedor('');
-        setDescripcion('');
-        setDescuento('');
-        setIva('');
-        setTimeout(() => setSuccess(false), 3000);
+        if (res.error) {
+          setErrorMsg(res.error);
+        } else {
+          setSuccess(true);
+          try { localStorage.removeItem(COMPRA_DRAFT_KEY); } catch (e) {}
+          setCart([]);
+          setProveedor('');
+          setDescripcion('');
+          setDescuento('');
+          setIva('');
+          setHasRestoredDraft(false);
+          setTimeout(() => setSuccess(false), 3000);
+        }
+      } catch (networkErr: any) {
+        console.error('Error de red al procesar compra:', networkErr);
+        setErrorMsg('Fallo de conexión o pérdida de señal. Tus datos, productos y fecha siguen guardados en el borrador de este teléfono. Intenta nuevamente cuando tengas señal.');
       }
     });
   };
@@ -413,6 +561,33 @@ export default function MobileCompraForm() {
         </div>
       ) : (
         <div className="space-y-6">
+
+          {/* Alerta de conectividad / pérdida de señal */}
+          {isOffline && (
+            <div className="bg-amber-500/10 border border-amber-500/30 p-3.5 rounded-xl flex items-center justify-between text-xs text-amber-300 animate-in fade-in">
+              <span className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping shrink-0" />
+                <strong>Sin señal de internet:</strong> No te preocupes, tus datos y fecha están guardados en tu teléfono y no se perderán.
+              </span>
+            </div>
+          )}
+
+          {/* Banner de borrador recuperado */}
+          {hasRestoredDraft && !success && (
+            <div className="bg-indigo-500/15 border border-indigo-500/30 p-3.5 rounded-xl flex items-center justify-between text-xs text-indigo-300 animate-in fade-in">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-sm">📋</span>
+                <span className="truncate">Borrador recuperado: tu información y fecha seleccionada se han preservado.</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleDescartarBorrador}
+                className="text-neutral-400 hover:text-rose-400 text-xs font-semibold underline shrink-0 ml-3 cursor-pointer transition-colors"
+              >
+                Descartar borrador
+              </button>
+            </div>
+          )}
 
           {/* Error global */}
           {errorMsg && (

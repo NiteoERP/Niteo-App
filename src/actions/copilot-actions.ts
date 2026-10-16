@@ -79,18 +79,45 @@ function calcularRangoFechas(periodo: string): { inicio: string; fin: string; de
   const now = new Date();
   let inicio = new Date();
   const fin = new Date();
+  const p = (periodo || '').toLowerCase().trim();
 
-  // Si el string es una fecha YYYY-MM-DD
-  if (/^\d{4}-\d{2}-\d{2}$/.test(periodo)) {
+  // 1. Si es rango explícito: "YYYY-MM-DD..YYYY-MM-DD" o "YYYY-MM-DD a YYYY-MM-DD" o "YYYY-MM-DD/YYYY-MM-DD"
+  const rangeMatch = p.match(/^(\d{4}-\d{2}-\d{2})\s*(?:\.\.|\s+a\s+|\s+hasta\s+|\/)\s*(\d{4}-\d{2}-\d{2})$/);
+  if (rangeMatch) {
     const tzOffset = getTimezoneOffsetString(DEFAULT_TIMEZONE);
     return {
-      inicio: `${periodo}T00:00:00${tzOffset}`,
-      fin: `${periodo}T23:59:59.999${tzOffset}`,
-      descripcion: `Fecha ${periodo}`
+      inicio: `${rangeMatch[1]}T00:00:00${tzOffset}`,
+      fin: `${rangeMatch[2]}T23:59:59.999${tzOffset}`,
+      descripcion: `Del ${rangeMatch[1]} al ${rangeMatch[2]}`
     };
   }
 
-  switch (periodo) {
+  // 2. Si es una fecha YYYY-MM-DD única
+  if (/^\d{4}-\d{2}-\d{2}$/.test(p)) {
+    const tzOffset = getTimezoneOffsetString(DEFAULT_TIMEZONE);
+    return {
+      inicio: `${p}T00:00:00${tzOffset}`,
+      fin: `${p}T23:59:59.999${tzOffset}`,
+      descripcion: `Fecha ${p}`
+    };
+  }
+
+  // 3. Patrones dinámicos: "ultimos_X_dias" o "ultimos_X_meses"
+  const matchDias = p.match(/^(?:ultimos_|ultimas_)?(\d+)[\s_]*(?:dias?|d)$/);
+  if (matchDias) {
+    const numDias = parseInt(matchDias[1], 10);
+    inicio.setDate(inicio.getDate() - numDias);
+    return { inicio: inicio.toISOString(), fin: fin.toISOString(), descripcion: `Últimos ${numDias} días` };
+  }
+
+  const matchMeses = p.match(/^(?:ultimos_|ultimas_)?(\d+)[\s_]*(?:meses?|m)$/);
+  if (matchMeses) {
+    const numMeses = parseInt(matchMeses[1], 10);
+    inicio.setMonth(inicio.getMonth() - numMeses);
+    return { inicio: inicio.toISOString(), fin: fin.toISOString(), descripcion: `Últimos ${numMeses} meses` };
+  }
+
+  switch (p) {
     case 'hoy': {
       const hoyKey = toLocalDateKey(now, DEFAULT_TIMEZONE);
       const range = getLocalDayRange(hoyKey, DEFAULT_TIMEZONE);
@@ -109,19 +136,52 @@ function calcularRangoFechas(periodo: string): { inicio: string; fin: string; de
       inicio.setHours(0, 0, 0, 0);
       return { inicio: inicio.toISOString(), fin: fin.toISOString(), descripcion: 'Esta semana' };
     }
+    case 'semana_pasada':
+    case 'semana_anterior': {
+      const day = now.getDay();
+      const diff = now.getDate() - day + (day === 0 ? -6 : 1) - 7;
+      inicio.setDate(diff);
+      inicio.setHours(0, 0, 0, 0);
+      const finSemana = new Date(inicio);
+      finSemana.setDate(finSemana.getDate() + 6);
+      finSemana.setHours(23, 59, 59, 999);
+      return { inicio: inicio.toISOString(), fin: finSemana.toISOString(), descripcion: 'Semana pasada' };
+    }
     case 'este_mes': {
       inicio = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
       return { inicio: inicio.toISOString(), fin: fin.toISOString(), descripcion: 'Este mes' };
+    }
+    case 'mes_anterior':
+    case 'mes_pasado': {
+      inicio = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
+      const finMes = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+      return { inicio: inicio.toISOString(), fin: finMes.toISOString(), descripcion: 'Mes anterior' };
+    }
+    case 'ultimos_15_dias': {
+      inicio.setDate(inicio.getDate() - 15);
+      return { inicio: inicio.toISOString(), fin: fin.toISOString(), descripcion: 'Últimos 15 días' };
     }
     case 'ultimos_30_dias': {
       inicio.setDate(inicio.getDate() - 30);
       return { inicio: inicio.toISOString(), fin: fin.toISOString(), descripcion: 'Últimos 30 días' };
     }
-    case 'ultimos_6_meses': {
+    case 'ultimos_3_meses':
+    case 'ultimos_90_dias':
+    case '3_meses':
+    case 'tres_meses':
+    case 'trimestre': {
+      inicio.setMonth(inicio.getMonth() - 3);
+      return { inicio: inicio.toISOString(), fin: fin.toISOString(), descripcion: 'Últimos 3 meses' };
+    }
+    case 'ultimos_6_meses':
+    case '6_meses':
+    case 'seis_meses':
+    case 'semestre': {
       inicio.setMonth(inicio.getMonth() - 6);
       return { inicio: inicio.toISOString(), fin: fin.toISOString(), descripcion: 'Últimos 6 meses' };
     }
-    case 'año_actual': {
+    case 'año_actual':
+    case 'este_año': {
       inicio = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
       return { inicio: inicio.toISOString(), fin: fin.toISOString(), descripcion: 'Año actual' };
     }
@@ -422,33 +482,52 @@ async function toolConsultarVentasPorMetodoPago(
   const { inicio, fin, descripcion } = calcularRangoFechas(args.periodo_o_fecha || 'hoy');
   const metodoBuscado = (args.metodo_pago || 'pago_movil').toLowerCase().replace(/[_\s-]/g, '');
 
-  let query = supabase
-    .from('ventas_facturas')
-    .select(`
-      id,
-      sede_id,
-      total,
-      fecha_venta,
-      ventas_pagos (
-        tipo_pago,
-        monto
-      )
-    `)
-    .eq('empresa_id', empresaId)
-    .gte('fecha_venta', inicio)
-    .lte('fecha_venta', fin)
-    .neq('numero_documento', 'TEST');
-
+  let targetSedeId: string | null = null;
   if (args.sede_nombre) {
     const sFound = resolverSede(args.sede_nombre, sedes);
     if (sFound) {
-      query = query.eq('sede_id', sFound.id);
+      targetSedeId = sFound.id;
     }
   }
 
-  const { data: facturas, error } = await query;
+  let allFacturas: any[] = [];
+  let from = 0;
+  const batchSize = 1000;
 
-  if (error) return { error: `Error consultando ventas por método de pago: ${error.message}` };
+  while (true) {
+    let query = supabase
+      .from('ventas_facturas')
+      .select(`
+        id,
+        sede_id,
+        total,
+        fecha_venta,
+        ventas_pagos (
+          tipo_pago,
+          monto
+        )
+      `)
+      .eq('empresa_id', empresaId)
+      .gte('fecha_venta', inicio)
+      .lte('fecha_venta', fin)
+      .eq('estado_activo', true)
+      .neq('numero_documento', 'TEST')
+      .range(from, from + batchSize - 1);
+
+    if (targetSedeId) {
+      query = query.eq('sede_id', targetSedeId);
+    }
+
+    const { data: batch, error } = await query;
+    if (error) return { error: `Error consultando ventas por método de pago: ${error.message}` };
+    if (!batch || batch.length === 0) break;
+
+    allFacturas.push(...batch);
+    if (batch.length < batchSize) break;
+    from += batchSize;
+  }
+
+  const facturas = allFacturas;
 
   const tasaHoy = (await getTasaBcvForDateAction(new Date().toISOString().substring(0, 10))).tasa || 1;
 
@@ -811,7 +890,7 @@ async function toolProponerVentaAlCosto(
 }
 
 /**
- * 7. Consulta métricas y ranking de ventas (ya implementada)
+ * 7. Consulta métricas y ranking de ventas exhaustivo (con paginación anti-límite 1000 y desglose por sede)
  */
 async function toolConsultarVentas(
   ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
@@ -837,40 +916,81 @@ async function toolConsultarVentas(
     }
   }
 
-  let query = supabase
-    .from('ventas_facturas')
-    .select(`
-      id,
-      numero_documento,
-      fecha_venta,
-      total,
-      descuento,
-      ventas_detalles (
-        id,
-        producto_id,
-        cantidad,
-        precio_unitario,
-        total,
-        promo_id,
-        productos (
-          id,
-          nombre,
-          codigo_barras
-        )
-      )
-    `)
-    .eq('empresa_id', empresaId)
-    .gte('fecha_venta', inicio)
-    .lte('fecha_venta', fin)
-    .neq('numero_documento', 'TEST');
+  // Mapa de nombres amigables de sede
+  const sedeNombres: Record<string, string> = {};
+  sedes.forEach((s, idx) => {
+    sedeNombres[s.id] = `Sede ${idx + 1} (${s.nombre_sede})`;
+  });
 
-  if (targetSedeId) {
-    query = query.eq('sede_id', targetSedeId);
+  const desglosadoPorSede: Record<string, {
+    sede_id: string;
+    nombre_sede: string;
+    total_usd: number;
+    total_facturas: number;
+  }> = {};
+
+  for (const s of sedes) {
+    desglosadoPorSede[s.id] = {
+      sede_id: s.id,
+      nombre_sede: sedeNombres[s.id] || s.nombre_sede,
+      total_usd: 0,
+      total_facturas: 0
+    };
   }
 
-  const { data: facturas, error } = await query;
-  if (error) return { error: `Error consultando ventas: ${error.message}` };
+  // 1. Paginación exhaustiva para ventas_facturas (supera el límite de 1000 registros de PostgREST)
+  let allFacturas: Array<{ id: string; total: number; sede_id: string; fecha_venta: string }> = [];
+  let from = 0;
+  const batchSize = 1000;
 
+  while (true) {
+    let query = supabase
+      .from('ventas_facturas')
+      .select('id, total, sede_id, fecha_venta')
+      .eq('empresa_id', empresaId)
+      .gte('fecha_venta', inicio)
+      .lte('fecha_venta', fin)
+      .eq('estado_activo', true)
+      .neq('numero_documento', 'TEST')
+      .order('fecha_venta', { ascending: false })
+      .range(from, from + batchSize - 1);
+
+    if (targetSedeId) {
+      query = query.eq('sede_id', targetSedeId);
+    }
+
+    const { data: batch, error } = await query;
+    if (error) return { error: `Error consultando ventas: ${error.message}` };
+    if (!batch || batch.length === 0) break;
+
+    allFacturas.push(...batch);
+    if (batch.length < batchSize) break;
+    from += batchSize;
+  }
+
+  let totalRecaudado = 0;
+  const totalFacturas = allFacturas.length;
+
+  for (const fac of allFacturas) {
+    const facTotal = Number(fac.total || 0);
+    totalRecaudado += facTotal;
+
+    const sId = fac.sede_id;
+    if (sId) {
+      if (!desglosadoPorSede[sId]) {
+        desglosadoPorSede[sId] = {
+          sede_id: sId,
+          nombre_sede: sedeNombres[sId] || `Sede (${sId})`,
+          total_usd: 0,
+          total_facturas: 0
+        };
+      }
+      desglosadoPorSede[sId].total_usd += facTotal;
+      desglosadoPorSede[sId].total_facturas += 1;
+    }
+  }
+
+  // 2. Ranking de productos y filtro de producto
   const agrupadoPorProducto: Record<string, {
     producto_id: string;
     nombre: string;
@@ -878,42 +998,85 @@ async function toolConsultarVentas(
     cantidad_vendida: number;
     total_usd: number;
   }> = {};
-
-  let totalRecaudado = 0;
-  let totalFacturas = (facturas || []).length;
   let totalUnidades = 0;
 
-  for (const fac of facturas || []) {
-    totalRecaudado += Number(fac.total || 0);
-    const detalles = (fac as any).ventas_detalles || [];
+  if (args.filtro_producto && args.filtro_producto.trim().length > 0) {
+    const busqueda = normalizarTexto(args.filtro_producto);
+    const { data: prodsCoincidentes } = await supabase
+      .from('productos')
+      .select('id, nombre, codigo_barras')
+      .eq('empresa_id', empresaId);
 
-    for (const det of detalles) {
-      const prod = det.productos;
-      const prodId = det.producto_id || 'desconocido';
-      const prodNombre = prod?.nombre || 'Producto no identificado';
-      const prodCodigo = prod?.codigo_barras || '';
+    const prodsFiltrados = (prodsCoincidentes || []).filter(p =>
+      normalizarTexto(p.nombre).includes(busqueda) || esCoincidenciaAproximada(p.nombre, args.filtro_producto || '')
+    );
+    const prodIds = prodsFiltrados.map(p => p.id);
 
-      if (args.filtro_producto && args.filtro_producto.trim().length > 0) {
-        if (!esCoincidenciaAproximada(prodNombre, args.filtro_producto)) continue;
+    if (prodIds.length > 0) {
+      const chunkSize = 200;
+      for (let i = 0; i < allFacturas.length; i += chunkSize) {
+        const facChunkIds = allFacturas.slice(i, i + chunkSize).map(f => f.id);
+        const { data: dets } = await supabase
+          .from('ventas_detalles')
+          .select('id, producto_id, cantidad, precio_unitario, total, productos(id, nombre, codigo_barras)')
+          .in('venta_id', facChunkIds)
+          .in('producto_id', prodIds);
+
+        for (const det of dets || []) {
+          const prod = (det as any).productos;
+          const prodId = det.producto_id || 'desconocido';
+          const prodNombre = prod?.nombre || 'Producto';
+          const prodCodigo = prod?.codigo_barras || '';
+          const cant = Number(det.cantidad || 0);
+          const subtotal = Number(det.total || 0);
+          totalUnidades += cant;
+
+          if (!agrupadoPorProducto[prodId]) {
+            agrupadoPorProducto[prodId] = {
+              producto_id: prodId,
+              nombre: prodNombre,
+              codigo_barras: prodCodigo,
+              cantidad_vendida: 0,
+              total_usd: 0
+            };
+          }
+          agrupadoPorProducto[prodId].cantidad_vendida += cant;
+          agrupadoPorProducto[prodId].total_usd += subtotal;
+        }
       }
+    }
+  } else {
+    // Si no hay filtro, computar ranking sobre muestra representativa de hasta 1500 facturas recientes
+    const sampleFacturas = allFacturas.slice(0, 1500);
+    const chunkSize = 300;
+    for (let i = 0; i < sampleFacturas.length; i += chunkSize) {
+      const facChunkIds = sampleFacturas.slice(i, i + chunkSize).map(f => f.id);
+      const { data: dets } = await supabase
+        .from('ventas_detalles')
+        .select('id, producto_id, cantidad, precio_unitario, total, productos(id, nombre, codigo_barras)')
+        .in('venta_id', facChunkIds);
 
-      const cant = Number(det.cantidad || 0);
-      const subtotal = Number(det.total || 0);
+      for (const det of dets || []) {
+        const prod = (det as any).productos;
+        const prodId = det.producto_id || 'desconocido';
+        const prodNombre = prod?.nombre || 'Producto';
+        const prodCodigo = prod?.codigo_barras || '';
+        const cant = Number(det.cantidad || 0);
+        const subtotal = Number(det.total || 0);
+        totalUnidades += cant;
 
-      totalUnidades += cant;
-
-      if (!agrupadoPorProducto[prodId]) {
-        agrupadoPorProducto[prodId] = {
-          producto_id: prodId,
-          nombre: prodNombre,
-          codigo_barras: prodCodigo,
-          cantidad_vendida: 0,
-          total_usd: 0
-        };
+        if (!agrupadoPorProducto[prodId]) {
+          agrupadoPorProducto[prodId] = {
+            producto_id: prodId,
+            nombre: prodNombre,
+            codigo_barras: prodCodigo,
+            cantidad_vendida: 0,
+            total_usd: 0
+          };
+        }
+        agrupadoPorProducto[prodId].cantidad_vendida += cant;
+        agrupadoPorProducto[prodId].total_usd += subtotal;
       }
-
-      agrupadoPorProducto[prodId].cantidad_vendida += cant;
-      agrupadoPorProducto[prodId].total_usd += subtotal;
     }
   }
 
@@ -930,14 +1093,29 @@ async function toolConsultarVentas(
     total_usd: Number(p.total_usd.toFixed(2))
   }));
 
+  const desgloseSedesArray = Object.values(desglosadoPorSede).map(s => {
+    const sTotal = Number(s.total_usd.toFixed(2));
+    const pct = totalRecaudado > 0 ? Number(((sTotal / totalRecaudado) * 100).toFixed(1)) : 0;
+    return {
+      sede_id: s.sede_id,
+      nombre_sede: s.nombre_sede,
+      total_usd: sTotal,
+      total_facturas: s.total_facturas,
+      porcentaje_del_total: `${pct}%`
+    };
+  });
+
   return {
     periodo: descripcion,
+    rango_fechas: { inicio, fin },
     sede_consultada: sedeIdentificada,
     filtro_producto: args.filtro_producto || null,
     total_facturas_emitidas: totalFacturas,
     total_ventas_usd: Number(totalRecaudado.toFixed(2)),
+    promedio_ticket_usd: totalFacturas > 0 ? Number((totalRecaudado / totalFacturas).toFixed(2)) : 0,
+    desglose_por_sede: desgloseSedesArray,
     total_unidades_coincidentes: Number(totalUnidades.toFixed(2)),
-    productos: topProductos
+    top_productos_mas_vendidos: topProductos
   };
 }
 
@@ -2021,7 +2199,7 @@ const copilotTools: { functionDeclarations: FunctionDeclaration[] } = {
           },
           periodo_o_fecha: {
             type: SchemaType.STRING,
-            description: 'Fecha (YYYY-MM-DD) o periodo: "hoy", "ayer", "esta_semana", "este_mes".',
+            description: 'Fecha (YYYY-MM-DD) o periodo: "hoy", "ayer", "esta_semana", "semana_pasada", "este_mes", "mes_anterior", "ultimos_30_dias", "ultimos_3_meses" (o ultimos_90_dias), "ultimos_6_meses", "año_actual", o rango "YYYY-MM-DD..YYYY-MM-DD".',
           },
           sede_nombre: {
             type: SchemaType.STRING,
@@ -2141,7 +2319,7 @@ const copilotTools: { functionDeclarations: FunctionDeclaration[] } = {
         properties: {
           periodo: {
             type: SchemaType.STRING,
-            description: 'Periodo a consultar: hoy, ayer, esta_semana, este_mes, ultimos_30_dias, ultimos_6_meses, año_actual.',
+            description: 'Periodo a consultar: hoy, ayer, esta_semana, semana_pasada, este_mes, mes_anterior, ultimos_30_dias, ultimos_3_meses (o ultimos_90_dias), ultimos_6_meses, año_actual, o rango "YYYY-MM-DD..YYYY-MM-DD".',
           },
           filtro_producto: {
             type: SchemaType.STRING,
@@ -2428,7 +2606,11 @@ TOLERANCIA A ERRORES ORTOGRÁFICOS Y TIPOGRÁFICOS (TYPOS):
 
 REGLAS DE OPERACIÓN:
 1. NUNCA INVENTES CIFRAS NI DATOS. Consulta siempre las herramientas para obtener datos verídicos de la base de datos.
-2. Si te preguntan por tasas de cambio de un día, ventas y compras en dólares y bolívares, pagos en Pago Móvil por sede, o consumos de insumos, llama a la herramienta adecuada.
+2. CONSULTA DE VENTAS, REPORTES Y FINANZAS:
+   - Si te preguntan por ventas de un periodo (ej. "ventas de los últimos 3 meses", "ventas de este mes", "ventas de ayer"), llama siempre a "consultar_ventas" con el periodo exacto (ej. "ultimos_3_meses", "este_mes", "mes_anterior", "ultimos_30_dias").
+   - Al invocar "consultar_ventas", la herramienta consulta el 100% de las facturas paginadas y devuelve automáticamente el GRAN TOTAL CONSOLIDADO y el "desglose_por_sede".
+   - SIEMPRE entrega directamente en tu respuesta: el total global en USD, el total de facturas emitidas, el ticket promedio y el desglose de lo vendido por cada sede (Sede 1 y Sede 2 con montos y porcentajes).
+   - NUNCA digas que estás haciendo aproximaciones basadas en 30 días o 6 meses ni preguntes si quiere ver el desglose sede por sede: entrégalo de inmediato con total claridad y precisión.
 3. Si el usuario te indica una regla de conversión (ej. "una barra pesa 3kg"), calcula la división matemáticamente sobre los kg devueltos por la herramienta y explícalo claramente.
 4. ASISTENCIA Y ESCANDALLO DE RECETAS:
    - Para consultar los ingredientes, escandallo de costos y márgenes de un producto del catálogo, llama a "consultar_receta".
