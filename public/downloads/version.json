@@ -1,13 +1,13 @@
 {
-  "version": "1.0.1",
+  "version": "1.0.2",
   "build_date": "2026-10-15",
   "min_version": "1.0.0",
   "download_url": "https://niteo-app.vercel.app/downloads/niteo-pos-setup.exe",
-  "title": "Niteo POS v1.0.1",
+  "title": "Niteo POS v1.0.2",
   "changelog": [
-    "Enlace directo a la nueva página pública de novedades y notas de versión",
-    "Optimización en la detección automática de actualizaciones en segundo plano",
-    "Mejoras de rendimiento y estabilidad en la interfaz táctil"
+    "Protección y normalización horaria en sincronización de cierres de caja",
+    "Prevención de cierres en cero y mejoras de consistencia entre terminales y la nube",
+    "Optimización en la detección automática de actualizaciones en segundo plano"
   ],
   "mandatory": false
 }
