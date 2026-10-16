@@ -77,7 +77,16 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
               if (txt.startsWith('{')) {
                 try { parsed = JSON.parse(txt); if(parsed.is_insumos) txt = parsed.texto; }catch(e){}
               }
-              setEditingRow({...target, parsed_detalles: parsed, edit_items: parsed?.items ? JSON.parse(JSON.stringify(parsed.items)) : []}); 
+              const detectedMoneda = parsed?.monedaOriginal || parsed?.items?.[0]?.monedaItem || (target.metodo_pago?.toLowerCase().includes('bs') ? 'VES' : 'USD');
+              const rawItems = parsed?.items ? JSON.parse(JSON.stringify(parsed.items)) : [];
+              const normalizedItems = rawItems.map((it: any) => ({ ...it, monedaItem: detectedMoneda }));
+              setEditingRow({
+                ...target,
+                moneda: detectedMoneda,
+                detalles: txt,
+                parsed_detalles: parsed,
+                edit_items: normalizedItems
+              }); 
               setIsEditModalOpen(true);
             }
           }
@@ -389,14 +398,18 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
     let res: any;
 
     if (editingRow.parsed_detalles?.is_insumos) {
+      const invoiceMoneda = editingRow.moneda || 'USD';
       res = await editarFacturaInsumos(editingRow.id, {
-          descripcion: editingRow.detalles,
+        descripcion: editingRow.detalles,
         proveedor: editingRow.proveedor,
-        moneda: 'USD',
-        tasa: editingRow.tasa_cambio,
+        moneda: invoiceMoneda,
+        tasa: Number(editingRow.tasa_cambio) || 1,
         metodo_pago: editingRow.metodo_pago || editingRow.modalidad_pago,
-        items_viejos: editingRow.parsed_detalles.items,
-        items_nuevos: editingRow.edit_items
+        items_viejos: editingRow.parsed_detalles?.items || [],
+        items_nuevos: (editingRow.edit_items || []).map((it: any) => ({
+          ...it,
+          monedaItem: invoiceMoneda
+        }))
       });
     } else {
       const payload = {
@@ -510,32 +523,81 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
         </div>
       )}
 
-      {/* CABECERA Y TABS */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            {/* CABECERA Y NAVEGACIÓN DE PESTAÑAS */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <ShoppingCart className="text-indigo-400" size={28} />
-            <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">
-              Gestión de Compras
-            </h1>
+            <div className="bg-indigo-500/20 p-2.5 rounded-xl border border-indigo-500/30">
+              <ShoppingCart className="text-indigo-400" size={24} />
+            </div>
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">
+                Gestión de Compras
+              </h1>
+              <p className="text-neutral-400 text-xs md:text-sm mt-0.5">
+                Registra gastos, ingresos de mercancía y audita el historial
+              </p>
+            </div>
           </div>
-          <p className="text-neutral-400 text-xs md:text-sm mt-1">Registra gastos, ingresos de mercancía y audita el historial</p></div>{profile?.rol === "MASTER" && activeSedeId && (<div className="mt-4 md:mt-0"><SedeSelector sedes={sedes} activeSedeId={activeSedeId} /></div>)}
+        </div>
 
-        <div className="flex flex-wrap gap-2 md:gap-4 p-1 bg-transparent max-w-full">
-          <button onClick={() => setActiveTab('insumos')} className={`flex items-center whitespace-nowrap gap-2 px-4 h-14 rounded-lg text-sm font-medium transition-all ${activeTab === 'insumos' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-neutral-200'}`}>
-            <Package size={16} /> Compra Insumos (Móvil)
-          </button>
-          <button onClick={() => setActiveTab('puntual')} className={`flex items-center whitespace-nowrap gap-2 px-4 h-14 rounded-lg text-sm font-medium transition-all ${activeTab === 'puntual' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-neutral-200'}`}>
-            <Receipt size={16} /> Gastos Operativos
-          </button>
-          <button onClick={() => setActiveTab('factura')} className={`flex items-center whitespace-nowrap gap-2 px-4 h-14 rounded-lg text-sm font-medium transition-all ${activeTab === 'factura' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-neutral-200'}`}>
-            <FileText size={16} /> Factura Proveedor
-          </button>
-          <button onClick={() => setActiveTab('historial')} className={`flex items-center whitespace-nowrap gap-2 px-4 h-14 rounded-lg text-sm font-medium transition-all ${activeTab === 'historial' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-400 hover:text-neutral-200'}`}>
-            <History size={16} /> Historial
-          </button>
+        {profile?.rol === "MASTER" && activeSedeId && (
+          <div className="w-full lg:w-auto">
+            <SedeSelector sedes={sedes} activeSedeId={activeSedeId} />
+          </div>
+        )}
+
+        {/* NAVEGACIÓN DE PESTAÑAS (SEGMENTED CONTROL RESPONSIVO) */}
+        <div className="w-full lg:w-auto bg-neutral-950/90 border border-neutral-800 p-1.5 rounded-2xl shadow-xl">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+            <button
+              onClick={() => setActiveTab('insumos')}
+              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
+                activeTab === 'insumos'
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 font-semibold'
+                  : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/60'
+              }`}
+            >
+              <Package size={16} className="shrink-0" />
+              <span>Insumos</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('puntual')}
+              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
+                activeTab === 'puntual'
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 font-semibold'
+                  : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/60'
+              }`}
+            >
+              <Receipt size={16} className="shrink-0" />
+              <span>Gastos</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('factura')}
+              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
+                activeTab === 'factura'
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 font-semibold'
+                  : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/60'
+              }`}
+            >
+              <FileText size={16} className="shrink-0" />
+              <span>Mercancía</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('historial')}
+              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
+                activeTab === 'historial'
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 font-semibold'
+                  : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/60'
+              }`}
+            >
+              <History size={16} className="shrink-0" />
+              <span>Historial</span>
+            </button>
+          </div>
         </div>
       </div>
+
 
       {isLoadingDatos && (
         <div className="flex justify-center p-8 text-indigo-400">
@@ -753,83 +815,128 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
       {activeTab === 'historial' && (
         <div className="animate-in slide-in-from-bottom-4 duration-300 space-y-4">
 
-          {/* Barra de Filtros y Búsqueda Interactiva */}
-          <div className="bg-neutral-900 border border-neutral-800 p-3 sm:p-4 rounded-2xl space-y-3">
-            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2.5 sm:gap-3">
-              
-              {/* Buscador */}
-              <div className="relative flex-1">
-                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="Buscar por proveedor, concepto, insumo u operador..."
-                  value={filtros.busqueda}
-                  onChange={(e) => setFiltros({ ...filtros, busqueda: e.target.value })}
-                  onKeyDown={(e) => e.key === 'Enter' && cargarHistorialCompleto()}
-                  className="w-full bg-neutral-950 sm:bg-neutral-900 border border-neutral-800 rounded-xl pl-9 pr-8 py-2.5 text-xs sm:text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-indigo-500 transition-colors"
-                />
-                {filtros.busqueda && (
-                  <button
-                    onClick={() => setFiltros({ ...filtros, busqueda: '' })}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white text-xs p-1 rounded-md"
-                    title="Borrar búsqueda"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
+                    {/* Barra de Filtros y Búsqueda Interactiva (Ergonómica Móvil y Desktop) */}
+          <div className="bg-neutral-900 border border-neutral-800 p-3 sm:p-4 rounded-2xl space-y-2.5">
+            {/* Fila 1: Buscador */}
+            <div className="relative w-full">
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Buscar por proveedor, concepto, insumo u operador..."
+                value={filtros.busqueda}
+                onChange={(e) => setFiltros({ ...filtros, busqueda: e.target.value })}
+                onKeyDown={(e) => e.key === 'Enter' && cargarHistorialCompleto()}
+                className="w-full bg-neutral-950 sm:bg-neutral-900 border border-neutral-800 rounded-xl pl-9 pr-8 py-2.5 text-xs sm:text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-indigo-500 transition-colors"
+              />
+              {filtros.busqueda && (
+                <button
+                  onClick={() => setFiltros({ ...filtros, busqueda: '' })}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white text-xs p-1 rounded-md"
+                  title="Borrar búsqueda"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
 
+            {/* Fila 2: Selectores en Grid 2 columnas en móvil, inline en Desktop */}
+            <div className="grid grid-cols-2 md:flex md:items-center gap-2">
               {/* Filtro por Tipo de Compra */}
-              <div className="relative min-w-[150px]">
+              <div className="relative flex-1 min-w-0">
                 <select
                   value={filtroTipo}
                   onChange={(e) => setFiltroTipo(e.target.value as any)}
-                  className="w-full bg-neutral-950 sm:bg-neutral-900 border border-neutral-800 rounded-xl pl-3 pr-8 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors cursor-pointer appearance-none"
+                  className="w-full bg-neutral-950 sm:bg-neutral-900 border border-neutral-800 rounded-xl pl-3 pr-7 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors cursor-pointer appearance-none truncate"
                 >
                   <option value="TODOS">📑 Todos los tipos</option>
                   <option value="INSUMOS">📦 Solo Insumos</option>
-                  <option value="PUNTUAL">💼 Gastos Operativos</option>
+                  <option value="PUNTUAL">💼 Solo Gastos</option>
                 </select>
-                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+                <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
               </div>
 
               {/* Filtro por Método de Pago */}
-              <div className="relative min-w-[170px]">
+              <div className="relative flex-1 min-w-0">
                 <select
                   value={filtroMetodo}
                   onChange={(e) => setFiltroMetodo(e.target.value)}
-                  className="w-full bg-neutral-950 sm:bg-neutral-900 border border-neutral-800 rounded-xl pl-3 pr-8 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors cursor-pointer appearance-none"
+                  className="w-full bg-neutral-950 sm:bg-neutral-900 border border-neutral-800 rounded-xl pl-3 pr-7 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors cursor-pointer appearance-none truncate"
                 >
                   <option value="TODOS">💳 Todos los métodos</option>
                   {metodosDisponiblesHistorial.map(m => (
                     <option key={m} value={m}>{m}</option>
                   ))}
                 </select>
-                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+                <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
               </div>
 
-              {/* Rango de Fechas */}
-              <div className="w-full md:w-auto">
-                <NiteoDateRangePicker
-                  startDate={filtros.fechaInicio}
-                  endDate={filtros.fechaFin}
-                  onChange={(s, e) => setFiltros({ ...filtros, fechaInicio: s, fechaFin: e })}
-                  align="right"
-                  className="w-full md:w-auto"
-                />
+              {/* Rango de Fechas + Botón Buscar */}
+              <div className="col-span-2 md:col-span-1 flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  <NiteoDateRangePicker
+                    startDate={filtros.fechaInicio}
+                    endDate={filtros.fechaFin}
+                    onChange={(s, e) => setFiltros({ ...filtros, fechaInicio: s, fechaFin: e })}
+                    align="right"
+                    className="w-full"
+                  />
+                </div>
+                <button
+                  onClick={cargarHistorialCompleto}
+                  disabled={isSearching}
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs sm:text-sm transition-all shadow-md shadow-indigo-600/20 disabled:opacity-50 shrink-0"
+                  title="Filtrar en servidor"
+                >
+                  {isSearching ? <Loader2 className="animate-spin" size={15} /> : <Search size={15} />}
+                  <span>Filtrar</span>
+                </button>
               </div>
+            </div>
 
-              {/* Botón Buscar en Servidor */}
+            {/* Fila 3: Quick Filter Pills (Estilo Historial de Ventas) */}
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1 border-t border-neutral-800/60 text-xs">
+              <span className="text-[11px] text-neutral-500 font-bold uppercase tracking-wider mr-1 shrink-0">Filtros:</span>
+              
               <button
-                onClick={cargarHistorialCompleto}
-                disabled={isSearching}
-                className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 text-xs sm:text-sm transition-all shadow-md shadow-indigo-600/20 disabled:opacity-50 shrink-0"
+                type="button"
+                onClick={() => setFiltroTipo(prev => prev === 'INSUMOS' ? 'TODOS' : 'INSUMOS')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all shrink-0 border ${
+                  filtroTipo === 'INSUMOS'
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                    : 'bg-neutral-950 text-neutral-400 border-neutral-800 hover:text-white'
+                }`}
               >
-                {isSearching ? <Loader2 className="animate-spin" size={15} /> : <Search size={15} />}
-                <span>Filtrar</span>
+                <span>📦 Solo Insumos</span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => setFiltroTipo(prev => prev === 'PUNTUAL' ? 'TODOS' : 'PUNTUAL')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all shrink-0 border ${
+                  filtroTipo === 'PUNTUAL'
+                    ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40'
+                    : 'bg-neutral-950 text-neutral-400 border-neutral-800 hover:text-white'
+                }`}
+              >
+                <span>💼 Solo Gastos</span>
+              </button>
+
+              {(filtros.busqueda || filtroTipo !== 'TODOS' || filtroMetodo !== 'TODOS' || filtros.fechaInicio || filtros.fechaFin) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFiltros({ busqueda: '', fechaInicio: '', fechaFin: '' });
+                    setFiltroTipo('TODOS');
+                    setFiltroMetodo('TODOS');
+                  }}
+                  className="px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-400 hover:bg-rose-500/10 border border-rose-500/30 transition-all shrink-0 ml-auto"
+                >
+                  ✕ Limpiar filtros
+                </button>
+              )}
             </div>
           </div>
+
 
           {/* Resumen de Resultados Filtrados (KPI Bar - Idéntico al Historial de Ventas) */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:px-4 sm:py-3.5 bg-neutral-900 border border-neutral-800 rounded-2xl text-xs">
@@ -1036,10 +1143,15 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
                                 if (txt.startsWith('{')) {
                                   try { parsed = JSON.parse(txt); if (parsed.is_insumos) txt = parsed.texto; } catch (e) {}
                                 }
+                                const detectedMoneda = parsed?.monedaOriginal || parsed?.items?.[0]?.monedaItem || compra.parsed_detalles?.monedaOriginal || (compra.metodo_pago?.toLowerCase().includes('bs') ? 'VES' : 'USD');
+                                const rawItems = parsed?.items ? JSON.parse(JSON.stringify(parsed.items)) : (parsedItems.length > 0 ? JSON.parse(JSON.stringify(parsedItems)) : []);
+                                const normalizedItems = rawItems.map((it: any) => ({ ...it, monedaItem: detectedMoneda }));
                                 setEditingRow({
                                   ...compra,
+                                  moneda: detectedMoneda,
+                                  detalles: txt,
                                   parsed_detalles: parsed,
-                                  edit_items: parsed?.items ? JSON.parse(JSON.stringify(parsed.items)) : (parsedItems.length > 0 ? JSON.parse(JSON.stringify(parsedItems)) : [])
+                                  edit_items: normalizedItems
                                 });
                                 setIsEditModalOpen(true);
                               }}
@@ -1335,7 +1447,7 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
                             </div>
 
                             <div className="sm:col-span-2">
-                              <label className="block text-[11px] font-medium text-neutral-400 mb-1">Total ($)</label>
+                              <label className="block text-[11px] font-medium text-neutral-400 mb-1">Total ({(editingRow.moneda || "USD") === "VES" ? "Bs." : "$"})</label>
                               <input
                                 type="number"
                                 step="any"
@@ -1366,7 +1478,7 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
                                       unidad_nueva: addEditUnidad || 'Und',
                                       cantidad: qty,
                                       costoTotal: cost,
-                                      monedaItem: 'USD'
+                                      monedaItem: (editingRow.moneda || 'USD')
                                     };
                                   } else {
                                     if (!addEditInsumoSearch) return;
@@ -1379,7 +1491,7 @@ export default function ComprasClient({ sedes, activeSedeId, profile }: { sedes:
                                       unidad_nueva: found?.unidad_medida || 'Und',
                                       cantidad: qty,
                                       costoTotal: cost,
-                                      monedaItem: 'USD'
+                                      monedaItem: (editingRow.moneda || 'USD')
                                     };
                                   }
 

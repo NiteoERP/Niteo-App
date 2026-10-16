@@ -352,22 +352,32 @@ export function useGenerateReport(empresaId: string) {
 
         // ── Reportes de Compras (JS-level aggregation desde browser) ──────────
         if (['compras_insumos', 'compras_operador', 'gastos_operativos'].includes(reportId)) {
-          const query = supabase
-            .from('compras_puntuales')
-            .select(
-              'id, proveedor, fecha_registro, monto_divisas, monto_bs, tasa_cambio, detalles, metodo_pago, usuario_id'
-            )
-            .eq('id_empresa', p_empresa_id)
-            .gte('fecha_registro', p_fecha_inicio)
-            .lte('fecha_registro', p_fecha_fin)
-            .order('fecha_registro', { ascending: false });
+          let rows: any[] = [];
+          let from = 0;
+          const batchSize = 1000;
 
-          if (p_sede_id) query.eq('id_sede', p_sede_id);
+          while (true) {
+            let query = supabase
+              .from('compras_puntuales')
+              .select(
+                'id, proveedor, fecha_registro, monto_divisas, monto_bs, tasa_cambio, detalles, metodo_pago, usuario_id'
+              )
+              .eq('id_empresa', p_empresa_id)
+              .gte('fecha_registro', p_fecha_inicio)
+              .lte('fecha_registro', p_fecha_fin)
+              .order('fecha_registro', { ascending: false })
+              .range(from, from + batchSize - 1);
 
-          const { data: rawData, error: qError } = await query;
-          if (qError) throw new Error(qError.message);
+            if (p_sede_id) query = query.eq('id_sede', p_sede_id);
 
-          const rows = rawData ?? [];
+            const { data: rawData, error: qError } = await query;
+            if (qError) throw new Error(qError.message);
+            if (!rawData || rawData.length === 0) break;
+
+            rows = rows.concat(rawData);
+            if (rawData.length < batchSize) break;
+            from += batchSize;
+          }
 
           // Enrich with user profiles
           const userIds = [...new Set(rows.map((d: any) => d.usuario_id).filter(Boolean))];
@@ -513,69 +523,94 @@ export function useGenerateReport(empresaId: string) {
         // ── Mermas y Regalías (Cortesías bonificadas + pérdidas) ──────────────
         if (reportId === 'mermas') {
           // 1. Obtener pagos de cortesía con su factura, cliente, detalles y productos
-          let pagosQuery = supabase
-            .from('ventas_pagos')
-            .select(`
-              id,
-              tipo_pago,
-              monto,
-              ventas_facturas!inner (
+          let pagosData: any[] = [];
+          let fromPagos = 0;
+          const batchPagos = 1000;
+
+          while (true) {
+            let pagosQuery = supabase
+              .from('ventas_pagos')
+              .select(`
                 id,
-                fecha_venta,
-                numero_documento,
-                numero_orden,
-                cliente_nombre,
-                tipo_documento,
-                total,
-                empresa_id,
-                sede_id,
-                clientes (
+                tipo_pago,
+                monto,
+                ventas_facturas!inner (
                   id,
-                  nombre
-                ),
-                ventas_detalles (
-                  cantidad,
-                  precio_unitario,
+                  fecha_venta,
+                  numero_documento,
+                  numero_orden,
+                  cliente_nombre,
+                  tipo_documento,
                   total,
-                  productos (
+                  empresa_id,
+                  sede_id,
+                  clientes (
                     id,
-                    nombre,
-                    costo,
-                    precio_venta
+                    nombre
+                  ),
+                  ventas_detalles (
+                    cantidad,
+                    precio_unitario,
+                    total,
+                    productos (
+                      id,
+                      nombre,
+                      costo,
+                      precio_venta
+                    )
                   )
                 )
-              )
-            `)
-            .ilike('tipo_pago', '%cortes%')
-            .eq('ventas_facturas.empresa_id', p_empresa_id)
-            .gte('ventas_facturas.fecha_venta', p_fecha_inicio)
-            .lte('ventas_facturas.fecha_venta', p_fecha_fin)
-            .order('ventas_facturas(fecha_venta)', { ascending: false });
+              `)
+              .ilike('tipo_pago', '%cortes%')
+              .eq('ventas_facturas.empresa_id', p_empresa_id)
+              .gte('ventas_facturas.fecha_venta', p_fecha_inicio)
+              .lte('ventas_facturas.fecha_venta', p_fecha_fin)
+              .order('ventas_facturas(fecha_venta)', { ascending: false })
+              .range(fromPagos, fromPagos + batchPagos - 1);
 
-          if (p_sede_id) {
-            pagosQuery = pagosQuery.eq('ventas_facturas.sede_id', p_sede_id);
+            if (p_sede_id) {
+              pagosQuery = pagosQuery.eq('ventas_facturas.sede_id', p_sede_id);
+            }
+
+            const { data: bData, error: pagosErr } = await pagosQuery;
+            if (pagosErr) throw new Error(pagosErr.message);
+            if (!bData || bData.length === 0) break;
+
+            pagosData = pagosData.concat(bData);
+            if (bData.length < batchPagos) break;
+            fromPagos += batchPagos;
           }
 
-          const { data: pagosData, error: pagosErr } = await pagosQuery;
-          if (pagosErr) throw new Error(pagosErr.message);
-
           // 2. Consultar mermas manuales registradas en shrinkages si existen
-          let shrinkagesQuery = supabase
-            .from('shrinkages')
-            .select(`
-              id,
-              quantity,
-              unit_cost,
-              total_loss,
-              notes,
-              created_at,
-              shrinkage_reasons (name),
-              productos (nombre, precio_venta)
-            `)
-            .gte('created_at', p_fecha_inicio)
-            .lte('created_at', p_fecha_fin);
+          let shrinkData: any[] = [];
+          let fromShrink = 0;
+          const batchShrink = 1000;
 
-          const { data: shrinkData } = await shrinkagesQuery;
+          while (true) {
+            let shrinkagesQuery = supabase
+              .from('shrinkages')
+              .select(`
+                id,
+                quantity,
+                unit_cost,
+                total_loss,
+                notes,
+                created_at,
+                shrinkage_reasons (name),
+                productos (nombre, precio_venta)
+              `)
+              .gte('created_at', p_fecha_inicio)
+              .lte('created_at', p_fecha_fin)
+              .range(fromShrink, fromShrink + batchShrink - 1);
+
+            const { data: bShrink, error: sErr } = await shrinkagesQuery;
+            if (sErr) throw new Error(sErr.message);
+            if (!bShrink || bShrink.length === 0) break;
+
+            shrinkData = shrinkData.concat(bShrink);
+            if (bShrink.length < batchShrink) break;
+            fromShrink += batchShrink;
+          }
 
           const rows: Record<string, any>[] = [];
           let sumCantidad = 0;
@@ -691,28 +726,42 @@ export function useGenerateReport(empresaId: string) {
 
         // ── Ventas por método de pago (query directa + pivot en JS) ───────────
         if (reportId === 'ventas_metodos_pago') {
-          const query = supabase
-            .from('ventas_facturas')
-            .select(`
-              fecha_venta,
-              total,
-              tipo_documento,
-              numero_orden,
-              ventas_pagos (
-                tipo_pago,
-                monto
-              )
-            `)
-            .eq('empresa_id', p_empresa_id)
-            .gte('fecha_venta', p_fecha_inicio)
-            .lte('fecha_venta', p_fecha_fin);
+          let allVentas: any[] = [];
+          let fromVentas = 0;
+          const batchVentas = 1000;
 
-          if (p_sede_id) query.eq('sede_id', p_sede_id);
+          while (true) {
+            let query = supabase
+              .from('ventas_facturas')
+              .select(`
+                fecha_venta,
+                total,
+                tipo_documento,
+                numero_orden,
+                ventas_pagos (
+                  tipo_pago,
+                  monto
+                )
+              `)
+              .eq('empresa_id', p_empresa_id)
+              .eq('estado_activo', true)
+              .gte('fecha_venta', p_fecha_inicio)
+              .lte('fecha_venta', p_fecha_fin)
+              .order('fecha_venta', { ascending: true })
+              .range(fromVentas, fromVentas + batchVentas - 1);
 
-          const { data: ventasData, error: vError } = await query;
-          if (vError) throw new Error(vError.message);
+            if (p_sede_id) query = query.eq('sede_id', p_sede_id);
 
-          const rows = ventasData ?? [];
+            const { data: bVentas, error: vError } = await query;
+            if (vError) throw new Error(vError.message);
+            if (!bVentas || bVentas.length === 0) break;
+
+            allVentas = allVentas.concat(bVentas);
+            if (bVentas.length < batchVentas) break;
+            fromVentas += batchVentas;
+          }
+
+          const rows = allVentas;
 
           // Pivot en JS: agrupar por fecha y método de pago (excluyendo cortesías)
           const byDate: Record<
@@ -750,28 +799,42 @@ export function useGenerateReport(empresaId: string) {
 
           // Si no hay ventas en ventas_facturas para esas fechas, verificar en cierres_transacciones
           if (rows.length === 0) {
-            let qCierres = supabase
-              .from('cierres_transacciones')
-              .select(`
-                monto,
-                moneda,
-                metodo,
-                cierres_caja!inner (
-                  fecha_cierre,
-                  tasa_cambio,
-                  sede_id,
-                  empresa_id
-                )
-              `)
-              .eq('cierres_caja.empresa_id', p_empresa_id)
-              .gte('cierres_caja.fecha_cierre', p_fecha_inicio.split('T')[0])
-              .lte('cierres_caja.fecha_cierre', p_fecha_fin.split('T')[0]);
+            let allCierres: any[] = [];
+            let fromCierres = 0;
+            const batchCierres = 1000;
 
-            if (p_sede_id) qCierres = qCierres.eq('cierres_caja.sede_id', p_sede_id);
+            while (true) {
+              let qCierres = supabase
+                .from('cierres_transacciones')
+                .select(`
+                  monto,
+                  moneda,
+                  metodo,
+                  cierres_caja!inner (
+                    fecha_cierre,
+                    tasa_cambio,
+                    sede_id,
+                    empresa_id
+                  )
+                `)
+                .eq('cierres_caja.empresa_id', p_empresa_id)
+                .gte('cierres_caja.fecha_cierre', p_fecha_inicio.split('T')[0])
+                .lte('cierres_caja.fecha_cierre', p_fecha_fin.split('T')[0])
+                .range(fromCierres, fromCierres + batchCierres - 1);
 
-            const { data: cierresData } = await qCierres;
-            if (cierresData && cierresData.length > 0) {
-              for (const row of cierresData as any[]) {
+              if (p_sede_id) qCierres = qCierres.eq('cierres_caja.sede_id', p_sede_id);
+
+              const { data: bCierres, error: cErr } = await qCierres;
+              if (cErr) break;
+              if (!bCierres || bCierres.length === 0) break;
+
+              allCierres = allCierres.concat(bCierres);
+              if (bCierres.length < batchCierres) break;
+              fromCierres += batchCierres;
+            }
+
+            if (allCierres.length > 0) {
+              for (const row of allCierres as any[]) {
                 const c = row.cierres_caja;
                 if (!c) continue;
                 const fecha = c.fecha_cierre || '';
@@ -861,25 +924,37 @@ export function useGenerateReport(empresaId: string) {
         // ── Reportes RPC estándar ──────────────────────────────────────────────
         
         if (reportId === 'propinas_mesero') {
-          let query = supabase
-            .from('ventas_facturas')
-            .select('mesero_nombre, propina, sede_id')
-            .eq('empresa_id', empresaId)
-            .gte('fecha_venta', p_fecha_inicio)
-            .lte('fecha_venta', p_fecha_fin)
-            .eq('estado_activo', true)
-            .gt('propina', 0);
-          
-          if (p_sede_id) query = query.eq('sede_id', p_sede_id);
-          if (p_cajero_id) query = query.ilike('mesero_nombre', `%${p_cajero_id}%`);
-          
-          const { data, error } = await query;
-          if (error) throw error;
-          
+          let allPropinas: any[] = [];
+          let fromProp = 0;
+          const batchProp = 1000;
+
+          while (true) {
+            let query = supabase
+              .from('ventas_facturas')
+              .select('mesero_nombre, propina, sede_id')
+              .eq('empresa_id', empresaId)
+              .gte('fecha_venta', p_fecha_inicio)
+              .lte('fecha_venta', p_fecha_fin)
+              .eq('estado_activo', true)
+              .gt('propina', 0)
+              .range(fromProp, fromProp + batchProp - 1);
+
+            if (p_sede_id) query = query.eq('sede_id', p_sede_id);
+            if (p_cajero_id) query = query.ilike('mesero_nombre', `%${p_cajero_id}%`);
+
+            const { data: bData, error } = await query;
+            if (error) throw error;
+            if (!bData || bData.length === 0) break;
+
+            allPropinas = allPropinas.concat(bData);
+            if (bData.length < batchProp) break;
+            fromProp += batchProp;
+          }
+
           const map: Record<string, any> = {};
           let totalProp = 0;
           let totalMesas = 0;
-          (data || []).forEach((v: any) => {
+          allPropinas.forEach((v: any) => {
             const mesero = v.mesero_nombre || 'Sin asignar';
             if (!map[mesero]) map[mesero] = { Mesero: mesero, 'Total Propina ($)': 0, 'Mesas Atendidas': 0 };
             map[mesero]['Total Propina ($)'] += Number(v.propina);
@@ -1352,38 +1427,50 @@ export function useGenerateReport(empresaId: string) {
               };
             });
 
-            let queryCombos = supabase
-              .from('ventas_detalles')
-              .select(`
-                producto_id,
-                cantidad,
-                combo_items,
-                productos!inner (
-                  id,
-                  nombre
-                ),
-                ventas_facturas!inner (
-                  empresa_id,
-                  sede_id,
-                  fecha_venta,
-                  estado_activo
-                )
-              `)
-              .eq('ventas_facturas.empresa_id', p_empresa_id)
-              .eq('ventas_facturas.estado_activo', true)
-              .not('combo_items', 'is', null);
+            let comboSales: any[] = [];
+            let fromCombos = 0;
+            const batchCombos = 1000;
 
-            if (p_sede_id) {
-              queryCombos = queryCombos.eq('ventas_facturas.sede_id', p_sede_id);
-            }
-            if (p_fecha_inicio) {
-              queryCombos = queryCombos.gte('ventas_facturas.fecha_venta', p_fecha_inicio);
-            }
-            if (p_fecha_fin) {
-              queryCombos = queryCombos.lte('ventas_facturas.fecha_venta', p_fecha_fin);
-            }
+            while (true) {
+              let queryCombos = supabase
+                .from('ventas_detalles')
+                .select(`
+                  producto_id,
+                  cantidad,
+                  combo_items,
+                  productos!inner (
+                    id,
+                    nombre
+                  ),
+                  ventas_facturas!inner (
+                    empresa_id,
+                    sede_id,
+                    fecha_venta,
+                    estado_activo
+                  )
+                `)
+                .eq('ventas_facturas.empresa_id', p_empresa_id)
+                .eq('ventas_facturas.estado_activo', true)
+                .not('combo_items', 'is', null)
+                .range(fromCombos, fromCombos + batchCombos - 1);
 
-            const { data: comboSales } = await queryCombos;
+              if (p_sede_id) {
+                queryCombos = queryCombos.eq('ventas_facturas.sede_id', p_sede_id);
+              }
+              if (p_fecha_inicio) {
+                queryCombos = queryCombos.gte('ventas_facturas.fecha_venta', p_fecha_inicio);
+              }
+              if (p_fecha_fin) {
+                queryCombos = queryCombos.lte('ventas_facturas.fecha_venta', p_fecha_fin);
+              }
+
+              const { data: bCombos } = await queryCombos;
+              if (!bCombos || bCombos.length === 0) break;
+
+              comboSales = comboSales.concat(bCombos);
+              if (bCombos.length < batchCombos) break;
+              fromCombos += batchCombos;
+            }
 
             if (comboSales && comboSales.length > 0) {
               const promoSubItemsMap: Record<string, Record<string, number>> = {};

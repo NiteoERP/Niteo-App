@@ -206,7 +206,7 @@ export default function MobileCompraForm() {
       } else if (res.data) {
         const d = res.data;
 
-        let nuevaMoneda = monedaGlobal;
+                let nuevaMoneda: 'USD' | 'VES' = monedaGlobal;
         if (d.moneda === 'VES' || d.moneda === 'USD') {
           nuevaMoneda = d.moneda;
           setMonedaGlobal(d.moneda);
@@ -236,6 +236,17 @@ export default function MobileCompraForm() {
           setFechaEmision(d.fecha);
         }
 
+        // Si ya habían ítems previos en el carrito, unificarlos estrictamente a la moneda de la factura
+        const prevCartUnificada = cart.map(item => {
+          if (item.monedaItem === nuevaMoneda) return item;
+          const factor = nuevaMoneda === 'VES' ? tasaDelDia : (1 / (tasaDelDia || 1));
+          return {
+            ...item,
+            costoTotal: Number((item.costoTotal * factor).toFixed(2)),
+            monedaItem: nuevaMoneda
+          };
+        });
+
         const newCartItems: CartItem[] = (d.items || []).map((item: any, i: number) => {
           const isNew = !item.insumo_id_recomendado;
           const factor = item.es_bulto ? (item.unidades_por_bulto_estimado || 1) : 1;
@@ -261,13 +272,14 @@ export default function MobileCompraForm() {
             factor_compra: factor,
             cantidad_base: qty * factor,
             costoTotal: costo,
-            monedaItem: d.moneda || nuevaMoneda,
+            monedaItem: nuevaMoneda,
           };
         });
 
-        // Combinar con ítems previos si ya había
-        const cartFinal = [...cart, ...newCartItems];
+        // Combinar con ítems previos asegurando que el 100% comparta la misma moneda
+        const cartFinal = [...prevCartUnificada, ...newCartItems];
         setCart(cartFinal);
+
         setActiveStep(2); // Pasar automáticamente al paso 2 para revisar ítems
 
         // GUARDADO INMEDIATO EN BORRADOR: asegura persistencia incluso si el navegador se cierra
@@ -496,7 +508,30 @@ export default function MobileCompraForm() {
   const [errorMsg, setErrorMsg] = useState('');
 
 
+    const handleMonedaGlobalChange = (newMoneda: 'USD' | 'VES') => {
+    if (newMoneda === monedaGlobal) return;
+    if (cart.length > 0) {
+      const factor = newMoneda === 'VES' ? tasaDelDia : (1 / (tasaDelDia || 1));
+      const converted = cart.map(item => ({
+        ...item,
+        costoTotal: Number((item.costoTotal * factor).toFixed(2)),
+        monedaItem: newMoneda,
+      }));
+      setCart(converted);
+    }
+    if (descuento && Number(descuento) > 0) {
+      const factor = newMoneda === 'VES' ? tasaDelDia : (1 / (tasaDelDia || 1));
+      setDescuento((Number(descuento) * factor).toFixed(2));
+    }
+    if (iva && Number(iva) > 0) {
+      const factor = newMoneda === 'VES' ? tasaDelDia : (1 / (tasaDelDia || 1));
+      setIva((Number(iva) * factor).toFixed(2));
+    }
+    setMonedaGlobal(newMoneda);
+  };
+
   const handleAddToCart = () => {
+
     if (!cantidad || !costoTotal || (!selectedInsumo && !isNewInsumo)) {
       setErrorMsg('Por favor completa la cantidad, el costo total y selecciona un insumo.');
       setTimeout(() => setErrorMsg(''), 3000);
@@ -538,15 +573,16 @@ export default function MobileCompraForm() {
 
   const removeFromCart = (id: string) => setCart(cart.filter(item => item.id !== id));
 
-  // Calcula el total global aplicando descuento e IVA
+    // Calcula el total global aplicando descuento e IVA (100% en la moneda de la factura)
+  const getSubtotalGlobal = () => {
+    return cart.reduce((acc, item) => acc + (Number(item.costoTotal) || 0), 0);
+  };
+
   const getTotalGlobal = () => {
-    let usd = 0;
-    cart.forEach(item => {
-      if (item.monedaItem === 'USD') usd += item.costoTotal;
-      else usd += item.costoTotal / tasaDelDia;
-    });
-    const base = monedaGlobal === 'USD' ? usd : usd * tasaDelDia;
-    return (base - (Number(descuento) || 0) + (Number(iva) || 0)).toFixed(2);
+    const sub = getSubtotalGlobal();
+    const desc = Number(descuento) || 0;
+    const tax = Number(iva) || 0;
+    return Math.max(0, sub - desc + tax).toFixed(2);
   };
 
   const handleRegistrarFactura = () => {
@@ -554,14 +590,13 @@ export default function MobileCompraForm() {
     setErrorMsg('');
 
     startTransition(async () => {
-      // Normalizar costos a la moneda global antes de enviar al servidor
-      const normalizedItems = cart.map(item => {
-        let costoUSD = item.monedaItem === 'VES'
-          ? item.costoTotal / tasaDelDia
-          : item.costoTotal;
-        const finalCosto = monedaGlobal === 'VES' ? costoUSD * tasaDelDia : costoUSD;
-        return { ...item, costoTotal: finalCosto, cantidad: item.cantidad_base };
-      });
+      // Todos los ítems comparten estricta y únicamente la moneda global de la factura
+      const normalizedItems = cart.map(item => ({
+        ...item,
+        costoTotal: Number(item.costoTotal) || 0,
+        monedaItem: monedaGlobal,
+        cantidad: item.cantidad_base
+      }));
 
       try {
         const res = await registrarFacturaInsumos({
@@ -576,6 +611,7 @@ export default function MobileCompraForm() {
           iva: Number(iva) || 0,
           items: normalizedItems,
         } as any);
+
 
         if (res.error) {
           setErrorMsg(res.error);
@@ -808,17 +844,18 @@ export default function MobileCompraForm() {
               />
             </div>
 
-            <div className="sm:col-span-2">
+                        <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-neutral-400 mb-1">Moneda Global</label>
               <select
                 value={monedaGlobal}
-                onChange={(e) => setMonedaGlobal(e.target.value as 'USD' | 'VES')}
+                onChange={(e) => handleMonedaGlobalChange(e.target.value as 'USD' | 'VES')}
                 className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-indigo-500"
               >
-                <option value="USD">USD</option>
-                <option value="VES">VES</option>
+                <option value="USD">USD ($)</option>
+                <option value="VES">VES (Bs.)</option>
               </select>
             </div>
+
 
             <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-neutral-400 mb-1">Método de Pago</label>
@@ -1029,9 +1066,11 @@ export default function MobileCompraForm() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-400 mb-1">Costo Total</label>
+                  <label className="block text-sm font-medium text-neutral-400 mb-1">
+                    Costo Total ({monedaGlobal === 'USD' ? '$ USD' : 'Bs. VES'})
+                  </label>
                   <input
                     type="number"
                     min="0.01"
@@ -1043,12 +1082,14 @@ export default function MobileCompraForm() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-400 mb-1">Moneda</label>
-                  <div className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2.5 text-neutral-500 cursor-not-allowed">
-                    {monedaGlobal === 'USD' ? '$ USD' : 'Bs VES'}
+                  <label className="block text-sm font-medium text-neutral-400 mb-1">Moneda Factura</label>
+                  <div className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2.5 text-indigo-300 font-bold text-sm flex items-center justify-between">
+                    <span>{monedaGlobal === 'USD' ? '$ USD' : 'Bs. VES'}</span>
+                    <span className="text-[10px] text-neutral-400 font-normal uppercase bg-neutral-800 px-2 py-0.5 rounded">Única moneda</span>
                   </div>
                 </div>
               </div>
+
             </div>
 
             <button
@@ -1059,7 +1100,7 @@ export default function MobileCompraForm() {
             </button>
           </div>
 
-          {/* ── Carrito ──────────────────────────────────────────────────── */}
+                    {/* ── Carrito ──────────────────────────────────────────────────── */}
           {cart.length > 0 && (
             <div className="mt-6">
               <h4 className="text-neutral-400 text-sm mb-3">Insumos en esta factura:</h4>
@@ -1093,9 +1134,9 @@ export default function MobileCompraForm() {
                         {' '}•{' '}
                         {/* Badge rojo si el precio fue ilegible (costoTotal = 0) */}
                         {item.costoTotal > 0 ? (
-                          <>{item.monedaItem} {item.costoTotal.toFixed(2)} Total{' '}
+                          <>{monedaGlobal === 'USD' ? '$' : 'Bs.'} {Number(item.costoTotal).toFixed(2)} Total{' '}
                             <span className="text-[10px] opacity-60">
-                              ({(item.costoTotal / (item.cantidad_base || 1)).toFixed(2)} c/{item.unidad_nueva})
+                              ({(Number(item.costoTotal) / (item.cantidad_base || 1)).toFixed(2)} c/{item.unidad_nueva})
                             </span>
                           </>
                         ) : (
@@ -1120,19 +1161,8 @@ export default function MobileCompraForm() {
                 {/* Subtotal */}
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-indigo-200/70">Subtotal Items:</span>
-                  <span className="text-white">
-                    {monedaGlobal === 'USD' ? '$' : 'Bs'}{' '}
-                    {cart
-                      .reduce((acc, i) => {
-                        const val =
-                          i.monedaItem === monedaGlobal
-                            ? i.costoTotal
-                            : monedaGlobal === 'USD'
-                            ? i.costoTotal / tasaDelDia
-                            : i.costoTotal * tasaDelDia;
-                        return acc + val;
-                      }, 0)
-                      .toFixed(2)}
+                  <span className="text-white font-medium">
+                    {monedaGlobal === 'USD' ? '$' : 'Bs.'} {getSubtotalGlobal().toFixed(2)}
                   </span>
                 </div>
 
@@ -1169,11 +1199,19 @@ export default function MobileCompraForm() {
                 <div className="h-px bg-indigo-500/20 w-full" />
 
                 {/* Total final */}
-                <div className="flex justify-between items-center">
-                  <span className="text-indigo-200 font-medium">Total a Pagar:</span>
-                  <span className="text-2xl font-bold text-white">
-                    {monedaGlobal === 'USD' ? '$' : 'Bs'} {getTotalGlobal()}
-                  </span>
+                <div className="flex flex-col gap-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-indigo-200 font-medium">Total Factura ({monedaGlobal}):</span>
+                    <span className="text-2xl font-bold text-white">
+                      {monedaGlobal === 'USD' ? '$' : 'Bs.'} {getTotalGlobal()}
+                    </span>
+                  </div>
+                  <div className="text-right text-xs text-neutral-400 font-mono">
+                    {monedaGlobal === 'USD'
+                      ? `≈ Bs. ${(Number(getTotalGlobal()) * tasaDelDia).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Tasa: ${tasaDelDia})`
+                      : `≈ ${(Number(getTotalGlobal()) / (tasaDelDia || 1)).toFixed(2)} USD (Tasa: ${tasaDelDia})`
+                    }
+                  </div>
                 </div>
               </div>
 

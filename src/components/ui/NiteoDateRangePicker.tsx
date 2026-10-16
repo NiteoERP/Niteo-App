@@ -132,7 +132,7 @@ export default function NiteoDateRangePicker({
   };
 
   // Presets predefinidos estilo Aronium
-  const applyPreset = (type: 'hoy' | 'ayer' | 'estaSemana' | 'ultimaSemana' | 'esteMes' | 'ultimoMes' | 'esteAno' | 'ultimoAno') => {
+  const applyPreset = (type: 'hoy' | 'ayer' | 'estaSemana' | 'ultimaSemana' | 'esteMes' | 'ultimoMes' | 'ultimos30Dias' | 'ultimos3Meses' | 'esteAno' | 'ultimoAno') => {
     const now = new Date();
     let s = '';
     let e = '';
@@ -169,6 +169,16 @@ export default function NiteoDateRangePicker({
         const prevM = subMonths(now, 1);
         s = format(startOfMonth(prevM), 'yyyy-MM-dd');
         e = format(endOfMonth(prevM), 'yyyy-MM-dd');
+        break;
+      }
+      case 'ultimos30Dias': {
+        s = format(subDays(now, 30), 'yyyy-MM-dd');
+        e = format(now, 'yyyy-MM-dd');
+        break;
+      }
+      case 'ultimos3Meses': {
+        s = format(subDays(now, 90), 'yyyy-MM-dd');
+        e = format(now, 'yyyy-MM-dd');
         break;
       }
       case 'esteAno': {
@@ -487,6 +497,21 @@ export default function NiteoDateRangePicker({
                       className="bg-neutral-800/80 hover:bg-neutral-700 hover:text-white border border-neutral-700/80 text-neutral-300 text-xs py-2.5 px-3 rounded-lg text-center transition-colors"
                     >
                       Último mes
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => applyPreset('ultimos30Dias')}
+                      className="bg-neutral-800/80 hover:bg-neutral-700 hover:text-white border border-neutral-700/80 text-neutral-300 text-xs py-2.5 px-3 rounded-lg text-center transition-colors"
+                    >
+                      Últimos 30 días
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyPreset('ultimos3Meses')}
+                      className="bg-neutral-800/80 hover:bg-neutral-700 hover:text-white border border-neutral-700/80 text-neutral-300 text-xs py-2.5 px-3 rounded-lg text-center transition-colors"
+                    >
+                      Últimos 3 meses
                     </button>
 
                     <button

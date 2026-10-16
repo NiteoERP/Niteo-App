@@ -215,50 +215,41 @@ export async function registrarFacturaInsumos(factura: {
     tasaEfectiva = bcv.tasa || 804.81;
   }
 
-    let montoTotalDivisas = 0;   
-  let montoTotalBs = 0;    
-  for (const item of factura.items) {     
-    let costoUSD = item.costoTotal;     
-    if (factura.moneda === 'VES') {       
-      costoUSD = item.costoTotal / tasaEfectiva;     
-    }     
-    montoTotalDivisas += costoUSD;   
-  }   
+    let montoTotalDivisas = 0;
+  let montoTotalBs = 0;
 
-  // Apply discount and IVA (assumed to be in the same currency as factura.moneda)
-  if ((factura as any).descuento > 0) {
-    let descUSD = (factura as any).descuento;
-    if (factura.moneda === 'VES') descUSD = descUSD / tasaEfectiva;
-    montoTotalDivisas -= descUSD;
+  if (factura.moneda === 'VES') {
+    const subtotalBs = factura.items.reduce((acc, it) => acc + (Number(it.costoTotal) || 0), 0);
+    const descBs = Number((factura as any).descuento) || 0;
+    const ivaBs = Number((factura as any).iva) || 0;
+    montoTotalBs = Math.max(0, subtotalBs - descBs + ivaBs);
+    montoTotalDivisas = Number((montoTotalBs / tasaEfectiva).toFixed(2));
+  } else {
+    const subtotalUSD = factura.items.reduce((acc, it) => acc + (Number(it.costoTotal) || 0), 0);
+    const descUSD = Number((factura as any).descuento) || 0;
+    const ivaUSD = Number((factura as any).iva) || 0;
+    montoTotalDivisas = Math.max(0, subtotalUSD - descUSD + ivaUSD);
+    montoTotalBs = Number((montoTotalDivisas * tasaEfectiva).toFixed(2));
   }
-  if ((factura as any).iva > 0) {
-    let ivaUSD = (factura as any).iva;
-    if (factura.moneda === 'VES') ivaUSD = ivaUSD / tasaEfectiva;
-    montoTotalDivisas += ivaUSD;
-  }
-
-  montoTotalBs = factura.moneda === 'VES'
-    ? (factura.items.reduce((acc, it) => acc + (Number(it.costoTotal) || 0), 0) - ((factura as any).descuento || 0) + ((factura as any).iva || 0))
-    : (montoTotalDivisas * tasaEfectiva);
 
   const safeFechaEmision = toSafeIsoDate(factura.fecha_emision);
 
-  const { data: header, error: headErr } = await supabase.from('compras_puntuales').insert({     
-    id_empresa: profile.empresa_id,     
-    id_sede: activeSedeId,     
-    proveedor: factura.proveedor,     
-    monto_divisas: Number(montoTotalDivisas.toFixed(2)),     
-    monto_bs: Number(montoTotalBs.toFixed(2)),     
-    tasa_cambio: tasaEfectiva,     
+  const { data: header, error: headErr } = await supabase.from('compras_puntuales').insert({
+    id_empresa: profile.empresa_id,
+    id_sede: activeSedeId,
+    proveedor: factura.proveedor,
+    monto_divisas: Number(montoTotalDivisas.toFixed(2)),
+    monto_bs: Number(montoTotalBs.toFixed(2)),
+    tasa_cambio: tasaEfectiva,
     fecha_registro: safeFechaEmision,
     detalles: JSON.stringify({
       texto: factura.descripcion?.trim() ? factura.descripcion : `Compra Insumos - ${factura.items.length} items`,
       is_insumos: true,
-      items: factura.items,
+      items: factura.items.map(it => ({ ...it, monedaItem: factura.moneda })),
       monedaOriginal: factura.moneda,
       tasaCambio: tasaEfectiva
-    }),     
-    metodo_pago: factura.metodo_pago || (factura.moneda === 'USD' ? 'Efectivo USD' : 'Transferencia BS'),     
+    }),
+    metodo_pago: factura.metodo_pago || (factura.moneda === 'USD' ? 'Efectivo USD' : 'Transferencia BS'),
     estado: 'PROCESADA',
     usuario_id: user.id
   }).select('id').single();    
@@ -447,12 +438,19 @@ export async function editarFacturaInsumos(
   let montoTotalDivisas = 0;
   let montoTotalBs = 0;
 
+  if (factura.moneda === 'VES') {
+    montoTotalBs = factura.items_nuevos.reduce((acc, it) => acc + (Number(it.costoTotal) || 0), 0);
+    montoTotalDivisas = Number((montoTotalBs / (factura.tasa || 1)).toFixed(2));
+  } else {
+    montoTotalDivisas = factura.items_nuevos.reduce((acc, it) => acc + (Number(it.costoTotal) || 0), 0);
+    montoTotalBs = Number((montoTotalDivisas * (factura.tasa || 1)).toFixed(2));
+  }
+
   for (const item of factura.items_nuevos) {
     let costoUSD = item.costoTotal;
     if (factura.moneda === 'VES') {
       costoUSD = item.costoTotal / factura.tasa;
     }
-    montoTotalDivisas += costoUSD;
 
     let idInsumo = item.insumo_id;
     if (item.is_new && item.nombre_nuevo) {
@@ -496,8 +494,6 @@ export async function editarFacturaInsumos(
     }
   }
 
-  montoTotalBs = montoTotalDivisas * factura.tasa;
-
   // 3. Actualizar la metadata de la compra puntual
   // First, let's find if there is a matching compras_facturas to update its total too
   const { data: oldPuntual } = await supabase.from('compras_puntuales').select('monto_divisas, fecha_registro, proveedor').eq('id', id_compra).single();
@@ -507,7 +503,13 @@ export async function editarFacturaInsumos(
     monto_divisas: montoTotalDivisas,
     monto_bs: montoTotalBs,
     tasa_cambio: factura.tasa,
-    detalles: JSON.stringify({ texto: factura.descripcion?.trim() ? factura.descripcion : `Compra Insumos - ${factura.items_nuevos.length} items`, is_insumos: true, items: factura.items_nuevos }),
+    detalles: JSON.stringify({
+      texto: factura.descripcion?.trim() ? factura.descripcion : `Compra Insumos - ${factura.items_nuevos.length} items`,
+      is_insumos: true,
+      items: factura.items_nuevos.map(it => ({ ...it, monedaItem: factura.moneda })),
+      monedaOriginal: factura.moneda,
+      tasaCambio: factura.tasa
+    }),
     metodo_pago: factura.metodo_pago,
     modificado: true,
     usuario_modificacion_id: user.id,

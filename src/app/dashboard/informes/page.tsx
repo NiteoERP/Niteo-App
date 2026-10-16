@@ -5,7 +5,7 @@ import {
   FileText, FileSpreadsheet, Printer, Search, ChevronDown, ChevronRight,
   TrendingUp, Clock, Calendar as CalendarIcon, Users, CreditCard, DollarSign,
   Package, AlertTriangle, Receipt, Star, BarChart2, X, Loader2,
-  Store, Tag, ShieldAlert, LayoutGrid, Trash2, List, RotateCw, Coins,
+  Store, Tag, ShieldAlert, LayoutGrid, Trash2, List, RotateCw, Coins, Play,
 } from 'lucide-react';
 import { useEmpresa } from '@/components/providers/EmpresaProvider';
 import { useSedes, useCatalogosInformes, useGenerateReport, ExtraFilters } from '@/hooks/useInformesData';
@@ -23,7 +23,7 @@ import CuentasPorCobrarView, { groupCuentasPorCobrarData } from '@/components/in
 
 // ─── Tipos ──────────────────────────────────────────────────────────────────
 
-type DateRangeKey = 'hoy' | 'ayer' | '7d' | 'esta_semana' | 'este_mes' | 'mes_pasado' | 'este_ano';
+type DateRangeKey = 'hoy' | 'ayer' | '7d' | '30d' | 'esta_semana' | 'este_mes' | 'mes_pasado' | '3_meses' | 'este_ano';
 
 interface Report {
   id: string;
@@ -251,13 +251,15 @@ export default function InformesPage() {
   const applyDatePreset = useCallback((key: DateRangeKey, setStart: (d: Date) => void, setEnd: (d: Date) => void) => {
     const today = new Date();
     switch (key) {
-      case 'hoy':        setStart(today);                          setEnd(today);                          break;
-      case 'ayer':       setStart(subDays(today, 1));              setEnd(subDays(today, 1));              break;
-      case '7d':         setStart(subDays(today, 7));              setEnd(today);                          break;
-      case 'esta_semana':setStart(startOfWeek(today));             setEnd(endOfWeek(today));               break;
-      case 'este_mes':   setStart(startOfMonth(today));            setEnd(endOfMonth(today));              break;
-      case 'mes_pasado': setStart(startOfMonth(subMonths(today,1)));setEnd(endOfMonth(subMonths(today,1)));break;
-      case 'este_ano':   setStart(startOfYear(today));             setEnd(endOfYear(today));               break;
+      case 'hoy':        setStart(today);                           setEnd(today);                           break;
+      case 'ayer':       setStart(subDays(today, 1));               setEnd(subDays(today, 1));               break;
+      case '7d':         setStart(subDays(today, 7));               setEnd(today);                           break;
+      case '30d':        setStart(subDays(today, 30));              setEnd(today);                           break;
+      case 'esta_semana':setStart(startOfWeek(today));              setEnd(endOfWeek(today));                break;
+      case 'este_mes':   setStart(startOfMonth(today));             setEnd(endOfMonth(today));               break;
+      case 'mes_pasado': setStart(startOfMonth(subMonths(today,1)));setEnd(endOfMonth(subMonths(today,1))); break;
+      case '3_meses':    setStart(subDays(today, 90));              setEnd(today);                           break;
+      case 'este_ano':   setStart(startOfYear(today));              setEnd(endOfYear(today));                break;
     }
   }, []);
 
@@ -270,23 +272,19 @@ export default function InformesPage() {
     applyDatePreset(key, setSheetStartDate, setSheetEndDate);
   };
 
-  // ── Generar reporte ────────────────────────────────────────────────────────
+  // ── Generar reporte (bajo demanda al presionar "Calcular Informe") ──────────
+  const handleGenerate = async (reportId?: string, s?: Date, e?: Date) => {
+    const rId = reportId || selectedReport?.id;
+    const start = s || sheetStartDate;
+    const end = e || sheetEndDate;
+    if (!rId || !start || !end) return;
 
-
-  useEffect(() => {
-    if (selectedReport && sheetStartDate && sheetEndDate) {
-      handleGenerate(selectedReport.id, sheetStartDate, sheetEndDate);
-    }
-  }, [selectedReport, sheetStartDate, sheetEndDate, categoriaFilter, cajeroFilter, clienteFilter, sedeId]);
-
-
-  const handleGenerate = async (reportId: string, s: Date, e: Date) => {
     const extra: ExtraFilters = {
       categoriaFilter: categoriaFilter || undefined,
       cajeroId:        cajeroFilter    || undefined,
       clienteId:       clienteFilter   || undefined,
     };
-    await generateReport(reportId, sedeId, s, e, extra);
+    await generateReport(rId, sedeId, start, end, extra);
   };
 
   // ── Catálogo filtrado por búsqueda ────────────────────────────────────────
@@ -305,13 +303,8 @@ export default function InformesPage() {
     setSelectedReport(report);
     setReportData(null);
     setReportError('');
-    setCategoriaFilter('');
-    setCajeroFilter('');
-    setClienteFilter('');
     setSheetOpen(true);
-    setSheetDateKey('este_mes');
-    applyDatePreset('este_mes', setSheetStartDate, setSheetEndDate);
-
+    // Preservar el período previamente configurado por el usuario (no reiniciar forzosamente a este_mes)
   };
 
 
@@ -790,7 +783,8 @@ export default function InformesPage() {
                 setCajeroFilter={setCajeroFilter}
                 clienteFilter={clienteFilter}
                 setClienteFilter={setClienteFilter}
-                onGenerate={() => setShowPreviewModal(true)}
+                onCalculate={() => handleGenerate(selectedReport.id, sheetStartDate, sheetEndDate)}
+                onPreview={() => setShowPreviewModal(true)}
                 onExport={exportExcel}
                 onClose={() => setSheetOpen(false)}
               />
@@ -953,19 +947,38 @@ export default function InformesPage() {
               </div>
 
 
-              {/* — Botón generar — */}
-              <button
-                onClick={() => setShowPreviewModal(true)}
-                disabled={isLoading}
-                className="w-full h-14 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50
-                           text-white font-bold rounded-2xl flex items-center justify-center gap-2
-                           transition-colors shadow-[0_0_20px_rgba(99,102,241,0.3)]"
-              >
-                {isLoading
-                  ? <><Loader2 size={18} className="animate-spin" /> Generando...</>
-                  : <><FileText size={18} /> Generar Documento</>
-                }
-              </button>
+              {/* — Botón Calcular y Acciones Móvil — */}
+              <div className="space-y-2 pt-1">
+                <button
+                  onClick={() => handleGenerate(selectedReport.id, sheetStartDate, sheetEndDate)}
+                  disabled={isLoading}
+                  className="w-full h-13 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50
+                             text-white font-bold rounded-2xl flex items-center justify-center gap-2
+                             transition-colors shadow-[0_0_20px_rgba(99,102,241,0.3)] text-sm cursor-pointer"
+                >
+                  {isLoading
+                    ? <><Loader2 size={18} className="animate-spin" /> Calculando Informe...</>
+                    : <><Play size={16} className="fill-white" /> Calcular Informe</>
+                  }
+                </button>
+
+                {reportData && !isLoading && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setShowPreviewModal(true)}
+                      className="h-11 bg-neutral-800 hover:bg-neutral-700 text-white font-medium rounded-xl flex items-center justify-center gap-1.5 text-xs border border-neutral-700 transition-colors"
+                    >
+                      <FileText size={15} className="text-indigo-400" /> Ver / PDF
+                    </button>
+                    <button
+                      onClick={exportExcel}
+                      className="h-11 bg-emerald-950/40 hover:bg-emerald-900/50 text-emerald-300 font-medium rounded-xl flex items-center justify-center gap-1.5 text-xs border border-emerald-700/50 transition-colors"
+                    >
+                      <FileSpreadsheet size={15} className="text-emerald-400" /> Excel
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {/* — Mini gráfico placeholder — */}
               {selectedReport.id !== 'cuentas_por_cobrar' && (
@@ -974,7 +987,7 @@ export default function InformesPage() {
                   {!reportData && !isLoading && (
                     <div className="h-32 flex flex-col items-center justify-center text-neutral-700 gap-2">
                       <BarChart2 size={32} className="opacity-30" />
-                      <p className="text-xs">Genera el reporte para ver el resumen</p>
+                      <p className="text-xs">Ajusta el período y presiona "Calcular Informe"</p>
                     </div>
                   )}
                   {isLoading && (
@@ -1236,7 +1249,7 @@ function DesktopReportPanel({
   categoriaFilter, setCategoriaFilter,
   cajeroFilter, setCajeroFilter,
   clienteFilter, setClienteFilter,
-  onGenerate, onExport, onClose,
+  onCalculate, onPreview, onExport, onClose,
 }: {
   report: Report;
   sedes: any[]; sedeId: string; setSedeId: (v: string) => void;
@@ -1249,7 +1262,7 @@ function DesktopReportPanel({
   categoriaFilter: string; setCategoriaFilter: (v:string)=>void;
   cajeroFilter: string; setCajeroFilter: (v:string)=>void;
   clienteFilter: string; setClienteFilter: (v:string)=>void;
-  onGenerate: () => void; onExport: () => void; onClose: () => void;
+  onCalculate: () => void; onPreview: () => void; onExport: () => void; onClose: () => void;
 }) {
   const group = REPORT_CATALOG.find(g => g.reports.some(r => r.id === report.id));
   const Icon  = report.icon;
@@ -1267,7 +1280,7 @@ function DesktopReportPanel({
             <p className="text-xs text-neutral-500">{report.desc}</p>
           </div>
         </div>
-        <button onClick={onClose} className="p-2 text-neutral-500 hover:text-white hover:bg-neutral-800 rounded-xl transition-colors">
+        <button onClick={onClose} className="p-2 text-neutral-500 hover:text-white hover:bg-neutral-800 rounded-xl transition-colors cursor-pointer">
           <X size={16} />
         </button>
       </div>
@@ -1359,12 +1372,38 @@ function DesktopReportPanel({
             />
           </div>
 
-          {/* Botón generar */}
-          <button onClick={onGenerate} disabled={isLoading}
-            className="w-full h-12 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold rounded-xl
-                       flex items-center justify-center gap-2 transition-colors shadow-[0_0_15px_rgba(99,102,241,0.25)]">
-            {isLoading ? <><Loader2 size={16} className="animate-spin" /> Generando...</> : <><FileText size={16} /> Generar Documento</>}
-          </button>
+          {/* Botón calcular principal */}
+          <div className="space-y-2 pt-1">
+            <button
+              onClick={onCalculate}
+              disabled={isLoading}
+              className="w-full h-12 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold rounded-xl
+                         flex items-center justify-center gap-2 transition-colors shadow-[0_0_15px_rgba(99,102,241,0.25)] cursor-pointer text-sm"
+            >
+              {isLoading ? (
+                <><Loader2 size={16} className="animate-spin" /> Calculando Informe...</>
+              ) : (
+                <><Play size={16} className="fill-white" /> Calcular Informe</>
+              )}
+            </button>
+
+            {reportData && !isLoading && (
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  onClick={onPreview}
+                  className="h-10 bg-neutral-800 hover:bg-neutral-700 text-white font-medium rounded-xl flex items-center justify-center gap-1.5 text-xs border border-neutral-700 transition-colors cursor-pointer"
+                >
+                  <FileText size={14} className="text-indigo-400" /> Ver / PDF
+                </button>
+                <button
+                  onClick={onExport}
+                  className="h-10 bg-emerald-950/40 hover:bg-emerald-900/50 text-emerald-300 font-medium rounded-xl flex items-center justify-center gap-1.5 text-xs border border-emerald-700/50 transition-colors cursor-pointer"
+                >
+                  <FileSpreadsheet size={14} className="text-emerald-400" /> Excel
+                </button>
+              </div>
+            )}
+          </div>
 
           {reportError && (
             <p className="text-rose-400 text-xs font-medium bg-rose-500/10 rounded-lg p-2 border border-rose-500/20">{reportError}</p>
@@ -1375,38 +1414,52 @@ function DesktopReportPanel({
         {/* Columna Resultados */}
         <div className="flex-1 overflow-y-auto print:overflow-visible print:h-auto custom-scrollbar p-6 space-y-6">
           {!reportData && !isLoading && (
-            <div className="h-full flex flex-col items-center justify-center text-neutral-700 gap-3">
-              <BarChart2 size={48} className="opacity-20" />
-              <p className="text-sm">Configura los filtros y genera el informe</p>
+            <div className="h-full flex flex-col items-center justify-center text-center p-8 text-neutral-500 gap-3">
+              <div className="w-16 h-16 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-indigo-400">
+                <BarChart2 size={32} />
+              </div>
+              <p className="text-sm font-semibold text-neutral-300">Informe listo para calcular</p>
+              <p className="text-xs text-neutral-500 max-w-sm">
+                Selecciona la sucursal y el período deseado a la izquierda, y presiona <span className="text-indigo-400 font-semibold">"Calcular Informe"</span>.
+              </p>
             </div>
           )}
           {isLoading && (
-            <div className="h-full flex items-center justify-center">
-              <Loader2 size={32} className="animate-spin text-indigo-400" />
+            <div className="h-full flex flex-col items-center justify-center gap-3">
+              <Loader2 size={36} className="animate-spin text-indigo-500" />
+              <p className="text-sm text-neutral-400 font-medium">Consultando registros y calculando totales...</p>
             </div>
           )}
           {reportData && !isLoading && (
             <>
-              {/* Mini gráfico */}
-              {report.id !== 'cuentas_por_cobrar' && (
-                <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5">
-                  <div className="flex items-center justify-between mb-4">
-                    <p className="text-sm font-bold text-neutral-300">Resumen Visual</p>
-                    <button onClick={onExport}
-                      className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-medium bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20 transition-colors">
-                      <FileSpreadsheet size={12} /> Exportar Excel
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Tarjetas de resultados */}
-              <div>
-                {report.id !== 'cuentas_por_cobrar' && (
-                  <p className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-3">
-                    {reportData.length} resultado{reportData.length !== 1 ? 's' : ''}
+              {/* Header de resultados y exportar */}
+              <div className="flex items-center justify-between pb-2 border-b border-neutral-800/60">
+                <div>
+                  <p className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                    {reportData.length} resultado{reportData.length !== 1 ? 's' : ''} encontrado{reportData.length !== 1 ? 's' : ''}
                   </p>
-                )}
+                  <p className="text-xs text-neutral-600">
+                    Período: {format(sheetStartDate, 'dd/MM/yyyy')} al {format(sheetEndDate, 'dd/MM/yyyy')}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={onExport}
+                    className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 font-medium bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20 transition-colors cursor-pointer"
+                  >
+                    <FileSpreadsheet size={14} /> Exportar Excel
+                  </button>
+                  <button
+                    onClick={onPreview}
+                    className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1.5 font-medium bg-indigo-500/10 px-3 py-1.5 rounded-lg border border-indigo-500/20 transition-colors cursor-pointer"
+                  >
+                    <FileText size={14} /> Ver Documento / PDF
+                  </button>
+                </div>
+              </div>
+
+              {/* Tarjetas / Tablas de resultados */}
+              <div>
                 {report.id === 'cuentas_por_cobrar' ? (
                   <CuentasPorCobrarView data={reportData} isPrintView={false} onExportExcel={onExport} />
                 ) : (
