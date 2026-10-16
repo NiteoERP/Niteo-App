@@ -38,8 +38,25 @@ interface ChangelogItem {
 
 const CHANGELOG_DATA: ChangelogItem[] = [
   {
+    id: 'pos-1-0-1',
+    version: '1.0.1',
+    platform: 'pos',
+    platformName: 'Niteo POS (Desktop)',
+    date: '15 de Octubre, 2026',
+    title: 'Niteo POS v1.0.1: Integración con Portal de Novedades y Ajustes de Inicio',
+    badge: 'MEJORA',
+    badgeStyle: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+    summary: 'Actualización con enlace directo al historial de versiones y optimizaciones en la verificación periódica de actualizaciones.',
+    highlights: [
+      'Enlace Directo a Novedades: Ahora puedes consultar todo el historial de cambios del ecosistema desde el modal de actualización en tu navegador.',
+      'Optimización de Notificación Flotante: Mayor estabilidad en la detección de versiones en segundo plano sin interrumpir el cobro.',
+      'Integridad de Datos Garantizada: Al actualizar, tu base de datos SQLite y ventas locales se mantienen intactas.'
+    ],
+    installerUrl: '/downloads/niteo-pos-setup.exe'
+  },
+  {
     id: 'pos-1-0-0',
-    version: versionData.version || '1.0.0',
+    version: '1.0.0',
     platform: 'pos',
     platformName: 'Niteo POS (Desktop)',
     date: '15 de Octubre, 2026',

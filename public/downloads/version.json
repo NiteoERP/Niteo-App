@@ -1,15 +1,13 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.1",
   "build_date": "2026-10-15",
   "min_version": "1.0.0",
   "download_url": "https://niteo-app.vercel.app/downloads/niteo-pos-setup.exe",
-  "title": "Niteo POS v1.0.0",
+  "title": "Niteo POS v1.0.1",
   "changelog": [
-    "Sincronización bidireccional en vivo con Niteo Cloud",
-    "Gestión de comandas, mesas y terminal móvil de meseros",
-    "Soporte de doble moneda (USD / VES) con tasa oficial BCV",
-    "Impresión térmica ESC/POS para pre-cuenta, comanda y recibo fiscal",
-    "Sistema integrado de auto-actualizaciones desatendidas"
+    "Enlace directo a la nueva página pública de novedades y notas de versión",
+    "Optimización en la detección automática de actualizaciones en segundo plano",
+    "Mejoras de rendimiento y estabilidad en la interfaz táctil"
   ],
   "mandatory": false
 }

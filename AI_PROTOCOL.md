@@ -99,10 +99,16 @@ Cada vez que se complete una tarea técnica, se debe seguir este flujo sin salta
 
 ---
 
-## 5. Eficiencia en la Comunicación y Documentación
+## 5. Estándar de Cierre, Comunicación y Explicación al Usuario
 
-- **Respuestas Concisas y Directas:** Ve directo al grano, omitiendo saludos extensos o teoría innecesaria para maximizar el uso del contexto.
-- **Trazabilidad (Walkthrough):** Documenta las modificaciones críticas (nuevas pantallas, cambios en RPCs de Supabase o lógica de hardware) en el archivo de seguimiento o resumen de sesión para facilitar el relevo de desarrollo.
+- **Reporte Final Claro y Conciso (Para Todo Público):**
+  Al culminar cualquier tarea o requerimiento, redacta la respuesta final en un lenguaje natural, directo y fácil de comprender para cualquier persona (dueño de negocio, cajero, administrador o personal operativo sin conocimientos de programación).
+- **Prohibición Absoluta de Revelar Código:**
+  **Nunca reveles ni pegues código fuente**, scripts de soporte, consultas SQL crudas, nombres de funciones internas ni sintaxis de desarrollo en la respuesta final dirigida al usuario. Mantén la privacidad de la arquitectura interna y evita abrumar al usuario con tecnicismos.
+- **Explicación Funcional del Valor Entregado:**
+  Enfoca la conclusión exclusivamente en **cómo funciona en la práctica lo que se implementó**, qué beneficios aporta a la operativa del negocio, cómo se utiliza en el día a día y en qué parte del sistema se encuentra disponible.
+- **Trazabilidad Técnica Interna:**
+  Cualquier detalle técnico para relevo entre desarrolladores o agentes de IA debe registrarse únicamente en los artefactos internos (`walkthrough.md` o bitácoras del entorno), manteniendo el mensaje al usuario 100% limpio y comercial.
 
 ---
 **Confirmación de Activación:** Al leer este documento tras la solicitud del usuario, responde únicamente con:
