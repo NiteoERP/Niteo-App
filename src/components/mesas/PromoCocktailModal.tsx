@@ -171,7 +171,7 @@ export default function PromoCocktailModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[300] flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
       <div className="bg-neutral-900 border border-neutral-700 w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Cabecera */}
         <div className="p-4 sm:p-5 bg-gradient-to-r from-indigo-900/70 via-purple-900/50 to-neutral-900 border-b border-neutral-800 flex items-center justify-between">
@@ -269,14 +269,22 @@ export default function PromoCocktailModal({
             const cid = c.id || c.producto_id;
             const cant = seleccionados[cid] || 0;
             const precio = Number(c.precio_venta || 0);
+            const puedeAgregar = totalSeleccionado < 2;
 
             return (
               <div
                 key={cid}
-                className={`p-3 rounded-xl border transition-all flex items-center justify-between ${
+                onClick={() => {
+                  if (puedeAgregar) {
+                    handleAgregar(cid);
+                  }
+                }}
+                className={`p-3 rounded-xl border transition-all flex items-center justify-between select-none ${
                   cant > 0
-                    ? 'bg-indigo-950/40 border-indigo-500/60 shadow-md shadow-indigo-500/10'
-                    : 'bg-neutral-800/40 border-neutral-800 hover:border-neutral-700'
+                    ? 'bg-indigo-950/40 border-indigo-500/60 shadow-md shadow-indigo-500/10 cursor-pointer'
+                    : puedeAgregar
+                    ? 'bg-neutral-800/40 border-neutral-800 hover:border-indigo-500/50 hover:bg-neutral-800/70 cursor-pointer active:scale-[0.98]'
+                    : 'bg-neutral-800/20 border-neutral-800/40 opacity-40 cursor-not-allowed'
                 }`}
               >
                 <div className="flex-1 pr-2 min-w-0">
@@ -297,7 +305,10 @@ export default function PromoCocktailModal({
                   {cant > 0 && (
                     <button
                       type="button"
-                      onClick={() => handleQuitar(cid)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleQuitar(cid);
+                      }}
                       className="w-8 h-8 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white flex items-center justify-center transition-colors active:scale-95 touch-manipulation"
                     >
                       <Minus size={15} />
@@ -312,7 +323,10 @@ export default function PromoCocktailModal({
 
                   <button
                     type="button"
-                    onClick={() => handleAgregar(cid)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAgregar(cid);
+                    }}
                     disabled={totalSeleccionado >= 2}
                     className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-95 touch-manipulation ${
                       totalSeleccionado >= 2

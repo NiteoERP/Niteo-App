@@ -183,7 +183,7 @@ export default function PromoSelectionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[300] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
       <div className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-3xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
         
         {/* Cabecera Niteo Premium */}
@@ -307,10 +307,17 @@ export default function PromoSelectionModal({
               return (
                 <div
                   key={prod.producto_id}
-                  className={`p-3.5 rounded-xl border flex flex-col justify-between transition-all ${
+                  onClick={() => {
+                    if (!disabledAdd) {
+                      agregarProducto(prod);
+                    }
+                  }}
+                  className={`p-3.5 rounded-xl border flex flex-col justify-between transition-all select-none ${
                     cantSel > 0
-                      ? 'bg-indigo-950/20 border-indigo-500/50 shadow-sm shadow-indigo-500/10'
-                      : 'bg-neutral-950/50 border-neutral-800/80 hover:border-neutral-700'
+                      ? 'bg-indigo-950/20 border-indigo-500/50 shadow-sm shadow-indigo-500/10 cursor-pointer'
+                      : !disabledAdd
+                      ? 'bg-neutral-950/50 border-neutral-800/80 hover:border-indigo-500/50 hover:bg-neutral-900/60 cursor-pointer active:scale-[0.99]'
+                      : 'bg-neutral-950/30 border-neutral-800/40 opacity-50 cursor-not-allowed'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">
@@ -332,7 +339,10 @@ export default function PromoSelectionModal({
                       {cantSel > 0 && (
                         <button
                           type="button"
-                          onClick={() => quitarProducto(prod.producto_id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            quitarProducto(prod.producto_id);
+                          }}
                           className="w-7 h-7 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 flex items-center justify-center transition-colors"
                         >
                           <Minus size={13} />
@@ -341,7 +351,10 @@ export default function PromoSelectionModal({
 
                       <button
                         type="button"
-                        onClick={() => agregarProducto(prod)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          agregarProducto(prod);
+                        }}
                         disabled={disabledAdd}
                         className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all ${
                           disabledAdd
