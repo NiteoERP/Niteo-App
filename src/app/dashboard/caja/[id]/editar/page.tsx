@@ -434,6 +434,17 @@ export default function EditarCierrePage({ params }: { params: { id: string } })
                 className="bg-neutral-800 text-white text-sm font-medium rounded-lg px-3 py-1.5 outline-none focus:border-indigo-500 cursor-pointer [&::-webkit-calendar-picker-indicator]:invert"
               />
             </div>
+
+            <div className="flex items-center gap-3 bg-black/30 border border-neutral-800 p-2 rounded-xl">
+              <label className="text-xs uppercase font-bold text-neutral-500 ml-2">Tasa BCV:</label>
+              <input 
+                type="number"
+                step="0.01"
+                value={tasaCambio}
+                onChange={(e) => setTasaCambio(parseFloat(e.target.value) || 1)}
+                className="w-28 bg-neutral-800 text-emerald-400 font-bold text-sm rounded-lg px-3 py-1.5 outline-none focus:border-indigo-500 text-right"
+              />
+            </div>
           </div>
         </div>
 

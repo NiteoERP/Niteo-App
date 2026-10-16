@@ -341,6 +341,7 @@ export async function actualizarCierre(cierreId: string, cierreData: any, transa
     .from('cierres_caja')
     .update({
       fecha_cierre: cierreData.fecha_cierre,
+      tasa_cambio: cierreData.tasa_cambio,
       real_efectivo_bs: cierreData.real_efectivo_bs,
       real_efectivo_usd: cierreData.real_efectivo_usd,
       real_bancos_bs: cierreData.real_bancos_bs,
@@ -390,6 +391,34 @@ export async function actualizarCierre(cierreId: string, cierreData: any, transa
     if (errorTransacciones) {
       console.error('Error insertando transacciones:', errorTransacciones);
       return { error: 'El cierre se actualizÃ³ a medias (error en los bancos). Detalles: ' + errorTransacciones.message };
+    }
+  }
+
+  // 4. Asegurar que las facturas de la sede y fecha del cierre queden vinculadas si estaban sueltas
+  if (cierreData.sede_id && cierreData.fecha_cierre) {
+    try {
+      const { data: profData } = await supabase
+        .from('perfiles')
+        .select('empresa_id')
+        .eq('id', user.id)
+        .single();
+      const { data: empData } = await supabase
+        .from('empresas')
+        .select('zona_horaria')
+        .eq('id', profData?.empresa_id)
+        .maybeSingle();
+      const timeZone = empData?.zona_horaria || DEFAULT_TIMEZONE;
+      const tzOffset = getTimezoneOffsetString(timeZone);
+
+      await supabase
+        .from('ventas_facturas')
+        .update({ cierre_caja_id: cierreId })
+        .eq('sede_id', cierreData.sede_id)
+        .is('cierre_caja_id', null)
+        .gte('fecha_venta', `${cierreData.fecha_cierre}T00:00:00.000${tzOffset}`)
+        .lte('fecha_venta', `${cierreData.fecha_cierre}T23:59:59.999${tzOffset}`);
+    } catch (e) {
+      console.error('Error vinculando facturas en actualizarCierre:', e);
     }
   }
 
@@ -535,12 +564,39 @@ export async function getCierreParaEditar(cierreId: string) {
     const timeZone = empData?.zona_horaria || DEFAULT_TIMEZONE;
     const tzOffset = getTimezoneOffsetString(timeZone);
 
-    const { data: ventasData } = await supabase
+    let { data: ventasData } = await supabase
       .from('ventas_facturas')
       .select('total, tipo_documento, numero_orden, ventas_pagos (tipo_pago, monto)')
       .eq('estado_activo', true)
       .eq('sede_id', cierre.sede_id)
       .eq('cierre_caja_id', cierre.id);
+
+    if (!ventasData || ventasData.length === 0) {
+      const cleanFecha = cierre.fecha_cierre.includes('T') ? cierre.fecha_cierre.split('T')[0] : cierre.fecha_cierre.split(' ')[0];
+      const { data: unlinkedVentas } = await supabase
+        .from('ventas_facturas')
+        .select('total, tipo_documento, numero_orden, ventas_pagos (tipo_pago, monto)')
+        .eq('estado_activo', true)
+        .eq('sede_id', cierre.sede_id)
+        .is('cierre_caja_id', null)
+        .gte('fecha_venta', `${cleanFecha}T00:00:00.000${tzOffset}`)
+        .lte('fecha_venta', `${cleanFecha}T23:59:59.999${tzOffset}`);
+      if (unlinkedVentas && unlinkedVentas.length > 0) {
+        ventasData = unlinkedVentas;
+      }
+    }
+
+    if (!cierre.tasa_cambio || Number(cierre.tasa_cambio) <= 1) {
+      const { data: tasaData } = await supabase
+        .from('tasa_cambiaria')
+        .select('tasa_bcv')
+        .order('fecha', { ascending: false })
+        .limit(1)
+        .single();
+      if (tasaData?.tasa_bcv) {
+        cierre.tasa_cambio = Number(tasaData.tasa_bcv);
+      }
+    }
 
     const esperadoPorMetodo: Record<string, number> = {};
     const ventasTotales = ventasData ? ventasData.reduce((acc, curr) => {
