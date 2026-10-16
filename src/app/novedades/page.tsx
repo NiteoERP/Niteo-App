@@ -38,6 +38,23 @@ interface ChangelogItem {
 
 const CHANGELOG_DATA: ChangelogItem[] = [
   {
+    id: 'pos-1-0-4',
+    version: '1.0.4',
+    platform: 'pos',
+    platformName: 'Niteo POS (Desktop)',
+    date: '16 de Octubre, 2026',
+    title: 'Niteo POS v1.0.4: Estabilidad en Auto-Actualización, Moneda en Cierres X/Z y Control de Propinas',
+    badge: 'ESTABILIDAD',
+    badgeStyle: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+    summary: 'Optimización del motor de actualización automática en Windows, selector de divisa al imprimir cortes de caja y trazabilidad completa de propinas.',
+    highlights: [
+      'Relevo de Auto-Actualización Blindado en Windows: Corrección de rutas de ejecución del instalador silencioso para que el sistema cierre, instale y vuelva a abrir sin errores de archivo.',
+      'Selector de Moneda en Reportes X y Cierres Z: Ahora puedes elegir al instante si deseas imprimir tu corte de turno en Dólares (USD), Bolívares (Bs) o Ambos.',
+      'Visualización Integral de Propinas: Columna dedicada y desglose detallado de propinas por venta y por mesero en el historial local y en la sede.'
+    ],
+    installerUrl: '/downloads/niteo-pos-setup.exe'
+  },
+  {
     id: 'pos-1-0-1',
     version: '1.0.1',
     platform: 'pos',

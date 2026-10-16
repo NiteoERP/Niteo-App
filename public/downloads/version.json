@@ -1,13 +1,13 @@
 {
-  "version": "1.0.3",
+  "version": "1.0.4",
   "build_date": "2026-10-16",
   "min_version": "1.0.0",
   "download_url": "https://niteo-app.vercel.app/downloads/niteo-pos-setup.exe",
-  "title": "Niteo POS v1.0.3",
+  "title": "Niteo POS v1.0.4",
   "changelog": [
-    "Reflejo y visualización integral de propinas en el historial de ventas (modo local y sede)",
-    "Columna y totales dedicados de propinas en las vistas de caja y reportes de documentos",
-    "Desglose claro de subtotal, propinas por mesero y total general cobrado en el detalle de ventas"
+    "Corrección definitiva del relevo de auto-actualización en Windows para evitar errores de ruta al instalar y reiniciar",
+    "Selector interactivo de moneda de impresión (USD, Bs o Ambos) al generar Reportes X y Cierres de Caja Z",
+    "Reflejo y visualización integral de propinas en el historial de ventas y reportes de documentos"
   ],
   "mandatory": false
 }

@@ -359,25 +359,77 @@ async function toolConsultarTasaCambio(
  */
 async function toolConsultarBalanceDia(
   ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
-  args: { fecha: string; turno?: 'todo_el_dia' | 'cenas_nocturno' | 'almuerzo'; sede_nombre?: string }
+  args: { fecha?: string; periodo?: string; turno?: 'todo_el_dia' | 'cenas_nocturno' | 'almuerzo'; sede_nombre?: string }
 ) {
   const { supabase, empresaId, sedeId, sedes } = ctx;
-  const fechaStr = args.fecha || toLocalDateKey(new Date(), DEFAULT_TIMEZONE);
-  const { start: inicioDia, end: finDia } = getLocalDayRange(fechaStr, DEFAULT_TIMEZONE);
+  const rawInput = (args.periodo || args.fecha || '').trim();
+  const isSingleDate = /^\d{4}-\d{2}-\d{2}$/.test(rawInput);
 
-  let targetSedeId = sedeId;
-  let sedeIdentificada = 'General / Todas las sedes';
-  if (args.sede_nombre) {
-    const sFound = resolverSede(args.sede_nombre, sedes);
-    if (sFound) {
-      targetSedeId = sFound.id;
-      sedeIdentificada = sFound.nombre_sede;
-    }
+  let inicioRango: string;
+  let finRango: string;
+  let descripcionPeriodo: string;
+  let fechaTasaRef: string;
+
+  if (isSingleDate || !rawInput) {
+    const fechaStr = isSingleDate ? rawInput : toLocalDateKey(new Date(), DEFAULT_TIMEZONE);
+    const { start, end } = getLocalDayRange(fechaStr, DEFAULT_TIMEZONE);
+    inicioRango = start;
+    finRango = end;
+    descripcionPeriodo = `Fecha ${fechaStr}`;
+    fechaTasaRef = fechaStr;
+  } else {
+    const r = calcularRangoFechas(rawInput);
+    inicioRango = r.inicio;
+    finRango = r.fin;
+    descripcionPeriodo = r.descripcion;
+    fechaTasaRef = toLocalDateKey(new Date(), DEFAULT_TIMEZONE);
   }
 
-  // Obtener tasa del día
-  const tasaInfo = await getTasaBcvForDateAction(fechaStr);
+  let targetSedeId: string | undefined = undefined;
+  let sedeIdentificada = 'General / Todas las sedes';
+  if (args.sede_nombre) {
+    const sNorm = normalizarTexto(args.sede_nombre);
+    const esGeneral = ['todas', 'ambas', 'todas las sedes', 'consolidado', 'general', 'global', 'ambas sedes'].includes(sNorm);
+    if (!esGeneral) {
+      const sFound = resolverSede(args.sede_nombre, sedes);
+      if (sFound) {
+        targetSedeId = sFound.id;
+        sedeIdentificada = sFound.nombre_sede;
+      }
+    }
+  } else if (!ctx.user.app_metadata?.user_role?.includes('MASTER') && ctx.rol !== 'MASTER' && ctx.rol !== 'SUPERADMIN' && sedeId && sedeId !== 'ALL') {
+    targetSedeId = sedeId;
+  }
+
+  const tasaInfo = await getTasaBcvForDateAction(fechaTasaRef);
   const tasa = tasaInfo.tasa || 1;
+
+  const sedeNombres: Record<string, string> = {};
+  const balancePorSede: Record<string, {
+    sede_id: string;
+    nombre_sede: string;
+    ventas_usd: number;
+    facturas: number;
+    compras_insumos_usd: number;
+    gastos_operativos_usd: number;
+    total_egresos_usd: number;
+    balance_neto_usd: number;
+  }> = {};
+
+  sedes.forEach((s, idx) => {
+    const label = `Sede ${idx + 1} (${s.nombre_sede})`;
+    sedeNombres[s.id] = label;
+    balancePorSede[s.id] = {
+      sede_id: s.id,
+      nombre_sede: label,
+      ventas_usd: 0,
+      facturas: 0,
+      compras_insumos_usd: 0,
+      gastos_operativos_usd: 0,
+      total_egresos_usd: 0,
+      balance_neto_usd: 0
+    };
+  });
 
   // Consultar Ventas Facturas con paginación exhaustiva y filtros dorados
   let allFacturas: any[] = [];
@@ -387,11 +439,11 @@ async function toolConsultarBalanceDia(
   while (true) {
     let queryVentas = supabase
       .from('ventas_facturas')
-      .select('id, total, fecha_venta, numero_documento, tipo_documento, numero_orden, ventas_pagos(tipo_pago, monto)')
+      .select('id, sede_id, total, fecha_venta, numero_documento, tipo_documento, numero_orden, ventas_pagos(tipo_pago, monto)')
       .eq('empresa_id', empresaId)
       .eq('estado_activo', true)
-      .gte('fecha_venta', inicioDia)
-      .lte('fecha_venta', finDia)
+      .gte('fecha_venta', inicioRango)
+      .lte('fecha_venta', finRango)
       .neq('numero_documento', 'TEST')
       .range(fromV, fromV + batchV - 1);
 
@@ -408,12 +460,11 @@ async function toolConsultarBalanceDia(
   }
 
   let totalVentasUsd = 0;
-  let totalCenasUsd = 0; // Ventas a partir de las 18:00 (6:00 PM)
+  let totalCenasUsd = 0;
   let countFacturas = 0;
   let countCenas = 0;
 
   for (const fac of allFacturas) {
-    // Excluir Cortesías / Regalías
     const isCortesia = fac.ventas_pagos?.some((p: any) => {
       const tp = (p.tipo_pago || '').toLowerCase();
       return tp.includes('cortes') || tp.includes('regal');
@@ -436,7 +487,11 @@ async function toolConsultarBalanceDia(
     totalVentasUsd += monto;
     countFacturas++;
 
-    // Verificar si es turno noche / cena en horario local de Venezuela (>= 18:00 o <= 04:00)
+    if (fac.sede_id && balancePorSede[fac.sede_id]) {
+      balancePorSede[fac.sede_id].ventas_usd += monto;
+      balancePorSede[fac.sede_id].facturas += 1;
+    }
+
     const fDate = new Date(fac.fecha_venta);
     const hourLocal = parseInt(new Intl.DateTimeFormat('en-US', { timeZone: DEFAULT_TIMEZONE, hour: 'numeric', hour12: false }).format(fDate), 10);
     if (hourLocal >= 18 || hourLocal <= 4) {
@@ -453,11 +508,11 @@ async function toolConsultarBalanceDia(
   while (true) {
     let queryCompras = supabase
       .from('compras_puntuales')
-      .select('id, monto_divisas, monto_bs, proveedor, detalles, estado')
+      .select('id, id_sede, monto_divisas, monto_bs, proveedor, detalles, estado')
       .eq('id_empresa', empresaId)
       .neq('estado', 'ANULADA')
-      .gte('fecha_registro', inicioDia)
-      .lte('fecha_registro', finDia)
+      .gte('fecha_registro', inicioRango)
+      .lte('fecha_registro', finRango)
       .range(fromC, fromC + batchC - 1);
 
     if (targetSedeId) {
@@ -474,17 +529,46 @@ async function toolConsultarBalanceDia(
 
   let totalComprasUsd = 0;
   let totalComprasBs = 0;
+  let totalInsumosUsd = 0;
+  let totalGastosOperativosUsd = 0;
 
   for (const comp of allCompras) {
-    totalComprasUsd += Number(comp.monto_divisas || 0);
-    totalComprasBs += Number(comp.monto_bs || (Number(comp.monto_divisas || 0) * tasa));
+    const mUsd = Number(comp.monto_divisas || 0);
+    const mBs = Number(comp.monto_bs || (mUsd * tasa));
+    totalComprasUsd += mUsd;
+    totalComprasBs += mBs;
+
+    const det = comp.detalles;
+    const esInsumo = (typeof det === 'string' && det.includes('"is_insumos":true')) || (typeof det === 'object' && det?.is_insumos);
+    if (esInsumo) {
+      totalInsumosUsd += mUsd;
+    } else {
+      totalGastosOperativosUsd += mUsd;
+    }
+
+    if (comp.id_sede && balancePorSede[comp.id_sede]) {
+      if (esInsumo) {
+        balancePorSede[comp.id_sede].compras_insumos_usd += mUsd;
+      } else {
+        balancePorSede[comp.id_sede].gastos_operativos_usd += mUsd;
+      }
+      balancePorSede[comp.id_sede].total_egresos_usd += mUsd;
+    }
   }
+
+  Object.values(balancePorSede).forEach(s => {
+    s.ventas_usd = Number(s.ventas_usd.toFixed(2));
+    s.compras_insumos_usd = Number(s.compras_insumos_usd.toFixed(2));
+    s.gastos_operativos_usd = Number(s.gastos_operativos_usd.toFixed(2));
+    s.total_egresos_usd = Number(s.total_egresos_usd.toFixed(2));
+    s.balance_neto_usd = Number((s.ventas_usd - s.total_egresos_usd).toFixed(2));
+  });
 
   const totalVentasBs = totalVentasUsd * tasa;
   const totalCenasBs = totalCenasUsd * tasa;
 
   return {
-    fecha: fechaStr,
+    periodo: descripcionPeriodo,
     sede_consultada: sedeIdentificada,
     tasa_bcv_aplicada: tasa,
     moneda_tasa: tasaInfo.moneda,
@@ -498,38 +582,48 @@ async function toolConsultarBalanceDia(
         cantidad_pedidos: countCenas
       }
     },
-    compras: {
-      total_compras_usd: Number(totalComprasUsd.toFixed(2)),
-      total_compras_bs: Number(totalComprasBs.toFixed(2)),
-      total_compras_registradas: allCompras.length
+    compras_y_gastos: {
+      total_egresos_usd: Number(totalComprasUsd.toFixed(2)),
+      total_egresos_bs: Number(totalComprasBs.toFixed(2)),
+      compras_insumos_usd: Number(totalInsumosUsd.toFixed(2)),
+      gastos_operativos_usd: Number(totalGastosOperativosUsd.toFixed(2)),
+      total_registros: allCompras.length
     },
     balance_neto: {
       balance_usd: Number((totalVentasUsd - totalComprasUsd).toFixed(2)),
-      balance_bs: Number((totalVentasBs - totalComprasBs).toFixed(2))
-    }
+      balance_bs: Number((totalVentasBs - totalComprasBs).toFixed(2)),
+      margen_operativo_pct: totalVentasUsd > 0 ? `${(((totalVentasUsd - totalComprasUsd) / totalVentasUsd) * 100).toFixed(1)}%` : '0%'
+    },
+    desglose_por_sede: Object.values(balancePorSede)
   };
 }
 
 /**
- * 3. Consulta ventas por método de pago (ej. Pago Móvil) desglosadas por cada sede
+ * 3. Consulta ventas por método de pago (ej. Pago Móvil, Zelle, Efectivo, o "todos") desglosadas por cada sede
  */
 async function toolConsultarVentasPorMetodoPago(
   ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
   args: {
-    metodo_pago: string;
+    metodo_pago?: string;
     periodo_o_fecha?: string;
     sede_nombre?: string;
   }
 ) {
   const { supabase, empresaId, sedes } = ctx;
   const { inicio, fin, descripcion } = calcularRangoFechas(args.periodo_o_fecha || 'hoy');
-  const metodoBuscado = (args.metodo_pago || 'pago_movil').toLowerCase().replace(/[_\s-]/g, '');
+  const rawMetodo = (args.metodo_pago || 'todos').toLowerCase().trim();
+  const metodoBuscado = rawMetodo.replace(/[_\s-]/g, '');
+  const esTodosMetodos = !rawMetodo || ['todos', 'todo', 'general', 'resumen', 'todoslosmetodos', 'all'].includes(metodoBuscado);
 
   let targetSedeId: string | null = null;
   if (args.sede_nombre) {
-    const sFound = resolverSede(args.sede_nombre, sedes);
-    if (sFound) {
-      targetSedeId = sFound.id;
+    const sNorm = normalizarTexto(args.sede_nombre);
+    const esGeneral = ['todas', 'ambas', 'todas las sedes', 'consolidado', 'general', 'global', 'ambas sedes'].includes(sNorm);
+    if (!esGeneral) {
+      const sFound = resolverSede(args.sede_nombre, sedes);
+      if (sFound) {
+        targetSedeId = sFound.id;
+      }
     }
   }
 
@@ -573,23 +667,32 @@ async function toolConsultarVentasPorMetodoPago(
   }
 
   const facturas = allFacturas;
-
   const tasaHoy = (await getTasaBcvForDateAction(new Date().toISOString().substring(0, 10))).tasa || 1;
 
-  // Mapa de nombres de sede con alias amigable (Sede 1: ..., Sede 2: ...)
   const sedeNombres: Record<string, string> = {};
-  sedes.forEach((s, idx) => {
-    sedeNombres[s.id] = `Sede ${idx + 1} (${s.nombre_sede})`;
-  });
-
   const desglosadoPorSede: Record<string, {
     sede_id: string;
     nombre_sede: string;
     total_usd: number;
     total_bs: number;
     transacciones: number;
+    por_metodo: Record<string, number>;
   }> = {};
 
+  sedes.forEach((s, idx) => {
+    const label = `Sede ${idx + 1} (${s.nombre_sede})`;
+    sedeNombres[s.id] = label;
+    desglosadoPorSede[s.id] = {
+      sede_id: s.id,
+      nombre_sede: label,
+      total_usd: 0,
+      total_bs: 0,
+      transacciones: 0,
+      por_metodo: {}
+    };
+  });
+
+  const resumenGlobalPorMetodo: Record<string, { total_usd: number; transacciones: number }> = {};
   let totalGeneralUsd = 0;
   let totalTransacciones = 0;
 
@@ -615,7 +718,8 @@ async function toolConsultarVentasPorMetodoPago(
         nombre_sede: sNombre,
         total_usd: 0,
         total_bs: 0,
-        transacciones: 0
+        transacciones: 0,
+        por_metodo: {}
       };
     }
 
@@ -624,12 +728,21 @@ async function toolConsultarVentasPorMetodoPago(
       const isPagoCortesia = isCortesiaDoc || (p.tipo_pago || '').toLowerCase().includes('cortes') || (p.tipo_pago || '').toLowerCase().includes('regal');
       if (isPagoCortesia) continue;
 
-      const pClean = (p.tipo_pago || '').toLowerCase().replace(/[_\s-]/g, '');
-      if (pClean.includes(metodoBuscado) || metodoBuscado.includes(pClean)) {
+      const nombreMetodo = (p.tipo_pago || 'Efectivo').trim();
+      const pClean = nombreMetodo.toLowerCase().replace(/[_\s-]/g, '');
+
+      if (esTodosMetodos || pClean.includes(metodoBuscado) || metodoBuscado.includes(pClean) || esCoincidenciaAproximada(nombreMetodo, rawMetodo)) {
         const monto = sign * Math.abs(Number(p.monto || 0));
         desglosadoPorSede[sId].total_usd += monto;
         desglosadoPorSede[sId].total_bs += monto * tasaHoy;
         desglosadoPorSede[sId].transacciones += 1;
+        desglosadoPorSede[sId].por_metodo[nombreMetodo] = Number(((desglosadoPorSede[sId].por_metodo[nombreMetodo] || 0) + monto).toFixed(2));
+
+        if (!resumenGlobalPorMetodo[nombreMetodo]) {
+          resumenGlobalPorMetodo[nombreMetodo] = { total_usd: 0, transacciones: 0 };
+        }
+        resumenGlobalPorMetodo[nombreMetodo].total_usd += monto;
+        resumenGlobalPorMetodo[nombreMetodo].transacciones += 1;
 
         totalGeneralUsd += monto;
         totalTransacciones += 1;
@@ -638,16 +751,27 @@ async function toolConsultarVentasPorMetodoPago(
   }
 
   return {
-    metodo_pago_consultado: args.metodo_pago,
+    metodo_pago_consultado: esTodosMetodos ? 'TODOS LOS MÉTODOS' : args.metodo_pago,
     periodo: descripcion,
     tasa_referencia_bcv: tasaHoy,
     total_general_usd: Number(totalGeneralUsd.toFixed(2)),
     total_general_bs: Number((totalGeneralUsd * tasaHoy).toFixed(2)),
     total_transacciones: totalTransacciones,
+    resumen_global_por_metodo: Object.entries(resumenGlobalPorMetodo)
+      .sort((a, b) => b[1].total_usd - a[1].total_usd)
+      .map(([metodo, val]) => ({
+        metodo,
+        total_usd: Number(val.total_usd.toFixed(2)),
+        transacciones: val.transacciones,
+        porcentaje: totalGeneralUsd > 0 ? `${((val.total_usd / totalGeneralUsd) * 100).toFixed(1)}%` : '0%'
+      })),
     desglose_por_sedes: Object.values(desglosadoPorSede).map(s => ({
-      ...s,
+      sede_id: s.sede_id,
+      nombre_sede: s.nombre_sede,
       total_usd: Number(s.total_usd.toFixed(2)),
-      total_bs: Number(s.total_bs.toFixed(2))
+      total_bs: Number(s.total_bs.toFixed(2)),
+      transacciones: s.transacciones,
+      desglose_metodos: s.por_metodo
     }))
   };
 }
@@ -960,20 +1084,29 @@ async function toolConsultarVentas(
     limite?: number;
     ordenar_por?: 'mas_vendidos' | 'menos_vendidos';
     sede_nombre?: string;
+    solo_delivery?: boolean;
+    canal?: 'todos' | 'delivery' | 'salon';
   }
 ) {
-  const { supabase, empresaId, sedeId, sedes } = ctx;
+  const { supabase, empresaId, sedeId, sedes, user, rol } = ctx;
+  const isMaster = user.app_metadata?.user_role === 'MASTER' || rol === 'MASTER' || rol === 'SUPERADMIN';
   const { inicio, fin, descripcion } = calcularRangoFechas(args.periodo || 'esta_semana');
   const limite = Math.min(Math.max(args.limite || 10, 1), 50);
 
-  let targetSedeId = sedeId;
+  let targetSedeId: string | undefined = undefined;
   let sedeIdentificada = 'General / Todas las sedes';
   if (args.sede_nombre) {
-    const sFound = resolverSede(args.sede_nombre, sedes);
-    if (sFound) {
-      targetSedeId = sFound.id;
-      sedeIdentificada = sFound.nombre_sede;
+    const sNorm = normalizarTexto(args.sede_nombre);
+    const esGeneral = ['todas', 'ambas', 'todas las sedes', 'consolidado', 'general', 'global', 'ambas sedes'].includes(sNorm);
+    if (!esGeneral) {
+      const sFound = resolverSede(args.sede_nombre, sedes);
+      if (sFound) {
+        targetSedeId = sFound.id;
+        sedeIdentificada = sFound.nombre_sede;
+      }
     }
+  } else if (!isMaster && sedeId && sedeId !== 'ALL') {
+    targetSedeId = sedeId;
   }
 
   // Mapa de nombres amigables de sede
@@ -987,6 +1120,7 @@ async function toolConsultarVentas(
     nombre_sede: string;
     total_usd: number;
     total_facturas: number;
+    flete_delivery_usd: number;
   }> = {};
 
   for (const s of sedes) {
@@ -994,7 +1128,8 @@ async function toolConsultarVentas(
       sede_id: s.id,
       nombre_sede: sedeNombres[s.id] || s.nombre_sede,
       total_usd: 0,
-      total_facturas: 0
+      total_facturas: 0,
+      flete_delivery_usd: 0
     };
   }
 
@@ -1006,6 +1141,8 @@ async function toolConsultarVentas(
     fecha_venta: string;
     tipo_documento?: string;
     numero_orden?: string;
+    cliente_nombre?: string;
+    notas?: string;
     ventas_pagos?: Array<{ tipo_pago?: string; monto?: number }>;
   }> = [];
   let from = 0;
@@ -1014,7 +1151,7 @@ async function toolConsultarVentas(
   while (true) {
     let query = supabase
       .from('ventas_facturas')
-      .select('id, total, sede_id, fecha_venta, tipo_documento, numero_orden, ventas_pagos(tipo_pago, monto)')
+      .select('id, total, sede_id, fecha_venta, tipo_documento, numero_orden, cliente_nombre, notas, ventas_pagos(tipo_pago, monto)')
       .eq('empresa_id', empresaId)
       .gte('fecha_venta', inicio)
       .lte('fecha_venta', fin)
@@ -1036,8 +1173,39 @@ async function toolConsultarVentas(
     from += batchSize;
   }
 
+  // Identificación de Delivery por productos de flete y/o atributos de orden
+  const esFiltroDelivery = args.solo_delivery === true || args.canal === 'delivery';
+  const esFiltroSalon = args.canal === 'salon';
+
+  const { data: prodDeliveryList } = await supabase
+    .from('productos')
+    .select('id, nombre')
+    .eq('empresa_id', empresaId)
+    .or('nombre.ilike.%delivery%,nombre.ilike.%flete%,nombre.ilike.%despacho%,nombre.ilike.%envio%,nombre.ilike.%envío%');
+
+  const deliveryProdIds = (prodDeliveryList || []).map(p => p.id);
+  const deliveryFleteMap = new Map<string, number>();
+
+  if (deliveryProdIds.length > 0 && allFacturas.length > 0) {
+    const chunkSize = 200;
+    for (let i = 0; i < allFacturas.length; i += chunkSize) {
+      const facIds = allFacturas.slice(i, i + chunkSize).map(f => f.id);
+      const { data: dDets } = await supabase
+        .from('ventas_detalles')
+        .select('factura_id, total')
+        .in('factura_id', facIds)
+        .in('producto_id', deliveryProdIds);
+
+      for (const d of dDets || []) {
+        const prev = deliveryFleteMap.get(d.factura_id) || 0;
+        deliveryFleteMap.set(d.factura_id, prev + Number(d.total || 0));
+      }
+    }
+  }
+
   let totalRecaudado = 0;
   let facturasValidasCount = 0;
+  let totalFleteRecaudado = 0;
 
   for (const fac of allFacturas) {
     // Excluir Cortesías / Regalías
@@ -1050,6 +1218,19 @@ async function toolConsultarVentas(
 
     if (isCortesia) continue;
 
+    const fleteMonto = deliveryFleteMap.get(fac.id) || 0;
+    const esDeliveryDoc = fleteMonto > 0 ||
+      (fac.cliente_nombre && fac.cliente_nombre.toLowerCase().includes('delivery')) ||
+      (fac.numero_orden && fac.numero_orden.toLowerCase().includes('delivery')) ||
+      (fac.notas && fac.notas.toLowerCase().includes('delivery'));
+
+    if (esFiltroDelivery && !esDeliveryDoc) {
+      continue;
+    }
+    if (esFiltroSalon && esDeliveryDoc) {
+      continue;
+    }
+
     const isRefund = (fac.tipo_documento && (
       fac.tipo_documento.toLowerCase().includes('refund') ||
       fac.tipo_documento.toLowerCase().includes('devolucion') ||
@@ -1061,6 +1242,7 @@ async function toolConsultarVentas(
     const facMonto = isRefund ? -Math.abs(rawTotal) : Math.abs(rawTotal);
 
     totalRecaudado += facMonto;
+    totalFleteRecaudado += fleteMonto;
     facturasValidasCount++;
 
     const sId = fac.sede_id;
@@ -1070,11 +1252,13 @@ async function toolConsultarVentas(
           sede_id: sId,
           nombre_sede: sedeNombres[sId] || `Sede (${sId})`,
           total_usd: 0,
-          total_facturas: 0
+          total_facturas: 0,
+          flete_delivery_usd: 0
         };
       }
       desglosadoPorSede[sId].total_usd += facMonto;
       desglosadoPorSede[sId].total_facturas += 1;
+      desglosadoPorSede[sId].flete_delivery_usd += fleteMonto;
     }
   }
 
@@ -1109,7 +1293,7 @@ async function toolConsultarVentas(
         const { data: dets } = await supabase
           .from('ventas_detalles')
           .select('id, producto_id, cantidad, precio_unitario, total, productos(id, nombre, codigo_barras)')
-          .in('venta_id', facChunkIds)
+          .in('factura_id', facChunkIds)
           .in('producto_id', prodIds);
 
         for (const det of dets || []) {
@@ -1144,7 +1328,7 @@ async function toolConsultarVentas(
       const { data: dets } = await supabase
         .from('ventas_detalles')
         .select('id, producto_id, cantidad, precio_unitario, total, productos(id, nombre, codigo_barras)')
-        .in('venta_id', facChunkIds);
+        .in('factura_id', facChunkIds);
 
       for (const det of dets || []) {
         const prod = (det as any).productos;
@@ -1191,18 +1375,27 @@ async function toolConsultarVentas(
       nombre_sede: s.nombre_sede,
       total_usd: sTotal,
       total_facturas: s.total_facturas,
-      porcentaje_del_total: `${pct}%`
+      porcentaje_del_total: `${pct}%`,
+      ticket_promedio: s.total_facturas > 0 ? Number((sTotal / s.total_facturas).toFixed(2)) : 0,
+      ...(esFiltroDelivery || s.flete_delivery_usd > 0 ? {
+        total_flete_delivery_usd: Number(s.flete_delivery_usd.toFixed(2))
+      } : {})
     };
   });
 
   return {
     periodo: descripcion,
+    canal_filtrado: esFiltroDelivery ? 'DELIVERY' : (esFiltroSalon ? 'SALON' : 'TODOS'),
     rango_fechas: { inicio, fin },
     sede_consultada: sedeIdentificada,
     filtro_producto: args.filtro_producto || null,
     total_facturas_emitidas: totalFacturas,
     total_ventas_usd: Number(totalRecaudado.toFixed(2)),
     promedio_ticket_usd: totalFacturas > 0 ? Number((totalRecaudado / totalFacturas).toFixed(2)) : 0,
+    ...(esFiltroDelivery || totalFleteRecaudado > 0 ? {
+      total_flete_delivery_usd: Number(totalFleteRecaudado.toFixed(2)),
+      pedidos_delivery_despachados: facturasValidasCount
+    } : {}),
     desglose_por_sede: desgloseSedesArray,
     total_unidades_coincidentes: Number(totalUnidades.toFixed(2)),
     top_productos_mas_vendidos: topProductos
@@ -2425,7 +2618,15 @@ const copilotTools: { functionDeclarations: FunctionDeclaration[] } = {
           },
           sede_nombre: {
             type: SchemaType.STRING,
-            description: 'Opcional. Nombre o número de la sede a filtrar (ej: "sede 1", "sede principal", "sede norte"). Dejar vacío para ver el consolidado general.',
+            description: 'Opcional. Nombre o número de la sede a filtrar (ej: "sede 1", "sede principal", "sede norte"). Dejar vacío para ver el consolidado general de todas las sedes.',
+          },
+          solo_delivery: {
+            type: SchemaType.BOOLEAN,
+            description: 'Opcional. Si es true, filtra EXCLUSIVAMENTE los pedidos y ventas realizados por Delivery (pedidos con cobro de flete/delivery o despacho a domicilio).',
+          },
+          canal: {
+            type: SchemaType.STRING,
+            description: 'Opcional. Canal de venta a consultar: "todos", "delivery" (para ventas de pedidos a domicilio/delivery) o "salon" (para ventas de salón/mesa/mostrador).',
           }
         },
         required: ['periodo']
@@ -2698,8 +2899,10 @@ REGLAS DE OPERACIÓN:
 1. NUNCA INVENTES CIFRAS NI DATOS. Consulta siempre las herramientas para obtener datos verídicos de la base de datos.
 2. CONSULTA DE VENTAS, REPORTES Y FINANZAS:
    - Si te preguntan por ventas de un periodo (ej. "ventas de los últimos 3 meses", "ventas de este mes", "ventas de ayer"), llama siempre a "consultar_ventas" con el periodo exacto (ej. "ultimos_3_meses", "este_mes", "mes_anterior", "ultimos_30_dias").
+   - CONSULTAS POR CANAL / DELIVERY: Si el usuario pregunta por DELIVERY o pedidos a domicilio (ej: "venta por delivery de este mes", "cuánto vendió delivery dividiendo sede 1 y sede 2", "pedidos a domicilio"), pasa SIEMPRE solo_delivery: true o canal: 'delivery' a la herramienta consultar_ventas. NUNCA digas que el sistema no puede filtrar por canal de delivery, porque la herramienta SÍ filtra con total exactitud las ventas y pedidos de delivery de cada sede.
+   - COMPARACIÓN ENTRE SEDES O DIVIDIR SEDE 1 Y SEDE 2: Si el usuario pide dividir, comparar o ver ambas sedes (ej: "divídelo sede 1 y sede 2", "ambas sedes", "por sucursal"), NO especifiques sede_nombre (o déjalo vacío) para que la herramienta consulte todas las sedes y devuelva el desglose exacto de Sede 1 y Sede 2.
    - Al invocar "consultar_ventas", la herramienta consulta el 100% de las facturas paginadas y devuelve automáticamente el GRAN TOTAL CONSOLIDADO y el "desglose_por_sede".
-   - SIEMPRE entrega directamente en tu respuesta: el total global en USD, el total de facturas emitidas, el ticket promedio y el desglose de lo vendido por cada sede (Sede 1 y Sede 2 con montos y porcentajes).
+   - SIEMPRE entrega directamente en tu respuesta: el total global en USD, el total de facturas emitidas, el ticket promedio y el desglose de lo vendido por cada sede (Sede 1 y Sede 2 con montos y porcentajes). Si es delivery, informa además el total facturado en órdenes de delivery, el cobro de flete recaudado y la cantidad de pedidos despachados.
    - NUNCA digas que estás haciendo aproximaciones basadas en 30 días o 6 meses ni preguntes si quiere ver el desglose sede por sede: entrégalo de inmediato con total claridad y precisión.
 3. Si el usuario te indica una regla de conversión (ej. "una barra pesa 3kg"), calcula la división matemáticamente sobre los kg devueltos por la herramienta y explícalo claramente.
 4. ASISTENCIA Y ESCANDALLO DE RECETAS:
