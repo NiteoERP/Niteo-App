@@ -25,8 +25,9 @@ type CartItem = {
   monedaItem: 'USD' | 'VES';
 };
 
-// Clave única para el borrador local de compras (resiliente a caídas de señal)
+// Claves únicas para borrador local y escaneo pendiente con IA (resiliente a caídas de señal y cambio de app a WhatsApp)
 const COMPRA_DRAFT_KEY = 'niteo_compra_mobile_draft_v2';
+const AI_PENDING_SCAN_KEY = 'niteo_ai_pending_scan_v2';
 
 export default function MobileCompraForm() {
   const [activeStep, setActiveStep] = useState<1 | 2>(1);
@@ -104,6 +105,19 @@ export default function MobileCompraForm() {
     return '';
   });
 
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(COMPRA_DRAFT_KEY);
+        if (saved) {
+          const p = JSON.parse(saved);
+          if (Array.isArray(p.cart) && p.cart.length > 0) return p.cart;
+        }
+      } catch (e) {}
+    }
+    return [];
+  });
+
   const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
 
@@ -113,8 +127,10 @@ export default function MobileCompraForm() {
 
   // ── Escaneo con IA ───────────────────────────────────────────────────────
   const [isScanning, setIsScanning] = useState(false);
+  const [scanNotice, setScanNotice] = useState('');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const fileInputRefCam = React.useRef<HTMLInputElement>(null);
+  const hasCheckedPendingScanRef = React.useRef(false);
 
   
   const compressImage = (file: File): Promise<string> => {
@@ -152,47 +168,88 @@ export default function MobileCompraForm() {
     });
   };
 
-  const handleScanInvoice = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const ejecutarLecturaIA = async (base64Str: string, mimeType: string, catalogoInsumos: Insumo[]) => {
     setIsScanning(true);
+    setScanNotice('🤖 Procesando factura con Inteligencia Artificial...');
+    setErrorMsg('');
+
     try {
-      const base64Str = await compressImage(file);
+      // 1. Guardar de inmediato en localStorage para que NUNCA se pierda si el usuario sale a WhatsApp
+      try {
+        localStorage.setItem(AI_PENDING_SCAN_KEY, JSON.stringify({
+          base64Str,
+          mimeType,
+          timestamp: Date.now()
+        }));
+      } catch (e) {
+        console.warn('No se pudo guardar respaldo de escaneo pendiente:', e);
+      }
+
       const { scanInvoice } = await import('@/actions/ai-actions');
 
-      const invContext = insumos.map(i => ({ id: i.id, nombre: i.nombre, unidad_medida: i.unidad_medida, palabras_clave: (i as any).palabras_clave || [] }));
-      const res = await scanInvoice(base64Str, file.type || 'image/jpeg', invContext, tiendasFrecuentes);
+      const invContext = catalogoInsumos.map(i => ({
+        id: i.id,
+        nombre: i.nombre,
+        unidad_medida: i.unidad_medida,
+        palabras_clave: (i as any).palabras_clave || []
+      }));
+
+      const res = await scanInvoice(base64Str, mimeType, invContext, tiendasFrecuentes);
 
       if (res.error) {
         const errorStr = res.error.toLowerCase();
         if (errorStr.includes('503') || errorStr.includes('504') || errorStr.includes('timeout') || errorStr.includes('fetch failed') || errorStr.includes('rate limit')) {
-          alert('Error al escanear (Saturación o fallo de conexión). Por favor, intente nuevamente.');
+          setErrorMsg('El servicio de IA está experimentando alta demanda. Puedes reintentar en unos segundos.');
         } else {
-          alert(res.error);
+          setErrorMsg(res.error);
         }
       } else if (res.data) {
         const d = res.data;
 
-        if (d.moneda === 'VES' || d.moneda === 'USD') setMonedaGlobal(d.moneda);
-        if (d.proveedor_nombre && d.proveedor_nombre !== 'Desconocido') setProveedor(d.proveedor_nombre);
-        if (d.descuento_total) setDescuento(d.descuento_total.toString());
-        if (d.monto_iva) setIva(d.monto_iva.toString());
+        let nuevaMoneda = monedaGlobal;
+        if (d.moneda === 'VES' || d.moneda === 'USD') {
+          nuevaMoneda = d.moneda;
+          setMonedaGlobal(d.moneda);
+        }
 
-        const newCart: CartItem[] = (d.items || []).map((item: any, i: number) => {
+        let nuevoProveedor = proveedor;
+        if (d.proveedor_nombre && d.proveedor_nombre !== 'Desconocido') {
+          nuevoProveedor = d.proveedor_nombre;
+          setProveedor(d.proveedor_nombre);
+        }
+
+        let nuevoDescuento = descuento;
+        if (d.descuento_total) {
+          nuevoDescuento = d.descuento_total.toString();
+          setDescuento(d.descuento_total.toString());
+        }
+
+        let nuevoIva = iva;
+        if (d.monto_iva) {
+          nuevoIva = d.monto_iva.toString();
+          setIva(d.monto_iva.toString());
+        }
+
+        let nuevaFecha = fechaEmision;
+        if (d.fecha) {
+          nuevaFecha = d.fecha;
+          setFechaEmision(d.fecha);
+        }
+
+        const newCartItems: CartItem[] = (d.items || []).map((item: any, i: number) => {
           const isNew = !item.insumo_id_recomendado;
           const factor = item.es_bulto ? (item.unidades_por_bulto_estimado || 1) : 1;
           const qty = item.cantidad || 1;
           const costo = item.precio_total ?? ((item.precio_unitario ?? 0) * qty);
-          
+
           let matchedName = '';
           let matchedUnidad = '';
           if (!isNew) {
-            const matchedInsumo = insumos.find(ins => ins.id === item.insumo_id_recomendado);
+            const matchedInsumo = catalogoInsumos.find(ins => ins.id === item.insumo_id_recomendado);
             matchedName = matchedInsumo ? matchedInsumo.nombre : (item.nombre_original_factura || 'Producto Existente');
             matchedUnidad = matchedInsumo ? matchedInsumo.unidad_medida : (item.unidad_medida_sugerida || 'Unidad');
           }
-          
+
           return {
             id: Date.now().toString() + i,
             insumo_id: item.insumo_id_recomendado || null,
@@ -204,19 +261,59 @@ export default function MobileCompraForm() {
             factor_compra: factor,
             cantidad_base: qty * factor,
             costoTotal: costo,
-            monedaItem: d.moneda,
+            monedaItem: d.moneda || nuevaMoneda,
           };
         });
 
-        setCart(prev => [...prev, ...newCart]);
+        // Combinar con ítems previos si ya había
+        const cartFinal = [...cart, ...newCartItems];
+        setCart(cartFinal);
+        setActiveStep(2); // Pasar automáticamente al paso 2 para revisar ítems
+
+        // GUARDADO INMEDIATO EN BORRADOR: asegura persistencia incluso si el navegador se cierra
+        try {
+          const draftToSave = {
+            fechaEmision: nuevaFecha,
+            proveedor: nuevoProveedor,
+            monedaGlobal: nuevaMoneda,
+            metodoPago,
+            descripcion,
+            descuento: nuevoDescuento,
+            iva: nuevoIva,
+            cart: cartFinal,
+            activeStep: 2,
+            savedAt: Date.now()
+          };
+          localStorage.setItem(COMPRA_DRAFT_KEY, JSON.stringify(draftToSave));
+          localStorage.removeItem(AI_PENDING_SCAN_KEY);
+        } catch (e) {}
+
+        setScanNotice('✅ Factura leída con éxito con IA.');
+        setTimeout(() => setScanNotice(''), 4000);
       }
     } catch (errInner) {
       console.error('Error IA:', errInner);
-      alert('Hubo un problema de conexión con la IA. Es posible que el servidor esté saturado (Rate Limit). Intenta de nuevo en un minuto.');
+      setErrorMsg('Hubo un problema de conexión al procesar la factura con IA.');
     } finally {
       setIsScanning(false);
+      try {
+        localStorage.removeItem(AI_PENDING_SCAN_KEY);
+      } catch (e) {}
       if (fileInputRef.current) fileInputRef.current.value = '';
       if (fileInputRefCam.current) fileInputRefCam.current.value = '';
+    }
+  };
+
+  const handleScanInvoice = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const base64Str = await compressImage(file);
+      await ejecutarLecturaIA(base64Str, file.type || 'image/jpeg', insumos);
+    } catch (err) {
+      console.error('Error al preparar imagen:', err);
+      setIsScanning(false);
     }
   };
 
@@ -237,9 +334,54 @@ export default function MobileCompraForm() {
       const [data, tasa] = await Promise.all([getInsumos(), getTasaDelDia(fechaEmision)]);
       setInsumos(data);
       setTasaDelDia(tasa);
+
+      // Reanudar automáticamente escaneo pendiente si el usuario se fue a WhatsApp y el navegador recargó
+      if (!hasCheckedPendingScanRef.current && typeof window !== 'undefined') {
+        hasCheckedPendingScanRef.current = true;
+        try {
+          const pendingRaw = localStorage.getItem(AI_PENDING_SCAN_KEY);
+          if (pendingRaw) {
+            const pending = JSON.parse(pendingRaw);
+            if (pending.base64Str && (Date.now() - (pending.timestamp || 0) < 300000)) {
+              setScanNotice('🔄 Reanudando lectura de factura con IA (habías salido a otra app)...');
+              ejecutarLecturaIA(pending.base64Str, pending.mimeType || 'image/jpeg', data);
+            } else {
+              localStorage.removeItem(AI_PENDING_SCAN_KEY);
+            }
+          }
+        } catch (e) {
+          console.warn('Error al verificar escaneo pendiente:', e);
+        }
+      }
     };
     initData();
   }, []);
+
+  // Guardado síncrono cuando el usuario cambia a WhatsApp u otra app (visibilitychange hidden)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        try {
+          const draft = {
+            fechaEmision,
+            proveedor,
+            monedaGlobal,
+            metodoPago,
+            descripcion,
+            descuento,
+            iva,
+            cart,
+            activeStep,
+            savedAt: Date.now()
+          };
+          localStorage.setItem(COMPRA_DRAFT_KEY, JSON.stringify(draft));
+        } catch (e) {}
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [fechaEmision, proveedor, monedaGlobal, metodoPago, descripcion, descuento, iva, cart, activeStep]);
 
   const metodosDisponibles = dbMetodos.length > 0
     ? dbMetodos.map(m => m.nombre)
@@ -287,19 +429,6 @@ export default function MobileCompraForm() {
   };
 
   // ── Carrito ──────────────────────────────────────────────────────────────
-  // ── Carrito (restaurado de borrador si existe) ───────────────────────────
-  const [cart, setCart] = useState<CartItem[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem(COMPRA_DRAFT_KEY);
-        if (saved) {
-          const p = JSON.parse(saved);
-          if (Array.isArray(p.cart) && p.cart.length > 0) return p.cart;
-        }
-      } catch (e) {}
-    }
-    return [];
-  });
 
   // Verificar si hay borrador recuperado y escuchar eventos de conectividad
   useEffect(() => {
@@ -561,6 +690,29 @@ export default function MobileCompraForm() {
         </div>
       ) : (
         <div className="space-y-6">
+
+          {/* Aviso de escaneo con IA reanudado o en progreso */}
+          {scanNotice && (
+            <div className="bg-indigo-500/15 border border-indigo-500/40 p-3.5 rounded-xl flex items-center justify-between text-xs text-indigo-200 animate-in fade-in">
+              <span className="flex items-center gap-2">
+                <Loader2 size={16} className={isScanning ? "animate-spin text-indigo-400 shrink-0" : "hidden"} />
+                <strong>{scanNotice}</strong>
+              </span>
+              {isScanning && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsScanning(false);
+                    setScanNotice('');
+                    try { localStorage.removeItem(AI_PENDING_SCAN_KEY); } catch (e) {}
+                  }}
+                  className="text-neutral-400 hover:text-rose-400 text-xs font-semibold underline shrink-0 ml-3 cursor-pointer"
+                >
+                  Cancelar
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Alerta de conectividad / pérdida de señal */}
           {isOffline && (
