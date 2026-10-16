@@ -30,6 +30,10 @@ export default async function LandingPage() {
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-neutral-400">
             <a href="#features" className="hover:text-white transition-colors">Características</a>
             <a href="#pricing" className="hover:text-white transition-colors">Planes</a>
+            <Link href="/novedades" className="hover:text-white transition-colors flex items-center gap-1.5">
+              <span>Novedades</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            </Link>
             <a href="#contact" className="hover:text-white transition-colors">Contacto</a>
             <Link href="/terms" className="hover:text-white transition-colors">Términos</Link>
           </nav>
@@ -364,6 +368,7 @@ export default async function LandingPage() {
               <ul className="space-y-2 text-sm text-neutral-500">
                 <li><a href="#features" className="hover:text-white transition-colors">Características</a></li>
                 <li><a href="#pricing" className="hover:text-white transition-colors">Precios</a></li>
+                <li><Link href="/novedades" className="hover:text-white transition-colors">Novedades y Versiones</Link></li>
                 <li><Link href="/register" className="hover:text-white transition-colors">Prueba Gratuita</Link></li>
                 <li><Link href="/terms" className="hover:text-white transition-colors">Términos y Condiciones</Link></li>
               </ul>
