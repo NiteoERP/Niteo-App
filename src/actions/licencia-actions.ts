@@ -260,18 +260,20 @@ export async function reportarPagoSuscripcion(formData: FormData) {
     };
   }
 
-  // 2. Bloquear referencias duplicadas o recicladas (en pagos aprobados, pendientes o rechazados de la empresa)
+  // 2. Bloquear referencias duplicadas que ya estén aprobadas o pendientes de revisión.
+  // (Si fue rechazado antes porque subió la foto equivocada, sí le permitimos volver a enviarlo con su referencia real y la foto correcta).
   const { data: refDuplicada } = await adminSupabase
     .from('suscripciones_pagos')
     .select('id, estado')
     .ilike('referencia', referencia)
+    .in('estado', ['aprobado', 'pendiente_aprobacion'])
     .limit(1)
     .maybeSingle();
 
   if (refDuplicada) {
     return {
       success: false,
-      error: 'Este número de referencia ya fue registrado anteriormente. Verifica los datos de tu comprobante.',
+      error: 'Este número de referencia ya fue utilizado en un pago aprobado o en revisión. Verifica los datos de tu comprobante.',
     };
   }
 

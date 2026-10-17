@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { reportarPagoSuscripcion } from '@/actions/licencia-actions';
 import {
-  CheckCircle, Clock, UploadCloud, FileText, AlertCircle,
+  CheckCircle, Clock, UploadCloud, FileText, AlertCircle, XCircle,
   RefreshCw, Check, Info, Zap, Calendar, Gift, Copy, ExternalLink, Image as ImageIcon, X, Building2
 } from 'lucide-react';
 
@@ -245,9 +245,33 @@ export default function BillingClientForm({
                       </p>
                       <p className="text-xs text-red-300/90">
                         {historialPagos[0].notas_admin || 'Los datos o la captura del pago no pudieron ser verificados.'}{' '}
-                        Por favor registra un comprobante válido; una vez verificado por administración se reactivarán todos los módulos.
+                        Por favor selecciona la captura correcta abajo y envíala nuevamente; una vez verificada por administración se reactivarán todos los módulos.
                       </p>
                     </div>
+                  </div>
+                )}
+
+                {/* Aviso cuando ya envió el pago y está pendiente de aprobación */}
+                {historialPagos[0]?.estado === 'pendiente_aprobacion' && (
+                  <div className="bg-amber-500/10 border border-amber-500/25 rounded-xl px-4 py-3.5 flex items-center justify-between gap-3 text-amber-300 text-sm">
+                    <div className="flex items-start gap-3">
+                      <Clock size={18} className="shrink-0 text-amber-400 mt-0.5" />
+                      <div className="space-y-0.5">
+                        <p className="font-bold text-amber-200">
+                          Comprobante en proceso de verificación (Ref: {historialPagos[0].referencia})
+                        </p>
+                        <p className="text-xs text-amber-300/90">
+                          Ya recibimos tu captura de pago por ${historialPagos[0].monto} USD. Apenas nuestro equipo valide la operación quedará aprobada tu suscripción.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setTab('historial')}
+                      className="shrink-0 px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 text-xs font-bold rounded-lg transition-colors"
+                    >
+                      Ver captura enviada
+                    </button>
                   </div>
                 )}
 

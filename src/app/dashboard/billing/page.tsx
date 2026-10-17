@@ -83,25 +83,31 @@ export default async function BillingPage() {
             <div className={`p-4 rounded-xl border mb-6 ${
               licencia.estado === 'ACTIVA' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
               licencia.estado === 'TRIAL' ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' :
-              licencia.estado === 'GRACIA' ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' :
+              (licencia.estado === 'GRACIA' || licencia.pagoEnRevision) ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' :
               'bg-red-500/10 border-red-500/20 text-red-400'
             }`}>
               <div className="flex items-center gap-2 font-bold mb-1">
                 {licencia.estado === 'ACTIVA' && <CheckCircle size={18} />}
                 {licencia.estado === 'TRIAL' && <ShieldCheck size={18} />}
                 {(licencia.estado === 'GRACIA' || licencia.estado === 'VENCIDA') && <AlertTriangle size={18} />}
-                Licencia {licencia.estado}
+                {licencia.estado === 'VENCIDA' && licencia.pagoEnRevision
+                  ? 'Pago en Verificación'
+                  : `Licencia ${licencia.estado}`}
               </div>
               <p className="text-sm opacity-90">
                 {licencia.planSuscripcion === 'LIFETIME' 
                   ? 'Acceso de por vida'
-                  : licencia.estado === 'VENCIDA'
-                    ? `Vencida hace ${licencia.diasVencido} días`
-                    : licencia.estado === 'ACTIVA'
-                      ? `Renovación en ${licencia.diasRestantes} días`
-                      : licencia.estado === 'GRACIA'
-                        ? `Pago en revisión (Gracia: ${licencia.diasRestantes} días)`
-                        : `Quedan ${licencia.diasRestantes} días`}
+                  : licencia.estado === 'VENCIDA' && licencia.pagoEnRevision
+                    ? 'Comprobante recibido — esperando aprobación para reactivar módulos'
+                    : licencia.estado === 'VENCIDA'
+                      ? `Vencida — Punto de Venta y Caja activos`
+                      : licencia.estado === 'ACTIVA'
+                        ? `Renovación en ${licencia.diasRestantes} días`
+                        : licencia.estado === 'GRACIA'
+                          ? (licencia.pagoEnRevision
+                              ? `Pago en revisión (${Math.max(1, licencia.diasRestantes)} días de acceso total)`
+                              : `Periodo de cortesía (${Math.max(1, licencia.diasRestantes)} días disponibles)`)
+                          : `Quedan ${licencia.diasRestantes} días`}
               </p>
             </div>
 

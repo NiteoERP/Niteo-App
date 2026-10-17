@@ -148,6 +148,25 @@ export default function LicenseBanner({ licencia }: LicenseBannerProps) {
 
   // ─── VENCIDA — POS y Caja activos, módulos administrativos restringidos ────
   if (licencia.estado === 'VENCIDA') {
+    if (licencia.pagoEnRevision) {
+      return (
+        <div className="bg-amber-500/10 border border-amber-500/25 rounded-xl px-3.5 py-2 mb-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5 text-amber-300">
+            <Clock size={15} className="shrink-0 text-amber-400" />
+            <span>
+              <strong>Nuevo comprobante en revisión:</strong> Tu Punto de Venta y Caja siguen activos. Apenas el administrador verifique tu captura se desbloquearán todos los módulos.
+            </span>
+          </div>
+          <Link
+            href="/dashboard/billing"
+            className="shrink-0 px-3 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 font-bold rounded-lg transition-colors"
+          >
+            Ver mi pago
+          </Link>
+        </div>
+      );
+    }
+
     return (
       <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-3.5 py-2 mb-3 flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2.5 text-red-300">

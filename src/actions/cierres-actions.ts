@@ -9,7 +9,7 @@ import { DEFAULT_TIMEZONE, getTimezoneOffsetString } from '@/utils/date-utils';
 // Helper para calcular el rango del día operativo:
 // Comienza a las 00:00 y se extiende hasta las 06:00 AM del día siguiente
 // para cubrir turnos que cierran a la 1:00 AM, 2:00 AM o 3:00 AM.
-export function getOperationalShiftRange(fechaStr: string, tzOffset: string): { startIso: string; endIso: string } {
+function getOperationalShiftRange(fechaStr: string, tzOffset: string): { startIso: string; endIso: string } {
   const cleanFecha = fechaStr.includes('T') ? fechaStr.split('T')[0] : fechaStr.split(' ')[0];
   const d = new Date(`${cleanFecha}T12:00:00Z`);
   d.setDate(d.getDate() + 1);
