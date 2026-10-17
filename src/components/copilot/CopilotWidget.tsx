@@ -33,34 +33,35 @@ interface MensajeChat {
 }
 
 const SUGERENCIAS_RAPIDAS = [
+  { label: '🛵 Delivery Sede 1 y 2', prompt: '¿Cuánto vendimos por delivery este mes dividiendo sede 1 y sede 2?' },
+  { label: '📈 Comparativa y Proyección', prompt: '¿Cómo van las ventas de este mes comparadas con el mes anterior y en cuánto proyectamos cerrar el mes?' },
+  { label: '📅 Días y Horas Pico', prompt: '¿Qué día de la semana vendemos más este mes y cuáles son nuestras horas pico?' },
+  { label: '💳 Todos los Métodos de Pago', prompt: 'Dame el resumen de ventas de todos los métodos de pago de este mes desglosado por sede.' },
+  { label: '🧾 Cuentas por Cobrar', prompt: '¿Quiénes son los clientes que nos deben dinero y cuánto es el total por cobrar?' },
+  { label: '🍽️ Rentabilidad del Menú', prompt: '¿Cuáles son los platos que más ganancia neta nos dejan este mes y cuáles tienen Food Cost alto?' },
+  { label: '🎁 Cortesías y Mermas', prompt: '¿Cuánto hemos entregado en cortesías y cuánto hemos perdido en mermas este mes?' },
+  { label: '👑 Clientes VIP', prompt: '¿Quiénes son nuestros 10 mejores clientes VIP por monto comprado y visitas?' },
+  { label: '🔐 Cierres y Mesas en Vivo', prompt: '¿Cuántas mesas están abiertas ahora mismo en el POS y cómo estuvieron los cierres de caja de esta semana?' },
+  { label: '📦 Estado de Inventario', prompt: '¿Cuánto vale mi inventario actual en dólares y qué insumos tienen stock bajo o agotado?' },
   { label: '🪄 Redondear a $0.50', prompt: 'Redondea todos los precios del catálogo al múltiplo de $0.50 más cercano.' },
   { label: '🎉 Crear Combo Fiesta', prompt: 'Hazme el combo fiesta que lleva 2 pizzas familiares tradicionales, 1 con maiz y un ref 2lt' },
   { label: '🍳 Receta y escandallo', prompt: 'Dime la receta de la Pizza Margarita y cuánto cuesta prepararla.' },
-  { label: '📝 Crear / Armar receta', prompt: 'Quiero armar la receta para la Pizza Margarita: 250g de masa de pizza, 120g de queso mozzarella y 60g de salsa de tomate.' },
   { label: '💵 Tasa de hoy', prompt: '¿Cuál es la tasa oficial de hoy?' },
-  { label: '🌙 Cenas y compras de hoy', prompt: 'Dime las ventas de las cenas y las compras de hoy tanto en dólares como en bolívares.' },
-  { label: '📱 Pago Móvil por sedes', prompt: '¿Cuáles fueron las ventas en Pago Móvil en las 2 sedes hoy?' },
-  { label: '🏆 Más vendidos esta semana', prompt: '¿Cuáles han sido los productos más vendidos esta semana?' },
-  { label: '🧀 Consumo de mozzarella', prompt: '¿Cuánto queso mozzarella se ha consumido y a cuántas barras equivale si una barra pesa 3kg?' },
-  { label: '🏷️ Fusionar marcas', prompt: 'Quiero fusionar las marcas de Harina de Maíz para que Harina PAN quede como palabra clave.' },
-  { label: '🚚 Registrar despacho', prompt: 'Quiero hacer un despacho de la Sede Principal a la Sede Norte con 10kg de queso mozzarella.' },
-  { label: '🤝 Venta al costo', prompt: 'Quiero hacer una venta al costo para Juan Pérez de 5 cajas de refresco.' },
-  { label: '⚠️ Auditar compras sospechosas', prompt: 'Verifica si en las compras de los últimos 30 días hay compras del mismo día con montos casi iguales.' },
-  { label: '📦 Combos inactivos (6 meses)', prompt: 'Revisa todos los combos que no se han utilizado en los últimos 6 meses para evaluar desactivarlos.' },
+  { label: '⚠️ Auditar anulaciones y caja', prompt: 'Revisa si hubo facturas anuladas, devoluciones o descuentos aplicados en caja este mes.' },
 ];
 
 /**
- * Renderizador de formato Markdown ligero para el chat de Copilot
- * Convierte **negrita**, *cursiva*, `código`, > citas y - viñetas en elementos HTML limpios
+ * Renderizador de formato Markdown enriquecido para el chat de Copilot
+ * Soporta tablas Markdown, encabezados (###), **negrita**, *cursiva*, `código`, > citas y - viñetas
  */
 function FormattedMessage({ text }: { text: string }) {
   const lines = text.split('\n');
   const elements: React.ReactNode[] = [];
   let currentList: React.ReactNode[] = [];
+  let currentTableRows: string[][] = [];
 
   const parseInline = (str: string): React.ReactNode[] => {
     const parts: React.ReactNode[] = [];
-    // Captura negrita **...**, código `...` y cursiva *...*
     const regex = /(\*\*.*?\*\*|`.*?`|\*.*?\*)/g;
     const tokens = str.split(regex);
 
@@ -91,8 +92,70 @@ function FormattedMessage({ text }: { text: string }) {
     return parts;
   };
 
+  const flushList = (keySuffix: string | number) => {
+    if (currentList.length > 0) {
+      elements.push(
+        <ul key={`ul-${keySuffix}`} className="my-1.5 pl-1 space-y-1">
+          {currentList}
+        </ul>
+      );
+      currentList = [];
+    }
+  };
+
+  const flushTable = (keySuffix: string | number) => {
+    if (currentTableRows.length > 0) {
+      const header = currentTableRows[0];
+      const body = currentTableRows.slice(1);
+      elements.push(
+        <div key={`table-${keySuffix}`} className="my-2 overflow-x-auto rounded-xl border border-neutral-700/70 bg-neutral-950/70">
+          <table className="w-full text-left border-collapse text-[11px]">
+            <thead>
+              <tr className="border-b border-neutral-700/80 bg-neutral-900/90 text-indigo-300">
+                {header.map((cell, cIdx) => (
+                  <th key={cIdx} className="px-2.5 py-1.5 font-semibold whitespace-nowrap">
+                    {parseInline(cell)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-800/70">
+              {body.map((row, rIdx) => (
+                <tr key={rIdx} className="hover:bg-neutral-800/40 transition-colors">
+                  {row.map((cell, cIdx) => (
+                    <td key={cIdx} className="px-2.5 py-1.5 text-neutral-200 whitespace-nowrap">
+                      {parseInline(cell)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+      currentTableRows = [];
+    }
+  };
+
   lines.forEach((line, lineIdx) => {
     const trimmed = line.trim();
+
+    // Detectar fila de tabla Markdown: | col1 | col2 |
+    if (trimmed.startsWith('|') && trimmed.endsWith('|') && trimmed.length > 2) {
+      flushList(lineIdx);
+      const rawCells = trimmed
+        .slice(1, -1)
+        .split('|')
+        .map(c => c.trim());
+      // Ignorar fila separadora |---|---|
+      const isSeparator = rawCells.every(c => /^[:\-]+$/.test(c));
+      if (!isSeparator && rawCells.length > 0) {
+        currentTableRows.push(rawCells);
+      }
+      return;
+    } else {
+      flushTable(lineIdx);
+    }
 
     if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
       const content = trimmed.slice(2);
@@ -105,13 +168,16 @@ function FormattedMessage({ text }: { text: string }) {
       return;
     }
 
-    if (currentList.length > 0) {
+    flushList(lineIdx);
+
+    if (trimmed.startsWith('### ') || trimmed.startsWith('## ')) {
+      const headingText = trimmed.replace(/^#{2,3}\s+/, '');
       elements.push(
-        <ul key={`ul-${lineIdx}`} className="my-1 pl-1 space-y-0.5">
-          {currentList}
-        </ul>
+        <h4 key={`h-${lineIdx}`} className="text-xs sm:text-sm font-bold text-indigo-300 mt-2.5 mb-1 tracking-tight">
+          {parseInline(headingText)}
+        </h4>
       );
-      currentList = [];
+      return;
     }
 
     if (trimmed.startsWith('> ')) {
@@ -135,13 +201,8 @@ function FormattedMessage({ text }: { text: string }) {
     );
   });
 
-  if (currentList.length > 0) {
-    elements.push(
-      <ul key="ul-final" className="my-1 pl-1 space-y-0.5">
-        {currentList}
-      </ul>
-    );
-  }
+  flushTable('final');
+  flushList('final');
 
   return <div className="space-y-0.5">{elements}</div>;
 }
@@ -156,7 +217,7 @@ export default function CopilotWidget({ activeSedeId }: { activeSedeId?: string 
     {
       id: 'init-1',
       rol: 'copilot',
-      texto: '¡Hola! Soy **Niteo Copilot**, tu asistente inteligente con conexión directa a ventas, inventario, tasas cambiarias, auditoría y catálogo.\n\nPuedes consultarme la tasa oficial de cualquier fecha, el balance de ventas/cenas y compras en USD y Bs, cobros en Pago Móvil por sede, o solicitarme traslados entre sedes, fusiones de marcas, actualizar precios y ventas al costo.',
+      texto: '¡Hola! Soy **Niteo Copilot 360°**, tu Director Financiero y Asistente Operativo con **Matemática Dorada**.\n\nPuedo analizar al instante el 100% de tus **ventas por sede, delivery, días de la semana, horas pico, métodos de pago, cuentas por cobrar, rentabilidad del menú, clientes VIP, cortesías/mermas, cierres de caja y mesas abiertas**, además de crear combos, recetas y ajustar precios.',
       creadoEn: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);

@@ -1,7 +1,8 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
-import { differenceInDays, addDays } from 'date-fns';
+import { createAdminClient } from '@/utils/supabase/admin';
+import { differenceInDays } from 'date-fns';
 import { revalidatePath } from 'next/cache';
 
 export interface EstadoLicencia {
@@ -67,7 +68,7 @@ export async function getEstadoLicencia(): Promise<EstadoLicencia | null> {
     } else {
       const regDate = (sub?.fecha_registro || empresa?.fecha_registro) ? new Date(sub?.fecha_registro || empresa?.fecha_registro) : new Date();
       fechaVenc = new Date(regDate);
-      fechaVenc.setDate(fechaVenc.getDate() + 7); // Changed from 14 to 7 for the 7-day trial
+      fechaVenc.setDate(fechaVenc.getDate() + 7); // 7-day trial
     }
 
     const difDias = differenceInDays(fechaVenc, hoy);
@@ -77,13 +78,14 @@ export async function getEstadoLicencia(): Promise<EstadoLicencia | null> {
     try {
       const { data: pagoPendiente } = await supabase
         .from('suscripciones_pagos')
-        .select('*')
+        .select('id, fecha_registro, estado')
         .eq('empresa_id', perfil.empresa_id)
         .eq('estado', 'pendiente_aprobacion')
+        .order('fecha_registro', { ascending: false })
         .limit(1)
         .maybeSingle();
 
-      const dateField = pagoPendiente?.fecha_registro || pagoPendiente?.fecha_reporte || pagoPendiente?.created_at;
+      const dateField = pagoPendiente?.fecha_registro;
       if (dateField) {
         const diasDesdePago = differenceInDays(hoy, new Date(dateField));
         if (diasDesdePago <= 5) {
@@ -99,7 +101,6 @@ export async function getEstadoLicencia(): Promise<EstadoLicencia | null> {
     let diasFinales = difDias;
 
     // Si hay un pago pendiente en los últimos 5 días, aseguramos al menos 5 días de gracia desde hoy
-    // (o desde la fecha de pago)
     if (enGraciaSilenciosa && diasFinales < 5) {
       diasFinales = 5;
     }
@@ -112,9 +113,8 @@ export async function getEstadoLicencia(): Promise<EstadoLicencia | null> {
         bloqueoFuerte = true;
       }
     } else {
-      // If there is a sub record, check its state. Otherwise default to TRIAL.
       const estadoSub = sub ? (sub.estado || 'TRIAL').toUpperCase() : 'TRIAL';
-      estado = (estadoSub === 'ACTIVA' || estadoSub === 'ACTIVO') ? 'ACTIVA' : 'TRIAL';
+      estado = (estadoSub === 'ACTIVA' || estadoSub === 'ACTIVO') ? 'ACTIVA' : (estadoSub === 'GRACIA' ? 'GRACIA' : 'TRIAL');
       
       // Si el pago está en verificación, anulamos el modo TRIAL y mostramos GRACIA
       if (enGraciaSilenciosa && estado !== 'ACTIVA') {
@@ -153,52 +153,81 @@ export async function reportarPagoSuscripcion(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'No autenticado' };
 
-  const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
-  if (!perfil) return { success: false, error: 'Sin perfil' };
+  const { data: perfil } = await supabase.from('perfiles').select('empresa_id, rol').eq('id', user.id).single();
+  if (!perfil?.empresa_id) return { success: false, error: 'Sin empresa asociada al perfil' };
 
   const monto = parseFloat(formData.get('monto') as string);
-  const metodo_pago = formData.get('metodo_pago') as string;
-  const referencia = formData.get('referencia') as string;
-  const plan_solicitado = formData.get('plan_solicitado') as string;
-  const archivo = formData.get('comprobante') as File;
+  const metodo_pago = (formData.get('metodo_pago') as string)?.trim();
+  const referencia = (formData.get('referencia') as string)?.trim();
+  const banco_destino = (formData.get('banco_destino') as string)?.trim() || null;
+  const fecha_pago = (formData.get('fecha_pago') as string)?.trim() || new Date().toISOString().split('T')[0];
+  const plan_solicitado = (formData.get('plan_solicitado') as string)?.trim();
+  const archivo = formData.get('comprobante') as File | null;
 
-  if (!monto || !metodo_pago) {
-    return { success: false, error: 'Monto y método son requeridos' };
+  if (!monto || isNaN(monto) || monto <= 0) {
+    return { success: false, error: 'El monto del pago no es válido.' };
+  }
+  if (!metodo_pago) {
+    return { success: false, error: 'Debes seleccionar un método de pago.' };
+  }
+  if (!referencia || referencia.length < 3) {
+    return { success: false, error: 'Debes ingresar el número de referencia o confirmación del pago.' };
   }
 
-  let comprobante_url = null;
+  const esEfectivo = metodo_pago.toLowerCase().includes('efectivo');
+  if (!esEfectivo && (!archivo || archivo.size === 0)) {
+    return { success: false, error: 'Por favor adjunta la captura o comprobante del pago (imagen o PDF).' };
+  }
+
+  const adminSupabase = createAdminClient();
+  let comprobante_url: string | null = null;
 
   if (archivo && archivo.size > 0) {
+    if (archivo.size > 10 * 1024 * 1024) {
+      return { success: false, error: 'El archivo del comprobante no debe superar los 10 MB.' };
+    }
     try {
-      const ext = archivo.name.split('.').pop();
-      const fileName = `${perfil.empresa_id}/${Date.now()}.${ext}`;
-      const { data: fileData, error: fileError } = await supabase.storage
+      const rawExt = (archivo.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const ext = ['jpg', 'jpeg', 'png', 'webp', 'pdf'].includes(rawExt) ? rawExt : 'jpg';
+      const fileName = `${perfil.empresa_id}/${Date.now()}_${referencia.replace(/[^a-zA-Z0-9_-]/g, '').slice(-10)}.${ext}`;
+      const arrayBuffer = await archivo.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      const { data: fileData, error: fileError } = await adminSupabase.storage
         .from('comprobantes')
-        .upload(fileName, archivo);
-        
-      if (!fileError && fileData) {
-        comprobante_url = fileData.path;
+        .upload(fileName, buffer, {
+          contentType: archivo.type || (ext === 'pdf' ? 'application/pdf' : `image/${ext === 'jpg' ? 'jpeg' : ext}`),
+          upsert: true,
+        });
+
+      if (fileError || !fileData) {
+        console.error('Error subiendo comprobante a Storage:', fileError);
+        return { success: false, error: 'Error al guardar la captura del comprobante: ' + (fileError?.message || 'Intenta nuevamente') };
       }
-    } catch (e) {
-      console.warn('Error al subir comprobante:', e);
+      comprobante_url = fileData.path;
+    } catch (e: any) {
+      console.error('Excepción al subir comprobante:', e);
+      return { success: false, error: 'No se pudo procesar la captura adjunta: ' + (e?.message || 'Archivo inválido') };
     }
   }
 
-  const modulos = formData.get('modulos') as string;
+  const modulos = (formData.get('modulos') as string)?.trim() || '';
   const ciclo   = (formData.get('ciclo') as string) || 'mensual'; // mensual | anual
   // planCompleto: "PRO [ANUAL] + [recetas,multi-price]" o "PRO [MENSUAL] + [recetas]"
   const cicloTag    = ciclo === 'anual' ? '[ANUAL]' : '[MENSUAL]';
   const planConCiclo = `${plan_solicitado || 'STARTER'} ${cicloTag}`;
   const planCompleto = modulos ? `${planConCiclo} + [${modulos}]` : planConCiclo;
 
-  // Insertar en suscripciones_pagos con columnas dedicadas para plan y comprobante
-  const { error } = await supabase.from('suscripciones_pagos').insert({
+  // Insertar en suscripciones_pagos con todas las columnas de trazabilidad
+  const { error } = await adminSupabase.from('suscripciones_pagos').insert({
     empresa_id: perfil.empresa_id,
     monto,
     metodo_pago,
-    referencia: referencia || 'S/R',   // referencia original del cliente, intacta y limpia
-    plan_solicitado: planCompleto,      // columna dedicada — sin mezclar con referencia
-    comprobante_url,                    // URL del archivo en Storage
+    referencia,
+    banco_destino,
+    fecha_pago,
+    plan_solicitado: planCompleto,
+    comprobante_url,
     moneda: 'USD',
     estado: 'pendiente_aprobacion',
   });
@@ -209,11 +238,10 @@ export async function reportarPagoSuscripcion(formData: FormData) {
 
   // ── AUTO-GRACIA O MANTENER ACTIVO ──
   // Si el usuario reporta un pago, no queremos reducirle el tiempo si estaba haciendo un pago anticipado.
-  // Vamos a obtener su suscripción actual:
   try {
-    const { data: subActual } = await supabase
+    const { data: subActual } = await adminSupabase
       .from('suscripciones_empresas')
-      .select('estado, fecha_vencimiento')
+      .select('plan, estado, fecha_vencimiento, modulos_activos')
       .eq('empresa_id', perfil.empresa_id)
       .maybeSingle();
 
@@ -228,20 +256,24 @@ export async function reportarPagoSuscripcion(formData: FormData) {
       const fechaGracia = new Date();
       fechaGracia.setDate(fechaGracia.getDate() + 5);
 
-      await supabase
+      await adminSupabase
         .from('suscripciones_empresas')
         .upsert({
           empresa_id: perfil.empresa_id,
-          plan: planCompleto.split(' ')[0].toUpperCase() || 'STARTER',
-          estado: 'gracia',
+          plan: (subActual?.plan || plan_solicitado || 'STARTER').toUpperCase(),
+          estado: 'GRACIA',
           fecha_vencimiento: fechaGracia.toISOString(),
+          modulos_activos: subActual?.modulos_activos || [],
         }, { onConflict: 'empresa_id' });
     }
-  } catch {
-    console.warn('No se pudo actualizar estado gracia — usando gracia silenciosa');
+  } catch (e) {
+    console.warn('No se pudo actualizar estado gracia — usando gracia silenciosa:', e);
   }
 
   revalidatePath('/dashboard');
   revalidatePath('/dashboard/billing');
+  revalidatePath('/admin');
+  revalidatePath('/admin/pagos');
   return { success: true };
 }
+

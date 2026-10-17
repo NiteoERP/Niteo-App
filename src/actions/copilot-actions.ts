@@ -1115,6 +1115,64 @@ async function toolConsultarVentas(
     sedeNombres[s.id] = `Sede ${idx + 1} (${s.nombre_sede})`;
   });
 
+  const esFiltroDelivery = args.solo_delivery === true || args.canal === 'delivery';
+  const esFiltroSalon = args.canal === 'salon';
+  const canalRpc = esFiltroDelivery ? 'delivery' : (esFiltroSalon ? 'salon' : 'todos');
+
+  // 0. Motor SQL Ultra-Rápido 360° (Procesa 100% de facturas y detalles en PostgreSQL en <100ms)
+  const { data: rpcData, error: rpcErr } = await supabase.rpc('get_copilot_ventas_360', {
+    p_empresa_id: empresaId,
+    p_fecha_inicio: inicio,
+    p_fecha_fin: fin,
+    p_sede_id: targetSedeId,
+    p_canal: canalRpc,
+    p_filtro_producto: args.filtro_producto || null,
+    p_ordenar_por: args.ordenar_por || 'mas_vendidos',
+    p_limite: limite
+  });
+
+  if (!rpcErr && rpcData) {
+    const totalUsd = Number(rpcData.total_ventas_usd || 0);
+    const totalFacs = Number(rpcData.total_facturas || 0);
+    const totalFlete = Number(rpcData.total_flete_delivery_usd || 0);
+    const pedidosDeliv = Number(rpcData.pedidos_delivery_despachados || 0);
+
+    const desgloseSedesRpc = (rpcData.desglose_sedes || []).map((s: any) => {
+      const sTotal = Number(s.total_usd || 0);
+      const sFacs = Number(s.total_facturas || 0);
+      const pct = totalUsd > 0 ? Number(((sTotal / totalUsd) * 100).toFixed(1)) : 0;
+      return {
+        sede_id: s.sede_id,
+        nombre_sede: sedeNombres[s.sede_id] || s.nombre_sede,
+        total_usd: Number(sTotal.toFixed(2)),
+        total_facturas: sFacs,
+        porcentaje_del_total: `${pct}%`,
+        ticket_promedio: sFacs > 0 ? Number((sTotal / sFacs).toFixed(2)) : 0,
+        pedidos_delivery: Number(s.pedidos_delivery || 0),
+        total_flete_delivery_usd: Number(Number(s.flete_delivery_usd || 0).toFixed(2))
+      };
+    });
+
+    return {
+      periodo: descripcion,
+      canal_filtrado: esFiltroDelivery ? 'DELIVERY' : (esFiltroSalon ? 'SALON' : 'TODOS'),
+      rango_fechas: { inicio, fin },
+      sede_consultada: sedeIdentificada,
+      filtro_producto: args.filtro_producto || null,
+      total_facturas_emitidas: totalFacs,
+      total_ventas_usd: Number(totalUsd.toFixed(2)),
+      promedio_ticket_usd: totalFacs > 0 ? Number((totalUsd / totalFacs).toFixed(2)) : 0,
+      pedidos_delivery_despachados: pedidosDeliv,
+      total_flete_delivery_usd: Number(totalFlete.toFixed(2)),
+      desglose_por_sede: desgloseSedesRpc,
+      desglose_por_dia_semana: rpcData.desglose_dia_semana || [],
+      horas_pico_ventas: rpcData.horas_pico || [],
+      ventas_por_categoria: rpcData.ventas_por_categoria || [],
+      total_unidades_coincidentes: Number(rpcData.total_unidades_productos || 0),
+      top_productos_mas_vendidos: rpcData.top_productos || []
+    };
+  }
+
   const desglosadoPorSede: Record<string, {
     sede_id: string;
     nombre_sede: string;
@@ -1133,7 +1191,7 @@ async function toolConsultarVentas(
     };
   }
 
-  // 1. Paginación exhaustiva para ventas_facturas (supera el límite de 1000 registros de PostgREST)
+  // 1. Paginación exhaustiva de respaldo para ventas_facturas
   let allFacturas: Array<{
     id: string;
     total: number;
@@ -1174,9 +1232,6 @@ async function toolConsultarVentas(
   }
 
   // Identificación de Delivery por productos de flete y/o atributos de orden
-  const esFiltroDelivery = args.solo_delivery === true || args.canal === 'delivery';
-  const esFiltroSalon = args.canal === 'salon';
-
   const { data: prodDeliveryList } = await supabase
     .from('productos')
     .select('id, nombre')
@@ -3361,6 +3416,504 @@ async function toolConsultarCierresYMesasAbiertas(
   };
 }
 
+/**
+ * 21. Consulta Clientes VIP, Fidelidad, Frecuencia de Compra e Historial por Cliente
+ */
+async function toolConsultarClientesVipYFidelidad(
+  ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
+  args: { periodo?: string; cliente_nombre?: string; sede_nombre?: string }
+) {
+  const { supabase, empresaId, sedes } = ctx;
+  const { inicio, fin, descripcion } = calcularRangoFechas(args.periodo || 'ultimos_3_meses');
+
+  let targetSedeId: string | null = null;
+  if (args.sede_nombre) {
+    const sNorm = normalizarTexto(args.sede_nombre);
+    const esGeneral = ['todas', 'ambas', 'todas las sedes', 'consolidado', 'general', 'global', 'ambas sedes'].includes(sNorm);
+    if (!esGeneral) {
+      const sFound = resolverSede(args.sede_nombre, sedes);
+      if (sFound) targetSedeId = sFound.id;
+    }
+  }
+
+  const { count: totalClientesCatalogo } = await supabase
+    .from('clientes')
+    .select('id', { count: 'exact', head: true })
+    .eq('empresa_id', empresaId);
+
+  let allFacturas: any[] = [];
+  let from = 0;
+  const batchSize = 1000;
+  while (true) {
+    let q = supabase
+      .from('ventas_facturas')
+      .select(`
+        id,
+        sede_id,
+        fecha_venta,
+        total,
+        tipo_documento,
+        numero_orden,
+        cliente_id,
+        cliente_nombre,
+        clientes (
+          nombre,
+          telefono,
+          rif_cedula
+        ),
+        ventas_pagos (
+          tipo_pago
+        )
+      `)
+      .eq('empresa_id', empresaId)
+      .eq('estado_activo', true)
+      .neq('numero_documento', 'TEST')
+      .gte('fecha_venta', inicio)
+      .lte('fecha_venta', fin)
+      .range(from, from + batchSize - 1);
+
+    if (targetSedeId) q = q.eq('sede_id', targetSedeId);
+
+    const { data: batch, error } = await q;
+    if (error || !batch || batch.length === 0) break;
+    allFacturas.push(...batch);
+    if (batch.length < batchSize) break;
+    from += batchSize;
+  }
+
+  const filtroCli = args.cliente_nombre ? normalizarTexto(args.cliente_nombre) : '';
+  const porCliente: Record<string, {
+    nombre: string;
+    telefono: string;
+    rif_cedula: string;
+    total_comprado_usd: number;
+    visitas_o_facturas: number;
+    ultima_compra: string;
+  }> = {};
+
+  for (const fac of allFacturas) {
+    const isCortesia = fac.ventas_pagos?.some((p: any) => {
+      const tp = (p.tipo_pago || '').toLowerCase();
+      return tp.includes('cortes') || tp.includes('regal');
+    }) ||
+    (fac.tipo_documento && (fac.tipo_documento.toLowerCase().includes('cortes') || fac.tipo_documento.toLowerCase().includes('regal'))) ||
+    (fac.numero_orden && (fac.numero_orden.toLowerCase().includes('cortes') || fac.numero_orden.toLowerCase().includes('regal')));
+
+    if (isCortesia) continue;
+
+    const cliObj = (fac as any).clientes;
+    const rawNombre = (cliObj?.nombre || fac.cliente_nombre || '').trim();
+    const norm = normalizarTexto(rawNombre);
+
+    // Ignorar genéricos si no se está filtrando específicamente
+    if (!filtroCli && (!rawNombre || ['cliente generico', 'consumidor final', 'mostrador', 'delivery', 'mesa', 'efectivo'].includes(norm))) {
+      continue;
+    }
+
+    if (filtroCli && !norm.includes(filtroCli) && !esCoincidenciaAproximada(rawNombre, args.cliente_nombre || '')) {
+      continue;
+    }
+
+    const isRefund = (fac.tipo_documento && (
+      fac.tipo_documento.toLowerCase().includes('refund') ||
+      fac.tipo_documento.toLowerCase().includes('devolucion') ||
+      fac.tipo_documento.toLowerCase().includes('nota_credito') ||
+      fac.tipo_documento.toLowerCase().includes('nc')
+    )) || Number(fac.total || 0) < 0;
+
+    const sign = isRefund ? -1 : 1;
+    const monto = sign * Math.abs(Number(fac.total || 0));
+    const fechaStr = (fac.fecha_venta || '').substring(0, 10);
+
+    const key = rawNombre.toUpperCase() || 'GENERICO';
+    if (!porCliente[key]) {
+      porCliente[key] = {
+        nombre: rawNombre || 'Cliente General',
+        telefono: cliObj?.telefono || 'N/A',
+        rif_cedula: cliObj?.rif_cedula || 'N/A',
+        total_comprado_usd: 0,
+        visitas_o_facturas: 0,
+        ultima_compra: fechaStr
+      };
+    }
+
+    porCliente[key].total_comprado_usd += monto;
+    porCliente[key].visitas_o_facturas += 1;
+    if (fechaStr > porCliente[key].ultima_compra) {
+      porCliente[key].ultima_compra = fechaStr;
+    }
+  }
+
+  const lista = Object.values(porCliente).map(c => ({
+    ...c,
+    total_comprado_usd: Number(c.total_comprado_usd.toFixed(2)),
+    ticket_promedio_usd: c.visitas_o_facturas > 0 ? Number((c.total_comprado_usd / c.visitas_o_facturas).toFixed(2)) : 0
+  }));
+
+  const topPorMonto = [...lista].sort((a, b) => b.total_comprado_usd - a.total_comprado_usd).slice(0, 20);
+  const topPorFrecuencia = [...lista].sort((a, b) => b.visitas_o_facturas - a.visitas_o_facturas).slice(0, 15);
+
+  return {
+    periodo: descripcion,
+    total_clientes_registrados_en_sistema: totalClientesCatalogo || 0,
+    clientes_identificados_en_periodo: lista.length,
+    top_clientes_vip_por_monto_usd: topPorMonto,
+    top_clientes_mas_frecuentes: topPorFrecuencia
+  };
+}
+
+/**
+ * 22. Ingeniería de Menú: Rentabilidad por Plato, Food Cost y Margen Real
+ */
+async function toolConsultarRentabilidadMenu(
+  ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
+  args: { periodo?: string; categoria?: string }
+) {
+  const { supabase, empresaId } = ctx;
+  const { inicio, fin, descripcion } = calcularRangoFechas(args.periodo || 'este_mes');
+
+  const { data: productos } = await supabase
+    .from('productos')
+    .select('id, nombre, precio_venta, costo, es_compuesto, categorias(nombre)')
+    .eq('empresa_id', empresaId)
+    .neq('archivado', true);
+
+  const { data: recetas } = await supabase
+    .from('recetas')
+    .select('producto_id, cantidad_necesaria, inventario_insumos(costo_promedio)')
+    .eq('empresa_id', empresaId);
+
+  const costoRecetaMap: Record<string, number> = {};
+  for (const r of recetas || []) {
+    if (!r.producto_id) continue;
+    const costoIns = Number((r as any).inventario_insumos?.costo_promedio || 0);
+    const cant = Number(r.cantidad_necesaria || 0);
+    costoRecetaMap[r.producto_id] = (costoRecetaMap[r.producto_id] || 0) + (costoIns * cant);
+  }
+
+  // Obtener ventas por producto desde nuestro motor SQL 360°
+  const { data: rpcVentas } = await supabase.rpc('get_copilot_ventas_360', {
+    p_empresa_id: empresaId,
+    p_fecha_inicio: inicio,
+    p_fecha_fin: fin,
+    p_sede_id: null,
+    p_canal: 'todos',
+    p_filtro_producto: args.categoria || null,
+    p_ordenar_por: 'mas_vendidos',
+    p_limite: 250
+  });
+
+  const ventasMap: Record<string, { cantidad: number; ingreso_usd: number }> = {};
+  for (const tp of rpcVentas?.top_productos || []) {
+    ventasMap[tp.producto_id] = {
+      cantidad: Number(tp.cantidad_vendida || 0),
+      ingreso_usd: Number(tp.total_usd || 0)
+    };
+  }
+
+  const analisisPlatos: any[] = [];
+  const alertasFoodCostAlto: any[] = [];
+  const sinCostoConfigurado: string[] = [];
+
+  for (const p of productos || []) {
+    const catNombre = (p as any).categorias?.nombre || 'General';
+    if (args.categoria && !normalizarTexto(catNombre).includes(normalizarTexto(args.categoria))) {
+      continue;
+    }
+
+    const precioVenta = Number(p.precio_venta || 0);
+    if (precioVenta <= 0) continue;
+
+    const costoUnitario = costoRecetaMap[p.id] > 0 ? costoRecetaMap[p.id] : Number(p.costo || 0);
+    const v = ventasMap[p.id] || { cantidad: 0, ingreso_usd: 0 };
+
+    if (costoUnitario <= 0) {
+      if (v.cantidad > 0) sinCostoConfigurado.push(p.nombre);
+      continue;
+    }
+
+    const margenUnitarioUsd = precioVenta - costoUnitario;
+    const foodCostPct = (costoUnitario / precioVenta) * 100;
+    const margenPct = 100 - foodCostPct;
+    const utilidadTotalGeneradaUsd = v.cantidad * margenUnitarioUsd;
+
+    const item = {
+      nombre: p.nombre,
+      categoria: catNombre,
+      precio_venta_usd: Number(precioVenta.toFixed(2)),
+      costo_preparacion_usd: Number(costoUnitario.toFixed(2)),
+      ganancia_por_unidad_usd: Number(margenUnitarioUsd.toFixed(2)),
+      food_cost_pct: `${foodCostPct.toFixed(1)}%`,
+      margen_rentabilidad_pct: `${margenPct.toFixed(1)}%`,
+      unidades_vendidas: v.cantidad,
+      utilidad_neta_generada_usd: Number(utilidadTotalGeneradaUsd.toFixed(2))
+    };
+
+    analisisPlatos.push(item);
+    if (foodCostPct >= 45) {
+      alertasFoodCostAlto.push(item);
+    }
+  }
+
+  const platosEstrellaPorUtilidad = [...analisisPlatos]
+    .sort((a, b) => b.utilidad_neta_generada_usd - a.utilidad_neta_generada_usd)
+    .slice(0, 15);
+
+  const mayorMargenUnitario = [...analisisPlatos]
+    .sort((a, b) => b.ganancia_por_unidad_usd - a.ganancia_por_unidad_usd)
+    .slice(0, 15);
+
+  return {
+    periodo: descripcion,
+    platos_con_costo_analizados: analisisPlatos.length,
+    platos_estrella_mayor_utilidad_total_usd: platosEstrellaPorUtilidad,
+    platos_mayor_ganancia_por_unidad: mayorMargenUnitario,
+    alertas_food_cost_elevado_mas_45_pct: alertasFoodCostAlto.slice(0, 15),
+    productos_vendidos_sin_receta_o_costo: sinCostoConfigurado.slice(0, 20),
+    ventas_por_categoria: rpcVentas?.ventas_por_categoria || []
+  };
+}
+
+/**
+ * 23. Comparativa de Crecimiento entre Periodos y Proyección de Cierre de Mes
+ */
+async function toolConsultarComparativaCrecimiento(
+  ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
+  args: { tipo_comparativa?: string; sede_nombre?: string }
+) {
+  const { supabase, empresaId, sedes } = ctx;
+  const modo = (args.tipo_comparativa || 'mes_actual_vs_mes_anterior').toLowerCase();
+
+  let targetSedeId: string | null = null;
+  if (args.sede_nombre) {
+    const sNorm = normalizarTexto(args.sede_nombre);
+    const esGeneral = ['todas', 'ambas', 'todas las sedes', 'consolidado', 'general', 'global', 'ambas sedes'].includes(sNorm);
+    if (!esGeneral) {
+      const sFound = resolverSede(args.sede_nombre, sedes);
+      if (sFound) targetSedeId = sFound.id;
+    }
+  }
+
+  const esSemanal = modo.includes('semana');
+  const rangoActual = calcularRangoFechas(esSemanal ? 'esta_semana' : 'este_mes');
+  const rangoAnterior = calcularRangoFechas(esSemanal ? 'semana_pasada' : 'mes_anterior');
+
+  const [resActual, resAnterior] = await Promise.all([
+    supabase.rpc('get_copilot_ventas_360', {
+      p_empresa_id: empresaId,
+      p_fecha_inicio: rangoActual.inicio,
+      p_fecha_fin: rangoActual.fin,
+      p_sede_id: targetSedeId,
+      p_canal: 'todos',
+      p_filtro_producto: null,
+      p_ordenar_por: 'mas_vendidos',
+      p_limite: 5
+    }),
+    supabase.rpc('get_copilot_ventas_360', {
+      p_empresa_id: empresaId,
+      p_fecha_inicio: rangoAnterior.inicio,
+      p_fecha_fin: rangoAnterior.fin,
+      p_sede_id: targetSedeId,
+      p_canal: 'todos',
+      p_filtro_producto: null,
+      p_ordenar_por: 'mas_vendidos',
+      p_limite: 5
+    })
+  ]);
+
+  const dAct = resActual.data || {};
+  const dAnt = resAnterior.data || {};
+
+  const ventasAct = Number(dAct.total_ventas_usd || 0);
+  const ventasAnt = Number(dAnt.total_ventas_usd || 0);
+  const difUsd = ventasAct - ventasAnt;
+  const variacionPct = ventasAnt > 0 ? ((difUsd / ventasAnt) * 100) : 0;
+
+  // Cálculo de proyección de cierre de mes (Run-rate diario)
+  const hoyCaracas = toLocalDateKey(new Date(), DEFAULT_TIMEZONE);
+  const [y, m, d] = hoyCaracas.split('-').map(Number);
+  const diasEnMes = new Date(y, m, 0).getDate();
+  const diasTranscurridos = Math.max(d, 1);
+  const promedioDiarioActualUsd = ventasAct / diasTranscurridos;
+  const proyeccionCierreMesUsd = promedioDiarioActualUsd * diasEnMes;
+
+  const sedesComparativa = sedes.map((s, idx) => {
+    const sAct = (dAct.desglose_sedes || []).find((x: any) => x.sede_id === s.id);
+    const sAnt = (dAnt.desglose_sedes || []).find((x: any) => x.sede_id === s.id);
+    const vAct = Number(sAct?.total_usd || 0);
+    const vAnt = Number(sAnt?.total_usd || 0);
+    const sDif = vAct - vAnt;
+    const sPct = vAnt > 0 ? ((sDif / vAnt) * 100) : 0;
+    return {
+      sede: `Sede ${idx + 1} (${s.nombre_sede})`,
+      periodo_actual_usd: Number(vAct.toFixed(2)),
+      periodo_anterior_usd: Number(vAnt.toFixed(2)),
+      diferencia_usd: Number(sDif.toFixed(2)),
+      variacion_pct: `${sPct >= 0 ? '+' : ''}${sPct.toFixed(1)}%`
+    };
+  });
+
+  return {
+    comparativa: esSemanal ? 'ESTA SEMANA vs SEMANA PASADA' : 'ESTE MES vs MES ANTERIOR',
+    periodo_actual: {
+      descripcion: rangoActual.descripcion,
+      total_ventas_usd: Number(ventasAct.toFixed(2)),
+      total_facturas: Number(dAct.total_facturas || 0)
+    },
+    periodo_anterior: {
+      descripcion: rangoAnterior.descripcion,
+      total_ventas_usd: Number(ventasAnt.toFixed(2)),
+      total_facturas: Number(dAnt.total_facturas || 0)
+    },
+    variacion_global: {
+      diferencia_usd: Number(difUsd.toFixed(2)),
+      porcentaje: `${variacionPct >= 0 ? '+' : ''}${variacionPct.toFixed(1)}%`
+    },
+    ...(!esSemanal ? {
+      proyeccion_cierre_de_mes: {
+        dias_transcurridos: diasTranscurridos,
+        dias_totales_del_mes: diasEnMes,
+        ritmo_venta_diaria_promedio_usd: Number(promedioDiarioActualUsd.toFixed(2)),
+        venta_proyectada_fin_de_mes_usd: Number(proyeccionCierreMesUsd.toFixed(2)),
+        superara_mes_anterior: proyeccionCierreMesUsd >= ventasAnt
+      }
+    } : {}),
+    comparativa_por_sede: sedesComparativa
+  };
+}
+
+/**
+ * 24. Auditoría de Seguridad: Facturas Anuladas, Devoluciones/Notas de Crédito y Descuentos en Caja
+ */
+async function toolConsultarAuditoriaSeguridad(
+  ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
+  args: { periodo?: string; sede_nombre?: string }
+) {
+  const { supabase, empresaId, sedes } = ctx;
+  const { inicio, fin, descripcion } = calcularRangoFechas(args.periodo || 'este_mes');
+
+  let targetSedeId: string | null = null;
+  if (args.sede_nombre) {
+    const sNorm = normalizarTexto(args.sede_nombre);
+    const esGeneral = ['todas', 'ambas', 'todas las sedes', 'consolidado', 'general', 'global', 'ambas sedes'].includes(sNorm);
+    if (!esGeneral) {
+      const sFound = resolverSede(args.sede_nombre, sedes);
+      if (sFound) targetSedeId = sFound.id;
+    }
+  }
+
+  const sedeNombres: Record<string, string> = {};
+  sedes.forEach((s, idx) => { sedeNombres[s.id] = `Sede ${idx + 1} (${s.nombre_sede})`; });
+
+  // 1. Facturas anuladas (estado_activo = false)
+  let qAnuladas = supabase
+    .from('ventas_facturas')
+    .select('id, sede_id, numero_documento, numero_orden, fecha_venta, total, cajero_nombre, cliente_nombre, notas')
+    .eq('empresa_id', empresaId)
+    .eq('estado_activo', false)
+    .neq('numero_documento', 'TEST')
+    .gte('fecha_venta', inicio)
+    .lte('fecha_venta', fin)
+    .order('fecha_venta', { ascending: false });
+
+  if (targetSedeId) qAnuladas = qAnuladas.eq('sede_id', targetSedeId);
+  const { data: anuladas } = await qAnuladas;
+
+  let montoAnuladasUsd = 0;
+  const detalleAnuladas = (anuladas || []).map(f => {
+    const m = Math.abs(Number(f.total || 0));
+    montoAnuladasUsd += m;
+    return {
+      fecha: (f.fecha_venta || '').substring(0, 10),
+      sede: sedeNombres[f.sede_id] || 'General',
+      documento: f.numero_documento || f.numero_orden,
+      cajero: f.cajero_nombre || 'N/A',
+      cliente: f.cliente_nombre || 'N/A',
+      monto_usd: Number(m.toFixed(2)),
+      notas: f.notas || null
+    };
+  });
+
+  // 2. Devoluciones / Notas de Crédito y Descuentos otorgados
+  let qDescuentos = supabase
+    .from('ventas_facturas')
+    .select('id, sede_id, numero_documento, numero_orden, tipo_documento, fecha_venta, total, descuento, cajero_nombre, cliente_nombre, notas')
+    .eq('empresa_id', empresaId)
+    .eq('estado_activo', true)
+    .neq('numero_documento', 'TEST')
+    .gte('fecha_venta', inicio)
+    .lte('fecha_venta', fin)
+    .or('descuento.gt.0,total.lt.0,tipo_documento.ilike.%refund%,tipo_documento.ilike.%devolucion%,tipo_documento.ilike.%nc%')
+    .order('fecha_venta', { ascending: false });
+
+  if (targetSedeId) qDescuentos = qDescuentos.eq('sede_id', targetSedeId);
+  const { data: descRows } = await qDescuentos;
+
+  let totalDescuentosUsd = 0;
+  let totalDevolucionesUsd = 0;
+  const detalleDescuentos: any[] = [];
+  const detalleDevoluciones: any[] = [];
+
+  for (const f of descRows || []) {
+    const desc = Number(f.descuento || 0);
+    const isRef = Number(f.total || 0) < 0 ||
+      (f.tipo_documento && (
+        f.tipo_documento.toLowerCase().includes('refund') ||
+        f.tipo_documento.toLowerCase().includes('devolucion') ||
+        f.tipo_documento.toLowerCase().includes('nc')
+      ));
+
+    if (desc > 0) {
+      totalDescuentosUsd += desc;
+      if (detalleDescuentos.length < 20) {
+        detalleDescuentos.push({
+          fecha: (f.fecha_venta || '').substring(0, 10),
+          sede: sedeNombres[f.sede_id] || 'General',
+          documento: f.numero_documento || f.numero_orden,
+          cajero: f.cajero_nombre || 'N/A',
+          descuento_otorgado_usd: Number(desc.toFixed(2)),
+          total_cobrado_usd: Number(Number(f.total || 0).toFixed(2))
+        });
+      }
+    }
+
+    if (isRef) {
+      const mRef = Math.abs(Number(f.total || 0));
+      totalDevolucionesUsd += mRef;
+      if (detalleDevoluciones.length < 20) {
+        detalleDevoluciones.push({
+          fecha: (f.fecha_venta || '').substring(0, 10),
+          sede: sedeNombres[f.sede_id] || 'General',
+          documento: f.numero_documento || f.numero_orden,
+          tipo: f.tipo_documento,
+          cajero: f.cajero_nombre || 'N/A',
+          monto_devuelto_usd: Number(mRef.toFixed(2)),
+          notas: f.notas || null
+        });
+      }
+    }
+  }
+
+  return {
+    periodo: descripcion,
+    facturas_anuladas: {
+      cantidad: detalleAnuladas.length,
+      monto_total_anulado_usd: Number(montoAnuladasUsd.toFixed(2)),
+      detalle: detalleAnuladas.slice(0, 20)
+    },
+    devoluciones_y_notas_credito: {
+      cantidad: detalleDevoluciones.length,
+      monto_total_devuelto_usd: Number(totalDevolucionesUsd.toFixed(2)),
+      detalle: detalleDevoluciones
+    },
+    descuentos_en_caja: {
+      cantidad_facturas_con_descuento: detalleDescuentos.length,
+      monto_total_descontado_usd: Number(totalDescuentosUsd.toFixed(2)),
+      detalle: detalleDescuentos
+    }
+  };
+}
+
 // ==========================================
 // DECLARACIONES DE HERRAMIENTAS PARA GEMINI
 // ==========================================
@@ -3530,7 +4083,7 @@ const copilotTools: { functionDeclarations: FunctionDeclaration[] } = {
     },
     {
       name: 'consultar_ventas',
-      description: 'Consulta el reporte y métricas de ventas agregadas (total recaudado en USD, desglose por sede, desglose por día de la semana Lunes-Domingo, horas pico de venta, ranking de productos más/menos vendidos, y ventas por canal Delivery o Salón) en un periodo.',
+      description: 'Consulta el reporte y métricas de ventas agregadas en <100ms sobre el 100% de las facturas (total recaudado en USD, desglose por sede, desglose por día de la semana Lunes-Domingo, horas pico de venta, ventas por categoría, ranking de productos más/menos vendidos, y ventas por canal Delivery o Salón) en un periodo.',
       parameters: {
         type: SchemaType.OBJECT,
         properties: {
@@ -3540,7 +4093,7 @@ const copilotTools: { functionDeclarations: FunctionDeclaration[] } = {
           },
           filtro_producto: {
             type: SchemaType.STRING,
-            description: 'Texto o fragmento del nombre del producto a filtrar.',
+            description: 'Texto o fragmento del nombre del producto o categoría a filtrar.',
           },
           limite: {
             type: SchemaType.NUMBER,
@@ -3668,6 +4221,78 @@ const copilotTools: { functionDeclarations: FunctionDeclaration[] } = {
           periodo: {
             type: SchemaType.STRING,
             description: 'Periodo para revisar cierres de caja: hoy, ayer, esta_semana, este_mes, ultimos_30_dias.',
+          },
+          sede_nombre: {
+            type: SchemaType.STRING,
+            description: 'Opcional. Sede específica o vacío para todas las sedes.',
+          }
+        }
+      }
+    },
+    {
+      name: 'consultar_clientes_vip_y_fidelidad',
+      description: 'Consulta el ranking de los mejores clientes (Clientes VIP por monto total comprado y por frecuencia de visitas) o el historial de compras de un cliente específico.',
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          periodo: {
+            type: SchemaType.STRING,
+            description: 'Periodo a consultar: este_mes, mes_anterior, ultimos_3_meses, ultimos_6_meses, año_actual.',
+          },
+          cliente_nombre: {
+            type: SchemaType.STRING,
+            description: 'Opcional. Nombre de un cliente específico para consultar cuánto ha comprado y cuántas veces ha venido.',
+          },
+          sede_nombre: {
+            type: SchemaType.STRING,
+            description: 'Opcional. Sede específica o vacío para todas las sedes.',
+          }
+        }
+      }
+    },
+    {
+      name: 'consultar_rentabilidad_menu',
+      description: 'Ingeniería de Menú y Food Cost: analiza qué productos dejan mayor ganancia neta en dólares, cuáles tienen el mayor margen por unidad, cuáles tienen alerta de Food Cost elevado (>45%) y cuánto vende cada categoría.',
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          periodo: {
+            type: SchemaType.STRING,
+            description: 'Periodo a evaluar: este_mes, mes_anterior, ultimos_30_dias, ultimos_3_meses.',
+          },
+          categoria: {
+            type: SchemaType.STRING,
+            description: 'Opcional. Filtrar por categoría (ej: "Pizzeria", "Barra").',
+          }
+        }
+      }
+    },
+    {
+      name: 'consultar_comparativa_y_proyeccion',
+      description: 'Compara el crecimiento de ventas entre dos periodos (Este Mes vs Mes Anterior, o Esta Semana vs Semana Pasada) desglosado por sede, y calcula la Proyección de Cierre de Mes según el ritmo diario de ventas.',
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          tipo_comparativa: {
+            type: SchemaType.STRING,
+            description: '"mes_actual_vs_mes_anterior" (por defecto) o "esta_semana_vs_semana_pasada".',
+          },
+          sede_nombre: {
+            type: SchemaType.STRING,
+            description: 'Opcional. Sede específica o vacío para comparar todas las sedes.',
+          }
+        }
+      }
+    },
+    {
+      name: 'consultar_auditoria_anulaciones_descuentos',
+      description: 'Auditoría de seguridad en facturación: consulta facturas anuladas (estado_activo=false), devoluciones/notas de crédito emitidas y facturas con descuentos aplicados en caja.',
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          periodo: {
+            type: SchemaType.STRING,
+            description: 'Periodo a auditar: hoy, ayer, esta_semana, este_mes, mes_anterior, ultimos_30_dias, ultimos_3_meses.',
           },
           sede_nombre: {
             type: SchemaType.STRING,
@@ -3911,9 +4536,9 @@ PERSONALIDAD Y TONO (AMIGABLE, COMPRENSIVO Y ULTRA-EFICIENTE EN TOKENS):
 - AHORRO MÁXIMO DE TOKENS: Sé muy concreto y directo en la entrega de datos. Evita introducciones largas o despedidas innecesarias. Presenta los números clave en negritas, listas o tablas compactas de Markdown.
 
 MATEMÁTICA DORADA Y COBERTURA 360° DE LA EMPRESA:
-- Todas tus herramientas operan bajo "Matemática Dorada": paginan el 100% de los registros sin límite de 1,000 filas, excluyen facturas anuladas (estado_activo=false) y compras ANULADAS, restan devoluciones/notas de crédito (-ABS) y segregan las cortesías/regalías de la venta neta.
+- Todas tus herramientas operan bajo "Matemática Dorada": procesan el 100% de los registros sin límite de 1,000 filas, excluyen facturas anuladas (estado_activo=false) y compras ANULADAS, restan devoluciones/notas de crédito (-ABS) y segregan las cortesías/regalías de la venta neta.
 - Tienes cobertura 360° para responder CUALQUIER duda de la empresa combinando tus herramientas si hace falta:
-  1. Ventas, Canales (Delivery vs Salón), Días de la Semana (Lunes a Domingo), Horas Pico y Ranking de Productos -> "consultar_ventas".
+  1. Ventas, Canales (Delivery vs Salón), Días de la Semana (Lunes a Domingo), Horas Pico, Categorías y Ranking de Productos -> "consultar_ventas".
   2. Rentabilidad, Utilidad Neta (P&L), Ventas vs Compras y Gastos Operativos (de un día o de todo el mes/semana) -> "consultar_balance_dia".
   3. Métodos de Pago (Zelle, Pago Móvil, Punto, Efectivo, o "todos" para ver el resumen completo) -> "consultar_ventas_por_metodo_pago".
   4. Cuentas por Cobrar, Deudores y Créditos pendientes -> "consultar_cuentas_por_cobrar".
@@ -3922,6 +4547,10 @@ MATEMÁTICA DORADA Y COBERTURA 360° DE LA EMPRESA:
   7. Compras de Insumos, Gastos Operativos y Ranking de Proveedores -> "consultar_compras_y_proveedores".
   8. Mesas/Cuentas Abiertas en vivo en el POS y Cierres de Caja / Arqueos Z / Descuadres -> "consultar_cierres_y_mesas_abiertas".
   9. Inventario, Valorización total en USD, Alertas de Bajo Stock y Consumo Real vs Teórico por recetas -> "consultar_consumo_insumo" (usa nombre_insumo="todos" o "bajo_stock" para resumen general del almacén).
+  10. Clientes VIP, Fidelidad, Frecuencia de Visitas e Historial de un Cliente -> "consultar_clientes_vip_y_fidelidad".
+  11. Ingeniería de Menú, Platos más Rentables, Alertas de Food Cost (>45%) y Margen por Plato -> "consultar_rentabilidad_menu".
+  12. Comparativa de Crecimiento (Este Mes vs Mes Anterior o Semana Actual vs Pasada) y Proyección de Cierre de Mes -> "consultar_comparativa_y_proyeccion".
+  13. Auditoría de Seguridad (Facturas Anuladas, Devoluciones y Descuentos aplicados en Caja) -> "consultar_auditoria_anulaciones_descuentos".
 
 RESOLUCIÓN INTELIGENTE DE SEDES:
 - Si el usuario dice "sede 1", "sucursal 1", "la 1", o similar, corresponde EXACTAMENTE a la primera sede: "${ctx.sedes[0]?.nombre_sede || 'Sede Principal'}".
@@ -3934,7 +4563,7 @@ TOLERANCIA A ERRORES ORTOGRÁFICOS Y TIPOGRÁFICOS (TYPOS):
 REGLAS DE OPERACIÓN:
 1. NUNCA INVENTES CIFRAS NI DATOS. Consulta siempre las herramientas para obtener datos verídicos de la base de datos.
 2. CONSULTA DE VENTAS, DÍAS DE LA SEMANA, CANALES Y FINANZAS:
-   - Si te preguntan por ventas de un periodo, qué día de la semana se vende más, a qué hora hay más movimiento, o cuáles son los productos más/menos vendidos, llama a "consultar_ventas". La herramienta ya te devuelve "desglose_por_sede", "desglose_por_dia_semana" (Lunes a Domingo con promedios) y "horas_pico_ventas".
+   - Si te preguntan por ventas de un periodo, qué día de la semana se vende más, a qué hora hay más movimiento, cuánto vendió cada categoría o cuáles son los productos más/menos vendidos, llama a "consultar_ventas".
    - CONSULTAS POR CANAL / DELIVERY: Si el usuario pregunta por DELIVERY o pedidos a domicilio, pasa SIEMPRE solo_delivery: true o canal: 'delivery' a "consultar_ventas".
    - SIEMPRE entrega directamente en tu respuesta: el total global en USD, el total de facturas emitidas, el ticket promedio y el desglose de cada sede (Sede 1 y Sede 2 con montos y porcentajes).
 3. Si el usuario te indica una regla de conversión (ej. "una barra pesa 3kg"), calcula la división matemáticamente sobre los kg devueltos por la herramienta y explícalo claramente.
@@ -4046,6 +4675,18 @@ REGLAS DE OPERACIÓN:
                   break;
                 case 'consultar_cierres_y_mesas_abiertas':
                   toolResult = await toolConsultarCierresYMesasAbiertas(ctx, call.args || {});
+                  break;
+                case 'consultar_clientes_vip_y_fidelidad':
+                  toolResult = await toolConsultarClientesVipYFidelidad(ctx, call.args || {});
+                  break;
+                case 'consultar_rentabilidad_menu':
+                  toolResult = await toolConsultarRentabilidadMenu(ctx, call.args || {});
+                  break;
+                case 'consultar_comparativa_y_proyeccion':
+                  toolResult = await toolConsultarComparativaCrecimiento(ctx, call.args || {});
+                  break;
+                case 'consultar_auditoria_anulaciones_descuentos':
+                  toolResult = await toolConsultarAuditoriaSeguridad(ctx, call.args || {});
                   break;
                 case 'auditar_compras_sospechosas':
                   toolResult = await toolAuditarComprasSospechosas(ctx, call.args || {});

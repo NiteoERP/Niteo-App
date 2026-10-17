@@ -25,7 +25,7 @@ export default async function BillingPage() {
   try {
     const { data: pagos } = await supabase
       .from('suscripciones_pagos')
-      .select('id, monto, metodo_pago, plan_solicitado, referencia, fecha_reporte, fecha_registro, estado')
+      .select('id, monto, moneda, metodo_pago, banco_destino, fecha_pago, plan_solicitado, referencia, comprobante_url, notas_admin, fecha_registro, fecha_revision, estado')
       .eq('empresa_id', perfil?.empresa_id)
       .order('fecha_registro', { ascending: false });
     historialPagos = pagos || [];
@@ -41,12 +41,35 @@ export default async function BillingPage() {
     metodosPago = [];
   }
 
+  // Obtener Tasa BCV activa para conversión automática en Pago Móvil / Transferencia
+  let tasaBcv: number | null = null;
+  try {
+    const { data: ultimaTasa } = await supabase
+      .from('tasa_cambiaria')
+      .select('tasa_bcv')
+      .order('fecha', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (ultimaTasa?.tasa_bcv && Number(ultimaTasa.tasa_bcv) > 0) {
+      tasaBcv = Number(ultimaTasa.tasa_bcv);
+    } else {
+      const resApi = await fetch('https://ve.dolarapi.com/v1/dolares/oficial', { next: { revalidate: 1800 } });
+      if (resApi.ok) {
+        const jsonApi = await resApi.json();
+        if (jsonApi?.promedio > 0) tasaBcv = Number(jsonApi.promedio);
+      }
+    }
+  } catch {
+    tasaBcv = null;
+  }
+
   return (
     <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Facturación y Licencia</h1>
-          <p className="text-neutral-400 text-sm">Gestiona tu plan de Niteo, añade módulos y reporta tus pagos.</p>
+          <p className="text-neutral-400 text-sm">Gestiona tu plan de Niteo, añade módulos y reporta tus pagos mensuales o anuales.</p>
         </div>
       </div>
 
@@ -87,6 +110,18 @@ export default async function BillingPage() {
                 <p className="text-xs text-neutral-500 uppercase font-bold tracking-wider mb-1">Plan Actual</p>
                 <p className="text-white font-medium capitalize">{licencia.planSuscripcion}</p>
               </div>
+              {licencia.fechaVencimiento && licencia.planSuscripcion !== 'LIFETIME' && (
+                <div>
+                  <p className="text-xs text-neutral-500 uppercase font-bold tracking-wider mb-1">Fecha de Corte / Vencimiento</p>
+                  <p className="text-neutral-200 text-sm font-medium">
+                    {new Date(licencia.fechaVencimiento).toLocaleDateString('es-VE', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                  </p>
+                </div>
+              )}
               <div>
                 <p className="text-xs text-neutral-500 uppercase font-bold tracking-wider mb-1">Módulos Activos</p>
                 {licencia.modulosActivos.length > 0 ? (
@@ -98,7 +133,7 @@ export default async function BillingPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-neutral-400 text-sm">Ninguno</p>
+                  <p className="text-neutral-400 text-sm">Incluidos según tu plan base</p>
                 )}
               </div>
             </div>
@@ -114,6 +149,7 @@ export default async function BillingPage() {
             metodosPago={metodosPago}
             licenciaEstado={licencia.estado}
             diasRestantes={licencia.diasRestantes}
+            tasaBcv={tasaBcv}
           />
         </div>
 
@@ -121,5 +157,6 @@ export default async function BillingPage() {
     </div>
   );
 }
+
 
 
