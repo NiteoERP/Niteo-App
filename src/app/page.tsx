@@ -69,8 +69,8 @@ export default async function LandingPage() {
             de alto rendimiento.
           </h1>
 
-          <p className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto leading-relaxed">
-            El sistema de gestión más completo para restaurantes, tiendas y negocios.
+          <p className="text-lg md:text-xl text-neutral-300 max-w-2xl mx-auto leading-relaxed">
+            Sistema de gestión integral para restaurantes, tiendas y negocios.
             Vende, controla tu inventario y genera informes — incluso sin internet.
           </p>
 
@@ -79,21 +79,21 @@ export default async function LandingPage() {
               href="/register"
               className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-lg px-10 py-4 rounded-2xl transition-all shadow-2xl shadow-indigo-600/30 hover:shadow-indigo-500/40 hover:-translate-y-1"
             >
-              <Zap size={20} className="fill-white" />
+              <Zap size={20} className="fill-white" aria-hidden="true" />
               Prueba Gratis por 7 Días
             </Link>
-            <a href="#pricing" className="inline-flex items-center gap-2 text-neutral-400 hover:text-white text-sm font-medium transition-colors">
-              Ver planes y precios <ArrowRight size={16} />
+            <a href="#pricing" className="inline-flex items-center gap-2 text-neutral-300 hover:text-white text-sm font-medium transition-colors">
+              Ver planes y precios <ArrowRight size={16} aria-hidden="true" />
             </a>
           </div>
 
-          <p className="text-xs text-neutral-600">Sin tarjeta de crédito · Sin compromisos · Cancela cuando quieras</p>
+          <p className="text-xs text-neutral-400">Sin tarjeta de crédito · Sin compromisos · Cancela cuando quieras</p>
         </div>
 
         {/* Mockup de pantalla */}
         <div className="relative max-w-6xl mx-auto mt-20">
           <div className="bg-gradient-to-b from-neutral-800 to-neutral-900 rounded-2xl border border-neutral-700/50 p-3 shadow-2xl shadow-black/60">
-            <div className="flex items-center gap-2 mb-3 px-2">
+            <div className="flex items-center gap-2 mb-3 px-2" aria-hidden="true">
               <div className="w-3 h-3 rounded-full bg-red-500/70" />
               <div className="w-3 h-3 rounded-full bg-yellow-500/70" />
               <div className="w-3 h-3 rounded-full bg-emerald-500/70" />
@@ -102,14 +102,15 @@ export default async function LandingPage() {
             <div className="bg-neutral-950 rounded-xl h-64 md:h-96 flex items-center justify-center border border-neutral-800">
               <div className="text-center space-y-3">
                 <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto border border-indigo-500/20">
-                  <img src="/logo.png" alt="Niteo" className="w-10 h-10 object-contain opacity-60" />
+                  <img src="/logo.png" alt="Vista previa del panel Niteo POS" className="w-10 h-10 object-contain opacity-60" />
                 </div>
-                <p className="text-neutral-600 text-sm font-medium">Panel de Control · Niteo POS</p>
+                <p className="text-neutral-400 text-sm font-medium">Panel de Control · Niteo POS</p>
+                <p className="text-neutral-500 text-xs">Representación visual ilustrativa de la interfaz</p>
               </div>
             </div>
           </div>
           {/* Glow bajo la pantalla */}
-          <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-3/4 h-20 bg-indigo-600/20 rounded-full blur-3xl" />
+          <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-3/4 h-20 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none" />
         </div>
       </section>
 
@@ -121,47 +122,47 @@ export default async function LandingPage() {
               Todo lo que necesita tu negocio
             </h2>
             <p className="text-neutral-400 text-lg max-w-2xl mx-auto">
-              Niteo no es un simple POS. Es el cerebro financiero de tu operación.
+              Niteo no es un simple POS. Es el centro administrativo y financiero de tu operación.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               {
-                icon: <WifiOff size={24} />,
+                icon: <WifiOff size={24} aria-hidden="true" />,
                 color: 'emerald',
                 title: 'Funciona sin Internet',
-                desc: 'Gracias a Niteo Sync, tu caja local sigue operando aunque se caiga la conexión. Sincroniza automáticamente cuando vuelve la señal. Nunca pares de vender.'
+                desc: 'Gracias a Niteo POS y su base de datos local, tu caja sigue operando aunque falle la conexión y sincroniza automáticamente al volver la señal.'
               },
               {
-                icon: <Zap size={24} />,
+                icon: <Zap size={24} aria-hidden="true" />,
                 color: 'indigo',
                 title: 'Compatible con Aronium',
                 desc: 'Si ya usas Aronium o A2 Softway, Niteo lee tu base de datos local y la sube en tiempo real a la nube sin que tengas que cambiar tu flujo de trabajo.'
               },
               {
-                icon: <BookOpen size={24} />,
+                icon: <BookOpen size={24} aria-hidden="true" />,
                 color: 'purple',
                 title: 'Motor de Recetas (Escandallos)',
-                desc: 'Cada pizza, plato o cóctel que vendes descuenta gramos exactos de materia prima. Conoce tu costo real y cuida tu margen de ganancia al instante.'
+                desc: 'Cada pizza, plato o cóctel que vendes descuenta las porciones configuradas de materia prima. Calcula tu costo operativo y cuida tu margen de ganancia.'
               },
               {
-                icon: <BarChart3 size={24} />,
+                icon: <BarChart3 size={24} aria-hidden="true" />,
                 color: 'blue',
                 title: 'Dashboard Financiero',
-                desc: 'Informes de rentabilidad real, conciliación bancaria, y estado de resultados. Toma decisiones basadas en datos, no en intuición.'
+                desc: 'Informes de rentabilidad operativa, conciliación de cierres y estado de resultados. Toma decisiones basadas en tus registros reales.'
               },
               {
-                icon: <Shield size={24} />,
+                icon: <Shield size={24} aria-hidden="true" />,
                 color: 'red',
                 title: 'Auditoría Invisible',
-                desc: 'Registro inalterable de cada anulación o modificación de factura, asociada al empleado que la realizó. Elimina el "robo hormiga" para siempre.'
+                desc: 'Bitácora de cada anulación o modificación de pedido asociada al usuario que la realizó. Detecta y frena el "robo hormiga" con trazabilidad completa.'
               },
               {
-                icon: <Users size={24} />,
+                icon: <Users size={24} aria-hidden="true" />,
                 color: 'amber',
                 title: 'Múltiples Usuarios y Roles',
-                desc: 'Define permisos exactos por empleado: cajero, gerente, contador. Cada quien ve y hace solo lo que le corresponde.'
+                desc: 'Define permisos exactos por empleado: cajero, gerente, mesero, comprador. Cada quien ve y hace solo lo que le corresponde.'
               },
             ].map((f, i) => {
               const colorMap: Record<string, string> = {

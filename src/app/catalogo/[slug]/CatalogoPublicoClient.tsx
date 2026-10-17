@@ -489,9 +489,12 @@ export default function CatalogoPublicoClient({ empresa, productos: productosIni
                       disabled={!empresa.whatsapp_catalogo}
                       className="w-full flex items-center justify-center gap-2.5 py-4 bg-[#25D366] hover:bg-[#1ebe5d] disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all active:scale-95 shadow-lg shadow-[#25D366]/20"
                     >
-                      <MessageCircle size={20} />
+                      <MessageCircle size={20} aria-hidden="true" />
                       Enviar pedido por WhatsApp
                     </button>
+                    <p className="text-[11px] text-neutral-400 text-center leading-relaxed">
+                      Al enviar aceptas compartir tu pedido por WhatsApp directamente con <strong className="text-neutral-300">{empresa.nombre_comercial}</strong>, quien es el único responsable de la venta, precios, entrega y garantías.
+                    </p>
                   </>
                 )}
               </div>

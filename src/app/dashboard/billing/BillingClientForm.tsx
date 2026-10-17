@@ -678,8 +678,23 @@ export default function BillingClientForm({
                         onChange={e => setFile(e.target.files?.[0] || null)}
                       />
                     </label>
+                    <p className="text-[11px] text-neutral-400 mt-1.5">
+                      🔒 Minimización de datos: Tu comprobante solo debe mostrar el monto, fecha y número de referencia. No incluyas claves ni datos bancarios confidenciales.
+                    </p>
                   </div>
                 </div>
+
+                <p className="text-[11px] text-neutral-400 text-center">
+                  Al reportar este pago confirmas que los datos son verídicos y aceptas los{' '}
+                  <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">
+                    Términos de Uso
+                  </a>{' '}
+                  y la{' '}
+                  <a href="/reembolsos" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">
+                    Política de Reembolso
+                  </a>
+                  .
+                </p>
 
                 <button
                   type="submit"

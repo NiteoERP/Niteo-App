@@ -13,10 +13,15 @@ export async function registrarUsuario(formData: FormData) {
   const fullName = (formData.get('fullName') as string)?.trim();
   const companyName = (formData.get('companyName') as string)?.trim();
   const rubro = (formData.get('rubro') as string)?.trim() || 'restaurante';
+  const acceptTerms = formData.get('acceptTerms');
 
   // Validación básica
   if (!email || !password || !fullName || !companyName) {
     return redirect(`/register?error=Por favor, completa todos los campos obligatorios.`);
+  }
+
+  if (!acceptTerms) {
+    return redirect(`/register?error=${encodeURIComponent('Debes aceptar los Términos y Condiciones y la Política de Privacidad para crear tu cuenta.')}`);
   }
 
   if (password.length < 6) {
@@ -32,6 +37,7 @@ export async function registrarUsuario(formData: FormData) {
         full_name: fullName,
         company_name: companyName,
         rubro: rubro,
+        terms_accepted_at: new Date().toISOString(),
       }
     }
   });

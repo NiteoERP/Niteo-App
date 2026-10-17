@@ -96,19 +96,22 @@ export default function LoginPage() {
             </div>
             <div className="grid grid-cols-2 gap-3 pt-1">
               <div className="bg-neutral-900/80 p-3 rounded-xl border border-neutral-800/60">
-                <p className="text-[11px] text-neutral-500 font-medium">Ventas de Hoy</p>
+                <p className="text-[11px] text-neutral-400 font-medium">Ventas de Hoy</p>
                 <p className="text-base font-bold text-white mt-0.5">$485.20</p>
               </div>
               <div className="bg-neutral-900/80 p-3 rounded-xl border border-neutral-800/60">
-                <p className="text-[11px] text-neutral-500 font-medium">Margen Bruto</p>
+                <p className="text-[11px] text-neutral-400 font-medium">Margen Bruto</p>
                 <p className="text-base font-bold text-indigo-400 mt-0.5">38.4%</p>
               </div>
             </div>
+            <p className="text-[10px] text-neutral-400 text-right italic">
+              * Vista previa ilustrativa · Datos de ejemplo
+            </p>
           </div>
         </div>
 
         {/* Footer del branding */}
-        <div className="relative z-10 text-xs text-neutral-500 pt-6">
+        <div className="relative z-10 text-xs text-neutral-400 pt-6">
           Desarrollado con ❤️ para negocios de alto rendimiento
         </div>
       </div>
@@ -294,10 +297,10 @@ export default function LoginPage() {
             </Link>
           </p>
 
-          {/* Ayuda y Soporte exclusivo por correo */}
-          <div className="pt-5 border-t border-neutral-800/80 text-center">
-            <p className="text-xs text-neutral-500 flex items-center justify-center gap-1.5">
-              <Mail size={14} className="text-neutral-400 shrink-0" />
+          {/* Ayuda y Soporte exclusivo por correo + Enlaces Legales */}
+          <div className="pt-5 border-t border-neutral-800/80 text-center space-y-2.5">
+            <p className="text-xs text-neutral-400 flex items-center justify-center gap-1.5">
+              <Mail size={14} className="text-neutral-400 shrink-0" aria-hidden="true" />
               ¿Problemas para acceder?{' '}
               <a 
                 href="mailto:niteosupport@gmail.com" 
@@ -306,6 +309,13 @@ export default function LoginPage() {
                 Contáctanos a soporte
               </a>
             </p>
+            <div className="flex items-center justify-center gap-4 text-[11px] text-neutral-400">
+              <Link href="/terms" className="hover:text-white transition-colors">Términos</Link>
+              <span>·</span>
+              <Link href="/privacidad" className="hover:text-white transition-colors">Privacidad</Link>
+              <span>·</span>
+              <Link href="/cookies" className="hover:text-white transition-colors">Cookies</Link>
+            </div>
           </div>
 
         </div>

@@ -107,14 +107,45 @@ function RegisterForm() {
             name="password"
             type="password"
             placeholder="••••••••"
-            className="w-full px-4 py-3.5 bg-neutral-900/50 border border-neutral-800 rounded-xl text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+            className="w-full px-4 py-3.5 bg-neutral-900/50 border border-neutral-800 rounded-xl text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
             required
             minLength={6}
           />
         </div>
 
+        {/* Consentimiento explícito obligatorio */}
+        <div className="pt-1">
+          <div className="flex items-start gap-2.5">
+            <input
+              id="acceptTerms"
+              name="acceptTerms"
+              type="checkbox"
+              required
+              className="mt-1 w-4 h-4 rounded bg-neutral-900 border-neutral-700 text-indigo-600 focus:ring-2 focus:ring-indigo-500 accent-indigo-600 cursor-pointer shrink-0"
+            />
+            <label htmlFor="acceptTerms" className="text-xs text-neutral-300 leading-relaxed cursor-pointer">
+              He leído y acepto expresamente los{' '}
+              <Link href="/terms" target="_blank" className="text-indigo-400 hover:underline font-medium">
+                Términos y Condiciones
+              </Link>
+              , la{' '}
+              <Link href="/privacidad" target="_blank" className="text-indigo-400 hover:underline font-medium">
+                Política de Privacidad
+              </Link>{' '}
+              y la{' '}
+              <Link href="/reembolsos" target="_blank" className="text-indigo-400 hover:underline font-medium">
+                Política de Reembolso
+              </Link>
+              .
+            </label>
+          </div>
+          <p className="text-[11px] text-neutral-400 mt-2 pl-6">
+            🔒 Solo solicitamos los datos mínimos necesarios para configurar tu cuenta. No se requiere tarjeta de crédito.
+          </p>
+        </div>
+
         {error && (
-          <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+          <div role="alert" className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
             <p className="text-sm font-medium text-red-400 text-center">
               {error}
             </p>
