@@ -1,55 +1,80 @@
 'use server';
 
+import { cache } from 'react';
 import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
-import { differenceInDays } from 'date-fns';
 import { revalidatePath } from 'next/cache';
 
 export interface EstadoLicencia {
   estado: 'ACTIVA' | 'TRIAL' | 'GRACIA' | 'VENCIDA';
-  diasRestantes: number;  // Si es negativo, indica días de vencido
-  diasVencido: number;    // 0 si está activa, >0 si está vencida
+  diasRestantes: number;    // >= 0 cuando está vigente o en gracia; < 0 si está vencida
+  diasVencido: number;      // 0 si está activa, > 0 si ya pasó la fecha de corte
   planSuscripcion: string;
   modulosActivos: string[];
   fechaVencimiento: string | null;
-  bloqueoFuerte: boolean; // Si debe bloquear reportes/finanzas
+  bloqueoFuerte: boolean;   // Si debe bloquear módulos administrativos (después de los 3 días de cortesía)
+  pagoEnRevision?: boolean; // true cuando la empresa ya reportó un pago y está pendiente de aprobación
 }
 
-export async function getEstadoLicencia(): Promise<EstadoLicencia | null> {
+/**
+ * Normaliza una fecha de vencimiento al final del día (23:59:59.999) en hora de Venezuela (UTC-4),
+ * garantizando que ningún plan se venza antes de que termine su día calendario completo.
+ */
+function normalizarFinDeDiaVenezuela(rawIso: string | Date): Date {
+  const d = typeof rawIso === 'string' ? new Date(rawIso) : new Date(rawIso.getTime());
+  // Si fue guardada a las 00:00:00 UTC (ej. 1ro del mes en servidor UTC), tomamos su año/mes/día UTC.
+  // De lo contrario, tomamos su fecha en Venezuela (UTC-4).
+  const esMedianocheUTC = d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && d.getUTCSeconds() === 0;
+  const ref = esMedianocheUTC ? d : new Date(d.getTime() - 4 * 3600 * 1000);
+  const year = ref.getUTCFullYear();
+  const month = String(ref.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(ref.getUTCDate()).padStart(2, '0');
+  return new Date(`${year}-${month}-${day}T23:59:59.999-04:00`);
+}
+
+const getEstadoLicenciaCached = cache(async (): Promise<EstadoLicencia | null> => {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
-    const { data: perfil } = await supabase
-      .from('perfiles')
-      .select('empresa_id')
-      .eq('id', user.id)
-      .single();
+    // 1. Obtener empresa_id desde JWT (instantáneo) con fallback a perfiles
+    let empresaId: string | null = user.app_metadata?.empresa_id || null;
+    if (!empresaId) {
+      const { data: perfil } = await supabase
+        .from('perfiles')
+        .select('empresa_id')
+        .eq('id', user.id)
+        .maybeSingle();
+      empresaId = perfil?.empresa_id || null;
+    }
 
-    if (!perfil?.empresa_id) return null;
+    if (!empresaId) return null;
 
-    // 1. Consultar tabla oficial suscripciones_empresas
-    const { data: sub } = await supabase
-      .from('suscripciones_empresas')
-      .select('plan, estado, fecha_vencimiento, fecha_registro, modulos_activos')
-      .eq('empresa_id', perfil.empresa_id)
-      .maybeSingle();
+    // 2. Consultar en paralelo suscripción y pagos pendientes de aprobación
+    const [subRes, pagoPendienteRes] = await Promise.all([
+      supabase
+        .from('suscripciones_empresas')
+        .select('plan, estado, fecha_vencimiento, fecha_registro, modulos_activos')
+        .eq('empresa_id', empresaId)
+        .maybeSingle(),
+      supabase
+        .from('suscripciones_pagos')
+        .select('id, fecha_registro, estado')
+        .eq('empresa_id', empresaId)
+        .eq('estado', 'pendiente_aprobacion')
+        .order('fecha_registro', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
 
-    // Consultar el estado en la tabla de empresas (fallback si no hay suscripción)
-    const { data: empresa } = await supabase
-      .from('empresas')
-      .select('fecha_registro')
-      .eq('id', perfil.empresa_id)
-      .single();
+    const sub = subRes.data;
+    const pagoPendiente = pagoPendienteRes.data;
 
-    // Determinar el plan activo
     const plan = (sub?.plan || 'PRO').toUpperCase();
     const modulos = sub?.modulos_activos || [];
 
-    const hoy = new Date();
-
-    // Plan LIFETIME
+    // Plan LIFETIME nunca vence
     if (plan === 'LIFETIME') {
       return {
         estado: 'ACTIVA',
@@ -59,77 +84,105 @@ export async function getEstadoLicencia(): Promise<EstadoLicencia | null> {
         modulosActivos: modulos,
         fechaVencimiento: '2099-12-31T23:59:59.000Z',
         bloqueoFuerte: false,
+        pagoEnRevision: false,
       };
     }
 
-    let fechaVenc: Date | null = null;
-    if (sub?.fecha_vencimiento) {
-      fechaVenc = new Date(sub.fecha_vencimiento);
-    } else {
-      const regDate = (sub?.fecha_registro || empresa?.fecha_registro) ? new Date(sub?.fecha_registro || empresa?.fecha_registro) : new Date();
-      fechaVenc = new Date(regDate);
-      fechaVenc.setDate(fechaVenc.getDate() + 7); // 7-day trial
+    // Si el estado en base de datos fue suspendido explícitamente por administración
+    const estadoSub = sub ? (sub.estado || 'TRIAL').toUpperCase() : 'TRIAL';
+    if (estadoSub === 'SUSPENDIDA') {
+      return {
+        estado: 'VENCIDA',
+        diasRestantes: -4,
+        diasVencido: 4,
+        planSuscripcion: plan,
+        modulosActivos: modulos,
+        fechaVencimiento: sub?.fecha_vencimiento || new Date().toISOString(),
+        bloqueoFuerte: true,
+        pagoEnRevision: false,
+      };
     }
 
-    const difDias = differenceInDays(fechaVenc, hoy);
-
-    // Revisar pagos pendientes en suscripciones_pagos
-    let enGraciaSilenciosa = false;
-    try {
-      const { data: pagoPendiente } = await supabase
-        .from('suscripciones_pagos')
-        .select('id, fecha_registro, estado')
-        .eq('empresa_id', perfil.empresa_id)
-        .eq('estado', 'pendiente_aprobacion')
-        .order('fecha_registro', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      const dateField = pagoPendiente?.fecha_registro;
-      if (dateField) {
-        const diasDesdePago = differenceInDays(hoy, new Date(dateField));
-        if (diasDesdePago <= 5) {
-          enGraciaSilenciosa = true;
-        }
+    let fechaVencBase: Date;
+    if (sub?.fecha_vencimiento) {
+      fechaVencBase = normalizarFinDeDiaVenezuela(sub.fecha_vencimiento);
+    } else {
+      let regDateStr = sub?.fecha_registro;
+      if (!regDateStr) {
+        const { data: empresa } = await supabase
+          .from('empresas')
+          .select('fecha_registro')
+          .eq('id', empresaId)
+          .maybeSingle();
+        regDateStr = empresa?.fecha_registro;
       }
-    } catch {
-      // Ignorar
+      const regDate = regDateStr ? new Date(regDateStr) : new Date();
+      regDate.setDate(regDate.getDate() + 7); // 7 días de prueba
+      fechaVencBase = normalizarFinDeDiaVenezuela(regDate);
+    }
+
+    const ahora = new Date();
+    const msDiff = fechaVencBase.getTime() - ahora.getTime();
+    // Si msDiff >= 0, aún no ha terminado el día de vencimiento en Venezuela:
+    // usamos Math.floor(msDiff / 86400000) para que en el último día sea 0 ("vence hoy") y nunca negativo.
+    // Si msDiff < 0, ya pasó las 23:59:59 del día de vencimiento: usamos Math.floor para obtener -1, -2, etc.
+    const difDias = Math.floor(msDiff / 86400000);
+
+    // Verificar si hay un pago reportado en revisión en los últimos 5 días
+    let enGraciaPorPago = false;
+    let diasGraciaPago = 5;
+    if (pagoPendiente?.fecha_registro) {
+      const diasTranscurridosPago = Math.floor((ahora.getTime() - new Date(pagoPendiente.fecha_registro).getTime()) / 86400000);
+      if (diasTranscurridosPago <= 5) {
+        enGraciaPorPago = true;
+        diasGraciaPago = Math.max(1, 5 - diasTranscurridosPago);
+      }
     }
 
     let estado: 'ACTIVA' | 'TRIAL' | 'GRACIA' | 'VENCIDA' = 'ACTIVA';
     let bloqueoFuerte = false;
-    let diasFinales = difDias;
+    let diasRestantes = difDias;
+    let diasVencido = difDias < 0 ? Math.abs(difDias) : 0;
 
-    // Si hay un pago pendiente en los últimos 5 días, aseguramos al menos 5 días de gracia desde hoy
-    if (enGraciaSilenciosa && diasFinales < 5) {
-      diasFinales = 5;
-    }
-
-    if (diasFinales < 0) {
-      if (diasFinales >= -3) {
+    if (enGraciaPorPago) {
+      // Si el cliente tiene un pago en revisión:
+      // Si su plan aún tenía más días vigentes (pago anticipado), mantenemos su estado ACTIVA.
+      // Si estaba por vencer o vencido, pasa a GRACIA con acceso total y 0 bloqueo.
+      if (difDias > diasGraciaPago && (estadoSub === 'ACTIVA' || estadoSub === 'ACTIVO')) {
+        estado = 'ACTIVA';
+        diasRestantes = difDias;
+        diasVencido = 0;
+      } else {
         estado = 'GRACIA';
+        diasRestantes = Math.max(difDias, diasGraciaPago);
+        diasVencido = 0;
+      }
+      bloqueoFuerte = false;
+    } else if (difDias < 0) {
+      // Ya pasó la fecha de corte y NO ha reportado pago:
+      // Damos 3 días de cortesía operativa (difDias = -1, -2, -3) antes de aplicar bloqueoFuerte.
+      if (difDias >= -3) {
+        estado = 'GRACIA';
+        diasRestantes = 3 - Math.abs(difDias); // 2, 1 o 0 días restantes de cortesía
+        bloqueoFuerte = false;
       } else {
         estado = 'VENCIDA';
         bloqueoFuerte = true;
       }
     } else {
-      const estadoSub = sub ? (sub.estado || 'TRIAL').toUpperCase() : 'TRIAL';
-      estado = (estadoSub === 'ACTIVA' || estadoSub === 'ACTIVO') ? 'ACTIVA' : (estadoSub === 'GRACIA' ? 'GRACIA' : 'TRIAL');
-      
-      // Si el pago está en verificación, anulamos el modo TRIAL y mostramos GRACIA
-      if (enGraciaSilenciosa && estado !== 'ACTIVA') {
-        estado = 'GRACIA';
-      }
+      // Vigente (difDias >= 0)
+      estado = (estadoSub === 'ACTIVA' || estadoSub === 'ACTIVO') ? 'ACTIVA' : 'TRIAL';
     }
 
     return {
       estado,
-      diasRestantes: diasFinales,
-      diasVencido: diasFinales < 0 ? Math.abs(diasFinales) : 0,
+      diasRestantes,
+      diasVencido,
       planSuscripcion: plan,
       modulosActivos: modulos,
-      fechaVencimiento: fechaVenc.toISOString(),
+      fechaVencimiento: fechaVencBase.toISOString(),
       bloqueoFuerte,
+      pagoEnRevision: enGraciaPorPago,
     };
   } catch (err: any) {
     if (err?.digest?.includes('DYNAMIC_SERVER_USAGE') || err?.digest?.includes('NEXT_REDIRECT')) {
@@ -144,8 +197,13 @@ export async function getEstadoLicencia(): Promise<EstadoLicencia | null> {
       modulosActivos: [],
       fechaVencimiento: new Date(Date.now() + 30 * 86400000).toISOString(),
       bloqueoFuerte: false,
+      pagoEnRevision: false,
     };
   }
+});
+
+export async function getEstadoLicencia(): Promise<EstadoLicencia | null> {
+  return getEstadoLicenciaCached();
 }
 
 export async function reportarPagoSuscripcion(formData: FormData) {

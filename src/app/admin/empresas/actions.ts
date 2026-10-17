@@ -61,23 +61,39 @@ export async function cambiarPlan(empresaId: string, plan: string, dias: number 
   try {
     const { supabase } = await requireSuperAdmin();
 
-    const fechaVenc = new Date();
-    fechaVenc.setDate(fechaVenc.getDate() + dias);
+    const target = new Date();
+    target.setUTCDate(target.getUTCDate() + dias);
+    const yyyy = target.getUTCFullYear();
+    const mm = String(target.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(target.getUTCDate()).padStart(2, '0');
+    const fechaVencIso = plan.toUpperCase() === 'LIFETIME'
+      ? '2099-12-31T23:59:59.999-04:00'
+      : new Date(`${yyyy}-${mm}-${dd}T23:59:59.999-04:00`).toISOString();
+
+    const esSuspendida = plan.toUpperCase() === 'SUSPENDIDA';
 
     const { error } = await supabase
       .from('suscripciones_empresas')
       .upsert({
         empresa_id: empresaId,
         plan: plan.toUpperCase(),
-        estado: plan.toUpperCase() === 'SUSPENDIDA' ? 'SUSPENDIDA' : 'ACTIVA',
-        fecha_vencimiento: plan.toUpperCase() === 'LIFETIME'
-          ? '2099-12-31T23:59:59.000Z'
-          : fechaVenc.toISOString(),
+        estado: esSuspendida ? 'SUSPENDIDA' : 'ACTIVA',
+        fecha_vencimiento: fechaVencIso,
       }, { onConflict: 'empresa_id' });
 
     if (error) return { success: false, error: error.message };
 
+    await supabase
+      .from('empresas')
+      .update({
+        plan_suscripcion: plan.toUpperCase(),
+        fecha_vencimiento_plan: fechaVencIso,
+        estado_activo: !esSuspendida,
+      })
+      .eq('id', empresaId);
+
     revalidatePath('/admin/empresas');
+    revalidatePath('/dashboard', 'layout');
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message };
@@ -101,7 +117,11 @@ export async function extenderLicencia(empresaId: string, dias: number) {
 
     // Si ya venció, extender desde HOY
     if (base < new Date()) base.setTime(Date.now());
-    base.setDate(base.getDate() + dias);
+    base.setUTCDate(base.getUTCDate() + dias);
+    const yyyy = base.getUTCFullYear();
+    const mm = String(base.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(base.getUTCDate()).padStart(2, '0');
+    const fechaVencIso = new Date(`${yyyy}-${mm}-${dd}T23:59:59.999-04:00`).toISOString();
 
     const { error } = await supabase
       .from('suscripciones_empresas')
@@ -109,12 +129,21 @@ export async function extenderLicencia(empresaId: string, dias: number) {
         empresa_id: empresaId,
         plan: sub?.plan || 'PRO',
         estado: 'ACTIVA',
-        fecha_vencimiento: base.toISOString(),
+        fecha_vencimiento: fechaVencIso,
       }, { onConflict: 'empresa_id' });
 
     if (error) return { success: false, error: error.message };
 
+    await supabase
+      .from('empresas')
+      .update({
+        fecha_vencimiento_plan: fechaVencIso,
+        estado_activo: true,
+      })
+      .eq('id', empresaId);
+
     revalidatePath('/admin/empresas');
+    revalidatePath('/dashboard', 'layout');
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message };

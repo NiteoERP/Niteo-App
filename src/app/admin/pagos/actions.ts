@@ -137,29 +137,42 @@ export async function aprobarPago(pagoId: string) {
       .eq('empresa_id', pago.empresa_id)
       .maybeSingle();
 
-    // 3. Calcular fecha de vencimiento según ciclo de facturación
+    // 3. Calcular fecha de vencimiento según ciclo de facturación (fin del día 23:59:59.999 UTC-4 Venezuela)
     const esAnual = !!(pago.plan_solicitado && pago.plan_solicitado.includes('[ANUAL]'));
     const hoy = new Date();
-    const primeroProximoMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1, 0, 0, 0, 0);
-    const diasHastaPrimero = Math.ceil((primeroProximoMes.getTime() - hoy.getTime()) / 86400000);
+    const vencActual = subActual?.fecha_vencimiento ? new Date(subActual.fecha_vencimiento) : null;
+    const baseActiva = (vencActual && vencActual > hoy) ? vencActual : hoy;
 
     let nuevaFecha: Date;
     if (esAnual) {
-      const baseDate = (subActual?.fecha_vencimiento && new Date(subActual.fecha_vencimiento) > hoy)
-        ? new Date(subActual.fecha_vencimiento)
-        : hoy;
-      nuevaFecha = new Date(baseDate.getFullYear(), baseDate.getMonth() + 12, 1, 0, 0, 0, 0);
+      // Sumar 1 año completo respetando días restantes si renueva anticipadamente
+      const target = new Date(baseActiva);
+      target.setUTCFullYear(target.getUTCFullYear() + 1);
+      const yyyy = target.getUTCFullYear();
+      const mm = String(target.getUTCMonth() + 1).padStart(2, '0');
+      const dd = String(target.getUTCDate()).padStart(2, '0');
+      nuevaFecha = new Date(`${yyyy}-${mm}-${dd}T23:59:59.999-04:00`);
     } else {
-      // Si la empresa paga en los últimos 7 días del mes o ya tenía vencimiento en el próximo mes,
-      // extendemos al 1ro del mes subsiguiente para garantizar su mes completo.
-      if (subActual?.fecha_vencimiento && new Date(subActual.fecha_vencimiento) >= primeroProximoMes) {
-        const venc = new Date(subActual.fecha_vencimiento);
-        nuevaFecha = new Date(venc.getFullYear(), venc.getMonth() + 1, 1, 0, 0, 0, 0);
+      const primeroProximoMes = new Date(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth() + 1, 1));
+      const diasHastaPrimero = Math.ceil((primeroProximoMes.getTime() - hoy.getTime()) / 86400000);
+
+      let target: Date;
+      if (vencActual && vencActual > hoy) {
+        // Renovación anticipada: sumar 1 mes completo sobre la fecha de vencimiento vigente
+        target = new Date(vencActual);
+        target.setUTCMonth(target.getUTCMonth() + 1);
       } else if (diasHastaPrimero <= 7) {
-        nuevaFecha = new Date(hoy.getFullYear(), hoy.getMonth() + 2, 1, 0, 0, 0, 0);
+        // Si paga en los últimos 7 días del mes, extender hasta el 1ro del mes subsiguiente
+        target = new Date(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth() + 2, 1));
       } else {
-        nuevaFecha = primeroProximoMes;
+        // Garantizar mínimo 30 días completos o el 1ro del próximo mes (el que otorgue mayor vigencia)
+        const masTreintaDias = new Date(hoy.getTime() + 30 * 86400000);
+        target = masTreintaDias > primeroProximoMes ? masTreintaDias : primeroProximoMes;
       }
+      const yyyy = target.getUTCFullYear();
+      const mm = String(target.getUTCMonth() + 1).padStart(2, '0');
+      const dd = String(target.getUTCDate()).padStart(2, '0');
+      nuevaFecha = new Date(`${yyyy}-${mm}-${dd}T23:59:59.999-04:00`);
     }
 
     // 3.5. Extraer módulos adicionales (plugins) de plan_solicitado preservando módulos base ('mesas', 'delivery')

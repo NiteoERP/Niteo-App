@@ -159,7 +159,9 @@ async function obtenerModificacionesFacturas(supabase: any, facturaIds: string[]
   if (!facturaIds || facturaIds.length === 0) return modsMap;
 
   try {
-    const { data: logsAudit, error } = await supabase
+    const { createAdminClient } = await import('@/utils/supabase/admin');
+    const admin = createAdminClient();
+    const { data: logsAudit, error } = await admin
       .from('auditoria_pos')
       .select('id, fecha, detalle, created_at')
       .eq('accion', 'Modificación de Pedido (Web)')
@@ -699,17 +701,22 @@ export async function modificarVentaPOS(payload: ModificarVentaPayload) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'No autorizado' };
 
-    const { data: profile } = await supabase
+    const { createAdminClient } = await import('@/utils/supabase/admin');
+    const admin = createAdminClient();
+
+    const { data: profile } = await admin
       .from('perfiles')
       .select('id, nombre_completo, rol, permisos, empresa_id')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (!profile) return { success: false, error: 'Perfil de usuario no encontrado' };
+    if (!profile && !user.app_metadata?.user_role) {
+      return { success: false, error: 'Perfil de usuario no encontrado' };
+    }
 
-    const rolNormalizado = (profile.rol || '').toUpperCase();
+    const rolNormalizado = (profile?.rol || user.app_metadata?.user_role || '').toUpperCase();
     const esRolValido = ['MASTER', 'PROPIETARIO', 'DUENO', 'GERENTE', 'ADMIN', 'SUPERADMIN'].includes(rolNormalizado);
-    const permisosUsuario = Array.isArray(profile.permisos) ? profile.permisos : [];
+    const permisosUsuario = Array.isArray(profile?.permisos) ? profile.permisos : [];
     const tieneModuloHabilitado = permisosUsuario.includes('modificar_ventas') || 
                                   permisosUsuario.includes('modificacion_ventas') || 
                                   permisosUsuario.includes('modificar_pedidos');
@@ -735,27 +742,24 @@ export async function modificarVentaPOS(payload: ModificarVentaPayload) {
       }
     }
 
-    const { createAdminClient } = await import('@/utils/supabase/admin');
-    const admin = createAdminClient();
-
     const { data: factura, error: errFac } = await admin
       .from('ventas_facturas')
       .select(`
         *,
         ventas_detalles (
-          id, id_pos, producto_id, cantidad, precio_unitario, total, descuento, notas, promo_id, combo_items,
+          id, id_pos, producto_id, cantidad, precio_unitario, total, descuento, promo_id, combo_items,
           productos ( id, nombre, id_insumo_vinculado )
         ),
-        ventas_pagos ( id, id_pos, tipo_pago, monto, moneda )
+        ventas_pagos ( id, id_pos, tipo_pago, monto, moneda, fecha_pago, referencia, tasa_cambio, monto_bs )
       `)
       .eq('id', payload.facturaId)
       .single();
 
     if (errFac || !factura) {
-      return { success: false, error: 'Factura no encontrada' };
+      return { success: false, error: 'Factura no encontrada: ' + (errFac?.message || '') };
     }
 
-    if (factura.empresa_id !== profile.empresa_id) {
+    if (factura.empresa_id !== profile.empresa_id && rolNormalizado !== 'SUPERADMIN') {
       return { success: false, error: 'No autorizado para modificar ventas de otra empresa' };
     }
 
@@ -768,7 +772,10 @@ export async function modificarVentaPOS(payload: ModificarVentaPayload) {
     // Eliminar items quitados y devolver insumos a inventario
     for (const od of toDelete) {
       await ajustarInventarioInsumos(admin, od.producto_id, Number(od.cantidad));
-      await admin.from('ventas_detalles').delete().eq('id', od.id);
+      const { error: errDel } = await admin.from('ventas_detalles').delete().eq('id', od.id);
+      if (errDel) {
+        return { success: false, error: 'Error al eliminar producto del pedido: ' + errDel.message };
+      }
     }
 
     // Actualizar items existentes
@@ -780,19 +787,21 @@ export async function modificarVentaPOS(payload: ModificarVentaPayload) {
           if (diff !== 0) {
             await ajustarInventarioInsumos(admin, d.producto_id, diff);
           }
-          await admin
+          const { error: errUpdDet } = await admin
             .from('ventas_detalles')
             .update({
               cantidad: d.cantidad,
               precio_unitario: d.precio_unitario,
-              total: d.total,
-              notas: d.notas || null
+              total: d.total
             })
             .eq('id', d.id_detalle);
+          if (errUpdDet) {
+            return { success: false, error: 'Error al actualizar producto del pedido: ' + errUpdDet.message };
+          }
         }
       } else {
         // Nuevo item agregado a la orden (trigger de DB descontará automáticamente)
-        await admin.from('ventas_detalles').insert({
+        const { error: errInsDet } = await admin.from('ventas_detalles').insert({
           id: crypto.randomUUID(),
           empresa_id: factura.empresa_id,
           id_pos: crypto.randomUUID(),
@@ -802,17 +811,22 @@ export async function modificarVentaPOS(payload: ModificarVentaPayload) {
           precio_unitario: d.precio_unitario,
           total: d.total,
           descuento: 0,
-          notas: d.notas || null,
           promo_id: d.promo_id || null,
           combo_items: d.combo_items || null
         });
+        if (errInsDet) {
+          return { success: false, error: 'Error al agregar producto al pedido: ' + errInsDet.message };
+        }
       }
     }
 
     // 2. Manejo de Pagos (reemplazar ventas_pagos)
-    await admin.from('ventas_pagos').delete().eq('factura_id', factura.id);
+    const { error: errDelPagos } = await admin.from('ventas_pagos').delete().eq('factura_id', factura.id);
+    if (errDelPagos) {
+      return { success: false, error: 'Error al limpiar pagos anteriores: ' + errDelPagos.message };
+    }
     if (payload.pagos && payload.pagos.length > 0) {
-      await admin.from('ventas_pagos').insert(
+      const { error: errInsPagos } = await admin.from('ventas_pagos').insert(
         payload.pagos.map(p => ({
           id: crypto.randomUUID(),
           empresa_id: factura.empresa_id,
@@ -820,9 +834,15 @@ export async function modificarVentaPOS(payload: ModificarVentaPayload) {
           factura_id: factura.id,
           tipo_pago: p.tipo_pago,
           monto: p.monto,
-          moneda: p.moneda || 'USD'
+          moneda: p.moneda || 'USD',
+          fecha_pago: factura.fecha_venta || new Date().toISOString(),
+          tasa_cambio: 1,
+          monto_bs: 0
         }))
       );
+      if (errInsPagos) {
+        return { success: false, error: 'Error al registrar los nuevos pagos: ' + errInsPagos.message };
+      }
     }
 
     // 3. Recalcular y actualizar totales en ventas_facturas
@@ -831,16 +851,19 @@ export async function modificarVentaPOS(payload: ModificarVentaPayload) {
     const propina = Number(payload.propina || 0);
     const nuevoTotal = Math.round((subtotal - descuento + propina) * 100) / 100;
 
-    await admin
+    const { error: errUpdFac } = await admin
       .from('ventas_facturas')
       .update({
         total: nuevoTotal,
         descuento,
         propina,
-        notas: payload.notas !== undefined ? payload.notas : factura.notas,
-        updated_at: new Date().toISOString()
+        notas: payload.notas !== undefined ? payload.notas : factura.notas
       })
       .eq('id', factura.id);
+
+    if (errUpdFac) {
+      return { success: false, error: 'Error al actualizar totales de la factura: ' + errUpdFac.message };
+    }
 
     // 4. Generar Resumen de Cambios para Auditoría
     const cambios: string[] = [];
@@ -925,7 +948,7 @@ export async function modificarVentaPOS(payload: ModificarVentaPayload) {
           empresa_id: factura.empresa_id,
           usuario_id: user.id,
           tabla_afectada: 'ventas_facturas',
-          accion: 'MODIFICAR',
+          accion: 'UPDATE',
           registro_id: factura.id,
           datos_viejos: {
             total: factura.total,
