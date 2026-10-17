@@ -31,13 +31,16 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
   // Get user profile to know their sede and empresa
   const { data: perfil } = await supabase
     .from('perfiles')
-    .select('empresa_id, sede_id, rol')
+    .select('empresa_id, sede_id, rol, permisos')
     .eq('id', user.id)
     .single();
 
   if (!perfil) {
     return <div>Error: Perfil no encontrado</div>;
   }
+
+  const effectiveRole = perfil.rol || user.app_metadata?.user_role || 'CAJERO';
+  const effectivePermisos = Array.isArray(perfil.permisos) ? perfil.permisos : [];
 
   // Fetch sedes
   const { data: sedes } = await supabase
@@ -128,13 +131,22 @@ export default async function POSPage({ searchParams }: { searchParams: Promise<
 
       {/* Tab Content */}
       {tab === 'ventas' && (
-        <LiveSalesFeed initialSales={initialSales} sedeId={activeSedeId} />
+        <LiveSalesFeed
+          initialSales={initialSales}
+          sedeId={activeSedeId}
+          initialUserRole={effectiveRole}
+          initialPermisos={effectivePermisos}
+        />
       )}
       {tab === 'cuentas' && (
         <CuentasAbiertasWidget sedeId={activeSedeId} />
       )}
       {tab === 'historial' && (
-        <HistorialVentas sedeId={activeSedeId} />
+        <HistorialVentas
+          sedeId={activeSedeId}
+          initialUserRole={effectiveRole}
+          initialPermisos={effectivePermisos}
+        />
       )}
     </div>
   );

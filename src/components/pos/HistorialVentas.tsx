@@ -14,18 +14,56 @@ import {
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-export default function HistorialVentas({ sedeId }: { sedeId: string }) {
+export default function HistorialVentas({
+  sedeId,
+  initialUserRole,
+  initialPermisos,
+}: {
+  sedeId: string;
+  initialUserRole?: string;
+  initialPermisos?: string[];
+}) {
   const { timeZone, empresa, userRole, permisos } = useEmpresa();
   const activeTz = timeZone || empresa?.zona_horaria || 'America/Caracas';
+  const [clientRole, setClientRole] = useState<string | null>(null);
+  const [clientPermisos, setClientPermisos] = useState<string[]>([]);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(async ({ data }: any) => {
+      if (!data?.user) return;
+      const metaRole = data.user.app_metadata?.user_role;
+      const { data: prof } = await supabase
+        .from('perfiles')
+        .select('rol, permisos')
+        .eq('id', data.user.id)
+        .maybeSingle();
+      if (prof?.rol || metaRole) {
+        setClientRole(prof?.rol || metaRole || null);
+      }
+      if (Array.isArray(prof?.permisos)) {
+        setClientPermisos(prof.permisos);
+      }
+    }).catch(() => {});
+  }, []);
+
   const canEditOrder = useMemo(() => {
-    const rolNorm = (userRole || '').toUpperCase();
-    const esRolValido = ['MASTER', 'PROPIETARIO', 'DUENO', 'GERENTE', 'ADMIN', 'SUPERADMIN'].includes(rolNorm);
-    const permisosActivos = Array.isArray(permisos) ? permisos : [];
+    const rolesToCheck = [userRole, initialUserRole, clientRole]
+      .filter(Boolean)
+      .map(r => (r || '').toUpperCase());
+    const validRoles = ['MASTER', 'PROPIETARIO', 'DUENO', 'GERENTE', 'ADMIN', 'SUPERADMIN'];
+    const esRolValido = rolesToCheck.some(r => validRoles.includes(r));
+
+    const permisosActivos = [
+      ...(Array.isArray(permisos) ? permisos : []),
+      ...(Array.isArray(initialPermisos) ? initialPermisos : []),
+      ...(Array.isArray(clientPermisos) ? clientPermisos : []),
+    ];
     const tieneModuloHabilitado = permisosActivos.includes('modificar_ventas') || 
                                   permisosActivos.includes('modificacion_ventas') || 
                                   permisosActivos.includes('modificar_pedidos');
     return esRolValido || tieneModuloHabilitado;
-  }, [userRole, permisos]);
+  }, [userRole, initialUserRole, clientRole, permisos, initialPermisos, clientPermisos]);
 
   const [ventas, setVentas] = useState<HistorialVentaPOS[]>([]);
   const [loading, setLoading] = useState(true);

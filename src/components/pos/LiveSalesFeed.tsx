@@ -10,21 +10,57 @@ import { normalizePaymentKey, getCanonicalPaymentMethodName, unifyPaymentMethods
 interface LiveSalesFeedProps {
   initialSales: VentaPOS[];
   sedeId: string;
+  initialUserRole?: string;
+  initialPermisos?: string[];
 }
 
-export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedProps) {
+export default function LiveSalesFeed({
+  initialSales,
+  sedeId,
+  initialUserRole,
+  initialPermisos,
+}: LiveSalesFeedProps) {
   const { timeZone, empresa, userRole, permisos } = useEmpresa();
   const activeTz = timeZone || empresa?.zona_horaria || 'America/Caracas';
+  const [clientRole, setClientRole] = useState<string | null>(null);
+  const [clientPermisos, setClientPermisos] = useState<string[]>([]);
+
+  useEffect(() => {
+    const sb = createClient();
+    sb.auth.getUser().then(async ({ data }: any) => {
+      if (!data?.user) return;
+      const metaRole = data.user.app_metadata?.user_role;
+      const { data: prof } = await sb
+        .from('perfiles')
+        .select('rol, permisos')
+        .eq('id', data.user.id)
+        .maybeSingle();
+      if (prof?.rol || metaRole) {
+        setClientRole(prof?.rol || metaRole || null);
+      }
+      if (Array.isArray(prof?.permisos)) {
+        setClientPermisos(prof.permisos);
+      }
+    }).catch(() => {});
+  }, []);
 
   const canEditOrder = useMemo(() => {
-    const rolNorm = (userRole || '').toUpperCase();
-    const esRolValido = ['MASTER', 'PROPIETARIO', 'DUENO', 'GERENTE', 'ADMIN', 'SUPERADMIN'].includes(rolNorm);
-    const permisosActivos = Array.isArray(permisos) ? permisos : [];
+    const rolesToCheck = [userRole, initialUserRole, clientRole]
+      .filter(Boolean)
+      .map(r => (r || '').toUpperCase());
+    const validRoles = ['MASTER', 'PROPIETARIO', 'DUENO', 'GERENTE', 'ADMIN', 'SUPERADMIN'];
+    const esRolValido = rolesToCheck.some(r => validRoles.includes(r));
+
+    const permisosActivos = [
+      ...(Array.isArray(permisos) ? permisos : []),
+      ...(Array.isArray(initialPermisos) ? initialPermisos : []),
+      ...(Array.isArray(clientPermisos) ? clientPermisos : []),
+    ];
     const tieneModuloHabilitado = permisosActivos.includes('modificar_ventas') || 
                                   permisosActivos.includes('modificacion_ventas') || 
                                   permisosActivos.includes('modificar_pedidos');
     return esRolValido || tieneModuloHabilitado;
-  }, [userRole, permisos]);
+  }, [userRole, initialUserRole, clientRole, permisos, initialPermisos, clientPermisos]);
 
   const [sales, setSales] = useState<VentaPOS[]>(initialSales);
   const [privacyMode, setPrivacyMode] = useState(false);

@@ -759,7 +759,8 @@ export async function modificarVentaPOS(payload: ModificarVentaPayload) {
       return { success: false, error: 'Factura no encontrada: ' + (errFac?.message || '') };
     }
 
-    if (factura.empresa_id !== profile.empresa_id && rolNormalizado !== 'SUPERADMIN') {
+    const userEmpresaId = profile?.empresa_id || user.app_metadata?.empresa_id;
+    if (userEmpresaId && factura.empresa_id !== userEmpresaId && rolNormalizado !== 'SUPERADMIN') {
       return { success: false, error: 'No autorizado para modificar ventas de otra empresa' };
     }
 
@@ -887,7 +888,8 @@ export async function modificarVentaPOS(payload: ModificarVentaPayload) {
 
     // 5. Registrar en auditoria_pos y auditoria_logs
     const auditId = crypto.randomUUID();
-    const gerenteTexto = `${profile.nombre_completo || 'Gerente'} (${rolNormalizado})`;
+    const nombreResponsable = profile?.nombre_completo || user.user_metadata?.full_name || user.email || 'Gerente';
+    const gerenteTexto = `${nombreResponsable} (${rolNormalizado})`;
     const modLog: ModificacionVentaLog = {
       id_log: auditId,
       fecha: new Date().toISOString(),
@@ -895,7 +897,7 @@ export async function modificarVentaPOS(payload: ModificarVentaPayload) {
       id_pos: factura.id_pos,
       numero_orden: factura.numero_orden,
       gerente_id: user.id,
-      gerente_nombre: profile.nombre_completo || 'Gerente',
+      gerente_nombre: nombreResponsable,
       gerente_rol: rolNormalizado,
       motivo: payload.motivo.trim(),
       total_anterior: Number(factura.total),
