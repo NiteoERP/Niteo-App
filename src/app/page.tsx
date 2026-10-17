@@ -364,28 +364,36 @@ export default async function LandingPage() {
               </p>
             </div>
             <div>
-              <h4 className="font-bold text-white mb-4 text-sm uppercase tracking-wider">Producto</h4>
-              <ul className="space-y-2 text-sm text-neutral-500">
+              <h4 className="font-bold text-white mb-4 text-sm uppercase tracking-wider">Producto y Legal</h4>
+              <ul className="space-y-2 text-sm text-neutral-400">
                 <li><a href="#features" className="hover:text-white transition-colors">Características</a></li>
                 <li><a href="#pricing" className="hover:text-white transition-colors">Precios</a></li>
                 <li><Link href="/novedades" className="hover:text-white transition-colors">Novedades y Versiones</Link></li>
                 <li><Link href="/register" className="hover:text-white transition-colors">Prueba Gratuita</Link></li>
                 <li><Link href="/terms" className="hover:text-white transition-colors">Términos y Condiciones</Link></li>
+                <li><Link href="/privacidad" className="hover:text-white transition-colors">Política de Privacidad</Link></li>
+                <li><Link href="/cookies" className="hover:text-white transition-colors">Política de Cookies</Link></li>
+                <li><Link href="/reembolsos" className="hover:text-white transition-colors">Política de Reembolso</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="font-bold text-white mb-4 text-sm uppercase tracking-wider">Soporte</h4>
-              <ul className="space-y-3 text-sm text-neutral-500">
+              <ul className="space-y-3 text-sm text-neutral-400">
                 <li className="flex items-center gap-2">
-                  <Mail size={14} className="text-indigo-400 shrink-0" />
+                  <Mail size={14} className="text-indigo-400 shrink-0" aria-hidden="true" />
                   <a href="mailto:niteosupport@gmail.com" className="hover:text-white transition-colors">niteosupport@gmail.com</a>
                 </li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-neutral-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-neutral-600">
+          <div className="border-t border-neutral-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-neutral-400">
             <p>© {new Date().getFullYear()} Niteo. Todos los derechos reservados.</p>
-            <Link href="/terms" className="hover:text-neutral-400 transition-colors">Términos y Condiciones</Link>
+            <div className="flex flex-wrap items-center justify-center gap-5">
+              <Link href="/terms" className="hover:text-white transition-colors">Términos y Condiciones</Link>
+              <Link href="/privacidad" className="hover:text-white transition-colors">Privacidad</Link>
+              <Link href="/cookies" className="hover:text-white transition-colors">Cookies</Link>
+              <Link href="/reembolsos" className="hover:text-white transition-colors">Reembolsos</Link>
+            </div>
           </div>
         </div>
       </footer>

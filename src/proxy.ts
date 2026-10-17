@@ -38,6 +38,11 @@ export async function proxy(request: NextRequest) {
   // Rutas públicas y APIs sin autenticación de usuario (evita consulta innecesaria a Supabase)
   if (
     request.nextUrl.pathname.startsWith('/catalogo') ||
+    request.nextUrl.pathname.startsWith('/terms') ||
+    request.nextUrl.pathname.startsWith('/privacidad') ||
+    request.nextUrl.pathname.startsWith('/cookies') ||
+    request.nextUrl.pathname.startsWith('/reembolsos') ||
+    request.nextUrl.pathname.startsWith('/novedades') ||
     request.nextUrl.pathname.startsWith('/api/webhooks') ||
     request.nextUrl.pathname.startsWith('/api/sync-bcv') ||
     request.nextUrl.pathname.startsWith('/api/vincular') ||

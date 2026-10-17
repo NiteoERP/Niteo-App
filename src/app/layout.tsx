@@ -18,11 +18,12 @@ export const metadata: Metadata = {
 };
 
 import NextTopLoader from 'nextjs-toploader';
+import CookieConsentBanner from '@/components/legal/CookieConsentBanner';
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
-      lang="en"
+      lang="es"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
@@ -38,6 +39,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           shadow="0 0 10px #818cf8,0 0 5px #818cf8"
         />
         {children}
+        <CookieConsentBanner />
       </body>
     </html>
   );

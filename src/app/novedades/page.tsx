@@ -357,12 +357,15 @@ export default function NovedadesPage() {
       </section>
 
       {/* ─── FOOTER PÚBLICO ─────────────────────────────────────────── */}
-      <footer className="border-t border-neutral-800 bg-black/50 py-10 px-6 text-xs text-neutral-500">
+      <footer className="border-t border-neutral-800 bg-black/50 py-10 px-6 text-xs text-neutral-400">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <p>© {new Date().getFullYear()} Niteo. Todos los derechos reservados.</p>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center justify-center gap-5">
             <Link href="/" className="hover:text-white transition-colors">Inicio</Link>
             <Link href="/terms" className="hover:text-white transition-colors">Términos y Condiciones</Link>
+            <Link href="/privacidad" className="hover:text-white transition-colors">Privacidad</Link>
+            <Link href="/cookies" className="hover:text-white transition-colors">Cookies</Link>
+            <Link href="/reembolsos" className="hover:text-white transition-colors">Reembolsos</Link>
             <a href="mailto:niteosupport@gmail.com" className="hover:text-white transition-colors">Soporte</a>
           </div>
         </div>
