@@ -58,7 +58,15 @@ export default function NuevoCierreCaja() {
   const [totalEsperado, setTotalEsperado] = useState(0);
   
   const currentSedeRef = React.useRef<string>('');
-  const [fechaCierre, setFechaCierre] = useState(() => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]);
+  const [fechaCierre, setFechaCierre] = useState(() => {
+    const localNow = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
+    // Si son entre las 12:00 AM y 05:59 AM (cierre nocturno a la 1am o 2am),
+    // la fecha del cierre operativo pertenece al día que finaliza.
+    if (localNow.getUTCHours() < 6) {
+      localNow.setUTCDate(localNow.getUTCDate() - 1);
+    }
+    return localNow.toISOString().split('T')[0];
+  });
   const [yaCerrado, setYaCerrado] = useState(false);
   const maxDate = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
   

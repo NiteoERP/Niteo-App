@@ -6,6 +6,21 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 import { DEFAULT_TIMEZONE, getTimezoneOffsetString } from '@/utils/date-utils';
 
+// Helper para calcular el rango del día operativo:
+// Comienza a las 00:00 y se extiende hasta las 06:00 AM del día siguiente
+// para cubrir turnos que cierran a la 1:00 AM, 2:00 AM o 3:00 AM.
+export function getOperationalShiftRange(fechaStr: string, tzOffset: string): { startIso: string; endIso: string } {
+  const cleanFecha = fechaStr.includes('T') ? fechaStr.split('T')[0] : fechaStr.split(' ')[0];
+  const d = new Date(`${cleanFecha}T12:00:00Z`);
+  d.setDate(d.getDate() + 1);
+  const nextDayStr = d.toISOString().split('T')[0];
+
+  return {
+    startIso: `${cleanFecha}T00:00:00.000${tzOffset}`,
+    endIso: `${nextDayStr}T06:00:00.000${tzOffset}`
+  };
+}
+
 // ============================================================================
 // 1. OBTENER DATOS PREVIOS DEL SISTEMA PARA EL CIERRE
 // ============================================================================
@@ -46,6 +61,7 @@ export async function getCierrePrevio(fechaStr: string, requestedSedeId?: string
 
   const timeZone = empData?.zona_horaria || DEFAULT_TIMEZONE;
   const tzOffset = getTimezoneOffsetString(timeZone);
+  const { startIso, endIso } = getOperationalShiftRange(fechaStr, tzOffset);
 
   if (empData && empData.tipo_tasa === 'MANUAL' && Number(empData.tasa_manual) > 0) {
     tasaCambio = Number(empData.tasa_manual);
@@ -77,8 +93,8 @@ export async function getCierrePrevio(fechaStr: string, requestedSedeId?: string
     .eq('estado_activo', true)
     .eq('sede_id', targetSedeId)
       .is('cierre_caja_id', null)
-      .gte('fecha_venta', `${fechaStr}T00:00:00.000${tzOffset}`)
-      .lte('fecha_venta', `${fechaStr}T23:59:59.999${tzOffset}`);
+      .gte('fecha_venta', startIso)
+      .lte('fecha_venta', endIso);
   
   
     const esperadoPorMetodo: Record<string, number> = {};
@@ -117,8 +133,8 @@ export async function getCierrePrevio(fechaStr: string, requestedSedeId?: string
     .select('monto')
     .eq('estado_activo', true)
     .eq('sede_id', targetSedeId)
-    .gte('fecha_gasto', `${fechaStr}T00:00:00${tzOffset}`)
-    .lte('fecha_gasto', `${fechaStr}T23:59:59.999${tzOffset}`);
+    .gte('fecha_gasto', startIso)
+    .lte('fecha_gasto', endIso);
   
   const gastosTotales = gastosData ? gastosData.reduce((acc, curr) => acc + Number(curr.monto), 0) : 0;
 
@@ -223,13 +239,14 @@ export async function guardarCierre(cierreData: any, transacciones: any[]) {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
+    const { startIso, endIso } = getOperationalShiftRange(cierreData.fecha_cierre, tzOffset);
     const { error: errorUpdateVentas } = await adminSupabase
       .from('ventas_facturas')
       .update({ cierre_caja_id: nuevoCierre.id })
       .eq('sede_id', finalSedeId)
       .is('cierre_caja_id', null)
-      .gte('fecha_venta', `${cierreData.fecha_cierre}T00:00:00.000${tzOffset}`)
-      .lte('fecha_venta', `${cierreData.fecha_cierre}T23:59:59.999${tzOffset}`);
+      .gte('fecha_venta', startIso)
+      .lte('fecha_venta', endIso);
 
     if (errorUpdateVentas) {
       console.error('Error actualizando ventas_facturas:', errorUpdateVentas);

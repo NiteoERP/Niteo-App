@@ -610,3 +610,338 @@ export async function procesarReembolsoPOS(facturaId: string, detalles: any[], m
   return { success: true };
 }
 
+export interface ModificarVentaItemPayload {
+  id_detalle?: string;
+  producto_id: string;
+  producto_nombre?: string;
+  cantidad: number;
+  precio_unitario: number;
+  total: number;
+  notas?: string;
+  promo_id?: string;
+  combo_items?: any[];
+}
+
+export interface ModificarVentaPagoPayload {
+  tipo_pago: string;
+  monto: number;
+  moneda?: string;
+}
+
+export interface ModificarVentaPayload {
+  facturaId: string;
+  motivo: string;
+  detalles: ModificarVentaItemPayload[];
+  pagos: ModificarVentaPagoPayload[];
+  descuento?: number;
+  propina?: number;
+  notas?: string;
+}
+
+async function ajustarInventarioInsumos(admin: any, productoId: string, deltaCantidad: number) {
+  if (!deltaCantidad || deltaCantidad === 0) return;
+
+  try {
+    const { data: prod } = await admin
+      .from('productos')
+      .select('id, id_insumo_vinculado')
+      .eq('id', productoId)
+      .maybeSingle();
+
+    if (prod?.id_insumo_vinculado) {
+      const { data: insumo } = await admin
+        .from('inventario_insumos')
+        .select('cantidad_actual')
+        .eq('id', prod.id_insumo_vinculado)
+        .maybeSingle();
+
+      if (insumo) {
+        const nuevaCantidad = Math.max(0, Number(insumo.cantidad_actual || 0) + deltaCantidad);
+        await admin
+          .from('inventario_insumos')
+          .update({ cantidad_actual: nuevaCantidad })
+          .eq('id', prod.id_insumo_vinculado);
+      }
+    } else {
+      const { data: recetas } = await admin
+        .from('recetas')
+        .select('insumo_id, cantidad_necesaria')
+        .eq('producto_id', productoId);
+
+      if (recetas && recetas.length > 0) {
+        for (const r of recetas) {
+          if (!r.insumo_id) continue;
+          const deltaInsumo = deltaCantidad * Number(r.cantidad_necesaria || 0);
+          const { data: insumo } = await admin
+            .from('inventario_insumos')
+            .select('cantidad_actual')
+            .eq('id', r.insumo_id)
+            .maybeSingle();
+
+          if (insumo) {
+            const nuevaCantidad = Math.max(0, Number(insumo.cantidad_actual || 0) + deltaInsumo);
+            await admin
+              .from('inventario_insumos')
+              .update({ cantidad_actual: nuevaCantidad })
+              .eq('id', r.insumo_id);
+          }
+        }
+      }
+    }
+  } catch (errInv) {
+    console.warn('[ajustarInventarioInsumos] Error ajustando inventario:', errInv);
+  }
+}
+
+export async function modificarVentaPOS(payload: ModificarVentaPayload) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'No autorizado' };
+
+    const { data: profile } = await supabase
+      .from('perfiles')
+      .select('id, nombre_completo, rol, empresa_id')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile) return { success: false, error: 'Perfil de usuario no encontrado' };
+
+    const rolNormalizado = (profile.rol || '').toUpperCase();
+    if (!['MASTER', 'GERENTE', 'ADMIN'].includes(rolNormalizado)) {
+      return { success: false, error: 'Solo Gerentes y Administradores tienen permiso para modificar ventas.' };
+    }
+
+    if (!payload.motivo || !payload.motivo.trim()) {
+      return { success: false, error: 'Es obligatorio indicar el motivo de la modificación.' };
+    }
+
+    if (!payload.detalles || payload.detalles.length === 0) {
+      return { success: false, error: 'El pedido debe conservar al menos un producto.' };
+    }
+
+    for (const d of payload.detalles) {
+      if (d.cantidad <= 0 || isNaN(d.cantidad)) {
+        return { success: false, error: 'Todas las cantidades deben ser mayores a 0.' };
+      }
+    }
+
+    const { createAdminClient } = await import('@/utils/supabase/admin');
+    const admin = createAdminClient();
+
+    const { data: factura, error: errFac } = await admin
+      .from('ventas_facturas')
+      .select(`
+        *,
+        ventas_detalles (
+          id, id_pos, producto_id, cantidad, precio_unitario, total, descuento, notas, promo_id, combo_items,
+          productos ( id, nombre, id_insumo_vinculado )
+        ),
+        ventas_pagos ( id, id_pos, tipo_pago, monto, moneda )
+      `)
+      .eq('id', payload.facturaId)
+      .single();
+
+    if (errFac || !factura) {
+      return { success: false, error: 'Factura no encontrada' };
+    }
+
+    if (factura.empresa_id !== profile.empresa_id) {
+      return { success: false, error: 'No autorizado para modificar ventas de otra empresa' };
+    }
+
+    const crypto = await import('crypto');
+
+    // 1. Manejo de Items de la Venta (inventario + ventas_detalles)
+    const newDetailIds = new Set(payload.detalles.filter(d => d.id_detalle).map(d => d.id_detalle));
+    const toDelete = (factura.ventas_detalles || []).filter((od: any) => !newDetailIds.has(od.id));
+
+    // Eliminar items quitados y devolver insumos a inventario
+    for (const od of toDelete) {
+      await ajustarInventarioInsumos(admin, od.producto_id, Number(od.cantidad));
+      await admin.from('ventas_detalles').delete().eq('id', od.id);
+    }
+
+    // Actualizar items existentes
+    for (const d of payload.detalles) {
+      if (d.id_detalle) {
+        const oldDetail = (factura.ventas_detalles || []).find((od: any) => od.id === d.id_detalle);
+        if (oldDetail) {
+          const diff = Number(oldDetail.cantidad) - Number(d.cantidad);
+          if (diff !== 0) {
+            await ajustarInventarioInsumos(admin, d.producto_id, diff);
+          }
+          await admin
+            .from('ventas_detalles')
+            .update({
+              cantidad: d.cantidad,
+              precio_unitario: d.precio_unitario,
+              total: d.total,
+              notas: d.notas || null
+            })
+            .eq('id', d.id_detalle);
+        }
+      } else {
+        // Nuevo item agregado a la orden (trigger de DB descontará automáticamente)
+        await admin.from('ventas_detalles').insert({
+          id: crypto.randomUUID(),
+          empresa_id: factura.empresa_id,
+          id_pos: crypto.randomUUID(),
+          factura_id: factura.id,
+          producto_id: d.producto_id,
+          cantidad: d.cantidad,
+          precio_unitario: d.precio_unitario,
+          total: d.total,
+          descuento: 0,
+          notas: d.notas || null,
+          promo_id: d.promo_id || null,
+          combo_items: d.combo_items || null
+        });
+      }
+    }
+
+    // 2. Manejo de Pagos (reemplazar ventas_pagos)
+    await admin.from('ventas_pagos').delete().eq('factura_id', factura.id);
+    if (payload.pagos && payload.pagos.length > 0) {
+      await admin.from('ventas_pagos').insert(
+        payload.pagos.map(p => ({
+          id: crypto.randomUUID(),
+          empresa_id: factura.empresa_id,
+          id_pos: crypto.randomUUID(),
+          factura_id: factura.id,
+          tipo_pago: p.tipo_pago,
+          monto: p.monto,
+          moneda: p.moneda || 'USD'
+        }))
+      );
+    }
+
+    // 3. Recalcular y actualizar totales en ventas_facturas
+    const subtotal = payload.detalles.reduce((acc, it) => acc + (Number(it.total) || 0), 0);
+    const descuento = Number(payload.descuento || 0);
+    const propina = Number(payload.propina || 0);
+    const nuevoTotal = Math.round((subtotal - descuento + propina) * 100) / 100;
+
+    await admin
+      .from('ventas_facturas')
+      .update({
+        total: nuevoTotal,
+        descuento,
+        propina,
+        notas: payload.notas !== undefined ? payload.notas : factura.notas,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', factura.id);
+
+    // 4. Generar Resumen de Cambios para Auditoría
+    const cambios: string[] = [];
+    toDelete.forEach((td: any) => {
+      cambios.push(`Eliminado: ${td.cantidad}x ${td.productos?.nombre || 'Producto'} ($${Number(td.total).toFixed(2)})`);
+    });
+    payload.detalles.forEach((nd) => {
+      if (!nd.id_detalle) {
+        cambios.push(`Agregado: ${nd.cantidad}x ${nd.producto_nombre || 'Producto'} ($${Number(nd.total).toFixed(2)})`);
+      } else {
+        const old = (factura.ventas_detalles || []).find((od: any) => od.id === nd.id_detalle);
+        if (old && (Number(old.cantidad) !== Number(nd.cantidad) || Number(old.total) !== Number(nd.total))) {
+          cambios.push(`Modificado: ${nd.producto_nombre || 'Producto'} (${old.cantidad}x -> ${nd.cantidad}x, $${Number(old.total).toFixed(2)} -> $${Number(nd.total).toFixed(2)})`);
+        }
+      }
+    });
+    if (Number(factura.total) !== nuevoTotal) {
+      cambios.push(`Total ajustado: $${Number(factura.total).toFixed(2)} -> $${nuevoTotal.toFixed(2)} USD`);
+    }
+    cambios.push(`Pagos actualizados (${payload.pagos.map(p => `${p.tipo_pago}: $${Number(p.monto).toFixed(2)}`).join(', ')})`);
+
+    // 5. Registrar en auditoria_pos y auditoria_logs
+    const auditId = crypto.randomUUID();
+    const gerenteTexto = `${profile.nombre_completo || 'Gerente'} (${rolNormalizado})`;
+    const modLog: ModificacionVentaLog = {
+      id_log: auditId,
+      fecha: new Date().toISOString(),
+      factura_id: factura.id,
+      id_pos: factura.id_pos,
+      numero_orden: factura.numero_orden,
+      gerente_id: user.id,
+      gerente_nombre: profile.nombre_completo || 'Gerente',
+      gerente_rol: rolNormalizado,
+      motivo: payload.motivo.trim(),
+      total_anterior: Number(factura.total),
+      total_nuevo: nuevoTotal,
+      descuento_anterior: Number(factura.descuento || 0),
+      descuento_nuevo: descuento,
+      detalles_anteriores: (factura.ventas_detalles || []).map((d: any) => ({
+        producto_id: d.producto_id,
+        producto_nombre: d.productos?.nombre || 'Producto',
+        cantidad: Number(d.cantidad),
+        precio_unitario: Number(d.precio_unitario),
+        total: Number(d.total)
+      })),
+      detalles_nuevos: payload.detalles.map((d) => ({
+        producto_id: d.producto_id,
+        producto_nombre: d.producto_nombre || 'Producto',
+        cantidad: Number(d.cantidad),
+        precio_unitario: Number(d.precio_unitario),
+        total: Number(d.total)
+      })),
+      pagos_anteriores: (factura.ventas_pagos || []).map((p: any) => ({
+        tipo_pago: p.tipo_pago,
+        monto: Number(p.monto)
+      })),
+      pagos_nuevos: payload.pagos.map((p) => ({
+        tipo_pago: p.tipo_pago,
+        monto: Number(p.monto)
+      })),
+      resumen_cambios: cambios
+    };
+
+    // Auditoria POS (para sincronización con POS local y vista rápida)
+    await admin
+      .from('auditoria_pos')
+      .insert({
+        id: auditId,
+        sede_id: factura.sede_id,
+        usuario_id: gerenteTexto,
+        accion: 'Modificación de Pedido (Web)',
+        detalle: JSON.stringify(modLog),
+        gerente_aprobador_id: user.id,
+        fecha: new Date().toISOString()
+      });
+
+    // Auditoria Logs (para el historial general del sistema)
+    try {
+      await admin
+        .from('auditoria_logs')
+        .insert({
+          empresa_id: factura.empresa_id,
+          usuario_id: user.id,
+          tabla_afectada: 'ventas_facturas',
+          accion: 'MODIFICAR',
+          registro_id: factura.id,
+          datos_viejos: {
+            total: factura.total,
+            descuento: factura.descuento,
+            detalles: modLog.detalles_anteriores,
+            pagos: modLog.pagos_anteriores
+          },
+          datos_nuevos: {
+            total: nuevoTotal,
+            descuento,
+            detalles: modLog.detalles_nuevos,
+            pagos: modLog.pagos_nuevos,
+            motivo: payload.motivo.trim(),
+            resumen_cambios: cambios
+          },
+          creado_en: new Date().toISOString()
+        });
+    } catch (eAudit) {
+      console.warn('Advertencia registrando en auditoria_logs:', eAudit);
+    }
+
+    return { success: true, modLog };
+  } catch (err: any) {
+    console.error('[modificarVentaPOS] Error:', err);
+    return { success: false, error: err?.message || 'Error inesperado al modificar la venta' };
+  }
+}
+

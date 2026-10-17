@@ -3,7 +3,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useEmpresa } from '@/components/providers/EmpresaProvider';
 import { VentaPOS } from '@/actions/pos-actions';
-import { Eye, EyeOff, Receipt, Clock, CheckCircle2, ChevronDown, ChevronUp, Users, CreditCard, Search, Contact, ConciergeBell } from 'lucide-react';
+import { Eye, EyeOff, Receipt, Clock, CheckCircle2, ChevronDown, ChevronUp, Users, CreditCard, Search, Contact, ConciergeBell, FileText } from 'lucide-react';
 import { normalizePaymentKey, getCanonicalPaymentMethodName, unifyPaymentMethods } from '@/utils/payment-methods';
 
 interface LiveSalesFeedProps {
@@ -431,6 +431,11 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
                                 ⭐ Cortesía
                               </span>
                             )}
+                            {sale.modificaciones && sale.modificaciones.length > 0 && (
+                              <span className="bg-blue-500/20 text-blue-300 border border-blue-500/40 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase shrink-0">
+                                ✏️ Modificada
+                              </span>
+                            )}
                           </div>
 
                           <div className="flex items-center gap-2 shrink-0">
@@ -528,6 +533,11 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
                             {isCortesia && (
                               <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase flex items-center gap-1 shadow-sm">
                                 <span>⭐</span> Cortesía
+                              </span>
+                            )}
+                            {sale.modificaciones && sale.modificaciones.length > 0 && (
+                              <span className="bg-blue-500/20 text-blue-300 border border-blue-500/40 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase flex items-center gap-1 shadow-sm">
+                                <span>✏️</span> Modificada
                               </span>
                             )}
                           </div>
@@ -635,6 +645,42 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
                           </div>
                         )}
                       </div>
+
+                      {sale.modificaciones && sale.modificaciones.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-neutral-800 space-y-2">
+                          <h4 className="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <FileText size={13} />
+                            Registro de Auditoría ({sale.modificaciones.length} {sale.modificaciones.length === 1 ? 'modificación' : 'modificaciones'})
+                          </h4>
+                          <div className="space-y-2">
+                            {sale.modificaciones.map((m, mIdx) => (
+                              <div key={m.id_log || mIdx} className="bg-neutral-900/90 border border-amber-500/20 rounded-xl p-3 text-xs space-y-1.5">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between text-neutral-400 gap-1 border-b border-neutral-800/80 pb-1.5">
+                                  <span className="font-semibold text-amber-300 flex items-center gap-1">
+                                    <span>👤</span> {m.gerente_nombre} <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1 py-0.2 rounded font-mono font-bold uppercase">{m.gerente_rol}</span>
+                                  </span>
+                                  <span className="font-mono text-[11px] text-neutral-400">
+                                    {formatDateTime(m.fecha)}
+                                  </span>
+                                </div>
+                                <p className="text-neutral-200">
+                                  <strong className="text-amber-400/90 font-medium">Motivo:</strong> {m.motivo}
+                                </p>
+                                {m.resumen_cambios && m.resumen_cambios.length > 0 && (
+                                  <div className="pt-1 border-t border-neutral-800/60 space-y-0.5">
+                                    {m.resumen_cambios.map((c, cIdx) => (
+                                      <div key={cIdx} className="flex items-center gap-1.5 text-neutral-300 text-[11px]">
+                                        <span className="text-amber-400">•</span>
+                                        <span>{c}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

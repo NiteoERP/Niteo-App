@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { HistorialVentaPOS, getHistorialVentasCompleto, toggleVentaVerificada, getResumenVerificacionMes, procesarReembolsoPOS } from '@/actions/pos-actions';
 import ReembolsoModal from './ReembolsoModal';
-import { Search, Calendar, ChevronDown, ChevronUp, Receipt, DollarSign, Clock, Users, CheckCircle2, Circle, Hash, ChevronLeft, ChevronRight, Printer, Ban, Sparkles, Filter, X, Contact, ConciergeBell, RotateCcw, Undo2 } from 'lucide-react';
+import EditarVentaModal from './EditarVentaModal';
+import { Search, Calendar, ChevronDown, ChevronUp, Receipt, DollarSign, Clock, Users, CheckCircle2, Circle, Hash, ChevronLeft, ChevronRight, Printer, Ban, Sparkles, Filter, X, Contact, ConciergeBell, RotateCcw, Undo2, Edit3, FileText } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { useEmpresa } from '@/components/providers/EmpresaProvider';
 import { normalizePaymentKey, getCanonicalPaymentMethodName, unifyPaymentMethods } from '@/utils/payment-methods';
@@ -14,13 +15,16 @@ import {
 import { es } from 'date-fns/locale';
 
 export default function HistorialVentas({ sedeId }: { sedeId: string }) {
-  const { timeZone, empresa } = useEmpresa();
+  const { timeZone, empresa, userRole } = useEmpresa();
   const activeTz = timeZone || empresa?.zona_horaria || 'America/Caracas';
+  const canEditOrder = ['MASTER', 'GERENTE', 'ADMIN'].includes((userRole || '').toUpperCase());
 
   const [ventas, setVentas] = useState<HistorialVentaPOS[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [reembolsoVenta, setReembolsoVenta] = useState<HistorialVentaPOS | null>(null);
+  const [modificarVenta, setModificarVenta] = useState<HistorialVentaPOS | null>(null);
+  const [filtroSoloModificadas, setFiltroSoloModificadas] = useState(false);
   
   // Filtros
   const [fechaFiltro, setFechaFiltro] = useState('');
@@ -212,9 +216,18 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
         if (!hasPago) return false;
       }
 
+      // 3. Filtro de sólo modificadas por gerencia
+      if (filtroSoloModificadas) {
+        if (!v.modificaciones || v.modificaciones.length === 0) return false;
+      }
+
       return true;
     });
-  }, [ventas, busqueda, filtroMetodo]);
+  }, [ventas, busqueda, filtroMetodo, filtroSoloModificadas]);
+
+  const totalModificadasCount = useMemo(() => {
+    return ventas.filter(v => v.modificaciones && v.modificaciones.length > 0).length;
+  }, [ventas]);
 
   const { totalMontoFiltrado, totalValorRegalado, totalCortesias, totalPropinasFiltrado, totalPropinasCount } = useMemo(() => {
     let sumPercibido = 0;
@@ -448,6 +461,26 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
               </span>
             )}
           </button>
+
+          {/* Botón Acceso Rápido Solo Modificadas */}
+          <button
+            type="button"
+            onClick={() => setFiltroSoloModificadas(prev => !prev)}
+            className={`px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all whitespace-nowrap border shrink-0 ${
+              filtroSoloModificadas
+                ? 'bg-blue-500/20 text-blue-300 border-blue-500/50 shadow-sm shadow-blue-500/10'
+                : 'bg-neutral-950 sm:bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border-neutral-800 hover:text-white'
+            }`}
+            title="Ver órdenes modificadas por gerencia"
+          >
+            <span>✏️</span>
+            <span>Modificadas</span>
+            {totalModificadasCount > 0 && (
+              <span className="ml-0.5 px-1.5 py-0.5 text-[10px] bg-blue-500/30 text-blue-200 rounded-full font-bold">
+                {totalModificadasCount}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
@@ -603,6 +636,11 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                               ⭐ Cortesía
                             </span>
                           )}
+                          {venta.modificaciones && venta.modificaciones.length > 0 && (
+                            <span className="bg-blue-500/20 text-blue-300 border border-blue-500/40 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase shrink-0">
+                              ✏️ Modificada
+                            </span>
+                          )}
                         </div>
 
                         <div className="flex items-center gap-2 shrink-0">
@@ -741,6 +779,11 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                               <span>⭐</span> Cortesía
                             </span>
                           )}
+                          {venta.modificaciones && venta.modificaciones.length > 0 && (
+                            <span className="bg-blue-500/20 text-blue-300 border border-blue-500/40 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase flex items-center gap-1 shadow-sm">
+                              <span>✏️</span> Modificada
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center gap-1.5 text-xs text-neutral-400 mt-1">
                           <Clock size={12} className="text-indigo-400/70" /> {formatDateTime(venta.fecha_venta)}
@@ -867,6 +910,18 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                             <Undo2 size={13} className="shrink-0" /> <span>Reembolso</span>
                           </button>
                         )}
+                        {canEditOrder && venta.estado_activo !== false && venta.tipo_documento !== 'REEMBOLSO' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setModificarVenta(venta);
+                            }}
+                            className="justify-center text-xs flex items-center gap-1.5 bg-blue-500/15 text-blue-300 hover:bg-blue-500/25 border border-blue-500/30 px-2.5 py-2 sm:px-3 sm:py-1.5 rounded-xl transition-colors font-semibold"
+                            title="Modificar productos y formas de pago con registro de auditoría"
+                          >
+                            <Edit3 size={13} className="shrink-0" /> <span>Modificar</span>
+                          </button>
+                        )}
                       </div>
                     </div>
 
@@ -949,6 +1004,44 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
                         </span>
                       </div>
                     )}
+                    {venta.modificaciones && venta.modificaciones.length > 0 && (
+                      <div className="pt-3 border-t border-neutral-800 space-y-2.5">
+                        <h4 className="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <FileText size={13} />
+                          Registro de Auditoría ({venta.modificaciones.length} {venta.modificaciones.length === 1 ? 'modificación' : 'modificaciones'})
+                        </h4>
+                        <div className="space-y-2">
+                          {venta.modificaciones.map((m, mIdx) => (
+                            <div key={m.id_log || mIdx} className="bg-neutral-900/90 border border-amber-500/20 rounded-xl p-3 text-xs space-y-2">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between text-neutral-400 gap-1 border-b border-neutral-800/80 pb-2">
+                                <span className="font-semibold text-amber-300 flex items-center gap-1.5">
+                                  <span>👤</span> {m.gerente_nombre} <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-mono font-bold uppercase">{m.gerente_rol}</span>
+                                </span>
+                                <span className="font-mono text-[11px] text-neutral-400">
+                                  {formatDateTime(m.fecha)}
+                                </span>
+                              </div>
+                              <div className="text-neutral-200">
+                                <span className="text-amber-400/90 font-bold">Motivo:</span> {m.motivo}
+                              </div>
+                              {m.resumen_cambios && m.resumen_cambios.length > 0 && (
+                                <div className="pt-1.5 border-t border-neutral-800/60 space-y-1">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Cambios aplicados:</span>
+                                  <div className="space-y-0.5">
+                                    {m.resumen_cambios.map((c, cIdx) => (
+                                      <div key={cIdx} className="flex items-center gap-1.5 text-neutral-300 text-[11px]">
+                                        <span className="text-amber-400 font-bold">•</span>
+                                        <span>{c}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -973,6 +1066,17 @@ export default function HistorialVentas({ sedeId }: { sedeId: string }) {
             </button>
           </div>
         </div>
+      )}
+
+      {modificarVenta && (
+        <EditarVentaModal
+          venta={modificarVenta}
+          isOpen={!!modificarVenta}
+          onClose={() => setModificarVenta(null)}
+          onSuccess={() => {
+            cargarVentas();
+          }}
+        />
       )}
     </div>
   );
