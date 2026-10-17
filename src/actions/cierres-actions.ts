@@ -77,7 +77,8 @@ export async function getCierrePrevio(fechaStr: string, requestedSedeId?: string
     .eq('estado_activo', true)
     .eq('sede_id', targetSedeId)
       .is('cierre_caja_id', null)
-      .gte('fecha_venta', new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()); // Solo arrastra max 3 dias atras
+      .gte('fecha_venta', `${fechaStr}T00:00:00.000${tzOffset}`)
+      .lte('fecha_venta', `${fechaStr}T23:59:59.999${tzOffset}`);
   
   
     const esperadoPorMetodo: Record<string, number> = {};
@@ -208,16 +209,33 @@ export async function guardarCierre(cierreData: any, transacciones: any[]) {
     }
   }
 
-  // 3. Marcar las ventas como cerradas
-  const { error: errorUpdateVentas } = await supabase
-    .from('ventas_facturas')
-    .update({ cierre_caja_id: nuevoCierre.id })
-    .eq('sede_id', finalSedeId)
-    .is('cierre_caja_id', null)
-      .gte('fecha_venta', new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()); // Solo arrastra max 3 dias atras
+  // 3. Marcar las ventas como cerradas correspondientes a la fecha del cierre
+  try {
+    const { data: empData } = await supabase
+      .from('empresas')
+      .select('zona_horaria')
+      .eq('id', profile.empresa_id)
+      .maybeSingle();
+    const timeZone = empData?.zona_horaria || DEFAULT_TIMEZONE;
+    const tzOffset = getTimezoneOffsetString(timeZone);
 
-  if (errorUpdateVentas) {
-    console.error('Error actualizando ventas_facturas:', errorUpdateVentas);
+    const adminSupabase = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    const { error: errorUpdateVentas } = await adminSupabase
+      .from('ventas_facturas')
+      .update({ cierre_caja_id: nuevoCierre.id })
+      .eq('sede_id', finalSedeId)
+      .is('cierre_caja_id', null)
+      .gte('fecha_venta', `${cierreData.fecha_cierre}T00:00:00.000${tzOffset}`)
+      .lte('fecha_venta', `${cierreData.fecha_cierre}T23:59:59.999${tzOffset}`);
+
+    if (errorUpdateVentas) {
+      console.error('Error actualizando ventas_facturas:', errorUpdateVentas);
+    }
+  } catch (errVentas) {
+    console.error('Error vinculando ventas al cierre:', errVentas);
   }
 
   // 4. Limpiar borrador de caja en la nube para esta sede

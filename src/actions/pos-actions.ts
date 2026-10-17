@@ -4,6 +4,27 @@ import { createClient } from '@/utils/supabase/server';
 import { registrarAsiento } from './contabilidad-actions';
 import { DEFAULT_TIMEZONE, getTimezoneOffsetString, getLocalDayRange, toLocalDateKey } from '@/utils/date-utils';
 
+export interface ModificacionVentaLog {
+  id_log: string;
+  fecha: string;
+  factura_id: string;
+  id_pos?: string;
+  numero_orden?: string;
+  gerente_id: string;
+  gerente_nombre: string;
+  gerente_rol: string;
+  motivo: string;
+  total_anterior: number;
+  total_nuevo: number;
+  descuento_anterior: number;
+  descuento_nuevo: number;
+  detalles_anteriores: { producto_id: string; producto_nombre: string; cantidad: number; precio_unitario: number; total: number }[];
+  detalles_nuevos: { producto_id: string; producto_nombre: string; cantidad: number; precio_unitario: number; total: number }[];
+  pagos_anteriores: { tipo_pago: string; monto: number }[];
+  pagos_nuevos: { tipo_pago: string; monto: number }[];
+  resumen_cambios: string[];
+}
+
 export interface VentaPOS {
   verificado?: boolean;
   id_factura: string;
@@ -20,8 +41,9 @@ export interface VentaPOS {
   mesero_nombre?: string;
   propina?: number;
   pagos?: { tipo_pago: string, monto: number }[];
-  metodo_pago?: string;       // resumen del primer mÃ©todo de pago registrado
+  metodo_pago?: string;       // resumen del primer método de pago registrado
   detalles: VentaDetalle[];
+  modificaciones?: ModificacionVentaLog[];
 }
 
 export interface VentaDetalle {
@@ -96,6 +118,9 @@ export async function getVentasRecientes(sedeId?: string): Promise<VentaPOS[]> {
     return [];
   }
 
+  const facturaIds = (ventas || []).map((v: any) => v.id);
+  const modsMap = await obtenerModificacionesFacturas(supabase, facturaIds);
+
   // Mapeamos los datos anidados
   return (ventas || []).map((v: any) => ({
     verificado: v.verificado,
@@ -114,6 +139,7 @@ export async function getVentasRecientes(sedeId?: string): Promise<VentaPOS[]> {
     propina: v.propina,
     pagos: (v.ventas_pagos || []).map((p: any) => ({ tipo_pago: p.tipo_pago, monto: p.monto })),
     metodo_pago: (v.ventas_pagos || [])[0]?.tipo_pago,
+    modificaciones: modsMap[v.id] || [],
     detalles: (v.ventas_detalles || []).map((d: any) => ({
       id_detalle: d.id,
       producto_id: d.producto_id,
@@ -126,6 +152,40 @@ export async function getVentasRecientes(sedeId?: string): Promise<VentaPOS[]> {
       producto_codigo: d.productos?.codigo_barras,
     }))
   }));
+}
+
+async function obtenerModificacionesFacturas(supabase: any, facturaIds: string[]): Promise<Record<string, ModificacionVentaLog[]>> {
+  const modsMap: Record<string, ModificacionVentaLog[]> = {};
+  if (!facturaIds || facturaIds.length === 0) return modsMap;
+
+  try {
+    const { data: logsAudit, error } = await supabase
+      .from('auditoria_pos')
+      .select('id, fecha, detalle, created_at')
+      .eq('accion', 'Modificación de Pedido (Web)')
+      .order('created_at', { ascending: false });
+
+    if (!error && logsAudit) {
+      const idsSet = new Set(facturaIds);
+      logsAudit.forEach((log: any) => {
+        try {
+          const parsed = JSON.parse(log.detalle);
+          if (parsed && parsed.factura_id && idsSet.has(parsed.factura_id)) {
+            if (!modsMap[parsed.factura_id]) modsMap[parsed.factura_id] = [];
+            modsMap[parsed.factura_id].push({
+              ...parsed,
+              id_log: log.id,
+              fecha: log.fecha || log.created_at || parsed.fecha,
+            });
+          }
+        } catch (_) {}
+      });
+    }
+  } catch (err) {
+    console.warn('Error cargando modificaciones de auditoria_pos:', err);
+  }
+
+  return modsMap;
 }
 
 export async function getProductosCatalogo(empresaId: string): Promise<ProductoPOS[]> {
@@ -278,6 +338,9 @@ export async function getHistorialVentasCompleto(
     return [];
   }
 
+  const facturaIds = (ventas || []).map((v: any) => v.id);
+  const modsMap = await obtenerModificacionesFacturas(supabase, facturaIds);
+
   return (ventas || []).map((v: any) => ({
     verificado: v.verificado,
     id_factura: v.id,
@@ -291,13 +354,14 @@ export async function getHistorialVentasCompleto(
     estado_activo: v.estado_activo,
     esta_pagado: v.estado_pago === 1,
     cliente_nombre: v.clientes?.nombre || v.cliente_nombre || v.numero_orden || 'Venta Rápida',
-      cajero_nombre: v.cajero_nombre,
-      mesero_nombre: v.mesero_nombre,
-      propina: v.propina,
-      pagos: (v.ventas_pagos || []).map((p: any) => ({
+    cajero_nombre: v.cajero_nombre,
+    mesero_nombre: v.mesero_nombre,
+    propina: v.propina,
+    pagos: (v.ventas_pagos || []).map((p: any) => ({
       tipo_pago: p.tipo_pago,
       monto: p.monto
     })),
+    modificaciones: modsMap[v.id] || [],
     detalles: (v.ventas_detalles || []).map((d: any) => ({
       id_detalle: d.id,
       producto_id: d.producto_id,

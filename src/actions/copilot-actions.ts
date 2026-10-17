@@ -1207,6 +1207,28 @@ async function toolConsultarVentas(
   let facturasValidasCount = 0;
   let totalFleteRecaudado = 0;
 
+  const facturasFiltradas: Array<any & { _sign: number }> = [];
+  const refundSignMap = new Map<string, number>();
+
+  const nombresDias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  const ventasPorDiaSemana: Record<string, {
+    dia: string;
+    orden: number;
+    total_usd: number;
+    total_facturas: number;
+    fechas_distintas: Set<string>;
+  }> = {
+    'Lunes': { dia: 'Lunes', orden: 1, total_usd: 0, total_facturas: 0, fechas_distintas: new Set() },
+    'Martes': { dia: 'Martes', orden: 2, total_usd: 0, total_facturas: 0, fechas_distintas: new Set() },
+    'Miércoles': { dia: 'Miércoles', orden: 3, total_usd: 0, total_facturas: 0, fechas_distintas: new Set() },
+    'Jueves': { dia: 'Jueves', orden: 4, total_usd: 0, total_facturas: 0, fechas_distintas: new Set() },
+    'Viernes': { dia: 'Viernes', orden: 5, total_usd: 0, total_facturas: 0, fechas_distintas: new Set() },
+    'Sábado': { dia: 'Sábado', orden: 6, total_usd: 0, total_facturas: 0, fechas_distintas: new Set() },
+    'Domingo': { dia: 'Domingo', orden: 7, total_usd: 0, total_facturas: 0, fechas_distintas: new Set() }
+  };
+
+  const ventasPorHora: Record<string, { hora: string; total_usd: number; pedidos: number }> = {};
+
   for (const fac of allFacturas) {
     // Excluir Cortesías / Regalías
     const isCortesia = fac.ventas_pagos?.some((p: any) => {
@@ -1238,12 +1260,39 @@ async function toolConsultarVentas(
       fac.tipo_documento.toLowerCase().includes('nc')
     )) || Number(fac.total || 0) < 0;
 
+    const sign = isRefund ? -1 : 1;
     const rawTotal = Number(fac.total || 0);
-    const facMonto = isRefund ? -Math.abs(rawTotal) : Math.abs(rawTotal);
+    const facMonto = sign * Math.abs(rawTotal);
+
+    facturasFiltradas.push({ ...fac, _sign: sign });
+    refundSignMap.set(fac.id, sign);
 
     totalRecaudado += facMonto;
-    totalFleteRecaudado += fleteMonto;
+    totalFleteRecaudado += sign * fleteMonto;
     facturasValidasCount++;
+
+    // Desglose por día de la semana y hora (Hora Venezuela UTC-4)
+    if (fac.fecha_venta) {
+      const fechaUtc = new Date(fac.fecha_venta);
+      if (!isNaN(fechaUtc.getTime())) {
+        const fechaVen = new Date(fechaUtc.getTime() - 4 * 60 * 60 * 1000);
+        const diaNombre = nombresDias[fechaVen.getUTCDay()];
+        const fechaStr = fechaVen.toISOString().substring(0, 10);
+        if (ventasPorDiaSemana[diaNombre]) {
+          ventasPorDiaSemana[diaNombre].total_usd += facMonto;
+          ventasPorDiaSemana[diaNombre].total_facturas += 1;
+          ventasPorDiaSemana[diaNombre].fechas_distintas.add(fechaStr);
+        }
+
+        const horaNum = fechaVen.getUTCHours();
+        const horaLabel = `${String(horaNum).padStart(2, '0')}:00 - ${String(horaNum).padStart(2, '0')}:59`;
+        if (!ventasPorHora[horaLabel]) {
+          ventasPorHora[horaLabel] = { hora: horaLabel, total_usd: 0, pedidos: 0 };
+        }
+        ventasPorHora[horaLabel].total_usd += facMonto;
+        ventasPorHora[horaLabel].pedidos += 1;
+      }
+    }
 
     const sId = fac.sede_id;
     if (sId) {
@@ -1258,13 +1307,13 @@ async function toolConsultarVentas(
       }
       desglosadoPorSede[sId].total_usd += facMonto;
       desglosadoPorSede[sId].total_facturas += 1;
-      desglosadoPorSede[sId].flete_delivery_usd += fleteMonto;
+      desglosadoPorSede[sId].flete_delivery_usd += sign * fleteMonto;
     }
   }
 
   const totalFacturas = facturasValidasCount;
 
-  // 2. Ranking de productos y filtro de producto
+  // 2. Ranking de productos y filtro de producto (usando facturasFiltradas)
   const agrupadoPorProducto: Record<string, {
     producto_id: string;
     nombre: string;
@@ -1288,21 +1337,22 @@ async function toolConsultarVentas(
 
     if (prodIds.length > 0) {
       const chunkSize = 200;
-      for (let i = 0; i < allFacturas.length; i += chunkSize) {
-        const facChunkIds = allFacturas.slice(i, i + chunkSize).map(f => f.id);
+      for (let i = 0; i < facturasFiltradas.length; i += chunkSize) {
+        const facChunkIds = facturasFiltradas.slice(i, i + chunkSize).map(f => f.id);
         const { data: dets } = await supabase
           .from('ventas_detalles')
-          .select('id, producto_id, cantidad, precio_unitario, total, productos(id, nombre, codigo_barras)')
+          .select('id, factura_id, producto_id, cantidad, precio_unitario, total, productos(id, nombre, codigo_barras)')
           .in('factura_id', facChunkIds)
           .in('producto_id', prodIds);
 
         for (const det of dets || []) {
+          const sign = refundSignMap.get(det.factura_id) || 1;
           const prod = (det as any).productos;
           const prodId = det.producto_id || 'desconocido';
           const prodNombre = prod?.nombre || 'Producto';
           const prodCodigo = prod?.codigo_barras || '';
-          const cant = Number(det.cantidad || 0);
-          const subtotal = Number(det.total || 0);
+          const cant = sign * Math.abs(Number(det.cantidad || 0));
+          const subtotal = sign * Math.abs(Number(det.total || 0));
           totalUnidades += cant;
 
           if (!agrupadoPorProducto[prodId]) {
@@ -1320,23 +1370,24 @@ async function toolConsultarVentas(
       }
     }
   } else {
-    // Si no hay filtro, computar ranking sobre muestra representativa de hasta 1500 facturas recientes
-    const sampleFacturas = allFacturas.slice(0, 1500);
-    const chunkSize = 300;
+    // Si no hay filtro, computar ranking sobre las facturas filtradas (hasta 2000 recientes)
+    const sampleFacturas = facturasFiltradas.slice(0, 2000);
+    const chunkSize = 250;
     for (let i = 0; i < sampleFacturas.length; i += chunkSize) {
       const facChunkIds = sampleFacturas.slice(i, i + chunkSize).map(f => f.id);
       const { data: dets } = await supabase
         .from('ventas_detalles')
-        .select('id, producto_id, cantidad, precio_unitario, total, productos(id, nombre, codigo_barras)')
+        .select('id, factura_id, producto_id, cantidad, precio_unitario, total, productos(id, nombre, codigo_barras)')
         .in('factura_id', facChunkIds);
 
       for (const det of dets || []) {
+        const sign = refundSignMap.get(det.factura_id) || 1;
         const prod = (det as any).productos;
         const prodId = det.producto_id || 'desconocido';
         const prodNombre = prod?.nombre || 'Producto';
         const prodCodigo = prod?.codigo_barras || '';
-        const cant = Number(det.cantidad || 0);
-        const subtotal = Number(det.total || 0);
+        const cant = sign * Math.abs(Number(det.cantidad || 0));
+        const subtotal = sign * Math.abs(Number(det.total || 0));
         totalUnidades += cant;
 
         if (!agrupadoPorProducto[prodId]) {
@@ -1383,6 +1434,28 @@ async function toolConsultarVentas(
     };
   });
 
+  const desglosePorDiaSemana = Object.values(ventasPorDiaSemana)
+    .sort((a, b) => a.orden - b.orden)
+    .map(d => {
+      const diasActivos = d.fechas_distintas.size;
+      return {
+        dia: d.dia,
+        total_usd: Number(d.total_usd.toFixed(2)),
+        total_facturas: d.total_facturas,
+        dias_operados_en_periodo: diasActivos,
+        promedio_por_dia_usd: diasActivos > 0 ? Number((d.total_usd / diasActivos).toFixed(2)) : 0
+      };
+    });
+
+  const horasPico = Object.values(ventasPorHora)
+    .sort((a, b) => b.total_usd - a.total_usd)
+    .slice(0, 6)
+    .map(h => ({
+      franja_horaria: h.hora,
+      total_usd: Number(h.total_usd.toFixed(2)),
+      pedidos: h.pedidos
+    }));
+
   return {
     periodo: descripcion,
     canal_filtrado: esFiltroDelivery ? 'DELIVERY' : (esFiltroSalon ? 'SALON' : 'TODOS'),
@@ -1397,29 +1470,105 @@ async function toolConsultarVentas(
       pedidos_delivery_despachados: facturasValidasCount
     } : {}),
     desglose_por_sede: desgloseSedesArray,
+    desglose_por_dia_semana: desglosePorDiaSemana,
+    horas_pico_ventas: horasPico,
     total_unidades_coincidentes: Number(totalUnidades.toFixed(2)),
     top_productos_mas_vendidos: topProductos
   };
 }
 
 /**
- * 8. Consulta consumo de materia prima e insumos (ya implementada)
+ * 8. Consulta consumo de materia prima, stock e inventario general o por insumo
  */
 async function toolConsultarConsumoInsumo(
   ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
-  args: { nombre_insumo: string; periodo?: string }
+  args: { nombre_insumo?: string; periodo?: string; sede_nombre?: string }
 ) {
-  const { supabase, empresaId, sedeId } = ctx;
+  const { supabase, empresaId, sedes } = ctx;
   const { inicio, fin, descripcion } = calcularRangoFechas(args.periodo || 'este_mes');
+
+  let targetSedeId: string | null = null;
+  if (args.sede_nombre) {
+    const sNorm = normalizarTexto(args.sede_nombre);
+    const esGeneral = ['todas', 'ambas', 'todas las sedes', 'consolidado', 'general', 'global', 'ambas sedes'].includes(sNorm);
+    if (!esGeneral) {
+      const sFound = resolverSede(args.sede_nombre, sedes);
+      if (sFound) targetSedeId = sFound.id;
+    }
+  }
+
+  const termRaw = (args.nombre_insumo || 'todos').trim();
+  const termNorm = normalizarTexto(termRaw);
+  const esConsultaGeneral = !termRaw || ['todos', 'todo', 'general', 'inventario', 'bajo stock', 'bajostock', 'stock', 'critico', 'alerta', 'valor'].includes(termNorm);
+
+  if (esConsultaGeneral) {
+    let qAll = supabase
+      .from('inventario_insumos')
+      .select('id, nombre, categoria, unidad_medida, cantidad_actual, stock_minimo, costo_promedio, sede_id')
+      .eq('empresa_id', empresaId)
+      .order('nombre', { ascending: true });
+
+    if (targetSedeId) {
+      qAll = qAll.or(`sede_id.eq.${targetSedeId},sede_id.is.null`);
+    }
+
+    const { data: todosInsumos, error: errAll } = await qAll;
+    if (errAll) return { error: `Error consultando inventario: ${errAll.message}` };
+
+    const items = todosInsumos || [];
+    let valorTotalInventarioUsd = 0;
+    const bajoStock: any[] = [];
+    const agotados: any[] = [];
+
+    const itemsValorizados = items.map(ins => {
+      const cant = Number(ins.cantidad_actual || 0);
+      const min = Number(ins.stock_minimo || 0);
+      const costo = Number(ins.costo_promedio || 0);
+      const valorUsd = cant > 0 ? cant * costo : 0;
+      valorTotalInventarioUsd += valorUsd;
+
+      const itemObj = {
+        id: ins.id,
+        nombre: ins.nombre,
+        categoria: ins.categoria || 'General',
+        unidad_medida: ins.unidad_medida,
+        stock_actual: Number(cant.toFixed(2)),
+        stock_minimo: Number(min.toFixed(2)),
+        costo_unitario_usd: Number(costo.toFixed(4)),
+        valor_total_usd: Number(valorUsd.toFixed(2))
+      };
+
+      if (cant <= 0) {
+        agotados.push(itemObj);
+      } else if (min > 0 && cant <= min) {
+        bajoStock.push(itemObj);
+      }
+
+      return itemObj;
+    });
+
+    itemsValorizados.sort((a, b) => b.valor_total_usd - a.valor_total_usd);
+
+    return {
+      modo: 'RESUMEN_INVENTARIO_GENERAL',
+      total_insumos_registrados: items.length,
+      valor_total_inventario_usd: Number(valorTotalInventarioUsd.toFixed(2)),
+      total_insumos_agotados: agotados.length,
+      total_insumos_bajo_stock_minimo: bajoStock.length,
+      insumos_bajo_stock_minimo: bajoStock.slice(0, 25),
+      insumos_agotados_muestra: agotados.slice(0, 25),
+      top_insumos_mayor_valor_usd: itemsValorizados.slice(0, 20)
+    };
+  }
 
   let queryInsumos = supabase
     .from('inventario_insumos')
-    .select('id, nombre, unidad_medida, cantidad_actual, costo_promedio, palabras_clave, sede_id')
+    .select('id, nombre, unidad_medida, cantidad_actual, stock_minimo, costo_promedio, palabras_clave, sede_id')
     .eq('empresa_id', empresaId)
-    .ilike('nombre', `%${args.nombre_insumo.trim()}%`);
+    .ilike('nombre', `%${termRaw}%`);
 
-  if (sedeId) {
-    queryInsumos = queryInsumos.or(`sede_id.eq.${sedeId},sede_id.is.null`);
+  if (targetSedeId) {
+    queryInsumos = queryInsumos.or(`sede_id.eq.${targetSedeId},sede_id.is.null`);
   }
 
   const { data: insumos, error: insErr } = await queryInsumos;
@@ -1430,20 +1579,19 @@ async function toolConsultarConsumoInsumo(
   if (listaInsumos.length === 0) {
     const { data: insumosAlt } = await supabase
       .from('inventario_insumos')
-      .select('id, nombre, unidad_medida, cantidad_actual, costo_promedio, palabras_clave, sede_id')
+      .select('id, nombre, unidad_medida, cantidad_actual, stock_minimo, costo_promedio, palabras_clave, sede_id')
       .eq('empresa_id', empresaId)
-      .limit(100);
+      .limit(300);
 
-    const term = args.nombre_insumo;
-    listaInsumos = (insumosAlt || []).filter(i => 
-      esCoincidenciaAproximada(i.nombre, term) ||
-      (Array.isArray(i.palabras_clave) && i.palabras_clave.some((p: string) => esCoincidenciaAproximada(p, term)))
+    listaInsumos = (insumosAlt || []).filter(i =>
+      esCoincidenciaAproximada(i.nombre, termRaw) ||
+      (Array.isArray(i.palabras_clave) && i.palabras_clave.some((p: string) => esCoincidenciaAproximada(p, termRaw)))
     );
 
     if (listaInsumos.length === 0) {
       return {
         encontrado: false,
-        mensaje: `No se encontró ningún insumo que coincida con "${args.nombre_insumo}" en el inventario.`
+        mensaje: `No se encontró ningún insumo que coincida con "${termRaw}" en el inventario.`
       };
     }
   }
@@ -1481,31 +1629,53 @@ async function toolConsultarConsumoInsumo(
         }
       });
 
-      let vQuery = supabase
-        .from('ventas_facturas')
-        .select(`
-          id,
-          ventas_detalles (
-            producto_id,
-            cantidad
-          )
-        `)
-        .eq('empresa_id', empresaId)
-        .gte('fecha_venta', inicio)
-        .lte('fecha_venta', fin);
-
-      if (sedeId) vQuery = vQuery.eq('sede_id', sedeId);
-
-      const { data: facturasProd } = await vQuery;
-
       const cantidadPorProducto: Record<string, number> = {};
-      for (const f of facturasProd || []) {
-        const dets = (f as any).ventas_detalles || [];
-        for (const d of dets) {
-          if (prodIds.includes(d.producto_id)) {
-            cantidadPorProducto[d.producto_id] = (cantidadPorProducto[d.producto_id] || 0) + Number(d.cantidad || 0);
+      let from = 0;
+      const batchSize = 1000;
+      while (true) {
+        let vQuery = supabase
+          .from('ventas_facturas')
+          .select(`
+            id,
+            tipo_documento,
+            total,
+            ventas_detalles!inner (
+              producto_id,
+              cantidad
+            )
+          `)
+          .eq('empresa_id', empresaId)
+          .eq('estado_activo', true)
+          .neq('numero_documento', 'TEST')
+          .gte('fecha_venta', inicio)
+          .lte('fecha_venta', fin)
+          .in('ventas_detalles.producto_id', prodIds)
+          .range(from, from + batchSize - 1);
+
+        if (targetSedeId) vQuery = vQuery.eq('sede_id', targetSedeId);
+
+        const { data: facturasProd } = await vQuery;
+        if (!facturasProd || facturasProd.length === 0) break;
+
+        for (const f of facturasProd) {
+          const isRefund = (f.tipo_documento && (
+            f.tipo_documento.toLowerCase().includes('refund') ||
+            f.tipo_documento.toLowerCase().includes('devolucion') ||
+            f.tipo_documento.toLowerCase().includes('nota_credito') ||
+            f.tipo_documento.toLowerCase().includes('nc')
+          )) || Number(f.total || 0) < 0;
+          const sign = isRefund ? -1 : 1;
+
+          const dets = (f as any).ventas_detalles || [];
+          for (const d of dets) {
+            if (prodIds.includes(d.producto_id)) {
+              cantidadPorProducto[d.producto_id] = (cantidadPorProducto[d.producto_id] || 0) + sign * Math.abs(Number(d.cantidad || 0));
+            }
           }
         }
+
+        if (facturasProd.length < batchSize) break;
+        from += batchSize;
       }
 
       for (const rec of recetas) {
@@ -1514,11 +1684,17 @@ async function toolConsultarConsumoInsumo(
       }
     }
 
+    const cantActual = Number(ins.cantidad_actual || 0);
+    const costoProm = Number(ins.costo_promedio || 0);
+
     resultados.push({
       insumo_id: ins.id,
       nombre: ins.nombre,
       unidad_medida: ins.unidad_medida,
-      stock_actual: Number(ins.cantidad_actual || 0),
+      stock_actual: Number(cantActual.toFixed(2)),
+      stock_minimo: Number(ins.stock_minimo || 0),
+      costo_unitario_usd: Number(costoProm.toFixed(4)),
+      valor_stock_usd: Number((cantActual * costoProm).toFixed(2)),
       consumo_real_registrado: Number(totalSalidasReales.toFixed(2)),
       consumo_teorico_por_recetas: Number(consumoTeorico.toFixed(2)),
       productos_en_receta: productosAfectados
@@ -1527,42 +1703,43 @@ async function toolConsultarConsumoInsumo(
 
   return {
     periodo: descripcion,
-    termino_busqueda: args.nombre_insumo,
+    termino_busqueda: termRaw,
     insumos_encontrados: resultados
   };
 }
 
 /**
- * 9. Auditoría de compras sospechosas (ya implementada)
+ * 9. Auditoría de compras sospechosas (excluyendo ANULADAS y paginando)
  */
 async function toolAuditarComprasSospechosas(
   ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
   args: { dias_atras?: number; margen_tolerancia_usd?: number }
 ) {
-  const { supabase, empresaId, sedeId } = ctx;
+  const { supabase, empresaId, sedes } = ctx;
   const dias = Math.min(Math.max(args.dias_atras || 30, 1), 180);
   const margen = typeof args.margen_tolerancia_usd === 'number' ? Math.abs(args.margen_tolerancia_usd) : 0.05;
 
   const fechaLimite = new Date();
   fechaLimite.setDate(fechaLimite.getDate() - dias);
 
-  let query = supabase
+  const sedeMap: Record<string, string> = {};
+  sedes.forEach((s, i) => { sedeMap[s.id] = `Sede ${i + 1} (${s.nombre_sede})`; });
+
+  const { data: compras, error } = await supabase
     .from('compras_puntuales')
-    .select('id, fecha_registro, proveedor, monto_divisas, monto_bs, tasa_cambio, detalles')
+    .select('id, id_sede, fecha_registro, proveedor, monto_divisas, monto_bs, tasa_cambio, detalles, estado')
     .eq('id_empresa', empresaId)
+    .neq('estado', 'ANULADA')
     .gte('fecha_registro', fechaLimite.toISOString())
     .order('fecha_registro', { ascending: false });
 
-  if (sedeId) query = query.eq('id_sede', sedeId);
-
-  const { data: compras, error } = await query;
   if (error) return { error: `Error consultando compras: ${error.message}` };
 
   if (!compras || compras.length < 2) {
     return {
       compras_analizadas: (compras || []).length,
       sospechosas: [],
-      mensaje: 'No se encontraron suficientes compras en el periodo para detectar duplicados.'
+      mensaje: 'No se encontraron suficientes compras activas en el periodo para detectar duplicados.'
     };
   }
 
@@ -1593,8 +1770,8 @@ async function toolAuditarComprasSospechosas(
             fecha: dia,
             mismo_proveedor: mismoProveedor,
             diferencia_usd: Number(difMonto.toFixed(2)),
-            compra_a: { id: c1.id, proveedor: c1.proveedor, monto_usd: monto1, detalles: c1.detalles },
-            compra_b: { id: c2.id, proveedor: c2.proveedor, monto_usd: monto2, detalles: c2.detalles }
+            compra_a: { id: c1.id, sede: sedeMap[c1.id_sede] || 'General', proveedor: c1.proveedor, monto_usd: monto1, detalles: c1.detalles },
+            compra_b: { id: c2.id, sede: sedeMap[c2.id_sede] || 'General', proveedor: c2.proveedor, monto_usd: monto2, detalles: c2.detalles }
           });
         }
       }
@@ -1609,7 +1786,7 @@ async function toolAuditarComprasSospechosas(
 }
 
 /**
- * 10. Busca combos inactivos
+ * 10. Busca combos inactivos (consultando 100% de detalles con promo_id)
  */
 async function toolBuscarCombosInactivos(
   ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
@@ -1636,18 +1813,25 @@ async function toolBuscarCombosInactivos(
     };
   }
 
-  const { data: facturas } = await supabase
-    .from('ventas_facturas')
-    .select(`id, ventas_detalles ( promo_id )`)
-    .eq('empresa_id', empresaId)
-    .gte('fecha_venta', fechaLimite.toISOString());
-
   const combosVendidos = new Set<string>();
-  for (const fac of facturas || []) {
-    const dets = (fac as any).ventas_detalles || [];
-    for (const d of dets) {
+  let from = 0;
+  const batchSize = 1000;
+  while (true) {
+    const { data: detsPromo, error: detErr } = await supabase
+      .from('ventas_detalles')
+      .select('promo_id, ventas_facturas!inner(empresa_id, estado_activo, fecha_venta)')
+      .not('promo_id', 'is', null)
+      .eq('ventas_facturas.empresa_id', empresaId)
+      .eq('ventas_facturas.estado_activo', true)
+      .gte('ventas_facturas.fecha_venta', fechaLimite.toISOString())
+      .range(from, from + batchSize - 1);
+
+    if (detErr || !detsPromo || detsPromo.length === 0) break;
+    for (const d of detsPromo) {
       if (d.promo_id) combosVendidos.add(d.promo_id);
     }
+    if (detsPromo.length < batchSize) break;
+    from += batchSize;
   }
 
   const inactivos = combos.filter(c => !combosVendidos.has(c.id)).map(c => ({
@@ -2429,6 +2613,754 @@ async function toolProponerAjusteMasivoPrecios(
   };
 }
 
+/**
+ * 16. Consulta Cuentas por Cobrar (Deudores, Créditos pendientes y Saldos por cliente/sede)
+ */
+async function toolConsultarCuentasPorCobrar(
+  ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
+  args: { cliente_nombre?: string; sede_nombre?: string }
+) {
+  const { supabase, empresaId, sedes } = ctx;
+
+  let targetSedeId: string | null = null;
+  if (args.sede_nombre) {
+    const sNorm = normalizarTexto(args.sede_nombre);
+    const esGeneral = ['todas', 'ambas', 'todas las sedes', 'consolidado', 'general', 'global', 'ambas sedes'].includes(sNorm);
+    if (!esGeneral) {
+      const sFound = resolverSede(args.sede_nombre, sedes);
+      if (sFound) targetSedeId = sFound.id;
+    }
+  }
+
+  const sedeNombres: Record<string, string> = {};
+  const deudaPorSede: Record<string, { sede: string; deuda_total_usd: number; facturas_pendientes: number }> = {};
+  sedes.forEach((s, idx) => {
+    const label = `Sede ${idx + 1} (${s.nombre_sede})`;
+    sedeNombres[s.id] = label;
+    deudaPorSede[s.id] = { sede: label, deuda_total_usd: 0, facturas_pendientes: 0 };
+  });
+
+  let allDeudas: any[] = [];
+  let from = 0;
+  const batchSize = 1000;
+
+  while (true) {
+    let q = supabase
+      .from('ventas_facturas')
+      .select(`
+        id,
+        sede_id,
+        numero_documento,
+        numero_orden,
+        tipo_documento,
+        fecha_venta,
+        fecha_vencimiento,
+        total,
+        saldo_pendiente,
+        estado_pago,
+        cliente_nombre,
+        notas,
+        clientes (
+          nombre,
+          rif_cedula,
+          telefono
+        ),
+        ventas_pagos (
+          tipo_pago,
+          monto
+        )
+      `)
+      .eq('empresa_id', empresaId)
+      .eq('estado_activo', true)
+      .neq('numero_documento', 'TEST')
+      .gt('saldo_pendiente', 0.01)
+      .order('fecha_venta', { ascending: false })
+      .range(from, from + batchSize - 1);
+
+    if (targetSedeId) q = q.eq('sede_id', targetSedeId);
+
+    const { data: batch, error } = await q;
+    if (error) return { error: `Error consultando cuentas por cobrar: ${error.message}` };
+    if (!batch || batch.length === 0) break;
+
+    allDeudas.push(...batch);
+    if (batch.length < batchSize) break;
+    from += batchSize;
+  }
+
+  const filtroCli = args.cliente_nombre ? normalizarTexto(args.cliente_nombre) : '';
+  let totalDeudaUsd = 0;
+  let totalFacturasPendientes = 0;
+
+  const porCliente: Record<string, {
+    cliente: string;
+    telefono: string;
+    documento_id: string;
+    deuda_total_usd: number;
+    facturas_pendientes: number;
+    fecha_mas_antigua: string;
+    facturas_detalle: any[];
+  }> = {};
+
+  for (const fac of allDeudas) {
+    const isCortesia = fac.ventas_pagos?.some((p: any) => {
+      const tp = (p.tipo_pago || '').toLowerCase();
+      return tp.includes('cortes') || tp.includes('regal');
+    }) ||
+    (fac.tipo_documento && (fac.tipo_documento.toLowerCase().includes('cortes') || fac.tipo_documento.toLowerCase().includes('regal'))) ||
+    (fac.numero_orden && (fac.numero_orden.toLowerCase().includes('cortes') || fac.numero_orden.toLowerCase().includes('regal')));
+
+    if (isCortesia) continue;
+
+    const saldo = Number(fac.saldo_pendiente || 0);
+    if (saldo <= 0.01) continue;
+
+    const cliObj = (fac as any).clientes;
+    const nombreCliente = (cliObj?.nombre || fac.cliente_nombre || 'Cliente General / Sin Nombre').trim();
+
+    if (filtroCli) {
+      const nomNorm = normalizarTexto(nombreCliente);
+      if (!nomNorm.includes(filtroCli) && !esCoincidenciaAproximada(nombreCliente, args.cliente_nombre || '')) {
+        continue;
+      }
+    }
+
+    totalDeudaUsd += saldo;
+    totalFacturasPendientes++;
+
+    const sId = fac.sede_id;
+    if (sId && deudaPorSede[sId]) {
+      deudaPorSede[sId].deuda_total_usd = Number((deudaPorSede[sId].deuda_total_usd + saldo).toFixed(2));
+      deudaPorSede[sId].facturas_pendientes += 1;
+    }
+
+    const cliKey = nombreCliente.toUpperCase();
+    const fechaStr = (fac.fecha_venta || '').substring(0, 10);
+    if (!porCliente[cliKey]) {
+      porCliente[cliKey] = {
+        cliente: nombreCliente,
+        telefono: cliObj?.telefono || 'N/A',
+        documento_id: cliObj?.rif_cedula || 'N/A',
+        deuda_total_usd: 0,
+        facturas_pendientes: 0,
+        fecha_mas_antigua: fechaStr,
+        facturas_detalle: []
+      };
+    }
+
+    porCliente[cliKey].deuda_total_usd = Number((porCliente[cliKey].deuda_total_usd + saldo).toFixed(2));
+    porCliente[cliKey].facturas_pendientes += 1;
+    if (fechaStr && (!porCliente[cliKey].fecha_mas_antigua || fechaStr < porCliente[cliKey].fecha_mas_antigua)) {
+      porCliente[cliKey].fecha_mas_antigua = fechaStr;
+    }
+
+    if (porCliente[cliKey].facturas_detalle.length < 8) {
+      porCliente[cliKey].facturas_detalle.push({
+        documento: fac.numero_documento || fac.numero_orden,
+        fecha: fechaStr,
+        sede: sedeNombres[sId] || 'General',
+        total_factura_usd: Number(Number(fac.total || 0).toFixed(2)),
+        saldo_pendiente_usd: Number(saldo.toFixed(2)),
+        notas: fac.notas || null
+      });
+    }
+  }
+
+  const rankingDeudores = Object.values(porCliente).sort((a, b) => b.deuda_total_usd - a.deuda_total_usd);
+
+  return {
+    total_deuda_por_cobrar_usd: Number(totalDeudaUsd.toFixed(2)),
+    total_facturas_pendientes: totalFacturasPendientes,
+    total_clientes_con_deuda: rankingDeudores.length,
+    desglose_por_sede: Object.values(deudaPorSede),
+    ranking_deudores: rankingDeudores.slice(0, 30)
+  };
+}
+
+/**
+ * 17. Consulta Mermas, Desperdicios, Cortesías, Regalías y Ventas al Costo
+ */
+async function toolConsultarMermasYCortesias(
+  ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
+  args: { periodo?: string; sede_nombre?: string }
+) {
+  const { supabase, empresaId, sedes } = ctx;
+  const { inicio, fin, descripcion } = calcularRangoFechas(args.periodo || 'este_mes');
+
+  let targetSedeId: string | null = null;
+  if (args.sede_nombre) {
+    const sNorm = normalizarTexto(args.sede_nombre);
+    const esGeneral = ['todas', 'ambas', 'todas las sedes', 'consolidado', 'general', 'global', 'ambas sedes'].includes(sNorm);
+    if (!esGeneral) {
+      const sFound = resolverSede(args.sede_nombre, sedes);
+      if (sFound) targetSedeId = sFound.id;
+    }
+  }
+
+  const sedeNombres: Record<string, string> = {};
+  sedes.forEach((s, idx) => { sedeNombres[s.id] = `Sede ${idx + 1} (${s.nombre_sede})`; });
+
+  // 1. Buscar Cortesías / Regalías en ventas_facturas
+  let allFacturas: any[] = [];
+  let from = 0;
+  const batchSize = 1000;
+  while (true) {
+    let q = supabase
+      .from('ventas_facturas')
+      .select(`
+        id,
+        sede_id,
+        numero_documento,
+        numero_orden,
+        tipo_documento,
+        fecha_venta,
+        total,
+        cliente_nombre,
+        cajero_nombre,
+        notas,
+        ventas_pagos (
+          tipo_pago,
+          monto
+        )
+      `)
+      .eq('empresa_id', empresaId)
+      .eq('estado_activo', true)
+      .neq('numero_documento', 'TEST')
+      .gte('fecha_venta', inicio)
+      .lte('fecha_venta', fin)
+      .range(from, from + batchSize - 1);
+
+    if (targetSedeId) q = q.eq('sede_id', targetSedeId);
+
+    const { data: batch, error } = await q;
+    if (error || !batch || batch.length === 0) break;
+    allFacturas.push(...batch);
+    if (batch.length < batchSize) break;
+    from += batchSize;
+  }
+
+  let totalCortesiasUsd = 0;
+  let cantidadCortesias = 0;
+  const cortesiasPorSede: Record<string, { sede: string; total_usd: number; ordenes: number }> = {};
+  const cortesiasPorBeneficiario: Record<string, { beneficiario: string; total_usd: number; ordenes: number }> = {};
+  const cortesiasDetalle: any[] = [];
+
+  for (const fac of allFacturas) {
+    const isCortesia = fac.ventas_pagos?.some((p: any) => {
+      const tp = (p.tipo_pago || '').toLowerCase();
+      return tp.includes('cortes') || tp.includes('regal');
+    }) ||
+    (fac.tipo_documento && (fac.tipo_documento.toLowerCase().includes('cortes') || fac.tipo_documento.toLowerCase().includes('regal'))) ||
+    (fac.numero_orden && (fac.numero_orden.toLowerCase().includes('cortes') || fac.numero_orden.toLowerCase().includes('regal')));
+
+    if (!isCortesia) continue;
+
+    const monto = Math.abs(Number(fac.total || 0));
+    totalCortesiasUsd += monto;
+    cantidadCortesias++;
+
+    const sNombre = sedeNombres[fac.sede_id] || 'General';
+    if (!cortesiasPorSede[sNombre]) {
+      cortesiasPorSede[sNombre] = { sede: sNombre, total_usd: 0, ordenes: 0 };
+    }
+    cortesiasPorSede[sNombre].total_usd = Number((cortesiasPorSede[sNombre].total_usd + monto).toFixed(2));
+    cortesiasPorSede[sNombre].ordenes += 1;
+
+    const benef = (fac.cliente_nombre || fac.notas || 'Sin Beneficiario Especificado').trim();
+    if (!cortesiasPorBeneficiario[benef]) {
+      cortesiasPorBeneficiario[benef] = { beneficiario: benef, total_usd: 0, ordenes: 0 };
+    }
+    cortesiasPorBeneficiario[benef].total_usd = Number((cortesiasPorBeneficiario[benef].total_usd + monto).toFixed(2));
+    cortesiasPorBeneficiario[benef].ordenes += 1;
+
+    if (cortesiasDetalle.length < 25) {
+      cortesiasDetalle.push({
+        fecha: (fac.fecha_venta || '').substring(0, 10),
+        sede: sNombre,
+        orden: fac.numero_orden || fac.numero_documento,
+        beneficiario: benef,
+        cajero: fac.cajero_nombre || 'N/A',
+        valor_usd: Number(monto.toFixed(2))
+      });
+    }
+  }
+
+  // 2. Buscar Mermas en tabla shrinkages y movimientos_inventario
+  let qShrink = supabase
+    .from('shrinkages')
+    .select('id, sede_id, quantity, unit_cost, total_loss, notes, created_at')
+    .eq('empresa_id', empresaId)
+    .gte('created_at', inicio)
+    .lte('created_at', fin);
+
+  if (targetSedeId) qShrink = qShrink.eq('sede_id', targetSedeId);
+  const { data: shrinkRows } = await qShrink;
+
+  let totalMermasUsd = 0;
+  const mermasDetalle: any[] = [];
+  for (const sh of shrinkRows || []) {
+    const loss = Number(sh.total_loss || (Number(sh.quantity || 0) * Number(sh.unit_cost || 0)));
+    totalMermasUsd += loss;
+    mermasDetalle.push({
+      fecha: (sh.created_at || '').substring(0, 10),
+      sede: sedeNombres[sh.sede_id] || 'General',
+      cantidad: Number(sh.quantity || 0),
+      perdida_usd: Number(loss.toFixed(2)),
+      motivo: sh.notes || 'Merma registrada'
+    });
+  }
+
+  // 3. Buscar Salidas de Almacén por Merma o Venta al Costo en movimientos_inventario
+  let qMovs = supabase
+    .from('movimientos_inventario')
+    .select('id, insumo_id, cantidad, motivo, fecha_movimiento, inventario_insumos(nombre, unidad_medida, costo_promedio)')
+    .eq('empresa_id', empresaId)
+    .eq('tipo_movimiento', 'SALIDA')
+    .gte('fecha_movimiento', inicio)
+    .lte('fecha_movimiento', fin);
+
+  const { data: movsSalida } = await qMovs;
+  let totalVentasCostoUsd = 0;
+  const ventasCostoDetalle: any[] = [];
+
+  for (const m of movsSalida || []) {
+    const mot = (m.motivo || '').toLowerCase();
+    const ins = (m as any).inventario_insumos;
+    const cant = Number(m.cantidad || 0);
+    const costo = Number(ins?.costo_promedio || 0);
+    const valor = cant * costo;
+
+    if (mot.includes('venta al costo') || mot.includes('costo')) {
+      totalVentasCostoUsd += valor;
+      if (ventasCostoDetalle.length < 25) {
+        ventasCostoDetalle.push({
+          fecha: (m.fecha_movimiento || '').substring(0, 10),
+          insumo: ins?.nombre || 'Insumo',
+          cantidad: `${cant} ${ins?.unidad_medida || ''}`.trim(),
+          costo_total_usd: Number(valor.toFixed(2)),
+          motivo: m.motivo
+        });
+      }
+    } else if (mot.includes('merma') || mot.includes('dañad') || mot.includes('vencid') || mot.includes('desperdicio')) {
+      totalMermasUsd += valor;
+      if (mermasDetalle.length < 25) {
+        mermasDetalle.push({
+          fecha: (m.fecha_movimiento || '').substring(0, 10),
+          insumo: ins?.nombre || 'Insumo',
+          cantidad: `${cant} ${ins?.unidad_medida || ''}`.trim(),
+          perdida_usd: Number(valor.toFixed(2)),
+          motivo: m.motivo
+        });
+      }
+    }
+  }
+
+  return {
+    periodo: descripcion,
+    cortesias_y_regalias: {
+      total_valor_menu_usd: Number(totalCortesiasUsd.toFixed(2)),
+      cantidad_ordenes: cantidadCortesias,
+      desglose_por_sede: Object.values(cortesiasPorSede),
+      top_beneficiarios: Object.values(cortesiasPorBeneficiario).sort((a, b) => b.total_usd - a.total_usd).slice(0, 15),
+      ultimas_cortesias: cortesiasDetalle
+    },
+    mermas_y_desperdicios: {
+      total_perdida_usd: Number(totalMermasUsd.toFixed(2)),
+      total_registros: mermasDetalle.length,
+      detalle_mermas: mermasDetalle
+    },
+    ventas_al_costo_personal: {
+      total_costo_usd: Number(totalVentasCostoUsd.toFixed(2)),
+      total_registros: ventasCostoDetalle.length,
+      detalle: ventasCostoDetalle
+    }
+  };
+}
+
+/**
+ * 18. Consulta Desempeño de Equipo (Cajeros, Meseros, Repartidores y Propinas)
+ */
+async function toolConsultarDesempenoEquipo(
+  ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
+  args: { periodo?: string; sede_nombre?: string }
+) {
+  const { supabase, empresaId, sedes } = ctx;
+  const { inicio, fin, descripcion } = calcularRangoFechas(args.periodo || 'este_mes');
+
+  let targetSedeId: string | null = null;
+  if (args.sede_nombre) {
+    const sNorm = normalizarTexto(args.sede_nombre);
+    const esGeneral = ['todas', 'ambas', 'todas las sedes', 'consolidado', 'general', 'global', 'ambas sedes'].includes(sNorm);
+    if (!esGeneral) {
+      const sFound = resolverSede(args.sede_nombre, sedes);
+      if (sFound) targetSedeId = sFound.id;
+    }
+  }
+
+  const sedeNombres: Record<string, string> = {};
+  sedes.forEach((s, idx) => { sedeNombres[s.id] = `Sede ${idx + 1} (${s.nombre_sede})`; });
+
+  const { data: perfilesList } = await supabase
+    .from('perfiles')
+    .select('id, nombre_completo, rol, sede_id')
+    .eq('empresa_id', empresaId);
+
+  const { data: usuariosPos } = await supabase
+    .from('usuarios')
+    .select('id, nombre, rol')
+    .eq('empresa_id', empresaId);
+
+  const mapaUsuarios: Record<string, string> = {};
+  (perfilesList || []).forEach(p => { if (p.id && p.nombre_completo) mapaUsuarios[p.id] = p.nombre_completo; });
+  (usuariosPos || []).forEach(u => { if (u.id && u.nombre) mapaUsuarios[u.id] = u.nombre; });
+
+  let allFacturas: any[] = [];
+  let from = 0;
+  const batchSize = 1000;
+  while (true) {
+    let q = supabase
+      .from('ventas_facturas')
+      .select(`
+        id,
+        sede_id,
+        total,
+        propina,
+        pago_repartidor,
+        tipo_documento,
+        numero_orden,
+        usuario_id,
+        cajero_nombre,
+        mesero_nombre,
+        repartidor_id,
+        ventas_pagos (
+          tipo_pago
+        )
+      `)
+      .eq('empresa_id', empresaId)
+      .eq('estado_activo', true)
+      .neq('numero_documento', 'TEST')
+      .gte('fecha_venta', inicio)
+      .lte('fecha_venta', fin)
+      .range(from, from + batchSize - 1);
+
+    if (targetSedeId) q = q.eq('sede_id', targetSedeId);
+
+    const { data: batch, error } = await q;
+    if (error || !batch || batch.length === 0) break;
+    allFacturas.push(...batch);
+    if (batch.length < batchSize) break;
+    from += batchSize;
+  }
+
+  const porCajero: Record<string, { nombre: string; sede: string; ventas_usd: number; facturas: number }> = {};
+  const porMesero: Record<string, { nombre: string; sede: string; ventas_usd: number; mesas_atendidas: number; propinas_usd: number }> = {};
+  const porRepartidor: Record<string, { repartidor: string; despachos: number; ventas_entregadas_usd: number; pago_flete_acumulado_usd: number }> = {};
+
+  let totalPropinasUsd = 0;
+  let totalPagosRepartidorUsd = 0;
+
+  for (const fac of allFacturas) {
+    const isCortesia = fac.ventas_pagos?.some((p: any) => {
+      const tp = (p.tipo_pago || '').toLowerCase();
+      return tp.includes('cortes') || tp.includes('regal');
+    }) ||
+    (fac.tipo_documento && (fac.tipo_documento.toLowerCase().includes('cortes') || fac.tipo_documento.toLowerCase().includes('regal'))) ||
+    (fac.numero_orden && (fac.numero_orden.toLowerCase().includes('cortes') || fac.numero_orden.toLowerCase().includes('regal')));
+
+    if (isCortesia) continue;
+
+    const isRefund = (fac.tipo_documento && (
+      fac.tipo_documento.toLowerCase().includes('refund') ||
+      fac.tipo_documento.toLowerCase().includes('devolucion') ||
+      fac.tipo_documento.toLowerCase().includes('nota_credito') ||
+      fac.tipo_documento.toLowerCase().includes('nc')
+    )) || Number(fac.total || 0) < 0;
+
+    const sign = isRefund ? -1 : 1;
+    const monto = sign * Math.abs(Number(fac.total || 0));
+    const propina = sign * Math.abs(Number(fac.propina || 0));
+    const pagoRep = sign * Math.abs(Number(fac.pago_repartidor || 0));
+    const sNombre = sedeNombres[fac.sede_id] || 'General';
+
+    totalPropinasUsd += propina;
+    totalPagosRepartidorUsd += pagoRep;
+
+    const nombreCajero = (fac.cajero_nombre || mapaUsuarios[fac.usuario_id] || 'Caja Principal').trim();
+    const cajKey = `${nombreCajero}__${sNombre}`;
+    if (!porCajero[cajKey]) {
+      porCajero[cajKey] = { nombre: nombreCajero, sede: sNombre, ventas_usd: 0, facturas: 0 };
+    }
+    porCajero[cajKey].ventas_usd += monto;
+    porCajero[cajKey].facturas += 1;
+
+    if (fac.mesero_nombre || propina > 0) {
+      const nombreMesero = (fac.mesero_nombre || nombreCajero).trim();
+      const mesKey = `${nombreMesero}__${sNombre}`;
+      if (!porMesero[mesKey]) {
+        porMesero[mesKey] = { nombre: nombreMesero, sede: sNombre, ventas_usd: 0, mesas_atendidas: 0, propinas_usd: 0 };
+      }
+      porMesero[mesKey].ventas_usd += monto;
+      porMesero[mesKey].mesas_atendidas += 1;
+      porMesero[mesKey].propinas_usd += propina;
+    }
+
+    if (fac.repartidor_id || pagoRep > 0) {
+      const repNombre = mapaUsuarios[fac.repartidor_id] || fac.repartidor_id || 'Repartidor General';
+      if (!porRepartidor[repNombre]) {
+        porRepartidor[repNombre] = { repartidor: repNombre, despachos: 0, ventas_entregadas_usd: 0, pago_flete_acumulado_usd: 0 };
+      }
+      porRepartidor[repNombre].despachos += 1;
+      porRepartidor[repNombre].ventas_entregadas_usd += monto;
+      porRepartidor[repNombre].pago_flete_acumulado_usd += pagoRep;
+    }
+  }
+
+  return {
+    periodo: descripcion,
+    total_propinas_recaudadas_usd: Number(totalPropinasUsd.toFixed(2)),
+    total_pagos_repartidores_usd: Number(totalPagosRepartidorUsd.toFixed(2)),
+    ranking_cajeros: Object.values(porCajero)
+      .sort((a, b) => b.ventas_usd - a.ventas_usd)
+      .map(c => ({
+        ...c,
+        ventas_usd: Number(c.ventas_usd.toFixed(2)),
+        ticket_promedio_usd: c.facturas > 0 ? Number((c.ventas_usd / c.facturas).toFixed(2)) : 0
+      })),
+    ranking_meseros_y_propinas: Object.values(porMesero)
+      .sort((a, b) => b.ventas_usd - a.ventas_usd)
+      .map(m => ({
+        ...m,
+        ventas_usd: Number(m.ventas_usd.toFixed(2)),
+        propinas_usd: Number(m.propinas_usd.toFixed(2))
+      })),
+    ranking_repartidores_delivery: Object.values(porRepartidor)
+      .sort((a, b) => b.despachos - a.despachos)
+      .map(r => ({
+        ...r,
+        ventas_entregadas_usd: Number(r.ventas_entregadas_usd.toFixed(2)),
+        pago_flete_acumulado_usd: Number(r.pago_flete_acumulado_usd.toFixed(2))
+      }))
+  };
+}
+
+/**
+ * 19. Consulta Compras de Insumos, Gastos Operativos y Ranking de Proveedores
+ */
+async function toolConsultarComprasYProveedores(
+  ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
+  args: { periodo?: string; filtro_proveedor_o_concepto?: string; sede_nombre?: string }
+) {
+  const { supabase, empresaId, sedes } = ctx;
+  const { inicio, fin, descripcion } = calcularRangoFechas(args.periodo || 'este_mes');
+
+  let targetSedeId: string | null = null;
+  if (args.sede_nombre) {
+    const sNorm = normalizarTexto(args.sede_nombre);
+    const esGeneral = ['todas', 'ambas', 'todas las sedes', 'consolidado', 'general', 'global', 'ambas sedes'].includes(sNorm);
+    if (!esGeneral) {
+      const sFound = resolverSede(args.sede_nombre, sedes);
+      if (sFound) targetSedeId = sFound.id;
+    }
+  }
+
+  const sedeNombres: Record<string, string> = {};
+  const comprasPorSede: Record<string, { sede: string; insumos_usd: number; gastos_operativos_usd: number; total_usd: number }> = {};
+  sedes.forEach((s, idx) => {
+    const label = `Sede ${idx + 1} (${s.nombre_sede})`;
+    sedeNombres[s.id] = label;
+    comprasPorSede[s.id] = { sede: label, insumos_usd: 0, gastos_operativos_usd: 0, total_usd: 0 };
+  });
+
+  let allCompras: any[] = [];
+  let from = 0;
+  const batchSize = 1000;
+  while (true) {
+    let q = supabase
+      .from('compras_puntuales')
+      .select('id, id_sede, fecha_registro, proveedor, monto_divisas, monto_bs, tasa_cambio, metodo_pago, detalles, estado')
+      .eq('id_empresa', empresaId)
+      .neq('estado', 'ANULADA')
+      .gte('fecha_registro', inicio)
+      .lte('fecha_registro', fin)
+      .order('fecha_registro', { ascending: false })
+      .range(from, from + batchSize - 1);
+
+    if (targetSedeId) q = q.eq('id_sede', targetSedeId);
+
+    const { data: batch, error } = await q;
+    if (error) return { error: `Error consultando compras y gastos: ${error.message}` };
+    if (!batch || batch.length === 0) break;
+
+    allCompras.push(...batch);
+    if (batch.length < batchSize) break;
+    from += batchSize;
+  }
+
+  const filtro = args.filtro_proveedor_o_concepto ? normalizarTexto(args.filtro_proveedor_o_concepto) : '';
+  let totalInsumosUsd = 0;
+  let totalGastosOpUsd = 0;
+
+  const porProveedor: Record<string, { proveedor: string; tipo: string; total_usd: number; compras_count: number }> = {};
+  const registrosRecientes: any[] = [];
+
+  for (const c of allCompras) {
+    const prov = (c.proveedor || 'Proveedor General').trim();
+    const detsStr = JSON.stringify(c.detalles || '');
+    if (filtro) {
+      if (!normalizarTexto(prov).includes(filtro) && !normalizarTexto(detsStr).includes(filtro)) {
+        continue;
+      }
+    }
+
+    const montoUsd = Number(c.monto_divisas || 0);
+    const esGastoOp = Array.isArray(c.detalles) && c.detalles.length > 0 && c.detalles[0]?.es_gasto_operativo === true;
+
+    if (esGastoOp) {
+      totalGastosOpUsd += montoUsd;
+    } else {
+      totalInsumosUsd += montoUsd;
+    }
+
+    const sId = c.id_sede;
+    if (sId && comprasPorSede[sId]) {
+      if (esGastoOp) comprasPorSede[sId].gastos_operativos_usd = Number((comprasPorSede[sId].gastos_operativos_usd + montoUsd).toFixed(2));
+      else comprasPorSede[sId].insumos_usd = Number((comprasPorSede[sId].insumos_usd + montoUsd).toFixed(2));
+      comprasPorSede[sId].total_usd = Number((comprasPorSede[sId].total_usd + montoUsd).toFixed(2));
+    }
+
+    const provKey = prov.toUpperCase();
+    if (!porProveedor[provKey]) {
+      porProveedor[provKey] = {
+        proveedor: prov,
+        tipo: esGastoOp ? 'Gasto Operativo' : 'Proveedor de Insumos',
+        total_usd: 0,
+        compras_count: 0
+      };
+    }
+    porProveedor[provKey].total_usd = Number((porProveedor[provKey].total_usd + montoUsd).toFixed(2));
+    porProveedor[provKey].compras_count += 1;
+
+    if (registrosRecientes.length < 25) {
+      registrosRecientes.push({
+        fecha: (c.fecha_registro || '').substring(0, 10),
+        sede: sedeNombres[sId] || 'General',
+        proveedor_o_concepto: prov,
+        tipo: esGastoOp ? 'GASTO OPERATIVO' : 'COMPRA INSUMOS',
+        monto_usd: Number(montoUsd.toFixed(2)),
+        metodo_pago: c.metodo_pago || 'N/A'
+      });
+    }
+  }
+
+  return {
+    periodo: descripcion,
+    total_general_egresos_usd: Number((totalInsumosUsd + totalGastosOpUsd).toFixed(2)),
+    total_compras_insumos_usd: Number(totalInsumosUsd.toFixed(2)),
+    total_gastos_operativos_usd: Number(totalGastosOpUsd.toFixed(2)),
+    desglose_por_sede: Object.values(comprasPorSede),
+    ranking_proveedores_y_gastos: Object.values(porProveedor).sort((a, b) => b.total_usd - a.total_usd).slice(0, 25),
+    ultimos_registros: registrosRecientes
+  };
+}
+
+/**
+ * 20. Consulta Cierres de Caja (Arqueos Z) y Mesas/Cuentas Abiertas en Tiempo Real
+ */
+async function toolConsultarCierresYMesasAbiertas(
+  ctx: Awaited<ReturnType<typeof getCopilotAuthContext>>,
+  args: { periodo?: string; sede_nombre?: string }
+) {
+  const { supabase, empresaId, sedes } = ctx;
+  const { inicio, fin, descripcion } = calcularRangoFechas(args.periodo || 'esta_semana');
+
+  let targetSedeId: string | null = null;
+  if (args.sede_nombre) {
+    const sNorm = normalizarTexto(args.sede_nombre);
+    const esGeneral = ['todas', 'ambas', 'todas las sedes', 'consolidado', 'general', 'global', 'ambas sedes'].includes(sNorm);
+    if (!esGeneral) {
+      const sFound = resolverSede(args.sede_nombre, sedes);
+      if (sFound) targetSedeId = sFound.id;
+    }
+  }
+
+  const sedeNombres: Record<string, string> = {};
+  sedes.forEach((s, idx) => { sedeNombres[s.id] = `Sede ${idx + 1} (${s.nombre_sede})`; });
+
+  // 1. Consultar Mesas / Cuentas Abiertas actualmente en POS
+  let qMesas = supabase
+    .from('pos_cuentas_abiertas')
+    .select('id, sede_id, numero_documento, nombre_cuenta, total, fecha_apertura, actualizado_en, detalles')
+    .eq('empresa_id', empresaId)
+    .order('actualizado_en', { ascending: false });
+
+  if (targetSedeId) qMesas = qMesas.eq('sede_id', targetSedeId);
+  const { data: cuentasAbiertas } = await qMesas;
+
+  let totalEnMesasAbiertasUsd = 0;
+  const mesasActivas = (cuentasAbiertas || []).map(c => {
+    const monto = Number(c.total || 0);
+    totalEnMesasAbiertasUsd += monto;
+    return {
+      sede: sedeNombres[c.sede_id] || 'General',
+      cuenta_o_mesa: c.nombre_cuenta || c.numero_documento || 'Mesa Abierta',
+      total_acumulado_usd: Number(monto.toFixed(2)),
+      abierta_desde: c.fecha_apertura,
+      ultima_actividad: c.actualizado_en
+    };
+  });
+
+  // 2. Consultar Cierres de Caja en el periodo
+  const fechaInicioDate = inicio.substring(0, 10);
+  const fechaFinDate = fin.substring(0, 10);
+
+  let qCierres = supabase
+    .from('cierres_caja')
+    .select('id, sede_id, fecha_cierre, tasa_cambio, sistema_ventas_brutas, sistema_gastos_operativos, sistema_total_esperado, real_efectivo_bs, real_efectivo_usd, real_bancos_bs, real_bancos_usd, diferencia_total, fecha_registro')
+    .eq('empresa_id', empresaId)
+    .gte('fecha_cierre', fechaInicioDate)
+    .lte('fecha_cierre', fechaFinDate)
+    .order('fecha_cierre', { ascending: false });
+
+  if (targetSedeId) qCierres = qCierres.eq('sede_id', targetSedeId);
+  const { data: cierres } = await qCierres;
+
+  let cierresConDescuadre = 0;
+  let diferenciaAcumuladaUsd = 0;
+
+  const historialCierres = (cierres || []).map(c => {
+    const dif = Number(c.diferencia_total || 0);
+    if (Math.abs(dif) > 0.5) cierresConDescuadre++;
+    diferenciaAcumuladaUsd += dif;
+
+    return {
+      fecha_cierre: c.fecha_cierre,
+      sede: sedeNombres[c.sede_id] || 'General',
+      sistema_ventas_brutas_usd: Number(Number(c.sistema_ventas_brutas || 0).toFixed(2)),
+      sistema_gastos_usd: Number(Number(c.sistema_gastos_operativos || 0).toFixed(2)),
+      sistema_esperado_usd: Number(Number(c.sistema_total_esperado || 0).toFixed(2)),
+      real_efectivo_usd: Number(Number(c.real_efectivo_usd || 0).toFixed(2)),
+      real_bancos_usd: Number(Number(c.real_bancos_usd || 0).toFixed(2)),
+      diferencia_descuadre_usd: Number(dif.toFixed(2)),
+      estado_arqueo: Math.abs(dif) <= 0.5 ? 'CUADRADO' : (dif < 0 ? 'FALTANTE' : 'SOBRANTE')
+    };
+  });
+
+  return {
+    periodo_cierres: descripcion,
+    pos_en_vivo: {
+      mesas_o_cuentas_abiertas_ahora: mesasActivas.length,
+      monto_total_en_mesas_abiertas_usd: Number(totalEnMesasAbiertasUsd.toFixed(2)),
+      detalle_cuentas_abiertas: mesasActivas
+    },
+    cierres_de_caja: {
+      total_cierres_registrados: historialCierres.length,
+      cierres_con_descuadre: cierresConDescuadre,
+      diferencia_neta_acumulada_usd: Number(diferenciaAcumuladaUsd.toFixed(2)),
+      historial_cierres: historialCierres
+    }
+  };
+}
+
 // ==========================================
 // DECLARACIONES DE HERRAMIENTAS PARA GEMINI
 // ==========================================
@@ -2450,13 +3382,17 @@ const copilotTools: { functionDeclarations: FunctionDeclaration[] } = {
     },
     {
       name: 'consultar_balance_dia',
-      description: 'Consulta las ventas (incluyendo el turno de cenas/nocturno) y compras de un día específico, expresadas tanto en Dólares (USD) como en Bolívares (VES) convertidas a la tasa oficial de ese día.',
+      description: 'Consulta el balance financiero (Estado de Resultados / P&L: Ventas netas vs Compras de insumos y Gastos operativos, utilidad/balance neto y margen operativo) de un día específico o de un periodo completo (esta_semana, este_mes, mes_anterior, ultimos_3_meses), desglosado por sede y en USD/VES.',
       parameters: {
         type: SchemaType.OBJECT,
         properties: {
           fecha: {
             type: SchemaType.STRING,
-            description: 'Fecha en formato YYYY-MM-DD (ej: "2026-10-14").',
+            description: 'Fecha en formato YYYY-MM-DD (ej: "2026-10-14") o nombre del periodo ("hoy", "ayer", "esta_semana", "este_mes", "mes_anterior", "ultimos_3_meses").',
+          },
+          periodo: {
+            type: SchemaType.STRING,
+            description: 'Opcional. Periodo a consultar si no es un solo día: "hoy", "ayer", "esta_semana", "semana_pasada", "este_mes", "mes_anterior", "ultimos_30_dias", "ultimos_3_meses", "año_actual".',
           },
           turno: {
             type: SchemaType.STRING,
@@ -2464,32 +3400,30 @@ const copilotTools: { functionDeclarations: FunctionDeclaration[] } = {
           },
           sede_nombre: {
             type: SchemaType.STRING,
-            description: 'Opcional. Nombre o número de la sede a consultar (ej: "sede 1", "sede 2", "sede principal", "sede norte"). Dejar vacío para consultar todas o la sede activa.',
+            description: 'Opcional. Nombre o número de la sede a consultar (ej: "sede 1", "sede 2"). Dejar vacío para consultar todas las sedes consolidadas y desglosadas.',
           }
-        },
-        required: ['fecha']
+        }
       }
     },
     {
       name: 'consultar_ventas_por_metodo_pago',
-      description: 'Consulta el total de ventas cobradas con un método de pago en específico (como Pago Móvil, Punto de Venta, Efectivo USD, Zelle) desglosadas por cada una de las sedes del negocio en un día o periodo.',
+      description: 'Consulta las ventas desglosadas por método de pago (Pago Móvil, Punto de Venta, Efectivo USD, Efectivo Bs, Zelle, Biopago, Transferencia, o "todos" para ver el resumen completo de todos los métodos de pago) por cada sede en un día o periodo.',
       parameters: {
         type: SchemaType.OBJECT,
         properties: {
           metodo_pago: {
             type: SchemaType.STRING,
-            description: 'Nombre del método de pago a consultar (ej: "pago_movil", "efectivo_usd", "punto_de_venta", "zelle").',
+            description: 'Nombre del método de pago a consultar (ej: "pago_movil", "efectivo_usd", "punto_de_venta", "zelle") o "todos" para obtener el desglose completo de todos los métodos de pago.',
           },
           periodo_o_fecha: {
             type: SchemaType.STRING,
-            description: 'Fecha (YYYY-MM-DD) o periodo: "hoy", "ayer", "esta_semana", "semana_pasada", "este_mes", "mes_anterior", "ultimos_30_dias", "ultimos_3_meses" (o ultimos_90_dias), "ultimos_6_meses", "año_actual", o rango "YYYY-MM-DD..YYYY-MM-DD".',
+            description: 'Fecha (YYYY-MM-DD) o periodo: "hoy", "ayer", "esta_semana", "semana_pasada", "este_mes", "mes_anterior", "ultimos_30_dias", "ultimos_3_meses", "ultimos_6_meses", "año_actual", o rango "YYYY-MM-DD..YYYY-MM-DD".',
           },
           sede_nombre: {
             type: SchemaType.STRING,
-            description: 'Opcional. Nombre o número de sede específica a consultar (ej: "sede 1", "sede principal"). Dejar vacío para ver el desglose comparativo de todas las sedes.',
+            description: 'Opcional. Nombre o número de sede específica a consultar (ej: "sede 1", "sede 2"). Dejar vacío para ver el desglose comparativo de todas las sedes.',
           }
-        },
-        required: ['metodo_pago']
+        }
       }
     },
     {
@@ -2596,7 +3530,7 @@ const copilotTools: { functionDeclarations: FunctionDeclaration[] } = {
     },
     {
       name: 'consultar_ventas',
-      description: 'Consulta el reporte y métricas de ventas agregadas (ranking de productos más vendidos, cantidades por producto o categoría, total recaudado en USD) en un periodo.',
+      description: 'Consulta el reporte y métricas de ventas agregadas (total recaudado en USD, desglose por sede, desglose por día de la semana Lunes-Domingo, horas pico de venta, ranking de productos más/menos vendidos, y ventas por canal Delivery o Salón) en un periodo.',
       parameters: {
         type: SchemaType.OBJECT,
         properties: {
@@ -2618,7 +3552,7 @@ const copilotTools: { functionDeclarations: FunctionDeclaration[] } = {
           },
           sede_nombre: {
             type: SchemaType.STRING,
-            description: 'Opcional. Nombre o número de la sede a filtrar (ej: "sede 1", "sede principal", "sede norte"). Dejar vacío para ver el consolidado general de todas las sedes.',
+            description: 'Opcional. Nombre o número de la sede a filtrar (ej: "sede 1", "sede 2"). Dejar vacío para ver el consolidado general y el desglose de todas las sedes.',
           },
           solo_delivery: {
             type: SchemaType.BOOLEAN,
@@ -2634,25 +3568,117 @@ const copilotTools: { functionDeclarations: FunctionDeclaration[] } = {
     },
     {
       name: 'consultar_consumo_insumo',
-      description: 'Consulta el consumo de materia prima o insumo (reales y teóricos por recetas de productos vendidos) en un periodo.',
+      description: 'Consulta el estado del inventario y almacén: puede consultar un insumo específico (stock actual, valor en USD, consumo real vs teórico por recetas) O pasar nombre_insumo="todos" o "bajo_stock" para obtener la valorización total del inventario, insumos agotados y alertas de stock mínimo.',
       parameters: {
         type: SchemaType.OBJECT,
         properties: {
           nombre_insumo: {
             type: SchemaType.STRING,
-            description: 'Nombre o parte del nombre del insumo (ej: "mozzarella", "queso", "harina").',
+            description: 'Nombre del insumo (ej: "mozzarella", "harina") o "todos" / "bajo_stock" para ver el resumen general del inventario, valor total en USD y alertas de stock crítico.',
           },
           periodo: {
             type: SchemaType.STRING,
-            description: 'Periodo de tiempo: hoy, esta_semana, este_mes, ultimos_30_dias.',
+            description: 'Periodo de tiempo para evaluar el consumo: hoy, esta_semana, este_mes, ultimos_30_dias, ultimos_3_meses.',
+          },
+          sede_nombre: {
+            type: SchemaType.STRING,
+            description: 'Opcional. Sede a consultar.',
           }
-        },
-        required: ['nombre_insumo']
+        }
+      }
+    },
+    {
+      name: 'consultar_cuentas_por_cobrar',
+      description: 'Consulta las cuentas por cobrar (clientes que deben dinero, facturas a crédito con saldo pendiente, monto total adeudado por sede y detalle de deudores).',
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          cliente_nombre: {
+            type: SchemaType.STRING,
+            description: 'Opcional. Nombre del cliente específico para consultar cuánto debe.',
+          },
+          sede_nombre: {
+            type: SchemaType.STRING,
+            description: 'Opcional. Sede específica ("sede 1", "sede 2") o vacío para ver todas las sedes.',
+          }
+        }
+      }
+    },
+    {
+      name: 'consultar_mermas_y_cortesias',
+      description: 'Consulta las cortesías/regalías entregadas (que se excluyen de la venta neta), las mermas o desperdicios de inventario y las ventas al costo al personal en un periodo.',
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          periodo: {
+            type: SchemaType.STRING,
+            description: 'Periodo a consultar: hoy, ayer, esta_semana, semana_pasada, este_mes, mes_anterior, ultimos_30_dias, ultimos_3_meses, año_actual.',
+          },
+          sede_nombre: {
+            type: SchemaType.STRING,
+            description: 'Opcional. Sede específica o vacío para todas las sedes.',
+          }
+        }
+      }
+    },
+    {
+      name: 'consultar_desempeno_equipo',
+      description: 'Consulta el rendimiento del personal: ranking de ventas por cajero, ventas y propinas recaudadas por mesero, y pedidos de delivery entregados por repartidor en un periodo.',
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          periodo: {
+            type: SchemaType.STRING,
+            description: 'Periodo a consultar: hoy, ayer, esta_semana, semana_pasada, este_mes, mes_anterior, ultimos_30_dias, ultimos_3_meses.',
+          },
+          sede_nombre: {
+            type: SchemaType.STRING,
+            description: 'Opcional. Sede específica o vacío para todas las sedes.',
+          }
+        }
+      }
+    },
+    {
+      name: 'consultar_compras_y_proveedores',
+      description: 'Consulta el desglose de compras de insumos/materia prima, gastos operativos y el ranking de proveedores a los que más se les ha comprado en un periodo.',
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          periodo: {
+            type: SchemaType.STRING,
+            description: 'Periodo a consultar: hoy, ayer, esta_semana, semana_pasada, este_mes, mes_anterior, ultimos_30_dias, ultimos_3_meses, año_actual.',
+          },
+          filtro_proveedor_o_concepto: {
+            type: SchemaType.STRING,
+            description: 'Opcional. Nombre del proveedor o concepto de gasto a buscar.',
+          },
+          sede_nombre: {
+            type: SchemaType.STRING,
+            description: 'Opcional. Sede específica o vacío para todas las sedes.',
+          }
+        }
+      }
+    },
+    {
+      name: 'consultar_cierres_y_mesas_abiertas',
+      description: 'Consulta cuántas mesas o cuentas están abiertas en vivo ahora mismo en el POS y revisa el historial de cierres de caja (arqueos Z), verificando si hubo descuadres, faltantes o sobrantes de efectivo.',
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          periodo: {
+            type: SchemaType.STRING,
+            description: 'Periodo para revisar cierres de caja: hoy, ayer, esta_semana, este_mes, ultimos_30_dias.',
+          },
+          sede_nombre: {
+            type: SchemaType.STRING,
+            description: 'Opcional. Sede específica o vacío para todas las sedes.',
+          }
+        }
       }
     },
     {
       name: 'auditar_compras_sospechosas',
-      description: 'Audita y detecta posibles compras duplicadas registradas en un mismo día con montos idénticos o casi iguales.',
+      description: 'Audita y detecta posibles compras duplicadas registradas en un mismo día con montos idénticos o casi iguales (excluyendo compras anuladas).',
       parameters: {
         type: SchemaType.OBJECT,
         properties: {
@@ -2872,7 +3898,7 @@ export async function enviarMensajeCopilot({
       .join(' | ');
 
     const systemInstruction = `
-Eres "Niteo Copilot", el asistente inteligente y analítico de la plataforma Niteo.
+Eres "Niteo Copilot", el Director Financiero (CFO) y Asistente Operativo 360° de la plataforma Niteo.
 Usuario: ${ctx.userName} (Rol: ${ctx.rol}).
 Empresa: "${ctx.empresa.nombre_comercial}" (Moneda: ${ctx.empresa.moneda} ${ctx.empresa.simbolo_moneda}).
 Catálogo Oficial de Sedes: ${sedesListStr}.
@@ -2880,60 +3906,55 @@ Privilegio Venta al Costo: ${ctx.permisoVentaCosto ? 'HABILITADO' : 'DENEGADO'}.
 Zona horaria: ${DEFAULT_TIMEZONE} (Venezuela / Caracas).
 
 PERSONALIDAD Y TONO (AMIGABLE, COMPRENSIVO Y ULTRA-EFICIENTE EN TOKENS):
-- Sé cálido, empático, profesional y cordial (ej. "¡Hola! Con gusto te ayudo a revisar eso 😊", "¡Por supuesto! Aquí tienes el balance:").
+- Sé cálido, empático, profesional y cordial (ej. "¡Hola! Con gusto te ayudo a revisar eso 😊", "¡Por supuesto! Aquí tienes el análisis:").
 - NUNCA respondas seco, robótico ni cortante. Haz sentir al usuario acompañado y en confianza.
-- AHORRO MÁXIMO DE TOKENS: Sé muy concreto y directo en la entrega de datos. Evita introducciones largas o despedidas innecesarias. Presenta los números clave en negritas, listas o tablas compactas de Markdown. Amigable pero conciso.
+- AHORRO MÁXIMO DE TOKENS: Sé muy concreto y directo en la entrega de datos. Evita introducciones largas o despedidas innecesarias. Presenta los números clave en negritas, listas o tablas compactas de Markdown.
+
+MATEMÁTICA DORADA Y COBERTURA 360° DE LA EMPRESA:
+- Todas tus herramientas operan bajo "Matemática Dorada": paginan el 100% de los registros sin límite de 1,000 filas, excluyen facturas anuladas (estado_activo=false) y compras ANULADAS, restan devoluciones/notas de crédito (-ABS) y segregan las cortesías/regalías de la venta neta.
+- Tienes cobertura 360° para responder CUALQUIER duda de la empresa combinando tus herramientas si hace falta:
+  1. Ventas, Canales (Delivery vs Salón), Días de la Semana (Lunes a Domingo), Horas Pico y Ranking de Productos -> "consultar_ventas".
+  2. Rentabilidad, Utilidad Neta (P&L), Ventas vs Compras y Gastos Operativos (de un día o de todo el mes/semana) -> "consultar_balance_dia".
+  3. Métodos de Pago (Zelle, Pago Móvil, Punto, Efectivo, o "todos" para ver el resumen completo) -> "consultar_ventas_por_metodo_pago".
+  4. Cuentas por Cobrar, Deudores y Créditos pendientes -> "consultar_cuentas_por_cobrar".
+  5. Cortesías, Regalías, Mermas, Desperdicios y Ventas al Costo al personal -> "consultar_mermas_y_cortesias".
+  6. Desempeño de Personal (Cajeros, Meseros, Propinas recaudadas y Repartidores de Delivery) -> "consultar_desempeno_equipo".
+  7. Compras de Insumos, Gastos Operativos y Ranking de Proveedores -> "consultar_compras_y_proveedores".
+  8. Mesas/Cuentas Abiertas en vivo en el POS y Cierres de Caja / Arqueos Z / Descuadres -> "consultar_cierres_y_mesas_abiertas".
+  9. Inventario, Valorización total en USD, Alertas de Bajo Stock y Consumo Real vs Teórico por recetas -> "consultar_consumo_insumo" (usa nombre_insumo="todos" o "bajo_stock" para resumen general del almacén).
 
 RESOLUCIÓN INTELIGENTE DE SEDES:
 - Si el usuario dice "sede 1", "sucursal 1", "la 1", o similar, corresponde EXACTAMENTE a la primera sede: "${ctx.sedes[0]?.nombre_sede || 'Sede Principal'}".
 - Si dice "sede 2", "sucursal 2", "la 2", corresponde a la segunda sede: "${ctx.sedes[1]?.nombre_sede || 'Sede Secundaria'}".
-- Si dice "sede principal", "la principal" o "central", asóciala con la sede principal (o la primera sede).
-- Si menciona el nombre directamente (ej. "Sede Norte", "Centro"), identifícala por coincidencia de texto.
+- Si pide comparar, dividir entre Sede 1 y Sede 2, o no especifica sede, DEJA sede_nombre VACÍO para obtener el consolidado general y el desglose comparativo de ambas sedes en una sola llamada.
 
 TOLERANCIA A ERRORES ORTOGRÁFICOS Y TIPOGRÁFICOS (TYPOS):
-- El usuario puede cometer faltas de ortografía, escribir rápido desde el celular o alterar letras (ej. "pisa" por "pizza", "mozarela" por "mozzarella", "sed 1" por "sede 1", "pago movl" por "pago móvil", "harinapan" por "harina pan", "despaho" por "despacho").
-- Entiende SIEMPRE su intención real de forma inteligente y amable, sin juzgar ni corregir al usuario innecesariamente.
-- Al invocar las herramientas de consulta, pasa los términos normalizados para asegurar el acierto, aunque la base de datos también cuenta con búsqueda difusa Levenshtein de respaldo.
+- El usuario puede cometer faltas de ortografía o escribir rápido desde el celular (ej. "pisa" por "pizza", "mozarela" por "mozzarella", "sed 1" por "sede 1", "pago movl" por "pago móvil"). Entiende SIEMPRE su intención real y normaliza los términos al llamar a las herramientas.
 
 REGLAS DE OPERACIÓN:
 1. NUNCA INVENTES CIFRAS NI DATOS. Consulta siempre las herramientas para obtener datos verídicos de la base de datos.
-2. CONSULTA DE VENTAS, REPORTES Y FINANZAS:
-   - Si te preguntan por ventas de un periodo (ej. "ventas de los últimos 3 meses", "ventas de este mes", "ventas de ayer"), llama siempre a "consultar_ventas" con el periodo exacto (ej. "ultimos_3_meses", "este_mes", "mes_anterior", "ultimos_30_dias").
-   - CONSULTAS POR CANAL / DELIVERY: Si el usuario pregunta por DELIVERY o pedidos a domicilio (ej: "venta por delivery de este mes", "cuánto vendió delivery dividiendo sede 1 y sede 2", "pedidos a domicilio"), pasa SIEMPRE solo_delivery: true o canal: 'delivery' a la herramienta consultar_ventas. NUNCA digas que el sistema no puede filtrar por canal de delivery, porque la herramienta SÍ filtra con total exactitud las ventas y pedidos de delivery de cada sede.
-   - COMPARACIÓN ENTRE SEDES O DIVIDIR SEDE 1 Y SEDE 2: Si el usuario pide dividir, comparar o ver ambas sedes (ej: "divídelo sede 1 y sede 2", "ambas sedes", "por sucursal"), NO especifiques sede_nombre (o déjalo vacío) para que la herramienta consulte todas las sedes y devuelva el desglose exacto de Sede 1 y Sede 2.
-   - Al invocar "consultar_ventas", la herramienta consulta el 100% de las facturas paginadas y devuelve automáticamente el GRAN TOTAL CONSOLIDADO y el "desglose_por_sede".
-   - SIEMPRE entrega directamente en tu respuesta: el total global en USD, el total de facturas emitidas, el ticket promedio y el desglose de lo vendido por cada sede (Sede 1 y Sede 2 con montos y porcentajes). Si es delivery, informa además el total facturado en órdenes de delivery, el cobro de flete recaudado y la cantidad de pedidos despachados.
-   - NUNCA digas que estás haciendo aproximaciones basadas en 30 días o 6 meses ni preguntes si quiere ver el desglose sede por sede: entrégalo de inmediato con total claridad y precisión.
+2. CONSULTA DE VENTAS, DÍAS DE LA SEMANA, CANALES Y FINANZAS:
+   - Si te preguntan por ventas de un periodo, qué día de la semana se vende más, a qué hora hay más movimiento, o cuáles son los productos más/menos vendidos, llama a "consultar_ventas". La herramienta ya te devuelve "desglose_por_sede", "desglose_por_dia_semana" (Lunes a Domingo con promedios) y "horas_pico_ventas".
+   - CONSULTAS POR CANAL / DELIVERY: Si el usuario pregunta por DELIVERY o pedidos a domicilio, pasa SIEMPRE solo_delivery: true o canal: 'delivery' a "consultar_ventas".
+   - SIEMPRE entrega directamente en tu respuesta: el total global en USD, el total de facturas emitidas, el ticket promedio y el desglose de cada sede (Sede 1 y Sede 2 con montos y porcentajes).
 3. Si el usuario te indica una regla de conversión (ej. "una barra pesa 3kg"), calcula la división matemáticamente sobre los kg devueltos por la herramienta y explícalo claramente.
 4. ASISTENCIA Y ESCANDALLO DE RECETAS:
-   - Para consultar los ingredientes, escandallo de costos y márgenes de un producto del catálogo, llama a "consultar_receta".
-   - Si el usuario te pide armar, crear o actualizar una receta (o te lista qué ingredientes lleva un plato, ej. "La pizza margarita lleva 250g de masa, 150g de mozzarella y 80g de salsa"), llama inmediatamente a "proponer_receta" para vincular los insumos del almacén y preparar la tarjeta interactiva de guardado.
-   - Si el usuario te pide ideas o sugerencias de recetas para su negocio, asesóralo gastronómicamente con entusiasmo y propón recetas prácticas usando los insumos que tenga.
+   - Para consultar ingredientes, costos y márgenes de un producto, llama a "consultar_receta".
+   - Para crear o actualizar una receta, llama a "proponer_receta".
 5. CREACIÓN Y GESTIÓN DE COMBOS Y PROMOCIONES:
-   - Si el usuario te pide crear o armar un combo o promoción (ej: "hazme el combo fiesta que lleva 2 pizzas familiares tradicionales, 1 con maiz y un ref 2lt"), llama inmediatamente a "proponer_combo".
-   - Extrae los productos indicados y sus cantidades.
-   - Si el usuario no especificó el precio, la herramienta sumará los precios de lista individuales de los productos. En tu respuesta, presenta el desglose claro y sugiere un precio atractivo o indícale que puede confirmarlo para que quede disponible en el punto de venta.
+   - Si el usuario te pide crear un combo o promoción, llama a "proponer_combo".
 6. ACTUALIZACIÓN Y REDONDEO DE PRECIOS (INDIVIDUAL Y MASIVO):
-   - ACTUALIZACIÓN INDIVIDUAL:
-     Si el usuario pide cambiar, actualizar o modificar el precio de un combo, promoción o producto puntual existente (ej: "actualiza la promo a 14", "pon la hamburguesa a $10"):
-     Llama a "proponer_actualizar_precio" indicando el nombre y el nuevo precio.
-   - ACTUALIZACIÓN Y REDONDEO MASIVO (CATÁLOGO COMPLETO O POR CATEGORÍA):
-     Si el usuario pide redondear precios de todo el catálogo, de una categoría, eliminar centavos, redondear a múltiplos de $0.50 o $1.00, o aplicar un incremento porcentual masivo (ej: "redondea los precios a 0.50", "redondea todos los precios al entero más cercano", "quita los centavos", "ajusta los precios que terminen en .85", "aumenta un 10% a las pizzas y redondea"):
-     Llama INMEDIATAMENTE a "proponer_ajuste_masivo_precios".
-     NUNCA digas que no cuentas con una herramienta masiva ni obligues al usuario a revisar uno por uno.
-     Describe el resumen del ajuste calculado de forma cordial (cuántos productos y combos cambiarán) e invítalo a verificar la vista previa en la tarjeta interactiva y confirmar con el botón.
-7. Para acciones que modifican datos (desactivar combos, fusionar marcas, despachos entre sedes, ventas al costo, guardar recetas, crear combos o actualizar/redondear precios):
-   - NUNCA afirmes haber ejecutado la mutación en la base de datos de inmediato.
-   - Llama a la herramienta "proponer_*" correspondiente.
-   - Describe la propuesta amablemente con los números exactos e invita al usuario a confirmar mediante el botón en pantalla.
+   - Para cambiar el precio de un producto o combo puntual, llama a "proponer_actualizar_precio".
+   - Para redondear o ajustar precios de todo el catálogo o de una categoría, llama a "proponer_ajuste_masivo_precios".
+7. Para acciones que modifican datos ("proponer_*"):
+   - NUNCA afirmes haber ejecutado la mutación en la base de datos de inmediato. Describe la propuesta con los números exactos e invita al usuario a confirmar con el botón en pantalla.
     `.trim();
 
     const modelNamesToTry = [
-      'gemini-flash-lite-latest',
-      'gemini-3.5-flash-lite',
       'gemini-flash-latest',
-      'gemini-3.5-flash',
-      'gemini-3.8-flash'
+      'gemini-flash-lite-latest',
+      'gemini-2.5-flash',
+      'gemini-2.0-flash'
     ];
     let lastError: any = null;
 
@@ -3010,6 +4031,21 @@ REGLAS DE OPERACIÓN:
                   break;
                 case 'consultar_consumo_insumo':
                   toolResult = await toolConsultarConsumoInsumo(ctx, call.args || {});
+                  break;
+                case 'consultar_cuentas_por_cobrar':
+                  toolResult = await toolConsultarCuentasPorCobrar(ctx, call.args || {});
+                  break;
+                case 'consultar_mermas_y_cortesias':
+                  toolResult = await toolConsultarMermasYCortesias(ctx, call.args || {});
+                  break;
+                case 'consultar_desempeno_equipo':
+                  toolResult = await toolConsultarDesempenoEquipo(ctx, call.args || {});
+                  break;
+                case 'consultar_compras_y_proveedores':
+                  toolResult = await toolConsultarComprasYProveedores(ctx, call.args || {});
+                  break;
+                case 'consultar_cierres_y_mesas_abiertas':
+                  toolResult = await toolConsultarCierresYMesasAbiertas(ctx, call.args || {});
                   break;
                 case 'auditar_compras_sospechosas':
                   toolResult = await toolAuditarComprasSospechosas(ctx, call.args || {});
