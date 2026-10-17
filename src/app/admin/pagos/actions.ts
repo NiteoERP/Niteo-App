@@ -31,7 +31,7 @@ export async function getPagosPendientes() {
       return { success: false, error: error.message, pagos: [] };
     }
 
-    // Obtener tasas BCV únicas para las fechas de los pagos pendientes
+    // Obtener tasas BCV únicas para las fechas de los pagos pendientes + última tasa disponible como respaldo
     const fechasUnicas = [...new Set(
       (data || []).map(p => {
         const fecha = p.fecha_pago || p.fecha_registro;
@@ -39,23 +39,34 @@ export async function getPagosPendientes() {
       }).filter(Boolean)
     )];
 
-    let tasasPorFecha: Record<string, number> = {};
+    const tasasPorFecha: Record<string, number> = {};
     if (fechasUnicas.length > 0) {
       const { data: tasas } = await supabase
         .from('tasa_cambiaria')
         .select('fecha, tasa_bcv')
         .in('fecha', fechasUnicas);
       (tasas || []).forEach((t: any) => {
-        tasasPorFecha[t.fecha] = t.tasa_bcv;
+        tasasPorFecha[t.fecha] = Number(t.tasa_bcv);
       });
+    }
+
+    // Tasa BCV más reciente como fallback
+    let tasaReciente: number | null = null;
+    const { data: ultimaTasa } = await supabase
+      .from('tasa_cambiaria')
+      .select('tasa_bcv')
+      .order('fecha', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (ultimaTasa?.tasa_bcv) {
+      tasaReciente = Number(ultimaTasa.tasa_bcv);
     }
 
     const formattedPagos = (data || []).map((p: any) => {
       const fechaRef = p.fecha_pago || p.fecha_registro;
       const fechaStr = fechaRef ? new Date(fechaRef).toISOString().split('T')[0] : null;
-      // Tasa BCV del día del pago (o la más reciente disponible si no hay exacta)
-      const tasaBCV = fechaStr ? (tasasPorFecha[fechaStr] || null) : null;
-      const montoBs = tasaBCV ? Math.round(p.monto * tasaBCV * 100) / 100 : null;
+      const tasaBCV = (fechaStr && tasasPorFecha[fechaStr]) ? tasasPorFecha[fechaStr] : tasaReciente;
+      const montoBs = tasaBCV ? Math.round(Number(p.monto) * tasaBCV * 100) / 100 : null;
 
       return {
         ...p,
@@ -64,7 +75,7 @@ export async function getPagosPendientes() {
         empresas: p.empresas ? {
           ...p.empresas,
           plan: p.empresas.plan_suscripcion || 'PRO',
-          estado: p.empresas.estado_activo ? 'activa' : 'inactiva'
+          estado: p.empresas.estado_activo ? 'ACTIVA' : 'INACTIVA'
         } : null
       };
     });
@@ -106,39 +117,64 @@ export async function aprobarPago(pagoId: string) {
     if (errPago || !pago) return { success: false, error: 'Pago no encontrado' };
 
     // 2. Detectar plan del pago: primero de la columna dedicada, fallback a parsear referencia
-    //    (el fallback es para pagos registrados antes de la migración migrate_billing_v2.sql)
     let planDetectado = 'PRO';
     if (pago.plan_solicitado) {
-      // Columna dedicada: "PRO + [recetas]" → extraemos el plan base
       const planBase = pago.plan_solicitado.split(' ')[0].toUpperCase();
-      if (['STARTER', 'PRO', 'ENTERPRISE'].includes(planBase)) {
+      if (['STARTER', 'PRO', 'ENTERPRISE', 'LIFETIME'].includes(planBase)) {
         planDetectado = planBase;
       }
     } else {
-      // Fallback legacy: buscar en referencia
-      const referencia = pago.referencia || '';
-      if (referencia.toUpperCase().includes('ENTERPRISE')) planDetectado = 'ENTERPRISE';
-      else if (referencia.toUpperCase().includes('STARTER')) planDetectado = 'STARTER';
-      else if (referencia.toUpperCase().includes('PRO')) planDetectado = 'PRO';
+      const referencia = (pago.referencia || '').toUpperCase();
+      if (referencia.includes('ENTERPRISE')) planDetectado = 'ENTERPRISE';
+      else if (referencia.includes('STARTER')) planDetectado = 'STARTER';
+      else if (referencia.includes('PRO')) planDetectado = 'PRO';
     }
 
+    // Consultar suscripción actual para respetar renovaciones anticipadas y módulos operativos
+    const { data: subActual } = await supabase
+      .from('suscripciones_empresas')
+      .select('plan, estado, fecha_vencimiento, modulos_activos')
+      .eq('empresa_id', pago.empresa_id)
+      .maybeSingle();
+
     // 3. Calcular fecha de vencimiento según ciclo de facturación
-    //    Mensual: 1ro del mes siguiente a las 00:00:00
-    //    Anual:   1ro del mes actual + 12 meses (trabaja todo el año, vence el 1ro del 13vo mes)
     const esAnual = !!(pago.plan_solicitado && pago.plan_solicitado.includes('[ANUAL]'));
     const hoy = new Date();
-    const nuevaFecha = esAnual
-      ? new Date(hoy.getFullYear(), hoy.getMonth() + 12, 1, 0, 0, 0, 0)  // 1ro en 12 meses
-      : new Date(hoy.getFullYear(), hoy.getMonth() + 1,  1, 0, 0, 0, 0); // 1ro del próximo mes
+    const primeroProximoMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1, 0, 0, 0, 0);
+    const diasHastaPrimero = Math.ceil((primeroProximoMes.getTime() - hoy.getTime()) / 86400000);
 
-    // 3.5. Extraer módulos adicionales (plugins) de plan_solicitado
-    let modulosDetectados: string[] = [];
+    let nuevaFecha: Date;
+    if (esAnual) {
+      const baseDate = (subActual?.fecha_vencimiento && new Date(subActual.fecha_vencimiento) > hoy)
+        ? new Date(subActual.fecha_vencimiento)
+        : hoy;
+      nuevaFecha = new Date(baseDate.getFullYear(), baseDate.getMonth() + 12, 1, 0, 0, 0, 0);
+    } else {
+      // Si la empresa paga en los últimos 7 días del mes o ya tenía vencimiento en el próximo mes,
+      // extendemos al 1ro del mes subsiguiente para garantizar su mes completo.
+      if (subActual?.fecha_vencimiento && new Date(subActual.fecha_vencimiento) >= primeroProximoMes) {
+        const venc = new Date(subActual.fecha_vencimiento);
+        nuevaFecha = new Date(venc.getFullYear(), venc.getMonth() + 1, 1, 0, 0, 0, 0);
+      } else if (diasHastaPrimero <= 7) {
+        nuevaFecha = new Date(hoy.getFullYear(), hoy.getMonth() + 2, 1, 0, 0, 0, 0);
+      } else {
+        nuevaFecha = primeroProximoMes;
+      }
+    }
+
+    // 3.5. Extraer módulos adicionales (plugins) de plan_solicitado preservando módulos base ('mesas', 'delivery')
+    const modulosPrevios: string[] = Array.isArray(subActual?.modulos_activos)
+      ? subActual.modulos_activos.filter((m: string) => m === 'mesas' || m === 'delivery')
+      : ['mesas', 'delivery'];
+
+    let pluginsDetectados: string[] = [];
     if (pago.plan_solicitado && pago.plan_solicitado.includes('+ [')) {
       const match = pago.plan_solicitado.match(/\+ \[([^\]]+)\]/);
       if (match && match[1]) {
-        modulosDetectados = match[1].split(',').map((m: string) => m.trim());
+        pluginsDetectados = match[1].split(',').map((m: string) => m.trim()).filter(Boolean);
       }
     }
+    const modulosFinales = Array.from(new Set([...modulosPrevios, ...pluginsDetectados]));
 
     // 4. Aprobar el pago
     const { error: errUpdate } = await supabase
@@ -152,15 +188,15 @@ export async function aprobarPago(pagoId: string) {
 
     if (errUpdate) return { success: false, error: errUpdate.message };
 
-    // 5. Actualizar o insertar la suscripción de la empresa
+    // 5. Actualizar o insertar la suscripción de la empresa (usando 'ACTIVA' en mayúsculas acorde al enum)
     const { error: errSub } = await supabase
       .from('suscripciones_empresas')
       .upsert({
         empresa_id: pago.empresa_id,
         plan: planDetectado,
-        estado: 'activa',
+        estado: 'ACTIVA',
         fecha_vencimiento: nuevaFecha.toISOString(),
-        modulos_activos: modulosDetectados,
+        modulos_activos: modulosFinales,
       }, { onConflict: 'empresa_id' });
 
     if (errSub) return { success: false, error: errSub.message };
@@ -169,8 +205,9 @@ export async function aprobarPago(pagoId: string) {
     await supabase
       .from('empresas')
       .update({
-        plan_suscripcion: planDetectado.toLowerCase(),
+        plan_suscripcion: planDetectado.toUpperCase(),
         fecha_vencimiento_plan: nuevaFecha.toISOString(),
+        estado_activo: true,
       })
       .eq('id', pago.empresa_id);
 
@@ -178,7 +215,8 @@ export async function aprobarPago(pagoId: string) {
     revalidatePath('/admin/pagos');
     revalidatePath('/admin/empresas');
     revalidatePath('/dashboard', 'layout');
-    return { success: true, plan: planDetectado };
+    revalidatePath('/dashboard/billing');
+    return { success: true, plan: planDetectado, fechaVencimiento: nuevaFecha.toISOString() };
   } catch (err: any) {
     return { success: false, error: err.message };
   }
@@ -194,7 +232,6 @@ export async function rechazarPago(pagoId: string, motivo: string) {
         estado: 'rechazado',
         fecha_revision: new Date().toISOString(),
         revisado_por: user.id,
-        // Guardamos el motivo en notas_admin para no destruir la referencia original del cliente
         notas_admin: motivo ? `Rechazado: ${motivo}` : 'Rechazado por administrador',
       })
       .eq('id', pagoId);
@@ -202,6 +239,7 @@ export async function rechazarPago(pagoId: string, motivo: string) {
     if (error) return { success: false, error: error.message };
 
     revalidatePath('/admin/pagos');
+    revalidatePath('/dashboard/billing');
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message };

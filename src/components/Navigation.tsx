@@ -23,7 +23,8 @@ import {
   ShoppingBag,
   Building2,
   UtensilsCrossed,
-  Sparkles
+  Sparkles,
+  CreditCard
 } from 'lucide-react';
 
 interface NavProps {
@@ -319,6 +320,12 @@ export function SidebarBottom({ permisos, userRole }: NavProps) {
 
   return (
     <div className="p-3 border-t border-neutral-800 shrink-0 space-y-1">
+      {(userRole === 'MASTER' || userRole === 'SUPERADMIN') && (
+        <Link href="/dashboard/billing" className={getLinkClass('/dashboard/billing')}>
+          <CreditCard size={18} />
+          <span className="text-sm font-medium">Suscripción y Plan</span>
+        </Link>
+      )}
       {hasPerm('ajustes') && (
         <Link href="/dashboard/configuracion" className={getLinkClass('/dashboard/configuracion')}>
           <Settings size={18} />
@@ -541,6 +548,12 @@ export function MobileNav({ permisos, userRole, modulosActivos = [], planSuscrip
                 {(isModuloHabilitado('delivery') && (userRole === 'MASTER' || userRole === 'SUPERADMIN')) && (
                   <Link href="/dashboard/delivery" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/delivery')}>
                     <Truck size={18} /> Reporte Entregas
+                  </Link>
+                )}
+
+                {(userRole === 'MASTER' || userRole === 'SUPERADMIN') && (
+                  <Link href="/dashboard/billing" onClick={() => setMenuOpen(false)} className={drawerItem('/dashboard/billing')}>
+                    <CreditCard size={18} /> Suscripción y Plan
                   </Link>
                 )}
 

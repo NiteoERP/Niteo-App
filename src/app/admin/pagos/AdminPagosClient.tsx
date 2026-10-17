@@ -28,14 +28,17 @@ const PLUGIN_PRECIOS: Record<string, number> = {
 
 function calcularMontoEsperado(planSolicitado: string | null): number {
   if (!planSolicitado) return 0;
-  // Formato: "PRO + [recetas,multi-price]"
+  // Formato: "PRO [MENSUAL] + [recetas,multi-price]" o "PRO [ANUAL] + [recetas]"
   const [planParte, pluginsParte] = planSolicitado.split(' + ');
-  const planBase = PLAN_PRECIOS[planParte?.toUpperCase()] || 0;
+  const planKey = planParte?.split(' ')[0]?.toUpperCase() || '';
+  const esAnual = planSolicitado.toUpperCase().includes('[ANUAL]');
+  const planBase = PLAN_PRECIOS[planKey] || 0;
   const pluginsStr = pluginsParte?.replace(/[\[\]]/g, '') || '';
   const pluginsTotal = pluginsStr
     ? pluginsStr.split(',').reduce((acc, p) => acc + (PLUGIN_PRECIOS[p.trim()] || 0), 0)
     : 0;
-  return planBase + pluginsTotal;
+  const mensualTotal = planBase + pluginsTotal;
+  return esAnual ? mensualTotal * 10 : mensualTotal;
 }
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -83,7 +86,7 @@ function PagoCard({ pago, onAprobar, onRechazar, isPending }: {
             <p className="font-bold text-white text-sm">{empresa?.nombre_comercial || 'Empresa desconocida'}</p>
           </div>
           <p className="text-xs text-neutral-500 flex items-center gap-1">
-            <Calendar size={11} /> {fecha}
+            <Calendar size={11} /> {fecha} · Ref: <span className="font-mono text-neutral-300">{pago.referencia || '—'}</span>
           </p>
         </div>
 
@@ -108,10 +111,14 @@ function PagoCard({ pago, onAprobar, onRechazar, isPending }: {
         <div className="border-t border-neutral-800 p-5 space-y-5 bg-neutral-950/40">
 
           {/* ── Info del pago ── */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
             <div>
               <p className="text-neutral-500 text-xs font-bold uppercase tracking-wider mb-1">Referencia</p>
               <p className="text-white font-mono">{pago.referencia || '—'}</p>
+            </div>
+            <div>
+              <p className="text-neutral-500 text-xs font-bold uppercase tracking-wider mb-1">Banco / Origen</p>
+              <p className="text-white">{pago.banco_destino || 'No especificado'}</p>
             </div>
             <div>
               <p className="text-neutral-500 text-xs font-bold uppercase tracking-wider mb-1">Fecha del pago</p>
@@ -359,20 +366,13 @@ export default function AdminPagosClient({ pagosPendientes, pagosHistorial }: {
             </div>
           ) : (
             pagosHistorial.map(p => (
-              <div key={p.id} className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 flex items-center justify-between gap-4">
-                <div>
-                  <p className="font-bold text-white text-sm">{p.empresas?.nombre_comercial || 'Empresa'}</p>
-                  <p className="text-xs text-neutral-500 mt-1">
-                    ${p.monto} USD · {p.metodo_pago} · {p.referencia}
-                  </p>
-                  <p className="text-xs text-neutral-600 mt-0.5">
-                    {new Date(p.fecha_revision || p.fecha_registro).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
-                  </p>
-                </div>
-                <span className={`text-xs px-2.5 py-1 rounded-full font-bold shrink-0 ${ESTADO_BADGE[p.estado as keyof typeof ESTADO_BADGE] || ''}`}>
-                  {p.estado?.toUpperCase()}
-                </span>
-              </div>
+              <PagoCard
+                key={p.id}
+                pago={p}
+                onAprobar={handleAprobar}
+                onRechazar={handleRechazar}
+                isPending={isPending}
+              />
             ))
           )}
         </div>
@@ -380,3 +380,4 @@ export default function AdminPagosClient({ pagosPendientes, pagosHistorial }: {
     </div>
   );
 }
+

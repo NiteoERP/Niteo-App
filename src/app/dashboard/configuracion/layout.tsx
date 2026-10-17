@@ -13,7 +13,8 @@ import {
   MapPin, 
   Database, 
   Sliders,
-  Tag
+  Tag,
+  ShieldCheck
 } from 'lucide-react';
 
 interface NavGroup {
@@ -31,6 +32,7 @@ const navGroups: NavGroup[] = [
     group: 'Empresa',
     items: [
       { name: 'Perfil General', href: '/dashboard/configuracion', icon: Building2, desc: 'Nombre, rubro y zona horaria' },
+      { name: 'Suscripción y Licencia', href: '/dashboard/billing', icon: ShieldCheck, desc: 'Plan activo, pagos y comprobantes' },
       { name: 'Monedas & Tasas', href: '/dashboard/configuracion/tasas', icon: DollarSign, desc: 'Tasa oficial BCV y multimoneda' },
       { name: 'Métodos de Pago', href: '/dashboard/configuracion/pagos', icon: CreditCard, desc: 'Cobros de ventas y compras' },
       { name: 'Inventario & Costeo', href: '/dashboard/configuracion/inventario', icon: Package, desc: 'Valoración de stock y despachos' },

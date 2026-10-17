@@ -34,7 +34,11 @@ export async function reportarPagoManual(metodo: string, referencia: string, mon
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Usuario no autenticado' };
 
-    const empresaId = user.app_metadata?.empresa_id;
+    let empresaId = user.app_metadata?.empresa_id;
+    if (!empresaId) {
+      const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single();
+      empresaId = perfil?.empresa_id;
+    }
     if (!empresaId) return { success: false, error: 'Sin empresa asignada' };
 
     const { error } = await supabase.from('suscripciones_pagos').insert({
@@ -42,7 +46,9 @@ export async function reportarPagoManual(metodo: string, referencia: string, mon
       metodo_pago: metodo,
       referencia: referencia,
       monto: monto,
-      estado: 'pendiente_aprobacion', banco_destino, fecha_pago
+      estado: 'pendiente_aprobacion',
+      banco_destino: banco_destino || null,
+      fecha_pago: fecha_pago || new Date().toISOString().split('T')[0],
     });
 
     if (error) throw error;
@@ -84,7 +90,7 @@ export async function aprobarPagoManual(pagoId: string, empresaId: string) {
 
     const { error: errSub } = await supabase
       .from('suscripciones_empresas')
-      .update({ plan: planDetectado, estado: 'activa' })
+      .update({ plan: planDetectado, estado: 'ACTIVA' })
       .eq('empresa_id', empresaId);
     if (errSub) throw errSub;
 
@@ -94,3 +100,4 @@ export async function aprobarPagoManual(pagoId: string, empresaId: string) {
     return { success: false, error: err.message };
   }
 }
+

@@ -69,7 +69,7 @@ export async function cambiarPlan(empresaId: string, plan: string, dias: number 
       .upsert({
         empresa_id: empresaId,
         plan: plan.toUpperCase(),
-        estado: plan.toUpperCase() === 'SUSPENDIDA' ? 'suspendida' : 'activa',
+        estado: plan.toUpperCase() === 'SUSPENDIDA' ? 'SUSPENDIDA' : 'ACTIVA',
         fecha_vencimiento: plan.toUpperCase() === 'LIFETIME'
           ? '2099-12-31T23:59:59.000Z'
           : fechaVenc.toISOString(),
@@ -108,7 +108,7 @@ export async function extenderLicencia(empresaId: string, dias: number) {
       .upsert({
         empresa_id: empresaId,
         plan: sub?.plan || 'PRO',
-        estado: 'activa',
+        estado: 'ACTIVA',
         fecha_vencimiento: base.toISOString(),
       }, { onConflict: 'empresa_id' });
 
@@ -129,7 +129,7 @@ export async function suspenderEmpresa(empresaId: string) {
       .from('suscripciones_empresas')
       .upsert({
         empresa_id: empresaId,
-        estado: 'suspendida',
+        estado: 'SUSPENDIDA',
         fecha_vencimiento: new Date().toISOString(),
       }, { onConflict: 'empresa_id' });
 
@@ -165,7 +165,7 @@ export async function actualizarModulosEmpresa(empresaId: string, modulos: strin
         .insert({
           empresa_id: empresaId,
           plan: 'PRO',
-          estado: 'activa',
+          estado: 'ACTIVA',
           modulos_activos: modulos,
         });
       error = res.error;
@@ -180,3 +180,4 @@ export async function actualizarModulosEmpresa(empresaId: string, modulos: strin
     return { success: false, error: err.message };
   }
 }
+
