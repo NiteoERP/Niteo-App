@@ -701,15 +701,24 @@ export async function modificarVentaPOS(payload: ModificarVentaPayload) {
 
     const { data: profile } = await supabase
       .from('perfiles')
-      .select('id, nombre_completo, rol, empresa_id')
+      .select('id, nombre_completo, rol, permisos, empresa_id')
       .eq('id', user.id)
       .single();
 
     if (!profile) return { success: false, error: 'Perfil de usuario no encontrado' };
 
     const rolNormalizado = (profile.rol || '').toUpperCase();
-    if (!['MASTER', 'GERENTE', 'ADMIN'].includes(rolNormalizado)) {
-      return { success: false, error: 'Solo Gerentes y Administradores tienen permiso para modificar ventas.' };
+    const esRolValido = ['MASTER', 'PROPIETARIO', 'DUENO', 'GERENTE', 'ADMIN', 'SUPERADMIN'].includes(rolNormalizado);
+    const permisosUsuario = Array.isArray(profile.permisos) ? profile.permisos : [];
+    const tieneModuloHabilitado = permisosUsuario.includes('modificar_ventas') || 
+                                  permisosUsuario.includes('modificacion_ventas') || 
+                                  permisosUsuario.includes('modificar_pedidos');
+
+    if (!esRolValido && !tieneModuloHabilitado) {
+      return { 
+        success: false, 
+        error: 'No tienes autorización. Esta acción es válida únicamente para usuarios Master, Propietario, Gerente o usuarios con el módulo de modificación de ventas habilitado.' 
+      };
     }
 
     if (!payload.motivo || !payload.motivo.trim()) {

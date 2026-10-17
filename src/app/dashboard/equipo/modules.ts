@@ -44,6 +44,12 @@ export const AVAILABLE_MODULES: ModuleDefinition[] = [
     description: 'Directorio de proveedores y cuentas por pagar', 
     category: 'operaciones' 
   },
+  { 
+    id: 'modificar_ventas', 
+    label: 'Modificar Ventas POS', 
+    description: 'Autoriza a rectificar pedidos cerrados de caja (quitar o cambiar productos y formas de pago con registro de auditoría)', 
+    category: 'operaciones' 
+  },
 
   // Inventario
   { 
@@ -136,7 +142,8 @@ export const ROLE_PRESETS: Record<string, string[]> = {
   MESERO: ['mesas'],
   GERENTE: [
     'dashboard', 'pos', 'caja', 'inventario', 'compras', 'proveedores',
-    'despachos', 'clientes', 'creditos', 'reportes', 'finanzas', 'mesas'
+    'despachos', 'clientes', 'creditos', 'reportes', 'finanzas', 'mesas',
+    'modificar_ventas'
   ],
   COMPRADOR: ['compras', 'proveedores', 'inventario'],
   REPARTIDOR: ['delivery'],

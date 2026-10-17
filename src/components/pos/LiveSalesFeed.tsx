@@ -2,8 +2,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useEmpresa } from '@/components/providers/EmpresaProvider';
-import { VentaPOS } from '@/actions/pos-actions';
-import { Eye, EyeOff, Receipt, Clock, CheckCircle2, ChevronDown, ChevronUp, Users, CreditCard, Search, Contact, ConciergeBell, FileText } from 'lucide-react';
+import { VentaPOS, getVentasRecientes } from '@/actions/pos-actions';
+import EditarVentaModal from './EditarVentaModal';
+import { Eye, EyeOff, Receipt, Clock, CheckCircle2, ChevronDown, ChevronUp, Users, CreditCard, Search, Contact, ConciergeBell, FileText, Edit3 } from 'lucide-react';
 import { normalizePaymentKey, getCanonicalPaymentMethodName, unifyPaymentMethods } from '@/utils/payment-methods';
 
 interface LiveSalesFeedProps {
@@ -12,14 +13,25 @@ interface LiveSalesFeedProps {
 }
 
 export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedProps) {
-  const { timeZone, empresa } = useEmpresa();
+  const { timeZone, empresa, userRole, permisos } = useEmpresa();
   const activeTz = timeZone || empresa?.zona_horaria || 'America/Caracas';
+
+  const canEditOrder = useMemo(() => {
+    const rolNorm = (userRole || '').toUpperCase();
+    const esRolValido = ['MASTER', 'PROPIETARIO', 'DUENO', 'GERENTE', 'ADMIN', 'SUPERADMIN'].includes(rolNorm);
+    const permisosActivos = Array.isArray(permisos) ? permisos : [];
+    const tieneModuloHabilitado = permisosActivos.includes('modificar_ventas') || 
+                                  permisosActivos.includes('modificacion_ventas') || 
+                                  permisosActivos.includes('modificar_pedidos');
+    return esRolValido || tieneModuloHabilitado;
+  }, [userRole, permisos]);
 
   const [sales, setSales] = useState<VentaPOS[]>(initialSales);
   const [privacyMode, setPrivacyMode] = useState(false);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
   const [filtroMetodo, setFiltroMetodo] = useState('TODOS');
+  const [modificarVenta, setModificarVenta] = useState<VentaPOS | null>(null);
   
   const supabase = createClient();
 
@@ -599,10 +611,24 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
                   {/* Body (Detalles Expandidos) */}
                   {isExpanded && (
                     <div className="p-3.5 sm:p-4 bg-neutral-950/90 border-t border-neutral-800">
-                      <h4 className="text-xs font-bold text-neutral-300 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                        <Receipt size={14} className="text-indigo-400" />
-                        Items del Ticket
-                      </h4>
+                      <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+                        <h4 className="text-xs font-bold text-neutral-300 uppercase tracking-wider flex items-center gap-1.5">
+                          <Receipt size={14} className="text-indigo-400" />
+                          Items del Ticket
+                        </h4>
+                        {canEditOrder && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setModificarVenta(sale);
+                            }}
+                            className="text-xs flex items-center gap-1.5 bg-blue-500/15 text-blue-300 hover:bg-blue-500/25 border border-blue-500/30 px-3 py-1.5 rounded-xl transition-colors font-semibold"
+                            title="Modificar productos y formas de pago con registro de auditoría"
+                          >
+                            <Edit3 size={13} className="shrink-0" /> <span>Modificar Pedido</span>
+                          </button>
+                        )}
+                      </div>
                       <div className="bg-neutral-900/90 border border-neutral-800/90 rounded-xl p-3 divide-y divide-neutral-800/70">
                         {sale.detalles.map((d: any) => (
                           <div key={d.id_detalle} className="py-2 first:pt-0 last:pb-0 text-xs sm:text-sm space-y-1">
@@ -690,6 +716,16 @@ export default function LiveSalesFeed({ initialSales, sedeId }: LiveSalesFeedPro
         )}
       </div>
 
+      {modificarVenta && (
+        <EditarVentaModal
+          venta={modificarVenta}
+          isOpen={!!modificarVenta}
+          onClose={() => setModificarVenta(null)}
+          onSuccess={() => {
+            getVentasRecientes(sedeId).then(data => setSales(data));
+          }}
+        />
+      )}
     </div>
   );
 }

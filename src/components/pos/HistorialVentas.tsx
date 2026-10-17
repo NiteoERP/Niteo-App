@@ -15,9 +15,17 @@ import {
 import { es } from 'date-fns/locale';
 
 export default function HistorialVentas({ sedeId }: { sedeId: string }) {
-  const { timeZone, empresa, userRole } = useEmpresa();
+  const { timeZone, empresa, userRole, permisos } = useEmpresa();
   const activeTz = timeZone || empresa?.zona_horaria || 'America/Caracas';
-  const canEditOrder = ['MASTER', 'GERENTE', 'ADMIN'].includes((userRole || '').toUpperCase());
+  const canEditOrder = useMemo(() => {
+    const rolNorm = (userRole || '').toUpperCase();
+    const esRolValido = ['MASTER', 'PROPIETARIO', 'DUENO', 'GERENTE', 'ADMIN', 'SUPERADMIN'].includes(rolNorm);
+    const permisosActivos = Array.isArray(permisos) ? permisos : [];
+    const tieneModuloHabilitado = permisosActivos.includes('modificar_ventas') || 
+                                  permisosActivos.includes('modificacion_ventas') || 
+                                  permisosActivos.includes('modificar_pedidos');
+    return esRolValido || tieneModuloHabilitado;
+  }, [userRole, permisos]);
 
   const [ventas, setVentas] = useState<HistorialVentaPOS[]>([]);
   const [loading, setLoading] = useState(true);
