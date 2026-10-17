@@ -266,7 +266,7 @@ export async function getHistoricoProveedores(meses: number = 6) {
   return { success: true, data };
 }
 
-export async function getTodosProveedores() {
+export async function getTodosProveedores(sedeId?: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'No autenticado' };
@@ -284,36 +284,51 @@ export async function getTodosProveedores() {
 
   const provIds = (data || []).map(p => p.id);
   const vencimientoMap: Record<string, { proxima_fecha_vencimiento: string; dias_para_vencer: number; vencidas: number; por_vencer: number }> = {};
+  const deudaMap: Record<string, number> = {};
+  const facturasCountMap: Record<string, number> = {};
+
   if (provIds.length > 0) {
-    const { data: facturas } = await supabase.from('compras_facturas')
+    let facturasQuery = supabase.from('compras_facturas')
       .select('proveedor_id, fecha_vencimiento, saldo_pendiente')
       .in('proveedor_id', provIds)
-      .gt('saldo_pendiente', 0)
-      .not('fecha_vencimiento', 'is', null);
+      .gt('saldo_pendiente', 0);
+
+    if (sedeId && sedeId !== 'ALL') {
+      facturasQuery = facturasQuery.eq('sede_id', sedeId);
+    }
+
+    const { data: facturas } = await facturasQuery;
 
     const now = new Date();
     now.setHours(0, 0, 0, 0);
 
     for (const f of (facturas || [])) {
-      if (!f.proveedor_id || !f.fecha_vencimiento) continue;
-      const vDate = new Date(f.fecha_vencimiento);
-      vDate.setHours(0, 0, 0, 0);
-      const diffDays = Math.ceil((vDate.getTime() - now.getTime()) / (1000 * 3600 * 24));
+      if (!f.proveedor_id) continue;
+      
+      const saldo = Number(f.saldo_pendiente) || 0;
+      deudaMap[f.proveedor_id] = (deudaMap[f.proveedor_id] || 0) + saldo;
+      facturasCountMap[f.proveedor_id] = (facturasCountMap[f.proveedor_id] || 0) + 1;
 
-      if (!vencimientoMap[f.proveedor_id]) {
-        vencimientoMap[f.proveedor_id] = {
-          proxima_fecha_vencimiento: f.fecha_vencimiento,
-          dias_para_vencer: diffDays,
-          vencidas: diffDays < 0 ? 1 : 0,
-          por_vencer: (diffDays >= 0 && diffDays <= 7) ? 1 : 0
-        };
-      } else {
-        const prev = vencimientoMap[f.proveedor_id];
-        if (diffDays < 0) prev.vencidas++;
-        if (diffDays >= 0 && diffDays <= 7) prev.por_vencer++;
-        if (diffDays < prev.dias_para_vencer) {
-          prev.dias_para_vencer = diffDays;
-          prev.proxima_fecha_vencimiento = f.fecha_vencimiento;
+      if (f.fecha_vencimiento) {
+        const vDate = new Date(f.fecha_vencimiento);
+        vDate.setHours(0, 0, 0, 0);
+        const diffDays = Math.ceil((vDate.getTime() - now.getTime()) / (1000 * 3600 * 24));
+
+        if (!vencimientoMap[f.proveedor_id]) {
+          vencimientoMap[f.proveedor_id] = {
+            proxima_fecha_vencimiento: f.fecha_vencimiento,
+            dias_para_vencer: diffDays,
+            vencidas: diffDays < 0 ? 1 : 0,
+            por_vencer: (diffDays >= 0 && diffDays <= 7) ? 1 : 0
+          };
+        } else {
+          const prev = vencimientoMap[f.proveedor_id];
+          if (diffDays < 0) prev.vencidas++;
+          if (diffDays >= 0 && diffDays <= 7) prev.por_vencer++;
+          if (diffDays < prev.dias_para_vencer) {
+            prev.dias_para_vencer = diffDays;
+            prev.proxima_fecha_vencimiento = f.fecha_vencimiento;
+          }
         }
       }
     }
@@ -321,6 +336,8 @@ export async function getTodosProveedores() {
 
   const enriched = (data || []).map(p => ({
     ...p,
+    monto_adeudado: deudaMap[p.id] || 0,
+    facturas_pendientes: facturasCountMap[p.id] || 0,
     vencimiento_info: vencimientoMap[p.id] || null
   }));
 

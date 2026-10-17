@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback, startTransition } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo, startTransition } from "react";
 import { getSedes } from "@/actions/dashboard-actions";
 import { getInsumos } from "@/actions/compras-actions";
 import {
@@ -80,10 +80,12 @@ export default function ProveedoresPage() {
     setEliminandoId(null);
   };
 
-  const [soloConDeuda, setSoloConDeuda] = useState(true);
+  const [filtroEstadoDeuda, setFiltroEstadoDeuda] = useState<"CON_DEUDA" | "TODOS" | "VENCIDAS" | "POR_VENCER">("CON_DEUDA");
+  const soloConDeuda = filtroEstadoDeuda === 'CON_DEUDA';
+  const setSoloConDeuda = (val: boolean) => setFiltroEstadoDeuda(val ? 'CON_DEUDA' : 'TODOS');
   const [todosProveedores, setTodosProveedores] = useState<any[]>([]);
 
-  const [filtroTipo, setFiltroTipo] = useState<"TODOS"|"PROVEEDORES"|"TIENDAS">("PROVEEDORES");
+  const [filtroTipo, setFiltroTipo] = useState<"TODOS"|"PROVEEDORES"|"TIENDAS">("TODOS");
 
   // 🔹 Modal: Crear Proveedor
   const [nuevoEsTienda, setNuevoEsTienda] = useState(false);
@@ -471,7 +473,7 @@ export default function ProveedoresPage() {
     const [sedesRes, provRes, todosRes, tasaRes] = await Promise.all([
       getSedes(),
       getProveedoresConDeuda(sedeId, 1, 20, debouncedSearch, filtroTipo),
-      getTodosProveedores(),
+      getTodosProveedores(sedeId),
       getTasaBcvAction(),
     ]);
     if (Array.isArray(sedesRes)) setSedes(sedesRes);
@@ -777,296 +779,677 @@ export default function ProveedoresPage() {
   const safeDate = (d: string) => formatFecha(d);
   const safeDateTime = (d: string) => formatFecha(d, { includeTime: true });
 
-  const provListToRender = soloConDeuda
-    ? proveedores
-    : todosProveedores.filter((p: any) => {
-        if (filtroTipo === "PROVEEDORES" && p.es_tienda) return false;
-        if (filtroTipo === "TIENDAS" && !p.es_tienda) return false;
-        if (debouncedSearch && debouncedSearch.trim() !== '') {
-          const q = debouncedSearch.toLowerCase().trim();
-          const name = (p.nombre_comercial || p.nombre_proveedor || '').toLowerCase();
-          const rif = (p.rif || p.rif_cedula || '').toLowerCase();
-          return name.includes(q) || rif.includes(q);
-        }
-        return true;
-      });
+  const provListToRender = useMemo(() => {
+    const sourceList = (todosProveedores && todosProveedores.length > 0)
+      ? todosProveedores
+      : proveedores;
+
+    return sourceList.filter((p: any) => {
+      // 1. Tipo: PROVEEDORES vs TIENDAS
+      if (filtroTipo === "PROVEEDORES" && p.es_tienda) return false;
+      if (filtroTipo === "TIENDAS" && !p.es_tienda) return false;
+
+      // 2. Estado de Deuda / Vencimiento
+      const deuda = Number(p.monto_adeudado) || 0;
+      if (filtroEstadoDeuda === 'CON_DEUDA' && deuda <= 0) return false;
+      if (filtroEstadoDeuda === 'VENCIDAS') {
+        if (!p.vencimiento_info || (p.vencimiento_info.vencidas || 0) <= 0) return false;
+      }
+      if (filtroEstadoDeuda === 'POR_VENCER') {
+        const porVencer = (p.vencimiento_info?.por_vencer || 0) > 0 ||
+          (p.vencimiento_info?.dias_para_vencer !== undefined && p.vencimiento_info.dias_para_vencer >= 0 && p.vencimiento_info.dias_para_vencer <= 7);
+        if (!porVencer) return false;
+      }
+
+      // 3. Búsqueda por texto (nombre, rif, teléfono, ubicación)
+      if (debouncedSearch && debouncedSearch.trim() !== '') {
+        const q = debouncedSearch.toLowerCase().trim();
+        const name = (p.nombre_proveedor || p.nombre_comercial || p.nombre || '').toLowerCase();
+        const rif = (p.rif || p.rif_cedula || '').toLowerCase();
+        const tel = (p.numero_contacto || p.telefono || '').toLowerCase();
+        const ubi = (p.ubicacion || '').toLowerCase();
+        return name.includes(q) || rif.includes(q) || tel.includes(q) || ubi.includes(q);
+      }
+
+      return true;
+    });
+  }, [todosProveedores, proveedores, filtroTipo, filtroEstadoDeuda, debouncedSearch]);
+
+  const totalDeudaFiltradaUSD = useMemo(() => {
+    return provListToRender.reduce((acc: number, p: any) => acc + (Number(p.monto_adeudado) || 0), 0);
+  }, [provListToRender]);
+
+  const totalDeudaFiltradaBs = useMemo(() => {
+    return totalDeudaFiltradaUSD * (tasaBcv || 1);
+  }, [totalDeudaFiltradaUSD, tasaBcv]);
+
+  const totalFacturasPendientesFiltradas = useMemo(() => {
+    return provListToRender.reduce((acc: number, p: any) => acc + (Number(p.facturas_pendientes) || 0), 0);
+  }, [provListToRender]);
 
 
   // ── RENDER ────────────────────────────────────────────────
   return (
-    <div className="p-4 md:p-8 max-w-5xl mx-auto">
-      {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in pb-12">
+      {/* ── Encabezado Principal (Estilo Ventas / Compras) ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2"><Store className="text-emerald-400" /> Proveedores</h1>
-          <p className="text-neutral-400 text-sm mt-0.5">Gestiona tus proveedores, facturas y pagos</p>
+          <h1 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+            <Store className="text-emerald-400" size={24} />
+            Proveedores & Cuentas por Pagar
+          </h1>
+          <p className="text-neutral-400 text-xs md:text-sm mt-1">
+            Gestión y control integral de proveedores, facturas de compras, vencimientos y abonos
+          </p>
         </div>
-        <div className="flex gap-2">
-          <button onClick={() => openNuevaFacturaModal()}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-4 py-2 rounded-xl text-sm transition-colors">
-            <FileText size={16} /> Nueva Factura
+
+        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+          <button
+            onClick={() => openNuevaFacturaModal()}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all shadow-md shadow-indigo-600/20 active:scale-95"
+          >
+            <FileText size={16} />
+            <span>Nueva Factura</span>
           </button>
-          <button onClick={() => setShowCrearModal(true)}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2 rounded-xl text-sm transition-colors">
-            <Plus size={16} /> Nuevo Proveedor
+          <button
+            onClick={() => setShowCrearModal(true)}
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all shadow-md shadow-emerald-600/20 active:scale-95"
+          >
+            <Plus size={16} />
+            <span>Nuevo Proveedor</span>
           </button>
         </div>
       </div>
 
-      {/* ── Filters ── */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 mb-4">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
-            <input
-              type="text"
-              defaultValue={debouncedSearch}
-              onChange={e => {
-                const val = e.target.value;
-                const win = window as any;
-                if (win.searchTimeout) clearTimeout(win.searchTimeout);
-                win.searchTimeout = setTimeout(() => {
-                  setDebouncedSearch(val);
-                }, 400);
+      {/* ── Barra de Filtros y Búsqueda Interactiva (Ergonómica Móvil y Desktop) ── */}
+      <div className="bg-neutral-900 border border-neutral-800 p-3 sm:p-4 rounded-2xl space-y-2.5 shadow-lg shadow-black/20">
+        {/* Fila 1: Buscador */}
+        <div className="relative w-full">
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Buscar por proveedor, RIF, teléfono o ubicación..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-neutral-950 sm:bg-neutral-900 border border-neutral-800 rounded-xl pl-9 pr-8 py-2.5 text-xs sm:text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500 transition-colors"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setDebouncedSearch('');
               }}
-              placeholder="Buscar proveedor..."
-              className="w-full bg-neutral-950 border border-neutral-800 text-neutral-300 text-sm py-2 pl-9 pr-3 rounded-xl outline-none focus:border-emerald-500"
-            />
-          </div>
-          <div className="relative w-full sm:w-48">
-            <Store size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
-            <select value={sedeId} onChange={e => setSedeId(e.target.value)}
-              className="w-full bg-neutral-950 border border-neutral-800 text-neutral-300 text-sm py-2 pl-9 pr-3 rounded-xl appearance-none outline-none focus:border-emerald-500">
-              <option className="bg-neutral-900 text-white" value="ALL">Todas las sedes</option>
-              {sedes.map(s => <option key={s.id} value={s.id} className="bg-neutral-900 text-white">{s.nombre}</option>)}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white text-xs p-1 rounded-md"
+              title="Borrar búsqueda"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* Fila 2: Selectores en Grid 3 columnas */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          {/* Selector de Sede */}
+          <div className="relative flex-1 min-w-0">
+            <Store size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+            <select
+              value={sedeId}
+              onChange={(e) => setSedeId(e.target.value)}
+              className="w-full bg-neutral-950 sm:bg-neutral-900 border border-neutral-800 rounded-xl pl-8 pr-7 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors cursor-pointer appearance-none truncate font-medium"
+            >
+              <option value="ALL">🏢 Todas las sedes</option>
+              {sedes.map((s) => (
+                <option key={s.id} value={s.id}>
+                  📍 {s.nombre}
+                </option>
+              ))}
             </select>
+            <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
           </div>
-                      <div className="flex rounded-xl overflow-hidden border border-neutral-800 text-sm">
-              <button onClick={() => setFiltroTipo("PROVEEDORES")}
-                className={`px-3 py-2 font-medium transition-colors ${filtroTipo === "PROVEEDORES" ? "bg-emerald-600 text-white" : "bg-neutral-950 text-neutral-400 hover:text-white"}`}>
-                Proveedores
-              </button>
-              <button onClick={() => setFiltroTipo("TIENDAS")}
-                className={`px-3 py-2 font-medium transition-colors ${filtroTipo === "TIENDAS" ? "bg-blue-600 text-white" : "bg-neutral-950 text-neutral-400 hover:text-white"}`}>
-                Tiendas
-              </button>
-              <button onClick={() => setFiltroTipo("TODOS")}
-                className={`px-3 py-2 font-medium transition-colors ${filtroTipo === "TODOS" ? "bg-neutral-700 text-white" : "bg-neutral-950 text-neutral-400 hover:text-white"}`}>
-                Ambos
-              </button>
-            </div>
-            <div className="flex rounded-xl overflow-hidden border border-neutral-800 text-sm">
-              <button onClick={() => setSoloConDeuda(true)}
-                className={`px-3 py-2 font-medium transition-colors ${soloConDeuda ? "bg-rose-600 text-white" : "bg-neutral-950 text-neutral-400 hover:text-white"}`}>
-                Con deuda
-              </button>
-              <button onClick={() => setSoloConDeuda(false)}
-                className={`px-3 py-2 font-medium transition-colors ${!soloConDeuda ? "bg-neutral-700 text-white" : "bg-neutral-950 text-neutral-400 hover:text-white"}`}>
-                Todos
-              </button>
-            </div>
+
+          {/* Selector de Tipo (Proveedores / Tiendas / Todos) */}
+          <div className="relative flex-1 min-w-0">
+            <Building2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+            <select
+              value={filtroTipo}
+              onChange={(e) => setFiltroTipo(e.target.value as any)}
+              className="w-full bg-neutral-950 sm:bg-neutral-900 border border-neutral-800 rounded-xl pl-8 pr-7 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors cursor-pointer appearance-none truncate font-medium"
+            >
+              <option value="TODOS">📑 Todos los tipos</option>
+              <option value="PROVEEDORES">🏢 Solo Proveedores Mayoristas</option>
+              <option value="TIENDAS">🏪 Solo Tiendas / Compras Directas</option>
+            </select>
+            <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+          </div>
+
+          {/* Selector de Estado de Deuda */}
+          <div className="relative flex-1 min-w-0">
+            <Wallet size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+            <select
+              value={filtroEstadoDeuda}
+              onChange={(e) => setFiltroEstadoDeuda(e.target.value as any)}
+              className="w-full bg-neutral-950 sm:bg-neutral-900 border border-neutral-800 rounded-xl pl-8 pr-7 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors cursor-pointer appearance-none truncate font-medium"
+            >
+              <option value="CON_DEUDA">🔴 Solo con deuda pendiente</option>
+              <option value="TODOS">🟢 Todos (con y sin deuda)</option>
+              <option value="VENCIDAS">⚠️ Con facturas vencidas</option>
+              <option value="POR_VENCER">⏳ Vencen en próximos 7 días</option>
+            </select>
+            <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+          </div>
+        </div>
+
+        {/* Fila 3: Quick Filter Pills (Estilo Historial de Ventas / Compras) */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1 border-t border-neutral-800/60 text-xs">
+          <span className="text-[11px] text-neutral-500 font-bold uppercase tracking-wider mr-1 shrink-0">Filtros:</span>
+
+          <button
+            type="button"
+            onClick={() => setFiltroEstadoDeuda(prev => prev === 'CON_DEUDA' ? 'TODOS' : 'CON_DEUDA')}
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all shrink-0 border ${
+              filtroEstadoDeuda === 'CON_DEUDA'
+                ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                : 'bg-neutral-950 text-neutral-400 border-neutral-800 hover:text-white'
+            }`}
+          >
+            <span>🔴 Con Deuda</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFiltroEstadoDeuda(prev => prev === 'VENCIDAS' ? 'TODOS' : 'VENCIDAS')}
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all shrink-0 border ${
+              filtroEstadoDeuda === 'VENCIDAS'
+                ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                : 'bg-neutral-950 text-neutral-400 border-neutral-800 hover:text-white'
+            }`}
+          >
+            <AlertCircle size={12} />
+            <span>Facturas Vencidas</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFiltroEstadoDeuda(prev => prev === 'POR_VENCER' ? 'TODOS' : 'POR_VENCER')}
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all shrink-0 border ${
+              filtroEstadoDeuda === 'POR_VENCER'
+                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                : 'bg-neutral-950 text-neutral-400 border-neutral-800 hover:text-white'
+            }`}
+          >
+            <Clock size={12} />
+            <span>Vencen Pronto (≤ 7d)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFiltroTipo(prev => prev === 'PROVEEDORES' ? 'TODOS' : 'PROVEEDORES')}
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all shrink-0 border ${
+              filtroTipo === 'PROVEEDORES'
+                ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40'
+                : 'bg-neutral-950 text-neutral-400 border-neutral-800 hover:text-white'
+            }`}
+          >
+            <span>🏢 Proveedores</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFiltroTipo(prev => prev === 'TIENDAS' ? 'TODOS' : 'TIENDAS')}
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all shrink-0 border ${
+              filtroTipo === 'TIENDAS'
+                ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
+                : 'bg-neutral-950 text-neutral-400 border-neutral-800 hover:text-white'
+            }`}
+          >
+            <span>🏪 Tiendas</span>
+          </button>
+
+          {(searchTerm || filtroTipo !== 'TODOS' || filtroEstadoDeuda !== 'CON_DEUDA' || sedeId !== 'ALL') && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchTerm('');
+                setDebouncedSearch('');
+                setFiltroTipo('TODOS');
+                setFiltroEstadoDeuda('CON_DEUDA');
+                setSedeId('ALL');
+              }}
+              className="px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-400 hover:bg-rose-500/10 border border-rose-500/30 transition-all shrink-0 ml-auto"
+            >
+              ✕ Limpiar filtros
+            </button>
+          )}
         </div>
       </div>
 
-      {/* ── List ── */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden">
-        {loading ? (
-          <div className="p-5 space-y-3">
-            {[1,2,3].map(i => <div key={i} className="h-20 bg-neutral-800/30 animate-pulse rounded-xl border border-neutral-800" />)}
+      {/* ── Resumen de Resultados Filtrados (KPI Bar - Idéntico al Historial de Ventas y Compras) ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:px-4 sm:py-3.5 bg-neutral-900 border border-neutral-800 rounded-2xl text-xs shadow-lg shadow-black/20">
+        <div className="flex items-center justify-between sm:justify-start gap-2 text-neutral-400 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs sm:text-sm">
+              Mostrando <strong className="text-white font-bold">{provListToRender.length}</strong> {provListToRender.length === 1 ? 'proveedor' : 'proveedores'}
+            </span>
+            {filtroEstadoDeuda === 'CON_DEUDA' && (
+              <span className="flex items-center gap-1 text-rose-400 font-semibold bg-rose-500/10 px-2 py-0.5 rounded-md border border-rose-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block" /> Con Deuda
+              </span>
+            )}
+            {filtroEstadoDeuda === 'VENCIDAS' && (
+              <span className="flex items-center gap-1 text-rose-300 font-semibold bg-rose-500/20 px-2 py-0.5 rounded-md border border-rose-500/40">
+                <AlertCircle size={12} /> Facturas Vencidas
+              </span>
+            )}
+            {filtroEstadoDeuda === 'POR_VENCER' && (
+              <span className="flex items-center gap-1 text-amber-300 font-semibold bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-500/30">
+                <Clock size={12} /> Vencen en ≤ 7 días
+              </span>
+            )}
+            {filtroTipo === 'PROVEEDORES' && (
+              <span className="flex items-center gap-1 text-indigo-300 font-medium bg-indigo-500/15 px-2 py-0.5 rounded-md border border-indigo-500/30">
+                🏢 Solo Proveedores
+              </span>
+            )}
+            {filtroTipo === 'TIENDAS' && (
+              <span className="flex items-center gap-1 text-blue-300 font-medium bg-blue-500/15 px-2 py-0.5 rounded-md border border-blue-500/30">
+                🏪 Solo Tiendas
+              </span>
+            )}
+            {sedeId !== 'ALL' && (
+              <span className="flex items-center gap-1 text-neutral-300 bg-neutral-800 px-2 py-0.5 rounded-md border border-neutral-700">
+                <Store size={11} className="text-indigo-400" /> {sedes.find(s => s.id === sedeId)?.nombre || 'Sede'}
+              </span>
+            )}
           </div>
-        ) : provListToRender.length === 0 ? (
-          <div className="p-12 text-center flex flex-col items-center justify-center">
-            <Check size={48} className="text-emerald-500/50 mb-4" />
-            <h3 className="text-xl font-bold text-white mb-2">{soloConDeuda ? '¡Todo al día!' : 'Sin proveedores'}</h3>
-            <p className="text-neutral-400">{soloConDeuda ? 'No tienes cuentas por pagar.' : 'Aún no has creado ningún proveedor.'}</p>
-            {!soloConDeuda && (
-              <button onClick={() => setShowCrearModal(true)}
-                className="mt-4 flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm">
-                <Plus size={16} /> Crear primer proveedor
+
+          {(searchTerm || filtroTipo !== 'TODOS' || filtroEstadoDeuda !== 'CON_DEUDA' || sedeId !== 'ALL') && (
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setDebouncedSearch('');
+                setFiltroTipo('TODOS');
+                setFiltroEstadoDeuda('CON_DEUDA');
+                setSedeId('ALL');
+              }}
+              className="text-xs text-neutral-400 hover:text-white underline ml-1 transition-colors cursor-pointer whitespace-nowrap"
+            >
+              Limpiar filtros
+            </button>
+          )}
+        </div>
+
+        {/* Total acumulado en USD y Bs para los filtros activos */}
+        <div className="flex items-center gap-3 self-end sm:self-auto bg-black/40 px-3.5 py-2 rounded-xl border border-neutral-800 shadow-inner">
+          <div className="text-right">
+            <div className="flex items-center justify-end gap-2 mb-0.5">
+              <span className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold">Total Deuda Filtrada</span>
+              {totalFacturasPendientesFiltradas > 0 && (
+                <span className="text-[10px] text-neutral-400 bg-neutral-800 px-1.5 py-0.2 rounded font-mono">
+                  {totalFacturasPendientesFiltradas} {totalFacturasPendientesFiltradas === 1 ? 'factura' : 'facturas'}
+                </span>
+              )}
+            </div>
+            <div className="flex items-baseline gap-2 justify-end">
+              <span className={`text-sm sm:text-base font-extrabold ${totalDeudaFiltradaUSD > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                {formatCurrency(totalDeudaFiltradaUSD)}
+              </span>
+              <span className="text-xs text-neutral-400 font-mono">
+                ≈ Bs. {totalDeudaFiltradaBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Listado de Tarjetas de Proveedor (Diseño y Ergonomía del Historial de Ventas / Compras) ── */}
+      {loading ? (
+        <div className="space-y-3.5">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 space-y-3 animate-pulse">
+              <div className="flex justify-between items-center">
+                <div className="h-6 w-48 bg-neutral-800 rounded-lg" />
+                <div className="h-7 w-28 bg-neutral-800 rounded-lg" />
+              </div>
+              <div className="h-4 w-72 bg-neutral-800/60 rounded" />
+              <div className="h-8 w-full bg-neutral-800/40 rounded-xl" />
+            </div>
+          ))}
+        </div>
+      ) : provListToRender.length === 0 ? (
+        <div className="text-center p-8 sm:p-14 text-neutral-500 border border-neutral-800 border-dashed rounded-3xl bg-neutral-900/40">
+          <Check size={48} className="mx-auto mb-3 text-emerald-500/40" />
+          <h3 className="text-lg sm:text-xl font-bold text-white mb-1.5">
+            {filtroEstadoDeuda === 'CON_DEUDA' ? '¡Todo al día!' : 'No hay proveedores para mostrar'}
+          </h3>
+          <p className="text-neutral-400 text-xs sm:text-sm max-w-md mx-auto">
+            {filtroEstadoDeuda === 'CON_DEUDA'
+              ? 'No tienes cuentas por pagar pendientes con los filtros seleccionados.'
+              : 'No se encontraron proveedores ni tiendas que coincidan con los criterios de búsqueda.'}
+          </p>
+          <div className="flex items-center justify-center gap-3 mt-5">
+            <button
+              onClick={() => setShowCrearModal(true)}
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2 rounded-xl text-xs sm:text-sm transition-colors shadow-md shadow-emerald-600/20"
+            >
+              <Plus size={16} /> Crear Proveedor
+            </button>
+            {(searchTerm || filtroTipo !== 'TODOS' || filtroEstadoDeuda !== 'CON_DEUDA' || sedeId !== 'ALL') && (
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setDebouncedSearch('');
+                  setFiltroTipo('TODOS');
+                  setFiltroEstadoDeuda('CON_DEUDA');
+                  setSedeId('ALL');
+                }}
+                className="text-xs text-neutral-300 hover:text-white bg-neutral-800 hover:bg-neutral-700 px-3.5 py-2 rounded-xl border border-neutral-700 transition-colors"
+              >
+                Limpiar filtros
               </button>
             )}
           </div>
-        ) : (
-          <div className="divide-y divide-neutral-800/50">
-            {provListToRender.map((prov: any) => (
-              <div key={prov.id_proveedor || prov.id} className="group">
+        </div>
+      ) : (
+        <div className="space-y-3.5">
+          {provListToRender.map((prov: any) => {
+            const provId = prov.id_proveedor || prov.id;
+            const isExpanded = expandedId === provId;
+            const tieneDeuda = Number(prov.monto_adeudado) > 0;
+            const tieneVencidas = (prov.vencimiento_info?.vencidas || 0) > 0;
+            const tienePorVencer = (prov.vencimiento_info?.por_vencer || 0) > 0;
+
+            const accentBorderClass = tieneVencidas
+              ? 'border-l-4 border-l-rose-500'
+              : tienePorVencer
+              ? 'border-l-4 border-l-amber-500'
+              : tieneDeuda
+              ? 'border-l-4 border-l-indigo-500'
+              : 'border-l-4 border-l-emerald-500';
+
+            return (
+              <div
+                key={provId}
+                className={`bg-neutral-900 border ${accentBorderClass} border-neutral-800 rounded-2xl overflow-hidden shadow-lg shadow-black/40 transition-all hover:border-neutral-700`}
+              >
+                {/* Cabecera y Resumen de la Tarjeta (Click para desplegar) */}
                 <div
-                  className={`p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer transition-colors ${
-                    prov.vencimiento_info?.vencidas > 0
-                      ? 'bg-rose-950/15 hover:bg-rose-950/25 border-l-4 border-l-rose-500'
-                      : prov.vencimiento_info?.por_vencer > 0
-                      ? 'bg-amber-950/15 hover:bg-amber-950/25 border-l-4 border-l-amber-500'
-                      : 'hover:bg-neutral-800/30'
-                  }`}
-                  onClick={() => toggleExpand(prov.id_proveedor || prov.id)}
+                  className="cursor-pointer select-none"
+                  onClick={() => toggleExpand(provId)}
                 >
-                  <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-full border flex items-center justify-center transition-colors shrink-0 ${
-                      prov.vencimiento_info?.vencidas > 0
-                        ? 'bg-rose-500/15 border-rose-500/40 text-rose-400'
-                        : prov.vencimiento_info?.por_vencer > 0
-                        ? 'bg-amber-500/15 border-amber-500/40 text-amber-400'
-                        : 'bg-neutral-800 border-neutral-700 text-neutral-400 group-hover:text-emerald-400 group-hover:border-emerald-500/30'
-                    }`}>
-                      <Store size={20} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-bold text-lg text-white truncate">{prov.nombre_proveedor || prov.nombre_comercial}</h3>
-                        {prov.es_tienda && (
-                          <span className="text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-md font-semibold">
-                            🏪 Tienda
+                  <div className="p-3.5 sm:p-4 space-y-2.5">
+                    {/* Fila 1: Badges + Nombre | Total USD/Bs + Botón Desplegar */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap">
+                        {/* Badge de tipo */}
+                        {prov.es_tienda ? (
+                          <span className="bg-blue-500/15 text-blue-300 border border-blue-500/30 text-[10px] sm:text-xs px-2 py-0.5 rounded-md font-bold uppercase shrink-0 flex items-center gap-1">
+                            <Store size={12} /> Tienda
+                          </span>
+                        ) : (
+                          <span className="bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 text-[10px] sm:text-xs px-2 py-0.5 rounded-md font-bold uppercase shrink-0 flex items-center gap-1">
+                            <Building2 size={12} /> Proveedor
                           </span>
                         )}
+
+                        {/* Nombre del Proveedor / Tienda */}
+                        <span className="font-bold text-white text-sm sm:text-base tracking-tight truncate">
+                          {prov.nombre_proveedor || prov.nombre_comercial}
+                        </span>
+
+                        {/* Badges de estado de vencimiento */}
+                        {tieneVencidas && (
+                          <span className="bg-rose-500/20 text-rose-400 border border-rose-500/40 text-[10px] px-2 py-0.5 rounded-md font-bold uppercase shrink-0 flex items-center gap-1 shadow-sm shadow-rose-900/50">
+                            <AlertCircle size={11} /> {prov.vencimiento_info.vencidas === 1 ? 'Factura vencida' : `${prov.vencimiento_info.vencidas} vencidas`}
+                          </span>
+                        )}
+                        {!tieneVencidas && tienePorVencer && (
+                          <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] px-2 py-0.5 rounded-md font-bold uppercase shrink-0 flex items-center gap-1 animate-pulse">
+                            <AlertTriangle size={11} /> {prov.vencimiento_info.dias_para_vencer === 0 ? 'Vence hoy' : `Vence en ${prov.vencimiento_info.dias_para_vencer}d`}
+                          </span>
+                        )}
+                        {!tieneDeuda && (
+                          <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] px-2 py-0.5 rounded-md font-bold uppercase shrink-0 flex items-center gap-1">
+                            <CheckCircle2 size={11} /> Al Día
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Total en USD y botón de desplegar */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <div className="text-right">
+                          <span className={`text-sm sm:text-base font-extrabold whitespace-nowrap px-2.5 py-0.5 rounded-md block ${
+                            tieneDeuda
+                              ? 'text-rose-400 bg-rose-500/10 border border-rose-500/20'
+                              : 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20'
+                          }`}>
+                            {formatCurrency(prov.monto_adeudado || 0)}
+                          </span>
+                          <span className="text-[11px] text-neutral-400 font-mono whitespace-nowrap mt-0.5 block text-right">
+                            ≈ Bs. {((prov.monto_adeudado || 0) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </div>
+
+                        <div className="w-7 h-7 rounded-lg bg-neutral-800 border border-neutral-700/70 flex items-center justify-center text-neutral-300 shrink-0">
+                          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Fila 2: Metadatos (RIF, Teléfono, Ubicación, Pendientes, Próx Vencimiento) */}
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-neutral-800/80 text-xs flex-wrap">
+                      <div className="flex items-center gap-3 text-neutral-400 flex-wrap">
+                        {(prov.rif || prov.rif_cedula) && (
+                          <span className="flex items-center gap-1">
+                            <Hash size={12} className="text-indigo-400/80 shrink-0" />
+                            <span>{prov.rif || prov.rif_cedula}</span>
+                          </span>
+                        )}
+                        {(prov.numero_contacto || prov.telefono) && (
+                          <span className="flex items-center gap-1">
+                            <Phone size={12} className="text-emerald-400/80 shrink-0" />
+                            <span>{prov.numero_contacto || prov.telefono}</span>
+                          </span>
+                        )}
+                        {prov.ubicacion && (
+                          <span className="flex items-center gap-1 truncate max-w-[220px]" title={prov.ubicacion}>
+                            <MapPin size={12} className="text-amber-400/80 shrink-0" />
+                            <span className="truncate">{prov.ubicacion}</span>
+                          </span>
+                        )}
+                        {prov.facturas_pendientes !== undefined && (
+                          <span className="flex items-center gap-1 text-neutral-300 font-medium bg-neutral-800/80 px-2 py-0.5 rounded-md border border-neutral-700/60">
+                            <FileText size={11} className="text-indigo-400 shrink-0" />
+                            <span>{prov.facturas_pendientes} pendiente(s)</span>
+                          </span>
+                        )}
+                      </div>
+
+                      {prov.vencimiento_info?.proxima_fecha_vencimiento && (
+                        <div className={`flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md ${
+                          tieneVencidas
+                            ? 'text-rose-400 bg-rose-500/10 border border-rose-500/20'
+                            : tienePorVencer
+                            ? 'text-amber-300 bg-amber-500/10 border border-amber-500/20'
+                            : 'text-neutral-400 bg-neutral-800/60 border border-neutral-700/60'
+                        }`}>
+                          <Clock size={11} />
+                          <span>Próx. vencimiento: {safeDate(prov.vencimiento_info.proxima_fecha_vencimiento)}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Fila 3: Botones de Acción Directos (con stopPropagation) */}
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-neutral-800/60 flex-wrap" onClick={(e) => e.stopPropagation()}>
+                      <div className="text-xs text-neutral-400 flex items-center gap-1.5">
+                        {isExpanded ? (
+                          <span className="text-indigo-400 text-[11px] font-medium flex items-center gap-1">
+                            <ChevronUp size={12} /> Ocultar facturas
+                          </span>
+                        ) : (
+                          <span className="text-neutral-500 text-[11px] flex items-center gap-1">
+                            <ChevronDown size={12} /> Toca para ver facturas y abonos
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {tieneDeuda && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setProveedorPagarGeneral(prov);
+                              setMontoAbonoGeneral(String(prov.monto_adeudado));
+                              setFechaPagoGeneral(new Date().toISOString().split('T')[0]);
+                              setErrorPagoGeneral('');
+                              setShowPagoGeneralModal(true);
+                            }}
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all shadow-md shadow-emerald-600/20 active:scale-95"
+                            title="Abonar a la deuda en cascada FIFO"
+                          >
+                            <Wallet size={13} />
+                            <span>Abonar Deuda</span>
+                          </button>
+                        )}
+
                         <button
                           type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openEditProveedorModal(prov);
-                          }}
-                          className="p-1 rounded-lg text-neutral-400 hover:text-emerald-400 hover:bg-neutral-800 transition-colors"
-                          title="Editar Proveedor"
+                          onClick={() => openNuevaFacturaModal(provId)}
+                          className="bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 hover:border-indigo-500/50 text-xs font-semibold px-2.5 py-1.5 rounded-xl flex items-center gap-1 transition-all"
+                          title="Registrar nueva factura para este proveedor"
                         >
-                          <Edit3 size={15} />
+                          <Plus size={13} />
+                          <span>Factura</span>
                         </button>
 
-                        {/* Alerta de vencimiento en el encabezado */}
-                        {prov.vencimiento_info?.vencidas > 0 && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-400 border border-rose-500/40 shadow-sm shadow-rose-900/50">
-                            <AlertCircle size={12} />
-                            {prov.vencimiento_info.vencidas === 1 ? 'Factura vencida' : `${prov.vencimiento_info.vencidas} facturas vencidas`}
-                          </span>
-                        )}
-                        {prov.vencimiento_info && prov.vencimiento_info.vencidas === 0 && prov.vencimiento_info.por_vencer > 0 && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/40 shadow-sm shadow-amber-900/50 animate-pulse">
-                            <AlertTriangle size={12} />
-                            {prov.vencimiento_info.dias_para_vencer === 0
-                              ? 'Factura vence hoy'
-                              : prov.vencimiento_info.dias_para_vencer === 1
-                              ? 'Factura vence mañana'
-                              : `Vence en ${prov.vencimiento_info.dias_para_vencer} días`}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-neutral-500 mt-0.5">
-                        {(prov.rif || prov.rif_cedula) && <span>RIF: {prov.rif || prov.rif_cedula}</span>}
-                        {(prov.numero_contacto) && <span>📞 {prov.numero_contacto}</span>}
-                        {prov.facturas_pendientes && <span>{prov.facturas_pendientes} factura(s) pendiente(s)</span>}
-                        {prov.vencimiento_info?.proxima_fecha_vencimiento && (
-                          <span className={
-                            prov.vencimiento_info.vencidas > 0
-                              ? "text-rose-400 font-semibold flex items-center gap-1"
-                              : prov.vencimiento_info.por_vencer > 0
-                              ? "text-amber-400 font-semibold flex items-center gap-1"
-                              : "text-neutral-500 flex items-center gap-1"
-                          }>
-                            ⏰ Próx. vencimiento: {safeDate(prov.vencimiento_info.proxima_fecha_vencimiento)}
-                          </span>
+                        <button
+                          type="button"
+                          onClick={() => setAbonosProvInfo({ id: provId, nombre: prov.nombre_proveedor || prov.nombre_comercial })}
+                          className="bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white border border-neutral-700 text-xs font-medium px-2.5 py-1.5 rounded-xl flex items-center gap-1 transition-all"
+                          title="Ver historial de abonos"
+                        >
+                          <History size={13} className="text-indigo-400" />
+                          <span className="hidden xs:inline sm:inline">Abonos</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => openEditProveedorModal(prov)}
+                          className="p-1.5 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800 border border-transparent hover:border-neutral-700 transition-colors"
+                          title="Editar proveedor"
+                        >
+                          <Edit3 size={14} />
+                        </button>
+
+                        {isMasterOrAdmin && (
+                          <button
+                            type="button"
+                            onClick={(e) => handleEliminarProveedor(e, provId, prov.nombre_proveedor || prov.nombre_comercial)}
+                            disabled={eliminandoId === provId}
+                            className="p-1.5 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-colors disabled:opacity-50"
+                            title="Eliminar proveedor"
+                          >
+                            {eliminandoId === provId ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                          </button>
                         )}
                       </div>
                     </div>
-                  </div>
-                  <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto mt-4 sm:mt-0 pt-4 sm:pt-0 border-t border-neutral-800/50 sm:border-0">
-                    {prov.monto_adeudado !== undefined && (
-                      <div className="text-right">
-                        <p className="text-xs font-semibold uppercase text-neutral-500 mb-0.5">Adeudado</p>
-                        <p className="font-black text-rose-400 text-lg">{formatCurrency(prov.monto_adeudado)}</p>
-                      </div>
-                    )}
-                    {prov.monto_adeudado > 0 && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setProveedorPagarGeneral(prov);
-                          setMontoAbonoGeneral(String(prov.monto_adeudado));
-                          setFechaPagoGeneral(new Date().toISOString().split('T')[0]);
-                          setErrorPagoGeneral('');
-                          setShowPagoGeneralModal(true);
-                        }}
-                        className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-all shadow-lg shadow-emerald-600/20 whitespace-nowrap"
-                      >
-                        <Wallet size={14} /> Pagar / Abonar Deuda
-                      </button>
-                    )}
-                    <button className="text-neutral-500 hover:text-white transition-colors p-2 rounded-full hover:bg-neutral-700">
-                      {expandedId === (prov.id_proveedor || prov.id) ? <ChevronUp /> : <ChevronDown />}
-                    </button>
                   </div>
                 </div>
 
-                {/* ── Facturas expandidas ── */}
-                {expandedId === (prov.id_proveedor || prov.id) && (() => {
-                  const provId = prov.id_proveedor || prov.id;
+                {/* ── Sub-panel Facturas Expandidas ── */}
+                {isExpanded && (() => {
                   const facturasPendientes = facturasProveedor.filter(f => Number(f.saldo_pendiente) > 0);
                   const facturasPagadas = facturasProveedor.filter(f => Number(f.saldo_pendiente) <= 0);
                   const verPagadas = mostrarHistorialPagadas[provId] || false;
 
                   const renderFacturaItem = (fac: any) => {
                     const saldado = Number(fac.saldo_pendiente) <= 0;
+                    const isVencida = !saldado && fac.fecha_vencimiento && new Date(fac.fecha_vencimiento).getTime() < new Date().setHours(0, 0, 0, 0);
+
+                    const cardBorderClass = saldado
+                      ? 'border-l-4 border-l-emerald-500/60 border-neutral-800 bg-neutral-900/50'
+                      : isVencida
+                      ? 'border-l-4 border-l-rose-500 border-neutral-800 hover:border-neutral-700'
+                      : 'border-l-4 border-l-indigo-500 border-neutral-800 hover:border-neutral-700';
+
                     return (
-                      <React.Fragment key={fac.id}>
-                        <div className={`bg-neutral-900 border rounded-xl p-4 transition-colors ${saldado ? 'border-emerald-500/20 bg-neutral-900/60' : 'border-neutral-800 hover:border-neutral-700'}`}>
+                      <div key={fac.id} className="space-y-1">
+                        <div className={`bg-neutral-900 border ${cardBorderClass} rounded-xl p-3.5 sm:p-4 transition-all shadow-md`}>
                           <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-                            <div>
-                              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                <h5 className="font-bold text-white">{fac.concepto || 'Factura / Deuda'}</h5>
-                                {fac.numero_factura && <span className="text-xs bg-neutral-800 text-neutral-300 px-2 py-0.5 rounded">Nº {fac.numero_factura}</span>}
+                            <div className="space-y-1.5 flex-1 min-w-0">
+                              {/* Fila superior: Concepto + badges */}
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h5 className="font-bold text-white text-sm sm:text-base truncate">
+                                  {fac.concepto || 'Factura de Compra'}
+                                </h5>
+                                {fac.numero_factura && (
+                                  <span className="text-xs bg-neutral-800 text-neutral-300 px-2 py-0.5 rounded font-mono font-medium border border-neutral-700/60">
+                                    Nº {fac.numero_factura}
+                                  </span>
+                                )}
                                 {fac.sede_nombre && (
                                   <span className="text-[11px] bg-neutral-800/80 text-neutral-300 border border-neutral-700/60 px-2 py-0.5 rounded-md flex items-center gap-1 font-medium">
                                     <Store size={11} className="text-indigo-400" /> {fac.sede_nombre}
                                   </span>
                                 )}
                                 {fac.modificado && (
-                                  <span className="text-[10px] font-medium bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded border border-amber-500/20" title={`Modificada por: ${fac.modificado_por || 'Usuario'}`}>
+                                  <span className="text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded" title={`Modificada por: ${fac.modificado_por || 'Usuario'}`}>
                                     Modificada
                                   </span>
                                 )}
-                                {saldado && <Badge label="Saldada" color="emerald" />}
-                                {!saldado && fac.fecha_vencimiento && (() => {
+                                {saldado ? (
+                                  <Badge label="Saldada" color="emerald" />
+                                ) : fac.fecha_vencimiento ? (() => {
                                   const now = new Date();
                                   const vDate = new Date(fac.fecha_vencimiento);
                                   const diffDays = Math.ceil((vDate.getTime() - now.getTime()) / (1000 * 3600 * 24));
-                                  
                                   if (diffDays < 0) return <Badge label="Vencida" color="rose" />;
                                   if (diffDays <= 7) return <Badge label={`Vence en ${diffDays}d`} color="amber" />;
-                                  return <span className="text-xs text-neutral-500 border border-neutral-700 px-2 py-0.5 rounded">Vence: {safeDate(fac.fecha_vencimiento)}</span>;
-                                })()}
+                                  return <span className="text-xs text-neutral-400 border border-neutral-700/60 px-2 py-0.5 rounded">Vence: {safeDate(fac.fecha_vencimiento)}</span>;
+                                })() : null}
                               </div>
-                              <div className="flex items-center gap-2 sm:gap-3 mt-3 flex-wrap">
-                                <p className="text-xs text-neutral-500 flex items-center gap-1"><Clock size={12} /> Emisión: {safeDate(fac.fecha_emision)}</p>
+
+                              {/* Fila metadatos + acciones de factura */}
+                              <div className="flex items-center gap-2 sm:gap-3 flex-wrap text-xs text-neutral-400 pt-1">
+                                <span className="flex items-center gap-1">
+                                  <Clock size={12} className="text-neutral-500" /> Emisión: {safeDate(fac.fecha_emision)}
+                                </span>
+
                                 {fac.pagos && fac.pagos.length > 0 && (
                                   <button
                                     type="button"
                                     onClick={() => togglePagos(fac.id)}
-                                    className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-medium bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 px-2.5 py-1.5 rounded-lg transition-colors"
+                                    className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-medium bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 px-2.5 py-1 rounded-lg transition-colors"
                                   >
                                     <History size={11} />
                                     {expandedPagos[fac.id] ? 'Ocultar abonos' : `Ver abonos (${fac.pagos.length})`}
                                   </button>
                                 )}
+
                                 <button
                                   type="button"
                                   onClick={() => openEditModal(fac)}
-                                  className="text-xs text-neutral-400 hover:text-white flex items-center gap-1 font-medium bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 px-2.5 py-1.5 rounded-lg transition-colors"
+                                  className="text-xs text-neutral-300 hover:text-white flex items-center gap-1 font-medium bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 px-2.5 py-1 rounded-lg transition-colors"
                                 >
                                   <Pencil size={11} />
                                   Editar
                                 </button>
+
                                 <button
                                   type="button"
                                   onClick={() => handleVerDetallesFactura(fac)}
-                                  className="text-xs text-neutral-400 hover:text-white flex items-center gap-1 font-medium bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 px-2.5 py-1.5 rounded-lg transition-colors"
+                                  className="text-xs text-neutral-300 hover:text-white flex items-center gap-1 font-medium bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 px-2.5 py-1 rounded-lg transition-colors"
                                 >
                                   <FileText size={11} />
                                   Ver detalles
                                 </button>
+
                                 {isMasterOrAdmin && (
                                   <button
                                     type="button"
                                     onClick={() => handleEliminarFactura(fac.id)}
-                                    className="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 font-medium bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 px-2.5 py-1.5 rounded-lg transition-colors"
-                                    title="Eliminar factura (Solo Master/Admin)"
+                                    className="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 font-medium bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 px-2.5 py-1 rounded-lg transition-colors"
+                                    title="Eliminar factura"
                                   >
                                     <Trash2 size={11} />
                                     Eliminar
@@ -1074,78 +1457,102 @@ export default function ProveedoresPage() {
                                 )}
                               </div>
                             </div>
-                            <div className="flex items-center justify-between w-full sm:w-auto gap-4 mt-4 sm:mt-0 pt-4 sm:pt-0 border-t border-neutral-800/50 sm:border-0">
+
+                            {/* Fila montos y botón de abonar */}
+                            <div className="flex items-center justify-between sm:justify-end gap-3.5 w-full sm:w-auto pt-3 sm:pt-0 border-t border-neutral-800/60 sm:border-0 shrink-0">
                               <div className="text-right">
-                                <p className="text-xs text-neutral-500">
-                                 - Total: {formatCurrency(fac.total)}
-                                </p>
-                                <p className={`font-black text-lg ${saldado ? 'text-emerald-400' : 'text-rose-400'}`}>{formatCurrency(fac.saldo_pendiente)}</p>
-                                <p className="text-xs text-neutral-600">{saldado ? 'saldada' : 'pendiente'}</p>
+                                <span className="text-[11px] text-neutral-500 block">
+                                  Total: {formatCurrency(fac.total)}
+                                </span>
+                                <span className={`font-black text-base sm:text-lg block ${saldado ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                  {formatCurrency(fac.saldo_pendiente)}
+                                </span>
+                                <span className="text-[10px] text-neutral-500 block font-mono">
+                                  {saldado ? 'Totalmente saldada' : `Pendiente`}
+                                </span>
                               </div>
+
                               {!saldado && (
                                 <button
+                                  type="button"
                                   onClick={() => { setFacturaPagar(fac); setMontoAbonar(String(fac.saldo_pendiente)); setShowPagoModal(true); }}
-                                  className="bg-emerald-600/10 hover:bg-emerald-600 text-emerald-500 hover:text-white border border-emerald-600/30 px-3 py-1.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap">
-                                  + Abonar
+                                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-xl text-xs sm:text-sm transition-all shadow-md shadow-emerald-600/20 whitespace-nowrap flex items-center gap-1"
+                                >
+                                  <Plus size={14} /> Abonar
                                 </button>
                               )}
                             </div>
                           </div>
                         </div>
 
-                        {/* ── Historial de pagos por factura (Minimizado) ── */}
+                        {/* Historial de pagos desplegable por factura */}
                         {fac.pagos && fac.pagos.length > 0 && expandedPagos[fac.id] && (
-                          <div className="bg-neutral-950/80 p-3.5 rounded-b-xl border border-neutral-800 border-t-0 -mt-2 ml-4 mr-2 shadow-inner">
-                            <div className="flex items-center justify-between mb-2">
-                              <p className="text-xs font-bold text-neutral-400 uppercase flex items-center gap-1"><History size={12} className="text-indigo-400" /> Detalle de Abonos a esta Factura</p>
+                          <div className="bg-neutral-950/90 p-3.5 rounded-xl border border-neutral-800 shadow-inner space-y-2 ml-2 sm:ml-4">
+                            <div className="flex items-center justify-between pb-1 border-b border-neutral-800/80">
+                              <p className="text-xs font-bold text-neutral-400 uppercase flex items-center gap-1.5">
+                                <History size={12} className="text-indigo-400" /> Abonos Aplicados a esta Factura
+                              </p>
                               <button
                                 type="button"
                                 onClick={() => togglePagos(fac.id)}
                                 className="text-[11px] text-neutral-500 hover:text-white"
                               >
-                                Ocultar
+                                Cerrar
                               </button>
                             </div>
                             <div className="space-y-1.5">
                               {fac.pagos.map((pago: any) => (
-                                <div key={pago.id} className="flex flex-wrap justify-between items-center text-xs py-1.5 px-3 border border-neutral-800/60 bg-neutral-900/60 rounded-lg gap-x-4">
-                                  <span className="text-neutral-400 font-mono">{safeDateTime(pago.fecha_pago || pago.created_at)}</span>
+                                <div key={pago.id} className="flex flex-wrap justify-between items-center text-xs py-2 px-3 border border-neutral-800/80 bg-neutral-900/70 rounded-lg gap-x-4 gap-y-1">
+                                  <span className="text-neutral-400 font-mono text-[11px]">{safeDateTime(pago.fecha_pago || pago.created_at)}</span>
                                   <div className="flex items-center gap-2">
-                                    <span className="text-white font-medium">{pago.metodo_pago}</span>
-                                    {pago.banco_origen && <span className="text-neutral-500">({pago.banco_origen})</span>}
+                                    <span className="text-white font-semibold">{pago.metodo_pago}</span>
+                                    {pago.banco_origen && <span className="text-neutral-400">({pago.banco_origen})</span>}
                                     {pago.referencia && <span className="text-indigo-400 font-mono">#{pago.referencia}</span>}
                                   </div>
-                                  <span className="font-bold text-emerald-400">+{formatCurrency(pago.monto)}</span>
-                                    <button onClick={(e) => { e.stopPropagation(); openEditAbonoModal(pago); }} className="text-neutral-500 hover:text-emerald-400 p-1 transition-colors"><Edit3 size={14} /></button>
-                                  
-                                  {pago.registrado_por && <div className="w-full mt-0.5 text-[10px] text-neutral-500">Registrado por: {pago.registrado_por}</div>}
+                                  <div className="flex items-center gap-2 ml-auto">
+                                    <span className="font-extrabold text-emerald-400">+{formatCurrency(pago.monto)}</span>
+                                    <button onClick={(e) => { e.stopPropagation(); openEditAbonoModal(pago); }} className="text-neutral-400 hover:text-emerald-400 p-1 transition-colors" title="Editar abono">
+                                      <Edit3 size={13} />
+                                    </button>
+                                    <button onClick={(e) => { e.stopPropagation(); handleEliminarAbono(pago.id); }} className="text-neutral-400 hover:text-rose-400 p-1 transition-colors" title="Eliminar abono">
+                                      <Trash2 size={13} />
+                                    </button>
                                   </div>
+                                  {pago.registrado_por && (
+                                    <div className="w-full text-[10px] text-neutral-500">Registrado por: {pago.registrado_por}</div>
+                                  )}
+                                </div>
                               ))}
                             </div>
                           </div>
                         )}
-                      </React.Fragment>
+                      </div>
                     );
                   };
 
                   return (
-                    <div className="bg-neutral-950/50 border-t border-neutral-800 p-5 px-6">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                    <div className="bg-neutral-950/70 border-t border-neutral-800 p-4 sm:p-5 space-y-4">
+                      {/* Cabecera del subpanel */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-neutral-800/80">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="text-sm font-semibold text-neutral-300 uppercase tracking-wider flex items-center gap-2">
-                            <FileText size={16} className="text-rose-400" /> Facturas por Pagar
+                          <h4 className="text-xs sm:text-sm font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-2">
+                            <FileText size={15} className="text-indigo-400" /> Facturas del Proveedor
                           </h4>
-                          <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold border ${
-                            facturasPendientes.length > 0 
-                              ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
-                              : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                          <span className={`text-[11px] px-2 py-0.5 rounded-md font-bold border ${
+                            facturasPendientes.length > 0
+                              ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                              : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
                           }`}>
-                            {facturasPendientes.length} pendiente{facturasPendientes.length === 1 ? '' : 's'}
+                            {facturasPendientes.length} {facturasPendientes.length === 1 ? 'pendiente' : 'pendientes'}
                           </span>
+                          {facturasPagadas.length > 0 && (
+                            <span className="text-[11px] px-2 py-0.5 rounded-md font-bold border bg-neutral-800 text-neutral-300 border-neutral-700">
+                              {facturasPagadas.length} {facturasPagadas.length === 1 ? 'saldada' : 'saldadas'}
+                            </span>
+                          )}
                         </div>
 
-                        {/* Esquina superior derecha: Historial de facturas y Agregar factura */}
-                          <div className="flex flex-row flex-wrap items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                        <div className="flex items-center gap-2 flex-wrap">
                           {facturasPagadas.length > 0 && (
                             <button
                               type="button"
@@ -1157,43 +1564,39 @@ export default function ProveedoresPage() {
                               }`}
                             >
                               <History size={13} className={verPagadas ? "text-white" : "text-indigo-400"} />
-                              {verPagadas ? 'Ocultar historial' : `Historial de facturas (${facturasPagadas.length})`}
+                              {verPagadas ? 'Ocultar saldadas' : `Ver saldadas (${facturasPagadas.length})`}
                             </button>
                           )}
+
                           <button
+                            type="button"
                             onClick={() => openNuevaFacturaModal(provId)}
-                            className="text-xs flex items-center gap-1.5 text-indigo-400 hover:text-indigo-300 border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-xl transition-colors font-semibold">
-                            <Plus size={13} /> Agregar factura
-                          </button>
-                          <button
-                            onClick={() => setAbonosProvInfo({id: provId, nombre: prov.nombre_comercial})}
-                            className="text-xs flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 px-3 py-1.5 rounded-xl transition-colors font-semibold">
-                            <History size={13} /> Historial de Abonos
+                            className="text-xs flex items-center gap-1.5 text-indigo-400 hover:text-indigo-300 border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-xl transition-colors font-semibold"
+                          >
+                            <Plus size={13} /> Agregar Factura
                           </button>
                         </div>
                       </div>
 
                       {loadingFacturas ? (
-                        <div className="space-y-3">{[1,2].map(i => <div key={i} className="h-16 bg-neutral-900 animate-pulse rounded-xl border border-neutral-800" />)}</div>
+                        <div className="space-y-3 py-2">
+                          {[1, 2].map(i => (
+                            <div key={i} className="h-20 bg-neutral-900/60 animate-pulse rounded-xl border border-neutral-800" />
+                          ))}
+                        </div>
                       ) : facturasProveedor.length === 0 ? (
-                        <div className="text-neutral-500 text-sm py-4 text-center">No hay facturas registradas para este proveedor.</div>
+                        <div className="text-neutral-500 text-sm py-6 text-center border border-dashed border-neutral-800 rounded-xl bg-neutral-900/20">
+                          <FileText size={28} className="mx-auto mb-2 opacity-30 text-neutral-400" />
+                          No hay facturas registradas para este proveedor.
+                        </div>
                       ) : (
-                        <div className="space-y-4">
-                          {/* 1. Facturas que faltan por pagar */}
+                        <div className="space-y-3">
+                          {/* Facturas pendientes */}
                           {facturasPendientes.length === 0 ? (
-                            <div className="text-center py-6 border border-dashed border-neutral-800/90 rounded-2xl bg-neutral-900/30">
+                            <div className="text-center py-6 border border-dashed border-neutral-800 rounded-2xl bg-neutral-900/30">
                               <CheckCircle2 className="mx-auto text-emerald-400 mb-1.5" size={26} />
                               <p className="text-sm font-semibold text-white">¡No hay facturas pendientes por pagar!</p>
-                              <p className="text-xs text-neutral-500 mt-0.5">Todas las facturas de este proveedor se encuentran saldadas.</p>
-                              {facturasPagadas.length > 0 && !verPagadas && (
-                                <button
-                                  type="button"
-                                  onClick={() => toggleHistorialPagadas(provId)}
-                                  className="mt-3 text-xs text-indigo-400 hover:text-indigo-300 font-semibold inline-flex items-center gap-1.5 bg-indigo-500/10 px-3 py-1.5 rounded-xl border border-indigo-500/20 hover:border-indigo-500/40 transition-colors"
-                                >
-                                  <History size={13} /> Ver {facturasPagadas.length} factura(s) en el historial
-                                </button>
-                              )}
+                              <p className="text-xs text-neutral-500 mt-0.5">Todas las facturas de este proveedor están saldadas.</p>
                             </div>
                           ) : (
                             <div className="space-y-3">
@@ -1201,12 +1604,12 @@ export default function ProveedoresPage() {
                             </div>
                           )}
 
-                          {/* 2. Sección desplegable: Historial de facturas pagadas */}
+                          {/* Historial de facturas pagadas */}
                           {verPagadas && facturasPagadas.length > 0 && (
-                            <div className="mt-5 pt-4 border-t border-neutral-800 space-y-3">
+                            <div className="mt-4 pt-4 border-t border-neutral-800 space-y-3">
                               <div className="flex items-center justify-between">
                                 <h5 className="text-xs font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
-                                  <History size={13} className="text-emerald-400" /> Historial de Facturas Pagadas / Saldadas ({facturasPagadas.length})
+                                  <CheckCircle2 size={13} className="text-emerald-400" /> Facturas Saldadas ({facturasPagadas.length})
                                 </h5>
                                 <button
                                   type="button"
@@ -1227,19 +1630,22 @@ export default function ProveedoresPage() {
                   );
                 })()}
               </div>
-            ))}
+            );
+          })}
 
-            {soloConDeuda && !loading && proveedores.length < totalCount && (
-              <div className="p-4 text-center">
-                <button onClick={fetchMore} disabled={loadingMore}
-                  className="text-sm text-neutral-400 hover:text-white bg-neutral-800 hover:bg-neutral-700 px-6 py-2 rounded-xl transition-colors">
-                  {loadingMore ? 'Cargando...' : 'Ver más'}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+          {filtroEstadoDeuda === 'CON_DEUDA' && !loading && proveedores.length < totalCount && (
+            <div className="p-4 text-center">
+              <button
+                onClick={fetchMore}
+                disabled={loadingMore}
+                className="text-xs sm:text-sm text-neutral-300 hover:text-white bg-neutral-800 hover:bg-neutral-700 px-6 py-2.5 rounded-xl border border-neutral-700 transition-colors font-medium shadow-md disabled:opacity-50"
+              >
+                {loadingMore ? 'Cargando más proveedores...' : 'Cargar más proveedores'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
           MODAL: Crear Proveedor
