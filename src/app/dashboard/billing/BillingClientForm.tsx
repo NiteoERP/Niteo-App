@@ -235,6 +235,22 @@ export default function BillingClientForm({
                   </div>
                 )}
 
+                {/* Alerta cuando el último pago fue rechazado */}
+                {historialPagos[0]?.estado === 'rechazado' && (
+                  <div className="bg-red-500/10 border border-red-500/25 rounded-xl px-4 py-3.5 flex items-start gap-3 text-red-300 text-sm">
+                    <XCircle size={18} className="shrink-0 text-red-400 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="font-bold text-red-200">
+                        Tu último comprobante reportado fue rechazado
+                      </p>
+                      <p className="text-xs text-red-300/90">
+                        {historialPagos[0].notas_admin || 'Los datos o la captura del pago no pudieron ser verificados.'}{' '}
+                        Por favor registra un comprobante válido; una vez verificado por administración se reactivarán todos los módulos.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Banner pago anticipado (plan activo, más de 3 días) */}
                 {esPagoAnticipado && (
                   <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-4 py-3 flex items-center gap-3 text-indigo-300 text-sm">

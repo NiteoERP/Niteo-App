@@ -51,8 +51,8 @@ const getEstadoLicenciaCached = cache(async (): Promise<EstadoLicencia | null> =
 
     if (!empresaId) return null;
 
-    // 2. Consultar en paralelo suscripción y pagos pendientes de aprobación
-    const [subRes, pagoPendienteRes] = await Promise.all([
+    // 2. Consultar en paralelo suscripción y últimos pagos registrados
+    const [subRes, pagosRecientesRes] = await Promise.all([
       supabase
         .from('suscripciones_empresas')
         .select('plan, estado, fecha_vencimiento, fecha_registro, modulos_activos')
@@ -60,16 +60,27 @@ const getEstadoLicenciaCached = cache(async (): Promise<EstadoLicencia | null> =
         .maybeSingle(),
       supabase
         .from('suscripciones_pagos')
-        .select('id, fecha_registro, estado')
+        .select('id, fecha_registro, estado, notas_admin')
         .eq('empresa_id', empresaId)
-        .eq('estado', 'pendiente_aprobacion')
         .order('fecha_registro', { ascending: false })
-        .limit(1)
-        .maybeSingle(),
+        .limit(5),
     ]);
 
     const sub = subRes.data;
-    const pagoPendiente = pagoPendienteRes.data;
+    const pagosRecientes = pagosRecientesRes.data || [];
+    const pagoPendiente = pagosRecientes.find(p => p.estado === 'pendiente_aprobacion') || null;
+
+    // Verificar si tuvo un pago rechazado recientemente (después de su último pago aprobado)
+    // Si envió un pago falso/rechazado, NO se le otorga gracia automática de 5 días al volver a subir otro.
+    const idxUltimoAprobado = pagosRecientes.findIndex(p => p.estado === 'aprobado');
+    const pagosDesdeUltimoAprobado = idxUltimoAprobado === -1
+      ? pagosRecientes
+      : pagosRecientes.slice(0, idxUltimoAprobado);
+    const tieneRechazoReciente = pagosDesdeUltimoAprobado.some(p => {
+      if (p.estado !== 'rechazado' || !p.fecha_registro) return false;
+      const diasDesdeRechazo = Math.floor((Date.now() - new Date(p.fecha_registro).getTime()) / 86400000);
+      return diasDesdeRechazo <= 15;
+    });
 
     const plan = (sub?.plan || 'PRO').toUpperCase();
     const modulos = sub?.modulos_activos || [];
@@ -88,9 +99,9 @@ const getEstadoLicenciaCached = cache(async (): Promise<EstadoLicencia | null> =
       };
     }
 
-    // Si el estado en base de datos fue suspendido explícitamente por administración
+    // Si el estado en base de datos fue suspendido explícitamente por administración (ej. pago falso)
     const estadoSub = sub ? (sub.estado || 'TRIAL').toUpperCase() : 'TRIAL';
-    if (estadoSub === 'SUSPENDIDA') {
+    if (estadoSub === 'SUSPENDIDA' || estadoSub === 'SUSPENDIDO') {
       return {
         estado: 'VENCIDA',
         diasRestantes: -4,
@@ -99,7 +110,7 @@ const getEstadoLicenciaCached = cache(async (): Promise<EstadoLicencia | null> =
         modulosActivos: modulos,
         fechaVencimiento: sub?.fecha_vencimiento || new Date().toISOString(),
         bloqueoFuerte: true,
-        pagoEnRevision: false,
+        pagoEnRevision: !!pagoPendiente,
       };
     }
 
@@ -123,15 +134,14 @@ const getEstadoLicenciaCached = cache(async (): Promise<EstadoLicencia | null> =
 
     const ahora = new Date();
     const msDiff = fechaVencBase.getTime() - ahora.getTime();
-    // Si msDiff >= 0, aún no ha terminado el día de vencimiento en Venezuela:
-    // usamos Math.floor(msDiff / 86400000) para que en el último día sea 0 ("vence hoy") y nunca negativo.
-    // Si msDiff < 0, ya pasó las 23:59:59 del día de vencimiento: usamos Math.floor para obtener -1, -2, etc.
     const difDias = Math.floor(msDiff / 86400000);
 
     // Verificar si hay un pago reportado en revisión en los últimos 5 días
+    // IMPORTANTE: Si la empresa tiene un pago rechazado reciente (posible pago falso),
+    // NO recibe desbloqueo automático hasta que el administrador apruebe manualmente el nuevo pago.
     let enGraciaPorPago = false;
     let diasGraciaPago = 5;
-    if (pagoPendiente?.fecha_registro) {
+    if (pagoPendiente?.fecha_registro && !tieneRechazoReciente) {
       const diasTranscurridosPago = Math.floor((ahora.getTime() - new Date(pagoPendiente.fecha_registro).getTime()) / 86400000);
       if (diasTranscurridosPago <= 5) {
         enGraciaPorPago = true;
@@ -145,9 +155,6 @@ const getEstadoLicenciaCached = cache(async (): Promise<EstadoLicencia | null> =
     let diasVencido = difDias < 0 ? Math.abs(difDias) : 0;
 
     if (enGraciaPorPago) {
-      // Si el cliente tiene un pago en revisión:
-      // Si su plan aún tenía más días vigentes (pago anticipado), mantenemos su estado ACTIVA.
-      // Si estaba por vencer o vencido, pasa a GRACIA con acceso total y 0 bloqueo.
       if (difDias > diasGraciaPago && (estadoSub === 'ACTIVA' || estadoSub === 'ACTIVO')) {
         estado = 'ACTIVA';
         diasRestantes = difDias;
@@ -159,18 +166,16 @@ const getEstadoLicenciaCached = cache(async (): Promise<EstadoLicencia | null> =
       }
       bloqueoFuerte = false;
     } else if (difDias < 0) {
-      // Ya pasó la fecha de corte y NO ha reportado pago:
-      // Damos 3 días de cortesía operativa (difDias = -1, -2, -3) antes de aplicar bloqueoFuerte.
-      if (difDias >= -3) {
+      // Si tuvo un rechazo reciente, tampoco le damos días de cortesía: debe esperar aprobación real
+      if (difDias >= -3 && !tieneRechazoReciente) {
         estado = 'GRACIA';
-        diasRestantes = 3 - Math.abs(difDias); // 2, 1 o 0 días restantes de cortesía
+        diasRestantes = 3 - Math.abs(difDias);
         bloqueoFuerte = false;
       } else {
         estado = 'VENCIDA';
         bloqueoFuerte = true;
       }
     } else {
-      // Vigente (difDias >= 0)
       estado = (estadoSub === 'ACTIVA' || estadoSub === 'ACTIVO') ? 'ACTIVA' : 'TRIAL';
     }
 
@@ -182,7 +187,7 @@ const getEstadoLicenciaCached = cache(async (): Promise<EstadoLicencia | null> =
       modulosActivos: modulos,
       fechaVencimiento: fechaVencBase.toISOString(),
       bloqueoFuerte,
-      pagoEnRevision: enGraciaPorPago,
+      pagoEnRevision: !!pagoPendiente,
     };
   } catch (err: any) {
     if (err?.digest?.includes('DYNAMIC_SERVER_USAGE') || err?.digest?.includes('NEXT_REDIRECT')) {
@@ -238,6 +243,38 @@ export async function reportarPagoSuscripcion(formData: FormData) {
   }
 
   const adminSupabase = createAdminClient();
+
+  // 1. Evitar que acumulen múltiples pagos pendientes al mismo tiempo
+  const { data: pendienteActual } = await adminSupabase
+    .from('suscripciones_pagos')
+    .select('id')
+    .eq('empresa_id', perfil.empresa_id)
+    .eq('estado', 'pendiente_aprobacion')
+    .limit(1)
+    .maybeSingle();
+
+  if (pendienteActual) {
+    return {
+      success: false,
+      error: 'Ya tienes un pago en proceso de verificación. Espera a que sea revisado antes de enviar otro.',
+    };
+  }
+
+  // 2. Bloquear referencias duplicadas o recicladas (en pagos aprobados, pendientes o rechazados de la empresa)
+  const { data: refDuplicada } = await adminSupabase
+    .from('suscripciones_pagos')
+    .select('id, estado')
+    .ilike('referencia', referencia)
+    .limit(1)
+    .maybeSingle();
+
+  if (refDuplicada) {
+    return {
+      success: false,
+      error: 'Este número de referencia ya fue registrado anteriormente. Verifica los datos de tu comprobante.',
+    };
+  }
+
   let comprobante_url: string | null = null;
 
   if (archivo && archivo.size > 0) {
@@ -270,13 +307,14 @@ export async function reportarPagoSuscripcion(formData: FormData) {
   }
 
   const modulos = (formData.get('modulos') as string)?.trim() || '';
-  const ciclo   = (formData.get('ciclo') as string) || 'mensual'; // mensual | anual
-  // planCompleto: "PRO [ANUAL] + [recetas,multi-price]" o "PRO [MENSUAL] + [recetas]"
+  const ciclo   = (formData.get('ciclo') as string) || 'mensual';
   const cicloTag    = ciclo === 'anual' ? '[ANUAL]' : '[MENSUAL]';
   const planConCiclo = `${plan_solicitado || 'STARTER'} ${cicloTag}`;
   const planCompleto = modulos ? `${planConCiclo} + [${modulos}]` : planConCiclo;
 
-  // Insertar en suscripciones_pagos con todas las columnas de trazabilidad
+  // Insertar en suscripciones_pagos con todas las columnas de trazabilidad.
+  // NOTA DE SEGURIDAD: Nunca modificamos fecha_vencimiento en suscripciones_empresas al reportar el pago;
+  // la gracia de 5 días se calcula dinámicamente sobre este registro y se revoca al instante si es rechazado.
   const { error } = await adminSupabase.from('suscripciones_pagos').insert({
     empresa_id: perfil.empresa_id,
     monto,
@@ -294,41 +332,7 @@ export async function reportarPagoSuscripcion(formData: FormData) {
     return { success: false, error: error.message };
   }
 
-  // ── AUTO-GRACIA O MANTENER ACTIVO ──
-  // Si el usuario reporta un pago, no queremos reducirle el tiempo si estaba haciendo un pago anticipado.
-  try {
-    const { data: subActual } = await adminSupabase
-      .from('suscripciones_empresas')
-      .select('plan, estado, fecha_vencimiento, modulos_activos')
-      .eq('empresa_id', perfil.empresa_id)
-      .maybeSingle();
-
-    const ahora = new Date();
-    const vencActual = subActual?.fecha_vencimiento ? new Date(subActual.fecha_vencimiento) : null;
-    
-    // Solo le damos 5 días de gracia desde HOY si estaba vencido o le quedaban menos de 5 días.
-    // Si tenía más de 5 días (pago anticipado), le dejamos su fecha intacta.
-    const necesitaGracia = !vencActual || vencActual < new Date(ahora.getTime() + 5 * 86400000);
-    
-    if (necesitaGracia) {
-      const fechaGracia = new Date();
-      fechaGracia.setDate(fechaGracia.getDate() + 5);
-
-      await adminSupabase
-        .from('suscripciones_empresas')
-        .upsert({
-          empresa_id: perfil.empresa_id,
-          plan: (subActual?.plan || plan_solicitado || 'STARTER').toUpperCase(),
-          estado: 'GRACIA',
-          fecha_vencimiento: fechaGracia.toISOString(),
-          modulos_activos: subActual?.modulos_activos || [],
-        }, { onConflict: 'empresa_id' });
-    }
-  } catch (e) {
-    console.warn('No se pudo actualizar estado gracia — usando gracia silenciosa:', e);
-  }
-
-  revalidatePath('/dashboard');
+  revalidatePath('/dashboard', 'layout');
   revalidatePath('/dashboard/billing');
   revalidatePath('/admin');
   revalidatePath('/admin/pagos');

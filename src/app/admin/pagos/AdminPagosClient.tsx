@@ -46,7 +46,7 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 function PagoCard({ pago, onAprobar, onRechazar, isPending }: {
   pago: any;
   onAprobar: (id: string) => void;
-  onRechazar: (id: string, motivo: string) => void;
+  onRechazar: (id: string, motivo: string, bloquearPorFraude?: boolean) => void;
   isPending: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -206,47 +206,61 @@ function PagoCard({ pago, onAprobar, onRechazar, isPending }: {
 
           {/* ── Acciones aprobar / rechazar ── */}
           {pago.estado === 'pendiente_aprobacion' && (
-            <div className="flex flex-col sm:flex-row gap-3 pt-2 border-t border-neutral-800">
-              <button
-                onClick={() => onAprobar(pago.id)}
-                disabled={isPending}
-                className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold rounded-xl transition-colors text-sm"
-              >
-                {isPending ? <RefreshCw size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-                Aprobar y Activar — vence el 1ro
-              </button>
-
+            <div className="flex flex-col gap-3 pt-2 border-t border-neutral-800">
               {!showRechazar ? (
-                <button
-                  onClick={() => setShowRechazar(true)}
-                  disabled={isPending}
-                  className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold rounded-xl transition-colors text-sm border border-red-500/20"
-                >
-                  <XCircle size={16} />
-                  Rechazar
-                </button>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={() => onAprobar(pago.id)}
+                    disabled={isPending}
+                    className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold rounded-xl transition-colors text-sm"
+                  >
+                    {isPending ? <RefreshCw size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+                    Aprobar y Activar Plan
+                  </button>
+
+                  <button
+                    onClick={() => setShowRechazar(true)}
+                    disabled={isPending}
+                    className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold rounded-xl transition-colors text-sm border border-red-500/20"
+                  >
+                    <XCircle size={16} />
+                    Rechazar Pago
+                  </button>
+                </div>
               ) : (
-                <div className="flex-1 flex gap-2">
+                <div className="bg-red-950/20 border border-red-500/25 rounded-xl p-4 space-y-3">
+                  <p className="text-xs font-bold text-red-300">
+                    Indica el motivo del rechazo (el cliente lo verá en su historial y se anulará su gracia automática):
+                  </p>
                   <input
                     type="text"
                     value={motivoRechazo}
                     onChange={e => setMotivoRechazo(e.target.value)}
-                    placeholder="Motivo del rechazo (opcional)"
-                    className="flex-1 bg-neutral-900 border border-red-500/30 text-white text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-red-500"
+                    placeholder="Ej: Referencia no encontrada en banco / Captura ilegible o inválida"
+                    className="w-full bg-neutral-900 border border-red-500/30 text-white text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-red-500"
                   />
-                  <button
-                    onClick={() => { onRechazar(pago.id, motivoRechazo); setShowRechazar(false); }}
-                    disabled={isPending}
-                    className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-sm transition-colors"
-                  >
-                    Confirmar
-                  </button>
-                  <button
-                    onClick={() => setShowRechazar(false)}
-                    className="px-4 py-2 bg-neutral-800 text-neutral-400 font-bold rounded-xl text-sm"
-                  >
-                    Cancelar
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => { onRechazar(pago.id, motivoRechazo, false); setShowRechazar(false); }}
+                      disabled={isPending}
+                      className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-black font-bold rounded-xl text-xs transition-colors"
+                    >
+                      Rechazar (Quitar gracia de 5 días)
+                    </button>
+                    <button
+                      onClick={() => { onRechazar(pago.id, motivoRechazo, true); setShowRechazar(false); }}
+                      disabled={isPending}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs transition-colors"
+                    >
+                      🚨 Comprobante Falso (Suspender y Bloquear Ya)
+                    </button>
+                    <button
+                      onClick={() => setShowRechazar(false)}
+                      className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-bold rounded-xl text-xs ml-auto"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -275,7 +289,7 @@ export default function AdminPagosClient({ pagosPendientes, pagosHistorial }: {
     startTransition(async () => {
       const res = await aprobarPago(id);
       if (res.success) {
-        mostrarAlerta(`✅ Pago aprobado. Plan ${res.plan} activado por 30 días.`, 'ok');
+        mostrarAlerta(`✅ Pago aprobado. Plan ${res.plan} activado.`, 'ok');
         setListaPendientes(p => p.filter(x => x.id !== id));
       } else {
         mostrarAlerta(`❌ Error: ${res.error}`, 'error');
@@ -283,11 +297,16 @@ export default function AdminPagosClient({ pagosPendientes, pagosHistorial }: {
     });
   };
 
-  const handleRechazar = (id: string, motivo: string) => {
+  const handleRechazar = (id: string, motivo: string, bloquearPorFraude: boolean = false) => {
     startTransition(async () => {
-      const res = await rechazarPago(id, motivo);
+      const res = await rechazarPago(id, motivo, bloquearPorFraude);
       if (res.success) {
-        mostrarAlerta('Pago rechazado correctamente.', 'ok');
+        mostrarAlerta(
+          bloquearPorFraude
+            ? '🚨 Pago rechazado por comprobante inválido. Empresa bloqueada de inmediato.'
+            : 'Pago rechazado y gracia automática revocada.',
+          'ok'
+        );
         setListaPendientes(p => p.filter(x => x.id !== id));
       } else {
         mostrarAlerta(`❌ Error: ${res.error}`, 'error');

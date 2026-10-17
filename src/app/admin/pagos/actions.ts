@@ -235,9 +235,21 @@ export async function aprobarPago(pagoId: string) {
   }
 }
 
-export async function rechazarPago(pagoId: string, motivo: string) {
+export async function rechazarPago(pagoId: string, motivo: string, bloquearPorFraude: boolean = false) {
   try {
     const { supabase, user } = await requireSuperAdmin();
+
+    const { data: pago, error: errPago } = await supabase
+      .from('suscripciones_pagos')
+      .select('id, empresa_id, referencia')
+      .eq('id', pagoId)
+      .single();
+
+    if (errPago || !pago) return { success: false, error: 'Pago no encontrado' };
+
+    const notaFinal = bloquearPorFraude
+      ? `Rechazado (Comprobante no válido): ${motivo || 'Operación no localizada en banco'}`
+      : (motivo ? `Rechazado: ${motivo}` : 'Rechazado por administrador');
 
     const { error } = await supabase
       .from('suscripciones_pagos')
@@ -245,13 +257,54 @@ export async function rechazarPago(pagoId: string, motivo: string) {
         estado: 'rechazado',
         fecha_revision: new Date().toISOString(),
         revisado_por: user.id,
-        notas_admin: motivo ? `Rechazado: ${motivo}` : 'Rechazado por administrador',
+        notas_admin: notaFinal,
       })
       .eq('id', pagoId);
 
     if (error) return { success: false, error: error.message };
 
+    // Verificar estado actual de la suscripción para revocar gracia de inmediato
+    const { data: subActual } = await supabase
+      .from('suscripciones_empresas')
+      .select('plan, estado, fecha_vencimiento, modulos_activos')
+      .eq('empresa_id', pago.empresa_id)
+      .maybeSingle();
+
+    if (bloquearPorFraude) {
+      // Bloqueo inmediato de módulos administrativos sin días de cortesía ni gracia
+      const fechaCorteInmediato = new Date(Date.now() - 4 * 86400000).toISOString();
+      await supabase
+        .from('suscripciones_empresas')
+        .upsert({
+          empresa_id: pago.empresa_id,
+          plan: subActual?.plan || 'PRO',
+          estado: 'SUSPENDIDA',
+          fecha_vencimiento: (subActual?.fecha_vencimiento && new Date(subActual.fecha_vencimiento) < new Date())
+            ? subActual.fecha_vencimiento
+            : fechaCorteInmediato,
+          modulos_activos: subActual?.modulos_activos || [],
+        }, { onConflict: 'empresa_id' });
+
+      await supabase
+        .from('empresas')
+        .update({ estado_activo: false })
+        .eq('id', pago.empresa_id);
+    } else if (subActual?.estado === 'GRACIA') {
+      // Si había quedado en GRACIA, devolverlo a VENCIDA/ACTIVA según su fecha real
+      const fechaVenc = subActual.fecha_vencimiento ? new Date(subActual.fecha_vencimiento) : null;
+      const sigueVigente = fechaVenc && fechaVenc > new Date();
+      await supabase
+        .from('suscripciones_empresas')
+        .update({
+          estado: sigueVigente ? 'ACTIVA' : 'VENCIDA',
+        })
+        .eq('empresa_id', pago.empresa_id);
+    }
+
+    revalidatePath('/admin');
     revalidatePath('/admin/pagos');
+    revalidatePath('/admin/empresas');
+    revalidatePath('/dashboard', 'layout');
     revalidatePath('/dashboard/billing');
     return { success: true };
   } catch (err: any) {

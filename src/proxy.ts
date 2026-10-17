@@ -181,24 +181,35 @@ export async function proxy(request: NextRequest) {
 
           if (!isLifetime && !isActiva) {
             // Verificar gracia de 5 días por pago reportado pendiente de aprobación
+            // (solo si no está suspendida ni tuvo un pago rechazado reciente)
             let enGracia = false;
-            try {
-              const { data: pagoPendiente } = await supabase
-                .from('suscripciones_pagos')
-                .select('fecha_registro')
-                .eq('empresa_id', profile.empresa_id)
-                .eq('estado', 'pendiente_aprobacion')
-                .order('fecha_registro', { ascending: false })
-                .limit(1)
-                .maybeSingle();
+            if (!estaSuspendida) {
+              try {
+                const { data: ultimosPagos } = await supabase
+                  .from('suscripciones_pagos')
+                  .select('fecha_registro, estado')
+                  .eq('empresa_id', profile.empresa_id)
+                  .order('fecha_registro', { ascending: false })
+                  .limit(5);
 
-              if (pagoPendiente?.fecha_registro) {
-                const diasDesdePago = Math.floor(
-                  (ahora.getTime() - new Date(pagoPendiente.fecha_registro).getTime()) / 86400000
-                );
-                enGracia = diasDesdePago <= 5;
-              }
-            } catch { /* ignorar error — no bloquear por esto */ }
+                const lista = ultimosPagos || [];
+                const pagoPendiente = lista.find(p => p.estado === 'pendiente_aprobacion');
+                const idxAprobado = lista.findIndex(p => p.estado === 'aprobado');
+                const desdeUltimoAprobado = idxAprobado === -1 ? lista : lista.slice(0, idxAprobado);
+                const tieneRechazoReciente = desdeUltimoAprobado.some(p => {
+                  if (p.estado !== 'rechazado' || !p.fecha_registro) return false;
+                  const diasRechazo = Math.floor((ahora.getTime() - new Date(p.fecha_registro).getTime()) / 86400000);
+                  return diasRechazo <= 15;
+                });
+
+                if (pagoPendiente?.fecha_registro && !tieneRechazoReciente) {
+                  const diasDesdePago = Math.floor(
+                    (ahora.getTime() - new Date(pagoPendiente.fecha_registro).getTime()) / 86400000
+                  );
+                  enGracia = diasDesdePago <= 5;
+                }
+              } catch { /* ignorar error — no bloquear por esto */ }
+            }
 
             if (!enGracia) {
               const url = request.nextUrl.clone();
